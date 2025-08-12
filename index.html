@@ -2,9 +2,85 @@
 <html lang="sk">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Angio Platform – Hello</title>
-  <body style="font-family:system-ui;display:grid;place-items:center;height:100vh;">
-    <h1>Hello World 👋</h1>
-    <p>Bežíme na Vercel. Ideme ďalej.</p>
+  <title>Angio Platform – Test pripojenia</title>
+  <body style="font-family:system-ui;max-width:720px;margin:40px auto;padding:0 16px;">
+    <h1>Angio Platform – pripojenie k Supabase</h1>
+
+    <section style="margin:24px 0;padding:16px;border:1px solid #ddd;border-radius:8px">
+      <h2 style="margin-top:0">Prihlásenie (magic link)</h2>
+      <input id="email" type="email" placeholder="tvoj@email.sk"
+             style="width:100%;padding:10px;margin:6px 0" />
+      <button id="sendLink">Pošli magic link</button>
+      <div id="whoami" style="margin-top:10px;color:#555">Neprihlásený</div>
+      <button id="signout" style="display:none;margin-top:6px">Odhlásiť</button>
+    </section>
+
+    <section style="margin:24px 0;padding:16px;border:1px solid #ddd;border-radius:8px">
+      <h2 style="margin-top:0">Test – uložiť pacienta</h2>
+      <input id="pseudo" placeholder="PSEUDO-ID (napr. PSEUDO-001)"
+             style="width:100%;padding:10px;margin:6px 0" />
+      <select id="sex" style="width:100%;padding:10px;margin:6px 0">
+        <option value="M">M</option><option value="F">F</option><option value="X">X</option>
+      </select>
+      <input id="yob" type="number" placeholder="Rok narodenia (napr. 1979)"
+             style="width:100%;padding:10px;margin:6px 0" />
+      <button id="save">Uložiť pacienta</button>
+      <div id="msg" style="margin-top:10px;color:#0a0"></div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+const SUPABASE_URL = "https://ktdvgmwrqwznuikehpmk.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0ZHZnbXdycXd6bnVpa2VocG1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMzg3MTUsImV4cCI6MjA3MDYxNDcxNX0.2YvdIUC41fYsXsT_zJyf2VKvOi2obsJ27fRewQEajmE";
+      
+
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+      async function refreshUser() {
+        const { data: { user } } = await supabase.auth.getUser();
+        const who = document.getElementById('whoami');
+        const out = document.getElementById('signout');
+        if (user) {
+          who.textContent = "Prihlásený: " + (user.email || user.id);
+          out.style.display = 'inline-block';
+        } else {
+          who.textContent = "Neprihlásený";
+          out.style.display = 'none';
+        }
+      }
+
+      document.getElementById('sendLink').onclick = async () => {
+        const email = document.getElementById('email').value;
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: "https://www.cievny.sk" }
+        });
+        alert(error ? ("Chyba: " + error.message) : "Odošiel magic link. Pozri e‑mail.");
+      };
+
+      document.getElementById('signout').onclick = async () => {
+        await supabase.auth.signOut();
+        await refreshUser();
+      };
+
+      document.getElementById('save').onclick = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { alert("Najprv sa prihlás (magic link)."); return; }
+
+        const pseudo = document.getElementById('pseudo').value.trim();
+        const sex    = document.getElementById('sex').value;
+        const yob    = Number(document.getElementById('yob').value);
+        const { error } = await supabase.from('patient').insert({
+          pseudo_id: pseudo, sex, yob, created_by: user.id
+        });
+        document.getElementById('msg').textContent =
+          error ? ("Chyba: " + error.message) : "Uložené ✅ – pozri tabuľku patient v Supabase.";
+        if (error) document.getElementById('msg').style.color = '#b00';
+        else       document.getElementById('msg').style.color = '#0a0';
+      };
+
+      refreshUser();
+      supabase.auth.onAuthStateChange(refreshUser);
+    </script>
   </body>
 </html>
