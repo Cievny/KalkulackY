@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVP Klasifikácia Kalkulačka</title>
+    <!-- Import Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Import Inter font for better typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to complement Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        /* Style for the result area transition */
+        #result-area {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out;
+            transform: translateY(20px);
+        }
+        #result-area.visible {
+            max-height: 500px; /* A large enough value to not clip content */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .criteria-item {
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+        .criteria-item.checked {
+            background-color: #f5f3ff; /* Violet background on selection */
+            border-color: #c4b5fd;
+        }
+        /* Custom radio button appearance */
+        input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        input[type="radio"]:checked {
+            background-color: #8b5cf6;
+            border-color: #8b5cf6;
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main calculator container -->
+    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-6 sm:p-10">
+        <div class="text-center">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-800">SVP Klasifikácia</h1>
+            <p class="mt-2 text-slate-500">Pre panvové žilové ochorenia</p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-10">
+            
+            <!-- S (Symptoms) & V (Varices) Section -->
+            <div>
+                <!-- S (Symptoms) Section -->
+                <h2 class="text-xl font-bold text-slate-700 mb-4">S - Symptómy</h2>
+                <div id="s-list" class="space-y-3 mb-8">
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="s0" name="s_class" value="S0"><label for="s0" class="ml-3 cursor-pointer">S0: Žiadne symptómy</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="s1" name="s_class" value="S1"><label for="s1" class="ml-3 cursor-pointer">S1: Bolesť v boku/hematuria</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="s2" name="s_class" value="S2"><label for="s2" class="ml-3 cursor-pointer">S2: Chronická panvová bolesť</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="s3" name="s_class" value="S3"><label for="s3" class="ml-3 cursor-pointer">S3: Symptómy dolných končatín</label></div>
+                </div>
+
+                <!-- V (Varices) Section -->
+                <h2 class="text-xl font-bold text-slate-700 mb-4">V - Varixy</h2>
+                <div id="v-list" class="space-y-3">
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="v0" name="v_class" value="V0"><label for="v0" class="ml-3 cursor-pointer">V0: Žiadne varixy</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="v1" name="v_class" value="V1"><label for="v1" class="ml-3 cursor-pointer">V1: Varixy v oblasti renálnej žily</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="v2" name="v_class" value="V2"><label for="v2" class="ml-3 cursor-pointer">V2: Panvové varixy (gonadálne, plexy)</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="v3" name="v_class" value="V3"><label for="v3" class="ml-3 cursor-pointer">V3: Extrapelvické varixy</label></div>
+                </div>
+            </div>
+
+            <!-- P (Pathophysiology) Builder Section -->
+            <div>
+                <h2 class="text-xl font-bold text-slate-700 mb-4">P - Patofyziológia</h2>
+                <div class="bg-slate-50 p-4 rounded-lg border">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="p_anatomy" class="block text-sm font-medium text-slate-700">Anatomický segment</label>
+                            <select id="p_anatomy" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md">
+                                <option value="LRV">LRV - Ľavá renálna žila</option>
+                                <option value="RRV">RRV - Pravá renálna žila</option>
+                                <option value="LGV">LGV - Ľavá gonadálna žila</option>
+                                <option value="RGV">RGV - Pravá gonadálna žila</option>
+                                <option value="LCIV">LCIV - Ľavá spoločná ilická véna</option>
+                                <option value="RCIV">RCIV - Pravá spoločná ilická véna</option>
+                                <option value="LEIV">LEIV - Ľavá externá ilická véna</option>
+                                <option value="REIV">REIV - Pravá externá ilická véna</option>
+                                <option value="LIIV">LIIV - Ľavá interná ilická véna</option>
+                                <option value="RIIV">RIIV - Pravá interná ilická véna</option>
+                                <option value="BGV">BGV - Broad ligament vein</option>
+                                <option value="PVP">PVP - Panvový venózny plexus</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Hemodynamika</label>
+                            <div class="flex space-x-4 mt-2" id="p_hemo_group">
+                                <label class="flex items-center"><input type="radio" name="p_hemo" value="R" checked class="mr-2"> R (Reflux)</label>
+                                <label class="flex items-center"><input type="radio" name="p_hemo" value="O" class="mr-2"> O (Obštrukcia)</label>
+                                <label class="flex items-center"><input type="radio" name="p_hemo" value="R,O" class="mr-2"> R+O</label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700">Etiológia</label>
+                            <div class="flex space-x-4 mt-2" id="p_etio_group">
+                                <label class="flex items-center"><input type="radio" name="p_etio" value="NT" checked class="mr-2"> NT (Netrombotická)</label>
+                                <label class="flex items-center"><input type="radio" name="p_etio" value="T" class="mr-2"> T (Trombotická)</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="add-p-segment" class="mt-4 w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors">Pridať P segment</button>
+                </div>
+                <!-- Display for added P segments -->
+                <div id="p-segments-display" class="mt-4 space-y-2">
+                    <!-- Segments will be added here by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Area -->
+        <div id="result-area" class="mt-10 p-6 rounded-xl bg-purple-500 border-2 border-purple-700 text-white text-center">
+            <!-- Content will be injected by JavaScript -->
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="mt-8">
+            <button id="reset-button" class="w-full bg-slate-200 text-slate-700 font-bold text-base py-3 px-6 rounded-lg hover:bg-slate-300 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-slate-300">
+                Resetovať
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const resultArea = document.getElementById('result-area');
+        const svInputs = document.querySelectorAll('input[name="s_class"], input[name="v_class"]');
+        const addPSegmentBtn = document.getElementById('add-p-segment');
+        const pSegmentsDisplay = document.getElementById('p-segments-display');
+        const resetButton = document.getElementById('reset-button');
+        let pSegments = [];
+
+        const calculateAndDisplayResult = () => {
+            // Highlight S and V selections
+            svInputs.forEach(input => {
+                input.closest('.criteria-item').classList.toggle('checked', input.checked);
+            });
+
+            const sValue = document.querySelector('input[name="s_class"]:checked')?.value || '_';
+            const vValue = document.querySelector('input[name="v_class"]:checked')?.value || '_';
+            const pValue = pSegments.length > 0 ? pSegments.join('; ') : '_';
+            
+            const isComplete = sValue !== '_' && vValue !== '_' && pValue !== '_';
+
+            if (!isComplete) {
+                resultArea.classList.remove('visible');
+                return;
+            }
+
+            resultArea.innerHTML = `
+                <h2 class="text-2xl font-bold mb-2">Výsledná SVP Klasifikácia</h2>
+                <p class="text-xl sm:text-2xl font-mono p-3 bg-black bg-opacity-20 rounded-lg tracking-wider">${sValue} ${vValue} P<sub>${pValue}</sub></p>
+            `;
+
+            resultArea.classList.add('visible');
+        };
+
+        const renderPSegments = () => {
+            pSegmentsDisplay.innerHTML = '';
+            pSegments.forEach((segment, index) => {
+                const segmentDiv = document.createElement('div');
+                segmentDiv.className = 'flex justify-between items-center bg-purple-100 p-2 rounded-md text-sm';
+                segmentDiv.innerHTML = `
+                    <span class="font-mono">${segment}</span>
+                    <button data-index="${index}" class="remove-p-segment text-red-500 hover:text-red-700 font-bold">&times;</button>
+                `;
+                pSegmentsDisplay.appendChild(segmentDiv);
+            });
+            
+            // Add event listeners to new remove buttons
+            document.querySelectorAll('.remove-p-segment').forEach(button => {
+                button.addEventListener('click', function() {
+                    const indexToRemove = parseInt(this.dataset.index);
+                    pSegments.splice(indexToRemove, 1);
+                    renderPSegments();
+                    calculateAndDisplayResult();
+                });
+            });
+        };
+
+        addPSegmentBtn.addEventListener('click', () => {
+            const anatomy = document.getElementById('p_anatomy').value;
+            const hemo = document.querySelector('input[name="p_hemo"]:checked').value;
+            const etio = document.querySelector('input[name="p_etio"]:checked').value;
+            const newSegment = `${anatomy},${hemo},${etio}`;
+            pSegments.push(newSegment);
+            renderPSegments();
+            calculateAndDisplayResult();
+        });
+
+        svInputs.forEach(input => {
+            input.addEventListener('change', calculateAndDisplayResult);
+        });
+
+        resetButton.addEventListener('click', () => {
+            document.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
+            pSegments = [];
+            renderPSegments();
+            calculateAndDisplayResult();
+        });
+    });
+    </script>
+
+</body>
+</html>
