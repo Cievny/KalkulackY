@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wellsovo skóre pre DVT</title>
+    <!-- Import Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Import Inter font for better typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to complement Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        /* Style for the result area transition */
+        #result-area {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out;
+            transform: translateY(20px);
+        }
+        #result-area.visible {
+            max-height: 500px; /* A large enough value to not clip content */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .criteria-item {
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+        .criteria-item.checked {
+            background-color: #e0f2fe; /* Blue background on selection */
+            border-color: #7dd3fc;
+        }
+        .point-positive { color: #22c55e; background-color: #dcfce7; }
+        .point-negative { color: #ef4444; background-color: #fee2e2; }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main calculator container -->
+    <div class="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-6 sm:p-10">
+        <div class="text-center">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-800">Wellsovo skóre pre DVT</h1>
+            <p class="mt-2 text-slate-500">Odhad klinickej pravdepodobnosti hlbokej žilovej trombózy</p>
+        </div>
+
+        <div class="mt-10">
+            <div id="wells-list" class="space-y-3">
+                <div class="criteria-item flex items-center p-4 rounded-xl">
+                    <input type="checkbox" id="c_cancer" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                    <label for="c_cancer" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Aktívne nádorové ochorenie (liečba v posledných 6 mesiacoch alebo paliatívna)</label>
+                    <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
+                </div>
+                <div class="criteria-item flex items-center p-4 rounded-xl">
+                    <input type="checkbox" id="c_paralysis" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                    <label for="c_paralysis" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Paralýza, paréza alebo nedávna sadrová fixácia dolnej končatiny</label>
+                    <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
+                </div>
+                <div class="criteria-item flex items-center p-4 rounded-xl">
+                    <input type="checkbox" id="c_bedridden" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                    <label for="c_bedridden" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Nedávno pripútaný na lôžko >3 dni alebo veľká operácia do 12 týždňov</label>
+                    <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
+                </div>
+                <div class="criteria-item flex items-center p-4 rounded-xl">
+                    <input type="checkbox" id="c_tenderness" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                    <label for="c_tenderness" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Lokálna bolestivosť v priebehu hlbokého žilového systému</label>
+                    <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
+                </div>
+                <div class="criteria-item flex items-center p-4 rounded-xl">
+                    <input type="checkbox" id="c_swelling" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                    <label for="c_swelling" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Opuch celej dolnej končatiny</label>
+                    <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
+                </div>
+                <div class="criteria-item flex items-center p-4 rounded-xl">
+                    <input type="checkbox" id="c_calf_swelling" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                    <label for="c_calf_swelling" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Obvod lýtka väčší o >3 cm v porovnaní s asymptomatickou stranou</label>
+                    <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
+                </div>
+                <div class="criteria-item flex items-center p-4 rounded-xl">
+                    <input type="checkbox" id="c_edema" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                    <label for="c_edema" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Priehlbinu zanechávajúci opuch (pitting edema) na symptomatickej končatine</label>
+                    <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
+                </div>
+                <div class="criteria-item flex items-center p-4 rounded-xl">
+                    <input type="checkbox" id="c_veins" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                    <label for="c_veins" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Viditeľné kolaterálne povrchové žily (nevarixové)</label>
+                    <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
+                </div>
+                 <div class="criteria-item flex items-center p-4 rounded-xl">
+                    <input type="checkbox" id="c_history" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                    <label for="c_history" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Anamnéza HŽT</label>
+                    <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
+                </div>
+                <div class="criteria-item flex items-center p-4 rounded-xl">
+                    <input type="checkbox" id="c_alternative" data-points="-2" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                    <label for="c_alternative" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Alternatívna diagnóza je rovnako alebo viac pravdepodobná ako HŽT</label>
+                    <span class="points point-negative text-lg font-bold px-3 py-1 rounded-full">-2</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Area -->
+        <div id="result-area" class="mt-10 p-6 rounded-xl text-white text-center">
+            <!-- Content will be injected by JavaScript -->
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="mt-8">
+            <button id="reset-button" class="w-full bg-slate-200 text-slate-700 font-bold text-base py-3 px-6 rounded-lg hover:bg-slate-300 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-slate-300">
+                Resetovať
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const resultArea = document.getElementById('result-area');
+        const checkboxes = document.querySelectorAll('#wells-list input[type="checkbox"]');
+        const resetButton = document.getElementById('reset-button');
+
+        const calculateAndDisplayResult = () => {
+            let totalPoints = 0;
+            let isAnyCheckboxChecked = false;
+
+            checkboxes.forEach(checkbox => {
+                const item = checkbox.closest('.criteria-item');
+                if (checkbox.checked) {
+                    isAnyCheckboxChecked = true;
+                    item.classList.add('checked');
+                    totalPoints += parseInt(checkbox.dataset.points);
+                } else {
+                    item.classList.remove('checked');
+                }
+            });
+
+            if (!isAnyCheckboxChecked) {
+                 resultArea.classList.remove('visible');
+                 return;
+            }
+
+            let resultTitle = '';
+            let probabilityText = '';
+            let recommendationText = '';
+            let resultClasses = [];
+
+            if (totalPoints >= 3) {
+                resultTitle = 'Vysoká pravdepodobnosť';
+                probabilityText = 'Pravdepodobnosť DVT: ~75%';
+                recommendationText = '<strong>Ďalší postup:</strong> Priamo ultrazvukové vyšetrenie. D-dimér test sa zvyčajne preskakuje.';
+                resultClasses = ['bg-red-500', 'border-red-700'];
+            } else if (totalPoints >= 1) {
+                resultTitle = 'Stredná pravdepodobnosť';
+                probabilityText = 'Pravdepodobnosť DVT: ~17%';
+                recommendationText = '<strong>Ďalší postup:</strong> Indikovať D-dimér test. Ak je pozitívny, doplniť ultrazvuk.';
+                resultClasses = ['bg-amber-500', 'border-amber-700'];
+            } else { // score <= 0
+                resultTitle = 'Nízka pravdepodobnosť';
+                probabilityText = 'Pravdepodobnosť DVT: ~3%';
+                recommendationText = '<strong>Ďalší postup:</strong> Indikovať D-dimér test. Ak je negatívny, DVT je nepravdepodobná.';
+                resultClasses = ['bg-emerald-500', 'border-emerald-700'];
+            }
+
+            resultArea.innerHTML = `
+                <div class="text-center">
+                    <h2 class="text-2xl font-bold mb-2">${resultTitle} (Skóre: ${totalPoints})</h2>
+                    <p class="text-base">${probabilityText}</p>
+                </div>
+                <hr class="my-4 border-white/30">
+                <div class="text-center">
+                    <p class="text-base">${recommendationText}</p>
+                </div>
+            `;
+
+            resultArea.className = 'mt-10 p-6 rounded-xl text-white text-center border-2 transition-all duration-300';
+            resultArea.classList.add(...resultClasses, 'visible');
+        };
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', calculateAndDisplayResult);
+        });
+
+        resetButton.addEventListener('click', () => {
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.closest('.criteria-item').classList.remove('checked');
+            });
+            calculateAndDisplayResult();
+        });
+        
+        // Initial calculation to hide the result area on page load
+        calculateAndDisplayResult();
+    });
+    </script>
+
+</body>
+</html>
