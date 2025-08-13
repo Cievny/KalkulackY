@@ -2,42 +2,164 @@
 <html lang="sk">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Cievny.sk – public insert test</title>
-  <body style="font-family:system-ui;max-width:720px;margin:40px auto;padding:0 16px;">
-    <h1>Test zápisu bez prihlásenia</h1>
+  <title>Cievny.sk – sandbox</title>
+  <style>
+    body{font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;max-width:900px;margin:40px auto;padding:0 16px}
+    section{border:1px solid #ddd;border-radius:10px;padding:16px;margin:20px 0}
+    input,select,button{padding:10px;border:1px solid #ccc;border-radius:8px}
+    button{cursor:pointer}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, monospace}
+  </style>
 
-    <section style="margin:24px 0;padding:16px;border:1px solid #ddd;border-radius:8px">
-      <h2 style="margin-top:0">Nový pacient (sandbox)</h2>
-      <input id="pseudo" placeholder="PSEUDO-ID (napr. PSEUDO-001)"
-             style="width:100%;padding:10px;margin:6px 0" />
-      <select id="sex" style="width:100%;padding:10px;margin:6px 0">
-        <option value="M">M</option><option value="F">F</option><option value="X">X</option>
-      </select>
-      <input id="yob" type="number" placeholder="Rok narodenia (napr. 1979)"
-             style="width:100%;padding:10px;margin:6px 0" />
-      <button id="save">Uložiť pacienta</button>
-      <div id="msg" style="margin-top:10px;color:#0a0"></div>
+  <body>
+    <h1>Cievny.sk – sandbox</h1>
+    <p style="color:#555">Režim bez prihlásenia (iba testovacie, neprodukčné dáta).</p>
+
+    <!-- 1) PACIENT -->
+    <section>
+      <h2>Nový pacient (sandbox)</h2>
+      <div class="row">
+        <input id="pseudo" placeholder="PSEUDO-ID (napr. PSEUDO-001)" style="flex:1 1 260px" />
+        <select id="sex">
+          <option value="M">M</option><option value="F">F</option><option value="X">X</option>
+        </select>
+        <input id="yob" type="number" placeholder="Rok narodenia (napr. 1979)" style="width:160px" />
+        <button id="savePatient">Uložiť pacienta</button>
+      </div>
+      <div id="patientMsg" style="margin-top:10px"></div>
+    </section>
+
+    <!-- 2) ABI/TTBI -->
+    <section>
+      <h2>ABI / TTBI (sandbox)</h2>
+      <div style="display:grid;gap:12px;max-width:560px">
+        <div>
+          <strong>Brachiálne tlaky</strong>
+          <div class="row">
+            <input id="sbp_r" type="number" placeholder="Right arm (mmHg)" />
+            <input id="sbp_l" type="number" placeholder="Left arm (mmHg)" />
+          </div>
+        </div>
+        <div>
+          <strong>Členkové tlaky</strong>
+          <div class="row">
+            <input id="abp_r" type="number" placeholder="Right ankle (mmHg)" />
+            <input id="abp_l" type="number" placeholder="Left ankle (mmHg)" />
+          </div>
+        </div>
+        <div>
+          <strong>Toe tlaky (voliteľné)</strong>
+          <div class="row">
+            <input id="tbp_r" type="number" placeholder="Right toe (mmHg)" />
+            <input id="tbp_l" type="number" placeholder="Left toe (mmHg)" />
+          </div>
+        </div>
+        <button id="calcAbi">Vypočítať a uložiť</button>
+        <div id="abiMsg" style="margin-top:8px"></div>
+        <pre id="abiOut" class="mono" style="margin:0"></pre>
+      </div>
     </section>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+      // --- Supabase klient ---
       const SUPABASE_URL  = "https://ktdvgmwrqwznuikehpmk.supabase.co";
       const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0ZHZnbXdycXd6bnVpa2VocG1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMzg3MTUsImV4cCI6MjA3MDYxNDcxNX0.2YvdIUC41fYsXsT_zJyf2VKvOi2obsJ27fRewQEajmE";
       const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-      document.getElementById('save').onclick = async () => {
+      // --- Pomocné ---
+      function inRange(x,min,max){ return typeof x==='number' && !Number.isNaN(x) && x>=min && x<=max; }
+      function abiCategory(v){
+        if(v==null) return '—';
+        if(v>1.4) return 'Nezkomprimovateľné (calc.)';
+        if(v>=1.00) return 'Normálne';
+        if(v>=0.90) return 'Hraničné';
+        if(v>=0.70) return 'Mierne';
+        if(v>=0.40) return 'Stredné';
+        return 'Ťažké';
+      }
+      function tbiCategory(v){
+        if(v==null) return '—';
+        if(v>=0.70) return 'Normálne';
+        if(v>=0.64) return 'Hraničné';
+        if(v>=0.30) return 'Abnormálne';
+        return 'Ťažko abnormálne';
+      }
+
+      // --- 1) Uloženie pacienta (public insert) ---
+      document.getElementById('savePatient').onclick = async () => {
         const pseudo = document.getElementById('pseudo').value.trim();
         const sex    = document.getElementById('sex').value;
         const yob    = Number(document.getElementById('yob').value);
+        const box = document.getElementById('patientMsg');
 
-        if (!pseudo) { alert("Vyplň PSEUDO‑ID."); return; }
+        if(!pseudo){ box.style.color='#b00'; box.textContent='Vyplň PSEUDO‑ID.'; return; }
 
-        const { error } = await supabase.from('patient')
-          .insert({ pseudo_id: pseudo, sex, yob /* created_by: NULL */ });
+        const { error } = await supabase.from('patient').insert({ pseudo_id:pseudo, sex, yob });
+        box.style.color = error ? '#b00' : '#0a0';
+        box.textContent = error ? ('Chyba: '+error.message) : 'Uložené ✅ – pozri tabuľku patient v Supabase.';
+      };
 
-        const msg = document.getElementById('msg');
-        msg.textContent = error ? ("Chyba: " + error.message) : "Uložené ✅ – pozri tabuľku patient v Supabase.";
-        msg.style.color = error ? '#b00' : '#0a0';
+      // --- 2) ABI/TTBI výpočet + uloženie do measurement (domain/name/value_numeric) ---
+      document.getElementById('calcAbi').onclick = async () => {
+        const msg = document.getElementById('abiMsg');
+        const out = document.getElementById('abiOut');
+        msg.textContent=''; out.textContent='';
+
+        const sbp_r = Number(document.getElementById('sbp_r').value);
+        const sbp_l = Number(document.getElementById('sbp_l').value);
+        const abp_r = Number(document.getElementById('abp_r').value);
+        const abp_l = Number(document.getElementById('abp_l').value);
+        const tbp_r_in = document.getElementById('tbp_r').value;
+        const tbp_l_in = document.getElementById('tbp_l').value;
+        const tbp_r = tbp_r_in ? Number(tbp_r_in) : null;
+        const tbp_l = tbp_l_in ? Number(tbp_l_in) : null;
+
+        // Validácie
+        const errs=[];
+        if(!inRange(sbp_r,60,240)) errs.push('Brach. R mimo 60–240');
+        if(!inRange(sbp_l,60,240)) errs.push('Brach. L mimo 60–240');
+        if(!inRange(abp_r,40,300)) errs.push('Ankle R mimo 40–300');
+        if(!inRange(abp_l,40,300)) errs.push('Ankle L mimo 40–300');
+        if(tbp_r_in && !inRange(tbp_r,20,200)) errs.push('Toe R mimo 20–200');
+        if(tbp_l_in && !inRange(tbp_l,20,200)) errs.push('Toe L mimo 20–200');
+        if(errs.length){ msg.style.color='#b00'; msg.textContent='Skontroluj vstupy: '+errs.join(', '); return; }
+
+        // Výpočet
+        const brachial_ref = Math.max(sbp_r, sbp_l);
+        const abpi_r = +(abp_r / brachial_ref).toFixed(2);
+        const abpi_l = +(abp_l / brachial_ref).toFixed(2);
+        const tbpi_r = tbp_r_in ? +(tbp_r / brachial_ref).toFixed(2) : null;
+        const tbpi_l = tbp_l_in ? +(tbp_l / brachial_ref).toFixed(2) : null;
+
+        // Pripravíme riadky na insert (podľa schémy: domain/name/value_numeric/unit)
+        const rows = [
+          { domain:'ABI',  name:'SBP_R',  value_numeric: sbp_r, unit:'mmHg' },
+          { domain:'ABI',  name:'SBP_L',  value_numeric: sbp_l, unit:'mmHg' },
+          { domain:'ABI',  name:'ABP_R',  value_numeric: abp_r, unit:'mmHg' },
+          { domain:'ABI',  name:'ABP_L',  value_numeric: abp_l, unit:'mmHg' },
+          { domain:'ABI',  name:'ABPI_R', value_numeric: abpi_r, unit:'ratio' },
+          { domain:'ABI',  name:'ABPI_L', value_numeric: abpi_l, unit:'ratio' },
+        ];
+        if(tbpi_r!==null) rows.push({ domain:'TTBI', name:'TBPI_R', value_numeric: tbpi_r, unit:'ratio' });
+        if(tbpi_l!==null) rows.push({ domain:'TTBI', name:'TBPI_L', value_numeric: tbpi_l, unit:'ratio' });
+
+        const { error } = await supabase.from('measurement').insert(rows);
+
+        if(error){ msg.style.color='#b00'; msg.textContent='Chyba uloženia: '+error.message; return; }
+
+        const lines = [
+          `Brach. referencia = max(${sbp_r}, ${sbp_l}) = ${brachial_ref} mmHg`,
+          `ABI R = ${abp_r} / ${brachial_ref} = ${abpi_r} → ${abiCategory(abpi_r)}`,
+          `ABI L = ${abp_l} / ${brachial_ref} = ${abpi_l} → ${abiCategory(abpi_l)}`
+        ];
+        if(tbpi_r!==null) lines.push(`TBI R = ${tbp_r} / ${brachial_ref} = ${tbpi_r} → ${tbiCategory(tbpi_r)}`);
+        if(tbpi_l!==null) lines.push(`TBI L = ${tbp_l} / ${brachial_ref} = ${tbpi_l} → ${tbiCategory(tbpi_l)}`);
+
+        msg.style.color='#0a0';
+        msg.textContent='Uložené ✅ (measurement).';
+        out.textContent=lines.join('\n');
       };
     </script>
   </body>
