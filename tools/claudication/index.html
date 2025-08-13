@@ -1,1 +1,345 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokročilý Sprievodca Liečbou Intermitentnej Klaudikácie</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .main-container {
+            min-height: 520px; /* Adjusted for error message */
+            position: relative;
+        }
+        .step-card {
+            transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+        }
+        .step-card.hidden {
+            opacity: 0;
+            transform: scale(0.98);
+            pointer-events: none;
+        }
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca;
+        }
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .btn-option {
+             background-color: white;
+             border: 1px solid #d1d5db;
+             color: #374151;
+             width: 100%;
+             text-align: left;
+             font-weight: 500;
+             padding: 1rem;
+        }
+        .btn-option:hover {
+            background-color: #f9fafb;
+            border-color: #6366f1;
+            color: #4f46e5;
+        }
+        .question-group {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
 
+    <div class="w-full max-w-2xl mx-auto main-container">
+        <!-- Step 1: Initial Diagnosis -->
+        <div id="step-1" class="step-card p-8">
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Pokročilý Sprievodca Liečbou IK</h1>
+            <p class="text-gray-500 mb-6">Detailný rozhodovací nástroj podľa usmernení SVS</p>
+            
+            <div class="space-y-4">
+                <h2 class="text-lg font-semibold text-gray-700">Krok 1: Počiatočný Manažment</h2>
+                <p class="text-gray-600">Každý pacient s novodiagnostikovanou IK by mal začať s nasledujúcou konzervatívnou liečbou:</p>
+                <ul class="list-disc list-inside space-y-2 text-gray-600 pl-2">
+                    <li><span class="font-semibold">Optimálna medikamentózna liečba (OMT)</span></li>
+                    <li><span class="font-semibold">Dôsledný manažment rizikových faktorov (zanechanie fajčenia)</span></li>
+                    <li><span class="font-semibold">Pohybová terapia (minimálne 12 týždňov)</span></li>
+                </ul>
+            </div>
+            <div class="mt-8 text-right">
+                <button onclick="showStep('step-2')" class="btn btn-primary">Pokračovať</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Re-evaluation -->
+        <div id="step-2" class="step-card p-8 hidden">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">Krok 2: Prehodnotenie po 12 týždňoch</h2>
+            <p class="text-gray-600 mb-6">Zlepšili sa symptómy pacienta natoľko, že už významne neobmedzujú jeho každodenné aktivity?</p>
+            <div class="flex space-x-4">
+                <button onclick="showFinalRecommendation('rec-conservative')" class="btn btn-primary flex-1">Áno, zlepšili sa</button>
+                <button onclick="nextFromReevaluation()" class="btn btn-secondary flex-1">Nie, pretrváva závažné obmedzenie</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Patient Details -->
+        <div id="step-3" class="step-card p-8 hidden">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">Krok 3: Detailné informácie o pacientovi</h2>
+            <p class="text-gray-600 mb-6">Zadajte kľúčové faktory ovplyvňujúce rozhodovanie.</p>
+            
+            <div class="space-y-6">
+                <div class="question-group">
+                    <label class="block text-md font-medium text-gray-700 mb-3">Fajčiarsky status pacienta:</label>
+                    <div class="flex space-x-4">
+                        <button id="smoker-yes" onclick="selectOption('smoking', 'yes', 'smoker-yes')" class="btn btn-secondary flex-1">Aktuálny fajčiar</button>
+                        <button id="smoker-no" onclick="selectOption('smoking', 'no', 'smoker-no')" class="btn btn-secondary flex-1">Nefajčiar</button>
+                    </div>
+                </div>
+                
+                <div class="question-group">
+                    <label class="block text-md font-medium text-gray-700 mb-3">Odhadované operačné riziko:</label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <button id="risk-low" onclick="selectOption('risk', 'low', 'risk-low')" class="btn btn-secondary">Nízke</button>
+                        <button id="risk-medium" onclick="selectOption('risk', 'medium', 'risk-medium')" class="btn btn-secondary">Stredné</button>
+                        <button id="risk-high" onclick="selectOption('risk', 'high', 'risk-high')" class="btn btn-secondary">Vysoké</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="step-3-error" class="hidden mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                Prosím, zvoľte obe možnosti (fajčiarsky status aj operačné riziko).
+            </div>
+
+            <div class="mt-8 text-right">
+                <button onclick="validateAndProceedToStep4()" class="btn btn-primary">Pokračovať na lokalizáciu</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Location -->
+        <div id="step-4" class="step-card p-8 hidden">
+            <h2 class="text-lg font-semibold text-gray-700 mb-4">Krok 4: Lokalizácia Ochorenia</h2>
+            <p class="text-gray-600 mb-6">Kde je primárna lokalizácia hemodynamicky významného ochorenia?</p>
+            <div class="space-y-3">
+                <button onclick="setAndRecommend('infrapopliteal')" class="btn btn-option">Infrapopliteálne (tepny predkolenia)</button>
+                <button onclick="setAndRecommend('fp')" class="btn btn-option">Femoropopliteálne (stehenná a podkolenná tepna)</button>
+                <button onclick="setAndRecommend('cf')" class="btn btn-option">Spoločná femorálna artéria (v slabine)</button>
+                <button onclick="setAndRecommend('ai')" class="btn btn-option">Aortoiliakálne (panvové tepny a aorta)</button>
+            </div>
+        </div>
+
+        <!-- Recommendation Screen -->
+        <div id="recommendation-container" class="step-card p-8 hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Odporúčanie na základe SVS AUC</h2>
+            <div id="recommendation-content" class="text-gray-700 space-y-3"></div>
+            <div class="mt-8 text-right">
+                <button onclick="restart()" class="btn btn-primary">Začať odznova</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 'step-1';
+        let patientData = {
+            smoking: null,
+            risk: null,
+            location: null,
+            lifestyleLimitation: 'severe' // Default for this path
+        };
+
+        // Function to show a specific step card
+        function showStep(stepId) {
+            const currentEl = document.getElementById(currentStep);
+            const nextEl = document.getElementById(stepId);
+
+            if (currentEl) currentEl.classList.add('hidden');
+            if (nextEl) nextEl.classList.remove('hidden');
+            currentStep = stepId;
+        }
+        
+        // Function to handle option selection in Step 3
+        function selectOption(key, value, buttonId) {
+            patientData[key] = value;
+            // Visually update buttons to show selection
+            const group = key === 'smoking' ? ['smoker-yes', 'smoker-no'] : ['risk-low', 'risk-medium', 'risk-high'];
+            
+            group.forEach(id => {
+                document.getElementById(id).classList.remove('btn-primary');
+                document.getElementById(id).classList.add('btn-secondary');
+            });
+            
+            const selectedBtn = document.getElementById(buttonId);
+            selectedBtn.classList.remove('btn-secondary');
+            selectedBtn.classList.add('btn-primary');
+        }
+
+        // Function to handle the "No" button in Step 2
+        function nextFromReevaluation() {
+            patientData.lifestyleLimitation = 'severe';
+            showStep('step-3');
+        }
+
+        // CORRECTED: Validate selections before proceeding from Step 3
+        function validateAndProceedToStep4() {
+            const errorEl = document.getElementById('step-3-error');
+            if (patientData.smoking && patientData.risk) {
+                errorEl.classList.add('hidden');
+                showStep('step-4');
+            } else {
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // Function to set location and trigger recommendation calculation
+        function setAndRecommend(location) {
+            patientData.location = location;
+            calculateAndShowRecommendation();
+        }
+
+        // Main logic to determine the correct recommendation
+        function calculateAndShowRecommendation() {
+            const { smoking, risk, location } = patientData;
+            let recKey = '';
+
+            // Validation is now handled before this function is called
+            switch (location) {
+                case 'infrapopliteal':
+                    recKey = 'rec-infrapopliteal';
+                    break;
+                case 'fp':
+                    if (risk === 'high' || smoking === 'yes') {
+                        recKey = 'rec-fp-severe-high-risk-smoker';
+                    } else {
+                        recKey = 'rec-fp-severe-low-risk-nonsmoker';
+                    }
+                    break;
+                case 'cf':
+                    if (risk === 'high') {
+                        recKey = 'rec-cf-severe-high-risk';
+                    } else {
+                         recKey = 'rec-cf-severe-low-risk';
+                    }
+                    break;
+                case 'ai':
+                    if (risk === 'high') {
+                        recKey = 'rec-ai-severe-high-risk';
+                    } else if (smoking === 'no' && (risk === 'low' || risk === 'medium')) {
+                        recKey = 'rec-ai-severe-low-risk-nonsmoker';
+                    } else {
+                        recKey = 'rec-ai-severe-smoker';
+                    }
+                    break;
+            }
+            showFinalRecommendation(recKey);
+        }
+
+        const recommendations = {
+            'rec-conservative': {
+                title: 'Pokračovať v konzervatívnej liečbe',
+                text: 'Symptómy sa zlepšili. Pokračujte v OMT, manažmente rizikových faktorov a aktívnom životnom štýle. Pravidelné sledovanie je dôležité.'
+            },
+            'rec-infrapopliteal': {
+                title: 'Invazívna liečba sa NEODPORÚČA',
+                text: 'Pri izolovanej chorobe tepien predkolenia invazívna liečba pre IK neprináša benefit a môže byť škodlivá. Hodnotenie: <strong>Riziko > Prínos (R>B)</strong>. Je potrebné pokračovať v maximálnej konzervatívnej liečbe.'
+            },
+            'rec-fp-severe-low-risk-nonsmoker': {
+                title: 'Zvážiť invazívnu liečbu (Femoropopliteálna oblasť)',
+                text: 'U nefajčiara s nízkym/stredným rizikom je <strong>endovaskulárna liečba</strong> hodnotená ako B>R (prínos prevyšuje riziko). <strong>Otvorená operácia (bypass)</strong> s použitím vlastnej žily je tiež B>R. Rozhodnutie je individuálne.'
+            },
+            'rec-fp-severe-high-risk-smoker': {
+                title: 'Zvážiť invazívnu liečbu s opatrnosťou (Femoropopliteálna oblasť)',
+                text: 'U fajčiara alebo pacienta s vysokým rizikom je prínos neistý. <strong>Endovaskulárna liečba</strong> je hodnotená ako B>R len pri krátkej vzdialenosti chôdze. <strong>Otvorená operácia</strong> je zvyčajne neurčitá alebo R>B. Dôrazne sa odporúča zanechanie fajčenia.'
+            },
+            'rec-cf-severe-low-risk': {
+                title: 'Odporúča sa otvorená operácia (Spoločná femorálna artéria)',
+                text: 'U pacienta s nízkym/stredným rizikom je <strong>otvorená operácia (endarterektómia)</strong> jasne preferovaná metóda (B>R). Endovaskulárna liečba sa neodporúča.'
+            },
+            'rec-cf-severe-high-risk': {
+                title: 'Liečba je neurčitá (Spoločná femorálna artéria)',
+                text: 'U pacienta s vysokým rizikom je aj otvorená operácia riziková a jej prínos je neistý. Je nutné veľmi starostlivo zvážiť pomer rizika a benefitu. Endovaskulárna liečba sa stále neodporúča.'
+            },
+            'rec-ai-severe-low-risk-nonsmoker': {
+                title: 'Zvážiť invazívnu liečbu (Aortoiliakálna oblasť)',
+                text: 'U nefajčiara s nízkym/stredným rizikom je hodnotenie B>R pre <strong>endovaskulárnu aj otvorenú liečbu</strong>. Voľba závisí od anatomickej komplexnosti (TASC). Pre jednoduchú anatómiu sa preferuje endovaskulárna liečba.'
+            },
+            'rec-ai-severe-smoker': {
+                title: 'Zvážiť invazívnu liečbu s opatrnosťou (Aortoiliakálna oblasť)',
+                text: 'U fajčiara je hodnotenie B>R len pre <strong>endovaskulárnu liečbu</strong> pri jednoduchej anatómii. Otvorená operácia je skôr neurčitá. Zanechanie fajčenia je kľúčové pre dlhodobý úspech.'
+            },
+            'rec-ai-severe-high-risk': {
+                title: 'Liečba je neurčitá alebo riziková (Aortoiliakálna oblasť)',
+                text: 'U pacienta s vysokým rizikom je otvorená operácia hodnotená ako R>B. Endovaskulárna liečba je neurčitá. Je nutné veľmi starostlivo zvážiť pomer rizika a benefitu.'
+            }
+        };
+
+        // Function to display the final recommendation
+        function showFinalRecommendation(recKey) {
+            const rec = recommendations[recKey];
+            if (!rec) return;
+
+            const recContainer = document.getElementById('recommendation-container');
+            const recContent = document.getElementById('recommendation-content');
+            
+            recContent.innerHTML = `
+                <h3 class="font-semibold text-lg text-indigo-600">${rec.title}</h3>
+                <p>${rec.text}</p>
+                <div class="mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700">
+                    <p class="font-bold">Dôležité upozornenie</p>
+                    <p class="text-sm">Tento nástroj je zjednodušenou interpretáciou a nenahrádza odborný klinický úsudok. Finálne rozhodnutie musí byť vždy individualizované a prediskutované s pacientom.</p>
+                </div>
+            `;
+            
+            showStep('recommendation-container');
+        }
+
+        // Function to restart the entire process
+        function restart() {
+            // Reset patient data object
+            patientData = { smoking: null, risk: null, location: null, lifestyleLimitation: 'severe' };
+            
+            // Reset button styles in Step 3
+            const groups = [['smoker-yes', 'smoker-no'], ['risk-low', 'risk-medium', 'risk-high']];
+            groups.flat().forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-secondary');
+                }
+            });
+
+            // Hide error message
+            document.getElementById('step-3-error').classList.add('hidden');
+            
+            // Go back to the first step
+            showStep('step-1');
+        }
+    </script>
+
+</body>
+</html>
