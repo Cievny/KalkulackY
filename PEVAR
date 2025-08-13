@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generátor PEVAR Správ a Zber Dát</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .form-section {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            margin-bottom: 1.5rem;
+        }
+        .form-section h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-subsection h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #374151;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        label.input-label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background-color: #f9fafb;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #bfdbfe;
+        }
+        input[type="checkbox"], input[type="radio"] {
+            height: 1.125rem;
+            width: 1.125rem;
+            border-radius: 0.25rem;
+            border-color: #d1d5db;
+            color: #2563eb;
+        }
+        input[type="checkbox"]:focus, input[type="radio"]:focus {
+             ring-offset: 0;
+             ring: 2px solid #3b82f6;
+        }
+        .choice-label {
+             margin-left: 0.5rem;
+             font-weight: 500;
+             color: #374151;
+        }
+        .derived-field {
+            background-color: #e5e7eb;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary {
+            background-color: #16a34a;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #15803d;
+        }
+        .btn-secondary {
+            background-color: #4b5563;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #374151;
+        }
+        #copy-feedback, #copy-table-feedback {
+            transition: opacity 0.5s;
+        }
+        .hidden {
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        tbody tr:hover {
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 sm:p-6 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Generátor Správ pre PEVAR</h1>
+            <p class="text-gray-600 mt-2">Zmeny vo formulári sa okamžite prejavia v texte správy.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Input Form -->
+            <div id="form-container">
+                <!-- Pacient a Indikácia -->
+                <div class="form-section">
+                    <h2>Pacient a Indikácia</h2>
+                    <div class="space-y-6">
+                        <div>
+                            <label for="rodne_cislo" class="input-label">Rodné číslo</label>
+                            <input type="text" id="rodne_cislo" value="665101/1234" placeholder="RRMMDD/XXXX">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="input-label">Vek</label>
+                                <div id="vek_display" class="derived-field"></div>
+                            </div>
+                             <div>
+                                <label class="input-label">Pohlavie</label>
+                                <div id="pohlavie_display" class="derived-field"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="input-label">Charakteristika pacienta</label>
+                            <div class="flex items-center space-x-6 mt-2">
+                                <div class="flex items-center">
+                                    <input id="char_krehky" type="checkbox">
+                                    <label for="char_krehky" class="choice-label">Krehký/á</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input id="char_polymorbidny" type="checkbox" checked>
+                                    <label for="char_polymorbidny" class="choice-label">Polymorbidný/á</label>
+                                </div>
+                            </div>
+                        </div>
+                         <div>
+                            <label class="input-label">Stav</label>
+                            <div class="flex items-center mt-2">
+                                <input id="symptomaticky" type="checkbox">
+                                <label for="symptomaticky" class="choice-label">Symptomatický/á</label>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="diagnoza" class="input-label">Diagnóza</label>
+                            <input type="text" id="diagnoza" value="komplexným postihnutím infrarenálnej aorty- AAA">
+                        </div>
+                         <div>
+                            <label class="input-label">Typ výkonu</label>
+                            <div class="flex items-center space-x-6 mt-2">
+                                <div class="flex items-center">
+                                    <input id="ind_elektivny" name="indikacia_typ" type="radio" value="elektívnemu" checked>
+                                    <label for="ind_elektivny" class="choice-label">Elektívny</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input id="ind_urgentny" name="indikacia_typ" type="radio" value="urgentnému">
+                                    <label for="ind_urgentny" class="choice-label">Urgentný</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Priebeh Výkonu -->
+                <div class="form-section">
+                    <h2>Priebeh Výkonu</h2>
+                    <div class="space-y-6">
+                        <div class="form-subsection">
+                            <h3>Prístup</h3>
+                            <div class="space-y-6 mt-4">
+                                <div>
+                                    <label for="anestezia_typ" class="input-label">Anestézia</label>
+                                    <select id="anestezia_typ">
+                                        <option>V lokálnej anestézii</option>
+                                        <option>V celkovej anestézii</option>
+                                        <option>V spinálnej anestézii</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="input-label">Strana prístupu</label>
+                                     <div class="flex items-center space-x-6 mt-2">
+                                        <div class="flex items-center">
+                                            <input id="pristup_obojstranne" name="pristup_strana" type="radio" value="l.utrq." data-text="obojstranne" checked>
+                                            <label for="pristup_obojstranne" class="choice-label">Obojstranne</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input id="pristup_vpravo" name="pristup_strana" type="radio" value="l.dx." data-text="vpravo">
+                                            <label for="pristup_vpravo" class="choice-label">Vpravo</label>
+                                        </div>
+                                         <div class="flex items-center">
+                                            <input id="pristup_vlavo" name="pristup_strana" type="radio" value="l.sin." data-text="vľavo">
+                                            <label for="pristup_vlavo" class="choice-label">Vľavo</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="punkcia_arteria" class="input-label">Tepna</label>
+                                        <input type="text" id="punkcia_arteria" value="AFC">
+                                    </div>
+                                    <div>
+                                        <label for="punkcia_technika" class="input-label">Technika punkcie</label>
+                                        <input type="text" id="punkcia_technika" value="Seldingerovou technikou, retrográdne">
+                                    </div>
+                                </div>
+                                 <div>
+                                    <label class="input-label">Navigácia</label>
+                                    <div class="flex items-center space-x-6 mt-2">
+                                        <div class="flex items-center">
+                                            <input id="usg_nav" type="checkbox">
+                                            <label for="usg_nav" class="choice-label">USG navigácia</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input id="rtg_nav" type="checkbox">
+                                            <label for="rtg_nav" class="choice-label">RTG navigácia</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="zabezpecenie_technika" class="input-label">Technika zabezpečenia vpichu</label>
+                                    <select id="zabezpecenie_technika">
+                                        <option value="preclosure technikou">Štandardná preclosure</option>
+                                        <option value="za použitia preclosure techniky za použitia ProStyle zariadenia">Preclosure s ProStyle</option>
+                                        <option value="odobratím hĺbky miesta vpichu kalibračným dilatátorom pre Manta systém">Kalibrácia pre Manta</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="sheath_velkost" class="input-label">Veľkosť sheathu</label>
+                                    <select id="sheath_velkost">
+                                        <option>6F</option>
+                                        <option>7F</option>
+                                        <option selected>8F</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-subsection">
+                            <h3>Katetrizácia a Implantácia</h3>
+                            <div class="space-y-6 mt-4">
+                                <div>
+                                     <label for="katetrizacia_aorty" class="input-label">Katetrizácia aorty</label>
+                                     <textarea id="katetrizacia_aorty" rows="2">Zľava zavádzame cez 8F puzdro 5F pig tail katéter do suprarenálnej aorty, sprava cez 8F puzdro Berenstein katéter do hrudnej aorty</textarea>
+                                </div>
+                                <div>
+                                    <label for="vodic_typ" class="input-label">Vodič</label>
+                                    <select id="vodic_typ">
+                                        <option>Lunderquist vodič</option>
+                                        <option>BackUp vodič</option>
+                                    </select>
+                                </div>
+                                <div class="form-subsection pt-4 border-t border-gray-200">
+                                    <h4>Implantácia hlavného tela</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                         <div>
+                                            <label for="sg_nazov" class="input-label">Názov stentgraftu</label>
+                                            <select id="sg_nazov">
+                                                <option>Endurant</option>
+                                                <option>Cook Alpha</option>
+                                                <option>ALTO</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="sg_rozmery" class="input-label">Rozmery (mm)</label>
+                                            <input type="text" id="sg_rozmery" value="18-166-16">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-subsection pt-4 border-t border-gray-200">
+                                    <h4>Katetrizácia kontralaterálnej nožičky</h4>
+                                    <div class="mt-4">
+                                        <label for="contra_kateter_typ" class="input-label">Typ katétra</label>
+                                        <select id="contra_kateter_typ">
+                                            <option>Berenstein</option>
+                                            <option>C1</option>
+                                            <option>SIM</option>
+                                            <option>Vertebrálnym</option>
+                                            <option>Shepherd Hook</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-subsection pt-4 border-t border-gray-200">
+                                    <h4>Implantácia distálnych komponentov</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4">
+                                        <label class="input-label md:col-span-2">Sprava</label>
+                                        <div>
+                                            <select id="komponent_dx_nazov">
+                                                <option>Ovation</option>
+                                                <option>Endurant</option>
+                                                <option>Cook</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                             <input type="text" id="komponent_dx_rozmery" value="12x120mm" placeholder="Rozmery (napr. 12x120mm)">
+                                        </div>
+
+                                        <label class="input-label md:col-span-2 mt-4">Zľava</label>
+                                        <div>
+                                            <select id="komponent_sin_nazov">
+                                                <option>Ovation</option>
+                                                <option>Endurant</option>
+                                                <option>Cook</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                             <input type="text" id="komponent_sin_rozmery" value="12x140mm" placeholder="Rozmery (napr. 12x140mm)">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="implantacia_komentar" class="input-label">Ďalší postup / Komplikácie</label>
+                                    <textarea id="implantacia_komentar" rows="2" placeholder="Zadajte ďalší postup alebo komplikácie..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Uzáver miesta vpichu -->
+                <div class="form-section">
+                    <h2>Uzáver miesta vpichu</h2>
+                    <div class="form-subsection">
+                        <h3>Pravá strana (l.dx.)</h3>
+                        <div class="space-y-4">
+                            <select id="uzaver_dx_technika">
+                                <option value="dotiahnutím sutúr Prostyle uzatváracieho zariadenia">ProStyle sutúra</option>
+                                <option value="pomocou Manta systému">Manta systém</option>
+                                <option value="manuálnou kompresiou">Manuálna kompresia</option>
+                                <option value="iné">Iné (špecifikovať v komentári)</option>
+                            </select>
+                            <input type="text" id="uzaver_dx_komentar" placeholder="Doplnkový komentár pre pravú stranu...">
+                             <div class="flex items-center">
+                                <input id="hemostaza_dx_check" type="checkbox" checked>
+                                <label for="hemostaza_dx_check" class="choice-label">Dosiahnutá úplná hemostáza (PatchPro bandáž)</label>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="form-subsection">
+                        <h3>Ľavá strana (l.sin.)</h3>
+                        <div class="space-y-4">
+                            <select id="uzaver_sin_technika">
+                                <option value="dotiahnutím sutúr Prostyle uzatváracieho zariadenia">ProStyle sutúra</option>
+                                <option value="pomocou Manta systému">Manta systém</option>
+                                <option value="manuálnou kompresiou">Manuálna kompresia</option>
+                                <option value="iné">Iné (špecifikovať v komentári)</option>
+                            </select>
+                             <input type="text" id="uzaver_sin_komentar" placeholder="Doplnkový komentár pre ľavú stranu...">
+                             <div class="flex items-center">
+                                <input id="hemostaza_sin_check" type="checkbox" checked>
+                                <label for="hemostaza_sin_check" class="choice-label">Dosiahnutá úplná hemostáza (PatchPro bandáž)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Výsledok a Záver -->
+                <div class="form-section">
+                    <h2>Výsledok a Záver</h2>
+                     <div class="space-y-6">
+                        <div class="form-subsection">
+                            <h3>Domodelovanie kritických miest</h3>
+                            <div class="space-y-4 mt-4">
+                                <div class="flex items-center">
+                                    <input id="modelovanie_telo_check" type="checkbox" checked>
+                                    <label for="modelovanie_telo_check" class="choice-label">V oblasti tela stentgraftu</label>
+                                </div>
+                                <div id="modelovanie_telo_options" class="pl-6 space-y-2">
+                                     <label for="modelovanie_telo_balon" class="input-label text-sm">Použitý balón:</label>
+                                     <select id="modelovanie_telo_balon">
+                                        <option>CODA</option>
+                                        <option>Reliant</option>
+                                    </select>
+                                </div>
+                        
+                                <div class="flex items-center mt-4">
+                                    <input id="modelovanie_extenzie_check" type="checkbox" checked>
+                                    <label for="modelovanie_extenzie_check" class="choice-label">V oblasti extenzií</label>
+                                </div>
+                                <div id="modelovanie_extenzie_options" class="pl-6 space-y-4">
+                                     <label for="modelovanie_extenzie_balon" class="input-label text-sm">Použitý balón:</label>
+                                     <select id="modelovanie_extenzie_balon">
+                                        <option>Atlas</option>
+                                        <option>Metacross</option>
+                                        <option>Mustang</option>
+                                    </select>
+                                    <label for="modelovanie_extenzie_rozmer" class="input-label text-sm">Veľkosť (mm):</label>
+                                    <input type="text" id="modelovanie_extenzie_rozmer" placeholder="napr. 12 a 18mm" value="">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-subsection">
+                            <h3>AG výsledok</h3>
+                            <div class="space-y-4 mt-4">
+                                <div class="flex items-center">
+                                    <input id="endoleak_check" type="checkbox">
+                                    <label for="endoleak_check" class="choice-label">Zobraziť endoleak</label>
+                                </div>
+                                <div id="endoleak_options" class="hidden pl-6 space-y-4">
+                                    <div>
+                                        <label for="endoleak_typ" class="input-label text-sm">Typ endoleaku:</label>
+                                        <select id="endoleak_typ">
+                                            <option value="I">Typ I</option>
+                                            <option value="II">Typ II</option>
+                                            <option value="III">Typ III</option>
+                                            <option value="IV">Typ IV</option>
+                                        </select>
+                                    </div>
+                                    <div id="endoleak_typ2_options" class="hidden space-y-4">
+                                        <div>
+                                            <label for="endoleak_typ2_zdroj" class="input-label text-sm">Zdroj (Typ II):</label>
+                                            <select id="endoleak_typ2_zdroj">
+                                                <option value="cestou lumbálnych tepien">Lumbálne tepny</option>
+                                                <option value="cestou akcesórnej renálnej tepny">Akcesórna renálna tepna</option>
+                                            </select>
+                                        </div>
+                                        <div id="endoleak_typ2_strana_options" class="hidden">
+                                            <label class="input-label text-sm">Strana (Akces. ren. tepna):</label>
+                                            <div class="flex items-center space-x-4">
+                                                <div class="flex items-center">
+                                                    <input id="endoleak_strana_dx" name="endoleak_strana" type="radio" value="vpravo" checked>
+                                                    <label for="endoleak_strana_dx" class="choice-label">Vpravo</label>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <input id="endoleak_strana_sin" name="endoleak_strana" type="radio" value="vľavo">
+                                                    <label for="endoleak_strana_sin" class="choice-label">Vľavo</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center pt-4 border-t border-gray-200">
+                                    <input id="komponenty_ok_check" type="checkbox" checked>
+                                    <label for="komponenty_ok_check" class="choice-label">Všetky komponenty dobre rozvinuté, bez stenózy.</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="odporucanie_cas" class="input-label">Kontrolné CTA</label>
+                            <select id="odporucanie_cas">
+                                <option value="pred ukončením hospitalizácie">Pred ukončením hospitalizácie</option>
+                                <option value="do mesiaca od výkonu" selected>Do mesiaca od výkonu</option>
+                                <option value="do 3 mesiacov od výkonu">Do 3 mesiacov od výkonu</option>
+                                <option value="do 6 mesiacov od výkonu">Do 6 mesiacov od výkonu</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="zaver_vykonu" class="input-label">Záver</label>
+                            <input type="text" id="zaver_vykonu" value="PEVAR AAA s dobrým efektom.">
+                        </div>
+                         <div>
+                            <label for="lekari" class="input-label">Lekári</label>
+                            <input type="text" id="lekari" value="MUDr. Vincze, MUDr. Širila">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Section -->
+            <div class="sticky top-8 self-start">
+                <div class="form-section">
+                    <h2>Vygenerovaná Správa</h2>
+                    <div class="space-y-4">
+                        <textarea id="output" rows="30" class="bg-white" readonly></textarea>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             <button id="copy-btn" class="btn btn-secondary w-full">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" /><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" /></svg>
+                                Kopírovať text
+                            </button>
+                            <button id="save-data-btn" class="btn btn-primary w-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                                Uložiť dáta o materiáli
+                            </button>
+                        </div>
+                        <p id="copy-feedback" class="text-center text-green-600 font-medium opacity-0">Text bol skopírovaný!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Collection Section -->
+        <div id="data-collection-section" class="mt-8 form-section">
+            <h2>Zber dát o použitom materiáli</h2>
+            <div class="overflow-x-auto mt-6">
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th>Rodné číslo</th>
+                            <th>SG Telo</th>
+                            <th>SG Telo Rozmer</th>
+                            <th>Komponent DX</th>
+                            <th>Komponent DX Rozmer</th>
+                            <th>Komponent SIN</th>
+                            <th>Komponent SIN Rozmer</th>
+                            <th>Balón Telo</th>
+                            <th>Balón Extenzie</th>
+                            <th>Balón Extenzie Rozmer</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table-body">
+                        <!-- Data rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-6 text-center">
+                 <button id="copy-table-btn" class="btn btn-secondary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M7 2a1 1 0 00-.707.293L3.414 5.172A1 1 0 003 5.886V17a1 1 0 001 1h12a1 1 0 001-1V5.886a1 1 0 00-.414-.714l-3.879-2.88a1 1 0 00-.707-.293H7zM9 4h2v5l-1-1-1 1V4z" /></svg>
+                    Kopírovať tabuľku pre Sheets/Excel
+                </button>
+                <p id="copy-table-feedback" class="text-center text-green-600 font-medium opacity-0 mt-2">Dáta z tabuľky boli skopírované!</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const getValue = (id) => document.getElementById(id).value.trim();
+        const getElement = (id) => document.getElementById(id);
+
+        /**
+         * Parses a Slovak personal identification number (Rodné číslo) to get birth date, age, and gender.
+         * @param {string} rc - The personal identification number.
+         * @returns {object|null} An object with age and gender, or null if invalid.
+         */
+        function parseRodneCislo(rc) {
+            if (!rc) return null;
+            const cleanedRc = rc.replace('/', '');
+            
+            if (!/^\d{9,10}$/.test(cleanedRc)) {
+                return null; // Invalid format
+            }
+
+            let year = parseInt(cleanedRc.substring(0, 2), 10);
+            let month = parseInt(cleanedRc.substring(2, 4), 10);
+            const day = parseInt(cleanedRc.substring(4, 6), 10);
+
+            // Determine century
+            if (cleanedRc.length === 10) {
+                 const currentYearLastTwoDigits = new Date().getFullYear() % 100;
+                 year += (year > currentYearLastTwoDigits) ? 1900 : 2000;
+            } else { // length is 9
+                 year += (year > 53) ? 1800 : 1900; // approximation for older RCs
+            }
+
+
+            // Determine gender
+            let gender = 'Muž';
+            if (month > 50) {
+                gender = 'Žena';
+                month -= 50;
+            }
+
+            const birthDate = new Date(year, month - 1, day);
+            if (isNaN(birthDate.getTime()) || birthDate.getMonth() !== month - 1) {
+                return null; // Invalid date
+            }
+
+            // Calculate age
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            return { age, gender };
+        }
+
+        /**
+         * Updates the age and gender display fields based on the Rodné číslo input.
+         */
+        function updatePatientInfoFromRC() {
+            const rcInput = getValue('rodne_cislo');
+            const patientInfo = parseRodneCislo(rcInput);
+
+            const vekDisplay = getElement('vek_display');
+            const pohlavieDisplay = getElement('pohlavie_display');
+
+            if (patientInfo) {
+                vekDisplay.textContent = patientInfo.age;
+                pohlavieDisplay.textContent = patientInfo.gender;
+            } else {
+                vekDisplay.textContent = 'N/A';
+                pohlavieDisplay.textContent = 'N/A';
+            }
+            generateReport(); // Trigger report update after RC change
+        }
+
+
+        // This function generates the report based on current form values
+        function generateReport() {
+            // --- Pacient a Indikácia ---
+            const pohlavie = getElement('pohlavie_display').textContent;
+            const jeZena = pohlavie === 'Žena';
+            
+            const vek = getElement('vek_display').textContent;
+            const vekText = `${vek} ročn${jeZena ? 'á' : 'ý'}`;
+            const pacientText = jeZena ? 'pacientka' : 'pacient';
+            const indikaciaText = jeZena ? 'indikovaná' : 'indikovaný';
+
+            const diagnoza = getValue('diagnoza');
+            
+            let charakteristikaParts = [];
+            if (getElement('char_krehky').checked) charakteristikaParts.push(jeZena ? 'krehká' : 'krehký');
+            if (getElement('char_polymorbidny').checked) charakteristikaParts.push(jeZena ? 'polymorbidná' : 'polymorbidný');
+            const charakteristika = charakteristikaParts.join(', ');
+
+            const jeSymptomaticky = getElement('symptomaticky').checked ? (jeZena ? 'symptomatická' : 'symptomatický') : '';
+            const indikaciaTyp = document.querySelector('input[name="indikacia_typ"]:checked').value;
+            
+            let uvodParts = [ vekText, charakteristika, jeSymptomaticky, pacientText, `s ${diagnoza},`, `${indikaciaText} k ${indikaciaTyp} PEVAR:` ];
+            const uvod = uvodParts.filter(p => p && p.trim() !== 'N/A ročný' && p.trim() !== 'N/A ročná').join(' ').replace(/\s+/g, ' ').trim();
+
+            // --- Priebeh Výkonu ---
+            const anestezia = getValue('anestezia_typ');
+            const strana_radio = document.querySelector('input[name="pristup_strana"]:checked');
+            const strana_text = strana_radio ? strana_radio.dataset.text : 'obojstranne';
+            const strana_skratka = strana_radio ? strana_radio.value : 'l.utrq.';
+            const arteria = getValue('punkcia_arteria');
+            const technika_punkcie = getValue('punkcia_technika');
+            
+            let navigacia_parts = [];
+            if (getElement('usg_nav').checked) navigacia_parts.push('USG');
+            if (getElement('rtg_nav').checked) navigacia_parts.push('RTG');
+            const navigacia = navigacia_parts.length > 0 ? `za použitia ${navigacia_parts.join(' a ')} navigácie` : '';
+
+            const zabezpecenie_technika = getValue('zabezpecenie_technika');
+            const sheath_velkost = getValue('sheath_velkost');
+
+            const pristup_text = [`${anestezia}, ${technika_punkcie}`, navigacia, `, pungujeme ${arteria} ${strana_skratka}. Zabezpečujeme miesta vpichu ${zabezpecenie_technika} ${strana_text} a zavádzame ${strana_text} ${sheath_velkost} sheath.`].filter(Boolean).join(' ').replace(/\s+,/g, ',');
+            
+            // --- Katetrizácia a Implantácia ---
+            const katetrizacia_aorty_text = getValue('katetrizacia_aorty');
+            const vodic = getValue('vodic_typ');
+            const sg_nazov = getValue('sg_nazov');
+            const sg_rozmery = getValue('sg_rozmery');
+            
+            const katetrizacia_prva_cast = katetrizacia_aorty_text ? `${katetrizacia_aorty_text}, po ktorom zavádzame ${vodic}.` : '';
+            const implantacia_tela_text = `Sprava zavádzame hlavné telo bifurkačného stentgraftu ${sg_nazov} (${sg_rozmery}), pomocou DSA verifikujeme odstup renálnych tepien a implantujeme telo SG.`;
+
+            const contra_kateter_typ = getValue('contra_kateter_typ');
+            const komponent_dx_nazov = getValue('komponent_dx_nazov');
+            const komponent_dx_rozmery = getValue('komponent_dx_rozmery');
+            const komponent_sin_nazov = getValue('komponent_sin_nazov');
+            const komponent_sin_rozmery = getValue('komponent_sin_rozmery');
+            const implantacia_komentar = getValue('implantacia_komentar');
+
+            const katetrizacia_nozicky_text = `${contra_kateter_typ} katétrom a viacerými vodičmi katetrizujeme kontralaterálnu nožičku.`;
+            const implantacia_dx_text = `Sprava implantujeme distálnu komponentu ${komponent_dx_nazov} (${komponent_dx_rozmery}).`;
+            const implantacia_sin_text = `Zľava implantujeme distálnu komponentu ${komponent_sin_nazov} (${komponent_sin_rozmery}).`;
+
+            const katetrizacia_text = [katetrizacia_prva_cast, implantacia_tela_text, katetrizacia_nozicky_text, implantacia_dx_text, implantacia_sin_text, implantacia_komentar].filter(Boolean).join('\n');
+
+
+            // --- Výsledok a Záver ---
+            const modelovanie_telo_check = getElement('modelovanie_telo_check').checked;
+            const modelovanie_extenzie_check = getElement('modelovanie_extenzie_check').checked;
+            let modelovanie_parts = [];
+
+            if (modelovanie_telo_check) {
+                const telo_balon = getValue('modelovanie_telo_balon');
+                modelovanie_parts.push(`v oblasti tela stentgraftu pomocou ${telo_balon} balónu`);
+            }
+
+            if (modelovanie_extenzie_check) {
+                const extenzie_balon = getValue('modelovanie_extenzie_balon');
+                const extenzie_rozmer = getValue('modelovanie_extenzie_rozmer');
+                if(extenzie_rozmer) {
+                   modelovanie_parts.push(`v oblasti extenzií pomocou ${extenzie_balon} balónu veľkosti ${extenzie_rozmer}`);
+                }
+            }
+
+            let modelovanie_text = '';
+            if (modelovanie_parts.length > 0) {
+                modelovanie_text = `Kritické miesta stentgraftu domodelované ${modelovanie_parts.join(' a ')}.`;
+            }
+            
+            // AG výsledok
+            let ag_vysledok_parts = ["Na záverečnej DSA sa zobrazuje dobrý výsledok endovaskulárnej liečby AAA."];
+            if (getElement('endoleak_check').checked) {
+                const typ = getValue('endoleak_typ');
+                let endoleak_veta = `Zobrazuje sa endoleak ${typ}. typu`;
+                if (typ === 'II') {
+                    const zdroj = getValue('endoleak_typ2_zdroj');
+                    endoleak_veta += ` ${zdroj}`;
+                    if (zdroj === 'cestou akcesórnej renálnej tepny') {
+                        const strana = document.querySelector('input[name="endoleak_strana"]:checked').value;
+                        endoleak_veta += ` ${strana}`;
+                    }
+                }
+                ag_vysledok_parts.push(endoleak_veta + '.');
+            } else {
+                ag_vysledok_parts.push("Nezobrazuje sa žiadny endoleak.");
+            }
+
+            if(getElement('komponenty_ok_check').checked) {
+                ag_vysledok_parts.push("Všetky komponenty dobre rozvinuté, bez stenózy.");
+            }
+            const ag_vysledok_text = ag_vysledok_parts.join(' ');
+
+            const odporucanie_cas = getValue('odporucanie_cas');
+            const odporucanie_text = `Odporúčame prvé kontrolné CTA vyšetrenie ${odporucanie_cas}.`;
+            const zaver_vykonu = getValue('zaver_vykonu');
+            const lekari = getValue('lekari');
+
+            const vysledok_text = [modelovanie_text, ag_vysledok_text, odporucanie_text].filter(Boolean).join('\n');
+
+            // --- Uzáver miesta vpichu ---
+            const uzaver_dx_technika = getValue('uzaver_dx_technika');
+            const uzaver_dx_komentar_text = getValue('uzaver_dx_komentar');
+            const uzaver_dx_hemostaza = getElement('hemostaza_dx_check').checked ? 'dosahujeme úplnu hemostázu pomocou PatchPro bandáži' : '';
+            const uzaver_dx_komentar = [uzaver_dx_komentar_text, uzaver_dx_hemostaza].filter(Boolean).join(', ');
+
+            const uzaver_sin_technika = getValue('uzaver_sin_technika');
+            const uzaver_sin_komentar_text = getValue('uzaver_sin_komentar');
+            const uzaver_sin_hemostaza = getElement('hemostaza_sin_check').checked ? 'dosahujeme úplnu hemostázu pomocou PatchPro bandáži' : '';
+            const uzaver_sin_komentar = [uzaver_sin_komentar_text, uzaver_sin_hemostaza].filter(Boolean).join(', ');
+
+
+            let uzaver_text_parts = [];
+            if (uzaver_dx_technika) {
+                let veta_dx = `Miesto vpichu ${arteria} l.dx. uzatvárame ${uzaver_dx_technika}`;
+                if (uzaver_dx_komentar) veta_dx += `, ${uzaver_dx_komentar}`;
+                uzaver_text_parts.push(veta_dx.trim() + '.');
+            }
+             if (uzaver_sin_technika) {
+                let veta_sin = `Miesto vpichu ${arteria} l.sin. uzatvárame ${uzaver_sin_technika}`;
+                if (uzaver_sin_komentar) veta_sin += `, ${uzaver_sin_komentar}`;
+                uzaver_text_parts.push(veta_sin.trim() + '.');
+            }
+            const uzaver_text = uzaver_text_parts.join('\n');
+            
+            const zaver_text = [`Z: ${zaver_vykonu}`, `\n${lekari}`].join('\n');
+
+
+            // Assembling the final report string
+            const report = [uvod, pristup_text, katetrizacia_text, vysledok_text, uzaver_text, zaver_text].filter(Boolean).join('\n\n');
+
+            // Setting the generated report to the output textarea
+            getElement('output').value = report;
+        }
+        
+        function setupConditionalDisplay() {
+            // Domodelovanie
+            const telo_check = getElement('modelovanie_telo_check');
+            const telo_options = getElement('modelovanie_telo_options');
+            telo_check.addEventListener('change', () => {
+                telo_options.classList.toggle('hidden', !telo_check.checked);
+            });
+            telo_options.classList.toggle('hidden', !telo_check.checked);
+
+
+            const extenzie_check = getElement('modelovanie_extenzie_check');
+            const extenzie_options = getElement('modelovanie_extenzie_options');
+            extenzie_check.addEventListener('change', () => {
+                extenzie_options.classList.toggle('hidden', !extenzie_check.checked);
+            });
+            extenzie_options.classList.toggle('hidden', !extenzie_check.checked);
+
+            // Endoleak
+            const endoleak_check = getElement('endoleak_check');
+            const endoleak_options = getElement('endoleak_options');
+            const endoleak_typ = getElement('endoleak_typ');
+            const endoleak_typ2_options = getElement('endoleak_typ2_options');
+            const endoleak_typ2_zdroj = getElement('endoleak_typ2_zdroj');
+            const endoleak_typ2_strana_options = getElement('endoleak_typ2_strana_options');
+
+            endoleak_check.addEventListener('change', () => {
+                endoleak_options.classList.toggle('hidden', !endoleak_check.checked);
+            });
+            
+            endoleak_typ.addEventListener('change', () => {
+                endoleak_typ2_options.classList.toggle('hidden', endoleak_typ.value !== 'II');
+                if(endoleak_typ.value !== 'II') {
+                    endoleak_typ2_strana_options.classList.add('hidden');
+                } else {
+                    endoleak_typ2_zdroj.dispatchEvent(new Event('change'));
+                }
+            });
+
+            endoleak_typ2_zdroj.addEventListener('change', () => {
+                endoleak_typ2_strana_options.classList.toggle('hidden', endoleak_typ2_zdroj.value !== 'cestou akcesórnej renálnej tepny');
+            });
+
+            // Initial state
+             endoleak_options.classList.toggle('hidden', !endoleak_check.checked);
+             endoleak_typ2_options.classList.toggle('hidden', endoleak_typ.value !== 'II');
+             endoleak_typ2_strana_options.classList.toggle('hidden', endoleak_typ2_zdroj.value !== 'cestou akcesórnej renálnej tepny');
+        }
+        
+        function saveData() {
+            const data = {
+                rc: getValue('rodne_cislo'),
+                sgTelo: getValue('sg_nazov'),
+                sgTeloRozmer: getValue('sg_rozmery'),
+                komponentDx: getValue('komponent_dx_nazov'),
+                komponentDxRozmer: getValue('komponent_dx_rozmery'),
+                komponentSin: getValue('komponent_sin_nazov'),
+                komponentSinRozmer: getValue('komponent_sin_rozmery'),
+                balonTelo: getElement('modelovanie_telo_check').checked ? getValue('modelovanie_telo_balon') : 'N/A',
+                balonExtenzie: getElement('modelovanie_extenzie_check').checked ? getValue('modelovanie_extenzie_balon') : 'N/A',
+                balonExtenzieRozmer: getElement('modelovanie_extenzie_check').checked ? getValue('modelovanie_extenzie_rozmer') : 'N/A'
+            };
+
+            const tableBody = getElement('data-table-body');
+            const newRow = tableBody.insertRow();
+
+            Object.values(data).forEach(text => {
+                const cell = newRow.insertCell();
+                cell.textContent = text;
+            });
+        }
+
+        function copyTableData() {
+            const table = getElement('data-table');
+            let dataString = '';
+
+            for (let row of table.rows) {
+                let rowData = [];
+                for (let cell of row.cells) {
+                    rowData.push(cell.textContent);
+                }
+                dataString += rowData.join('\t') + '\n';
+            }
+
+             if (dataString) {
+                navigator.clipboard.writeText(dataString).then(() => {
+                    const feedback = getElement('copy-table-feedback');
+                    feedback.style.opacity = 1;
+                    setTimeout(() => { feedback.style.opacity = 0; }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy table data: ', err);
+                });
+            }
+        }
+
+
+        // --- Event Listeners for real-time updates ---
+        const inputsToWatch = [
+            getElement('rodne_cislo'),
+            getElement('char_krehky'),
+            getElement('char_polymorbidny'),
+            getElement('symptomaticky'),
+            getElement('diagnoza'),
+            ...document.querySelectorAll('input[name="indikacia_typ"]'),
+            getElement('anestezia_typ'),
+            ...document.querySelectorAll('input[name="pristup_strana"]'),
+            getElement('punkcia_arteria'),
+            getElement('punkcia_technika'),
+            getElement('usg_nav'),
+            getElement('rtg_nav'),
+            getElement('zabezpecenie_technika'),
+            getElement('sheath_velkost'),
+            getElement('katetrizacia_aorty'),
+            getElement('vodic_typ'),
+            getElement('sg_nazov'),
+            getElement('sg_rozmery'),
+            getElement('contra_kateter_typ'),
+            getElement('komponent_dx_nazov'),
+            getElement('komponent_dx_rozmery'),
+            getElement('komponent_sin_nazov'),
+            getElement('komponent_sin_rozmery'),
+            getElement('implantacia_komentar'),
+            getElement('uzaver_dx_technika'),
+            getElement('uzaver_dx_komentar'),
+            getElement('hemostaza_dx_check'),
+            getElement('uzaver_sin_technika'),
+            getElement('uzaver_sin_komentar'),
+            getElement('hemostaza_sin_check'),
+            getElement('modelovanie_telo_check'),
+            getElement('modelovanie_telo_balon'),
+            getElement('modelovanie_extenzie_check'),
+            getElement('modelovanie_extenzie_balon'),
+            getElement('modelovanie_extenzie_rozmer'),
+            getElement('endoleak_check'),
+            getElement('endoleak_typ'),
+            getElement('endoleak_typ2_zdroj'),
+            ...document.querySelectorAll('input[name="endoleak_strana"]'),
+            getElement('komponenty_ok_check'),
+            getElement('odporucanie_cas'),
+            getElement('zaver_vykonu'),
+            getElement('lekari'),
+        ];
+
+        inputsToWatch.forEach(input => {
+            const eventType = (input.type === 'text' || input.type === 'number' || input.tagName.toLowerCase() === 'select' || input.tagName.toLowerCase() === 'textarea') ? 'input' : 'change';
+            if (input.id === 'rodne_cislo') {
+                 input.addEventListener('input', updatePatientInfoFromRC);
+            } else {
+                 input.addEventListener(eventType, generateReport);
+            }
+        });
+        
+        // --- Other functionalities ---
+        getElement('copy-btn').addEventListener('click', () => {
+            const outputText = getElement('output');
+            if (outputText.value) {
+                outputText.select();
+                try {
+                    document.execCommand('copy');
+                    const feedback = getElement('copy-feedback');
+                    feedback.textContent = 'Text bol skopírovaný!';
+                    feedback.style.color = '#16a34a';
+                    feedback.style.opacity = 1;
+                    setTimeout(() => { feedback.style.opacity = 0; }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                    const feedback = getElement('copy-feedback');
+                    feedback.textContent = 'Kopírovanie zlyhalo.';
+                    feedback.style.color = '#dc2626';
+                    feedback.style.opacity = 1;
+                     setTimeout(() => { feedback.style.opacity = 0; }, 3000);
+                }
+            }
+        });
+
+        getElement('save-data-btn').addEventListener('click', saveData);
+        getElement('copy-table-btn').addEventListener('click', copyTableData);
+
+        // Initial setup on page load
+        setupConditionalDisplay();
+        updatePatientInfoFromRC();
+    </script>
+</body>
+</html>
