@@ -1,59 +1,44 @@
-<section style="margin:24px 0;padding:16px;border:1px solid #ddd;border-radius:8px">
-  <h2 style="margin-top:0">Prihlásenie</h2>
+<!doctype html>
+<html lang="sk">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cievny.sk – public insert test</title>
+  <body style="font-family:system-ui;max-width:720px;margin:40px auto;padding:0 16px;">
+    <h1>Test zápisu bez prihlásenia</h1>
 
-  <div style="display:grid;gap:8px;max-width:460px">
-    <input id="email" type="email" placeholder="tvoj@email.sk" style="padding:10px" />
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button id="sendLink">Pošli magic link</button>
-      <input id="pwd" type="password" placeholder="Heslo (len ak máš vytvorené)" style="padding:10px;flex:1 1 180px" />
-      <button id="signinPwd">Prihlásiť heslom</button>
-      <button id="signout" style="margin-left:auto;display:none">Odhlásiť</button>
-    </div>
-    <div id="whoami" style="color:#555">Neprihlásený</div>
-    <div id="authMsg" style="color:#b00"></div>
-  </div>
-</section>
+    <section style="margin:24px 0;padding:16px;border:1px solid #ddd;border-radius:8px">
+      <h2 style="margin-top:0">Nový pacient (sandbox)</h2>
+      <input id="pseudo" placeholder="PSEUDO-ID (napr. PSEUDO-001)"
+             style="width:100%;padding:10px;margin:6px 0" />
+      <select id="sex" style="width:100%;padding:10px;margin:6px 0">
+        <option value="M">M</option><option value="F">F</option><option value="X">X</option>
+      </select>
+      <input id="yob" type="number" placeholder="Rok narodenia (napr. 1979)"
+             style="width:100%;padding:10px;margin:6px 0" />
+      <button id="save">Uložiť pacienta</button>
+      <div id="msg" style="margin-top:10px;color:#0a0"></div>
+    </section>
 
-<script>
-// ---- Supabase klient (ponechaj tvoje URL/ANON) ----
-const SUPABASE_URL = "https://ktdvgmwrqwznuikehpmk.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0ZHZnbXdycXd6bnVpa2VocG1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMzg3MTUsImV4cCI6MjA3MDYxNDcxNX0.2YvdIUC41fYsXsT_zJyf2VKvOi2obsJ27fRewQEajmE";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+      const SUPABASE_URL  = "https://ktdvgmwrqwznuikehpmk.supabase.co";
+      const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0ZHZnbXdycXd6bnVpa2VocG1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMzg3MTUsImV4cCI6MjA3MDYxNDcxNX0.2YvdIUC41fYsXsT_zJyf2VKvOi2obsJ27fRewQEajmE";
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-const who = document.getElementById('whoami');
-const out = document.getElementById('signout');
-const msg = document.getElementById('authMsg');
+      document.getElementById('save').onclick = async () => {
+        const pseudo = document.getElementById('pseudo').value.trim();
+        const sex    = document.getElementById('sex').value;
+        const yob    = Number(document.getElementById('yob').value);
 
-async function refreshUser() {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error) { msg.textContent = "Auth error: " + error.message; return; }
-  if (user) { who.textContent = "Prihlásený: " + (user.email || user.id); out.style.display = 'inline-block'; msg.textContent = ""; }
-  else { who.textContent = "Neprihlásený"; out.style.display = 'none'; }
-}
+        if (!pseudo) { alert("Vyplň PSEUDO‑ID."); return; }
 
-document.getElementById('sendLink').onclick = async () => {
-  msg.textContent = "";
-  const email = document.getElementById('email').value.trim();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.origin }
-  });
-  msg.style.color = error ? '#b00' : '#0a0';
-  msg.textContent = error ? ("Chyba: " + error.message) : "Odošiel magic link. Otvor ho v Safari.";
-};
+        const { error } = await supabase.from('patient')
+          .insert({ pseudo_id: pseudo, sex, yob /* created_by: NULL */ });
 
-document.getElementById('signinPwd').onclick = async () => {
-  msg.textContent = "";
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('pwd').value;
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  msg.style.color = error ? '#b00' : '#0a0';
-  msg.textContent = error ? ("Heslové prihlásenie zlyhalo: " + error.message) : "Prihlásený (heslo).";
-  await refreshUser();
-};
-
-document.getElementById('signout').onclick = async () => { await supabase.auth.signOut(); await refreshUser(); };
-
-refreshUser();
-supabase.auth.onAuthStateChange(refreshUser);
-</script>
+        const msg = document.getElementById('msg');
+        msg.textContent = error ? ("Chyba: " + error.message) : "Uložené ✅ – pozri tabuľku patient v Supabase.";
+        msg.style.color = error ? '#b00' : '#0a0';
+      };
+    </script>
+  </body>
+</html>
