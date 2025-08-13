@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEAP Klasifikácia Kalkulačka</title>
+    <!-- Import Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Import Inter font for better typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to complement Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        /* Style for the result area transition */
+        #result-area {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out;
+            transform: translateY(20px);
+        }
+        #result-area.visible {
+            max-height: 500px; /* A large enough value to not clip content */
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .criteria-item {
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            border: 1px solid #e5e7eb;
+        }
+        .criteria-item.checked {
+            background-color: #f0f9ff; /* Light blue background on selection */
+            border-color: #bae6fd;
+        }
+        /* Custom radio/checkbox button appearance */
+        input[type="radio"], input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #d1d5db;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        input[type="radio"] { border-radius: 50%; }
+        input[type="checkbox"] { border-radius: 0.25rem; }
+
+        input[type="radio"]:checked, input[type="checkbox"]:checked {
+            background-color: #0ea5e9;
+            border-color: #0ea5e9;
+        }
+        input[type="radio"]:checked {
+             background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+        }
+        input[type="checkbox"]:checked {
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L6.5 9.086l4.293-4.293a1 1 0 0 1 1.414 0z'/%3e%3c/svg%3e");
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main calculator container -->
+    <div class="w-full max-w-6xl bg-white rounded-2xl shadow-xl p-6 sm:p-10">
+        <div class="text-center">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-800">CEAP Klasifikácia</h1>
+            <p class="mt-2 text-slate-500">Pre chronické venózne ochorenia</p>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10">
+            
+            <!-- C (Clinical) Section -->
+            <div>
+                <h2 class="text-xl font-bold text-slate-700 mb-4">C - Klinický stav</h2>
+                <div class="space-y-3">
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c0" name="c_class" value="C0"><label for="c0" class="ml-3 cursor-pointer">C0: Bez viditeľných znakov</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c1" name="c_class" value="C1"><label for="c1" class="ml-3 cursor-pointer">C1: Teleangiektázie, retik. varixy</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c2" name="c_class" value="C2"><label for="c2" class="ml-3 cursor-pointer">C2: Varixy</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c3" name="c_class" value="C3"><label for="c3" class="ml-3 cursor-pointer">C3: Edém</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c4" name="c_class" value="C4"><label for="c4" class="ml-3 cursor-pointer">C4: Kožné zmeny</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c5" name="c_class" value="C5"><label for="c5" class="ml-3 cursor-pointer">C5: Zahojený vred</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c6" name="c_class" value="C6"><label for="c6" class="ml-3 cursor-pointer">C6: Aktívny vred</label></div>
+                </div>
+            </div>
+
+            <!-- E (Etiologic) Section -->
+            <div>
+                <h2 class="text-xl font-bold text-slate-700 mb-4">E - Etiológia</h2>
+                <div class="space-y-3">
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="ec" name="e_class" value="Ec"><label for="ec" class="ml-3 cursor-pointer">Ec: Kongenitálna</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="ep" name="e_class" value="Ep"><label for="ep" class="ml-3 cursor-pointer">Ep: Primárna</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="es" name="e_class" value="Es"><label for="es" class="ml-3 cursor-pointer">Es: Sekundárna</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="en" name="e_class" value="En"><label for="en" class="ml-3 cursor-pointer">En: Bez venóznej etiológie</label></div>
+                </div>
+            </div>
+            
+            <!-- A (Anatomic) Section -->
+            <div>
+                <h2 class="text-xl font-bold text-slate-700 mb-4">A - Anatómia</h2>
+                <div class="space-y-3">
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="checkbox" id="as" name="a_class" value="As"><label for="as" class="ml-3 cursor-pointer">As: Povrchové žily</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="checkbox" id="ad" name="a_class" value="Ad"><label for="ad" class="ml-3 cursor-pointer">Ad: Hlboké žily</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="checkbox" id="ap" name="a_class" value="Ap"><label for="ap" class="ml-3 cursor-pointer">Ap: Perforátory</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="checkbox" id="an" name="a_class" value="An"><label for="an" class="ml-3 cursor-pointer">An: Bez lokalizácie</label></div>
+                </div>
+            </div>
+
+            <!-- P (Pathophysiologic) Section -->
+            <div>
+                <h2 class="text-xl font-bold text-slate-700 mb-4">P - Patofyziológia</h2>
+                <div class="space-y-3">
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="pr" name="p_class" value="Pr"><label for="pr" class="ml-3 cursor-pointer">Pr: Reflux</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="po" name="p_class" value="Po"><label for="po" class="ml-3 cursor-pointer">Po: Obštrukcia</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="pro" name="p_class" value="Pr,o"><label for="pro" class="ml-3 cursor-pointer">Pr,o: Reflux a Obštrukcia</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="pn" name="p_class" value="Pn"><label for="pn" class="ml-3 cursor-pointer">Pn: Bez venóznej patofyziológie</label></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Area -->
+        <div id="result-area" class="mt-10 p-6 rounded-xl bg-sky-500 border-2 border-sky-700 text-white text-center">
+            <!-- Content will be injected by JavaScript -->
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="mt-8">
+            <button id="reset-button" class="w-full bg-slate-200 text-slate-700 font-bold text-base py-3 px-6 rounded-lg hover:bg-slate-300 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-slate-300">
+                Resetovať
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const resultArea = document.getElementById('result-area');
+        const allInputs = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+        const resetButton = document.getElementById('reset-button');
+
+        const calculateAndDisplayResult = () => {
+            allInputs.forEach(input => {
+                input.closest('.criteria-item').classList.toggle('checked', input.checked);
+            });
+
+            const cValue = document.querySelector('input[name="c_class"]:checked')?.value || '_';
+            const eValue = document.querySelector('input[name="e_class"]:checked')?.value || '_';
+            const pValue = document.querySelector('input[name="p_class"]:checked')?.value || '_';
+            
+            const aValues = Array.from(document.querySelectorAll('input[name="a_class"]:checked')).map(cb => cb.value);
+            const aValue = aValues.length > 0 ? aValues.join(',') : '_';
+            
+            const isComplete = cValue !== '_' && eValue !== '_' && aValue !== '_' && pValue !== '_';
+
+            if (!isComplete) {
+                resultArea.classList.remove('visible');
+                return;
+            }
+
+            resultArea.innerHTML = `
+                <h2 class="text-2xl font-bold mb-2">Výsledná CEAP Klasifikácia</h2>
+                <p class="text-3xl font-mono p-3 bg-black bg-opacity-20 rounded-lg tracking-wider">${cValue}, ${eValue}, ${aValue}, ${pValue}</p>
+            `;
+
+            resultArea.classList.add('visible');
+        };
+
+        allInputs.forEach(input => {
+            input.addEventListener('change', calculateAndDisplayResult);
+        });
+
+        resetButton.addEventListener('click', () => {
+            allInputs.forEach(input => {
+                input.checked = false;
+                input.closest('.criteria-item').classList.remove('checked');
+            });
+            calculateAndDisplayResult();
+        });
+    });
+    </script>
+
+</body>
+</html>
