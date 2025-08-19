@@ -1,1 +1,359 @@
+<!doctype html>
+<html lang="sk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cievy pre život – Edukačný portál pre pacientov a verejnosť</title>
+    <meta name="description" content="Prehľadné informácie o cievnych ochoreniach: prevencia, diagnostika, liečba a jednoduché kalkulačky rizika. Edukačný portál pre pacientov a verejnosť." />
+    <meta name="theme-color" content="#0ea5e9" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="container nav">
+        <a href="#hero" class="logo" aria-label="Domov">Cievy&nbsp;pre&nbsp;život</a>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+        <ul id="nav-menu" class="nav-links">
+          <li><a href="#about">O ochoreniach</a></li>
+          <li><a href="#prevention">Prevencia</a></li>
+          <li><a href="#treatments">Výkony a liečba</a></li>
+          <li><a href="#tools">Nástroje</a></li>
+          <li><a href="#blog">Blog</a></li>
+          <li><a href="#contact">Kontakt</a></li>
+          <li><a class="btn btn-sm" href="#tools">Zistite svoje riziko</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section id="hero" class="hero container">
+        <div class="hero-content">
+          <h1>Cievy pre život</h1>
+          <p>Včasná diagnostika a prevencia zachraňujú životy.</p>
+          <div class="hero-actions" id="cta">
+            <a href="#tools" class="btn btn-primary">Zistite svoje riziko</a>
+            <a href="#about" class="btn btn-ghost">Čo sú cievne ochorenia</a>
+          </div>
+        </div>
+        <div class="hero-media" role="img" aria-label="Ilustrácia cievneho systému">
+          <svg viewBox="0 0 420 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#0ea5e9" />
+                <stop offset="100%" stop-color="#22c55e" />
+              </linearGradient>
+              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            <rect x="0" y="0" width="420" height="320" fill="url(#g)" rx="16" />
+            <g stroke="rgba(255,255,255,0.85)" stroke-width="3" fill="none" filter="url(#glow)">
+              <path d="M210,20 C190,60 170,90 160,120 C150,150 150,190 170,230 C190,270 210,290 210,300" />
+              <path d="M210,20 C230,60 250,90 260,120 C270,150 270,190 250,230 C230,270 210,290 210,300" />
+              <path d="M210,120 C190,140 170,160 150,180" />
+              <path d="M210,120 C230,140 250,160 270,180" />
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <section id="about" class="container">
+        <h2>O cievnych ochoreniach</h2>
+        <p class="section-lead">Cievne ochorenia postihujú tepny a žily. Patrí sem <strong>ateroskleróza</strong>, <strong>aneuryzma</strong>, <strong>trombóza</strong> či <strong>kŕčové žily (varixy)</strong>. Včasné rozpoznanie a liečba výrazne znižujú riziko komplikácií ako mozgová mŕtvica či infarkt.</p>
+        <div class="infogrid">
+          <div class="card">
+            <div class="icon">🧬</div>
+            <h3>Príčiny</h3>
+            <ul class="muted">
+              <li>Genetika a vek</li>
+              <li>Životný štýl (fajčenie, strava, pohyb)</li>
+              <li>Vysoký tlak, cholesterol, cukrovka</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="icon">⚠️</div>
+            <h3>Dôsledky</h3>
+            <ul class="muted">
+              <li>Infarkt myokardu, mozgová mŕtvica</li>
+              <li>Periférne artériové ochorenie (bolesť nôh pri chôdzi)</li>
+              <li>Pľúcna embólia pri trombóze</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="icon">🩺</div>
+            <h3>Možnosti liečby</h3>
+            <ul class="muted">
+              <li>Úprava životného štýlu, lieky</li>
+              <li>Intervenčné výkony (angioplastika, stent)</li>
+              <li>Chirurgické riešenie (napr. EVAR pri aneuryzme)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="prevention" class="container">
+        <h2>Prevencia</h2>
+        <div class="grid three">
+          <article class="card">
+            <h3>Zdravý životný štýl</h3>
+            <p>Strava bohatá na zeleninu a vlákninu, obmedziť soľ a trans‑tuky, pravidelný pohyb 150 min/týždeň, <strong>nefajčiť</strong>.</p>
+          </article>
+          <article class="card">
+            <h3>Skríning</h3>
+            <p>Meranie tlaku, lipidov, glukózy, vyšetrenie ABI pri bolestiach nôh, ultrazvuk karotíd podľa odporúčania lekára.</p>
+          </article>
+          <article class="card">
+            <h3>Konajte včas</h3>
+            <p>Ak pociťujete bolesť na hrudi, náhle slabosti, dýchavicu alebo bolesť lýtka s opuchom, vyhľadajte lekársku pomoc.</p>
+          </article>
+        </div>
+        <div style="margin-top:12px">
+          <a href="#contact" class="btn btn-primary">Objednajte sa na preventívne vyšetrenie</a>
+        </div>
+      </section>
+
+      <section id="treatments" class="container">
+        <h2>Výkony a liečba</h2>
+        <div class="steps">
+          <div class="card step">
+            <h3>Angioplastika</h3>
+            <p>Rozšírenie zúženej tepny balónikom. Často sa kombinuje so zavedením stentu.</p>
+            <div class="step-anim" aria-hidden="true">
+              <div class="vessel"><span class="plaque"></span><span class="balloon"></span></div>
+            </div>
+          </div>
+          <div class="card step">
+            <h3>Stent</h3>
+            <p>Drobná výstuž, ktorá udrží tepnu otvorenú a zlepší prietok krvi.</p>
+            <div class="step-anim" aria-hidden="true">
+              <div class="vessel stented"></div>
+            </div>
+          </div>
+          <div class="card step">
+            <h3>EVAR</h3>
+            <p>Endovaskulárna oprava aneuryzmy pomocou protézy zavedenou cez tepny v slabinách.</p>
+            <div class="step-anim" aria-hidden="true">
+              <div class="vessel evar"></div>
+            </div>
+          </div>
+          <div class="card step">
+            <h3>Rádiofrekvenčná ablácia</h3>
+            <p>Liečba kŕčových žíl uzatvorením chorého úseku žily tepelnou energiou.</p>
+            <div class="step-anim" aria-hidden="true">
+              <div class="vessel rfa"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion">
+          <button class="accordion-toggle" aria-expanded="false">Často kladené otázky</button>
+          <div class="accordion-panel">
+            <details>
+              <summary>Je angioplastika bolestivá?</summary>
+              <p>Výkon prebieha v lokálnej anestézii. Môžete cítiť tlak, nie ostrú bolesť.</p>
+            </details>
+            <details>
+              <summary>Aké sú riziká stentu?</summary>
+              <p>Možné sú zriedkavé komplikácie (krvácanie, znovuzúženie). O všetkom vás informuje lekár.</p>
+            </details>
+            <details>
+              <summary>Kedy sa robí EVAR?</summary>
+              <p>Pri väčších aneuryzmách brušnej aorty, podľa veľkosti a anatomických pomerov.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section id="tools" class="container">
+        <h2>Interaktívne nástroje</h2>
+        <p class="notice">Tieto nástroje slúžia len na edukačné účely a nenahrádzajú vyšetrenie u lekára.</p>
+
+        <div class="tools-grid">
+          <article class="card calc" id="calc-cvd">
+            <h3>Odhad kardiovaskulárneho rizika (zjednodušené)</h3>
+            <form>
+              <div class="form-row grid two">
+                <label>Vek
+                  <input type="number" name="age" min="18" max="99" placeholder="roky" required />
+                </label>
+                <label>Pohlavie
+                  <select name="sex">
+                    <option value="male">Muž</option>
+                    <option value="female">Žena</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-row grid two">
+                <label>Systolický tlak (mmHg)
+                  <input type="number" name="sbp" min="80" max="240" placeholder="napr. 130" />
+                </label>
+                <label>Celkový cholesterol (mmol/L)
+                  <input type="number" step="0.1" name="tc" min="2" max="12" placeholder="napr. 5.2" />
+                </label>
+              </div>
+              <div class="form-row grid two">
+                <label>HDL (mmol/L)
+                  <input type="number" step="0.1" name="hdl" min="0.3" max="3" placeholder="napr. 1.2" />
+                </label>
+                <label>Diabetes
+                  <select name="dm">
+                    <option value="no">Nie</option>
+                    <option value="yes">Áno</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-row grid two">
+                <label>Fajčenie
+                  <select name="smoke">
+                    <option value="no">Nie</option>
+                    <option value="yes">Áno</option>
+                  </select>
+                </label>
+                <label>Liečba tlaku
+                  <select name="htx">
+                    <option value="no">Nie</option>
+                    <option value="yes">Áno</option>
+                  </select>
+                </label>
+              </div>
+              <button type="button" class="btn btn-primary" data-action="calc-cvd">Vypočítať riziko</button>
+            </form>
+            <output class="calc-output" aria-live="polite"></output>
+          </article>
+
+          <article class="card calc" id="calc-dvt">
+            <h3>Riziko trombózy (zjednodušené)</h3>
+            <form>
+              <div class="form-row grid two">
+                <label>Vek ≥ 60 rokov
+                  <select name="age60">
+                    <option value="no">Nie</option>
+                    <option value="yes">Áno</option>
+                  </select>
+                </label>
+                <label>Nedávna operácia/úraz (3 mesiace)
+                  <select name="surg">
+                    <option value="no">Nie</option>
+                    <option value="yes">Áno</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-row grid two">
+                <label>Imobilizácia / dlhé cestovanie
+                  <select name="immob">
+                    <option value="no">Nie</option>
+                    <option value="yes">Áno</option>
+                  </select>
+                </label>
+                <label>Aktívne onkologické ochorenie
+                  <select name="ca">
+                    <option value="no">Nie</option>
+                    <option value="yes">Áno</option>
+                  </select>
+                </label>
+              </div>
+              <div class="form-row grid two">
+                <label>Tehotenstvo / šestonedelie
+                  <select name="preg">
+                    <option value="no">Nie</option>
+                    <option value="yes">Áno</option>
+                  </select>
+                </label>
+                <label>Prekonaná DVT/PE
+                  <select name="history">
+                    <option value="no">Nie</option>
+                    <option value="yes">Áno</option>
+                  </select>
+                </label>
+              </div>
+              <button type="button" class="btn btn-primary" data-action="calc-dvt">Odhadnúť riziko</button>
+            </form>
+            <output class="calc-output" aria-live="polite"></output>
+          </article>
+
+          <article class="card calc" id="calc-abi">
+            <h3>ABI index (členok/rameno)</h3>
+            <form>
+              <div class="form-row grid two">
+                <label>Tlak členok (mmHg)
+                  <input type="number" name="ankle" min="40" max="260" placeholder="napr. 120" />
+                </label>
+                <label>Tlak rameno (mmHg)
+                  <input type="number" name="brachial" min="40" max="260" placeholder="napr. 130" />
+                </label>
+              </div>
+              <button type="button" class="btn btn-primary" data-action="calc-abi">Vypočítať ABI</button>
+            </form>
+            <output class="calc-output" aria-live="polite"></output>
+          </article>
+        </div>
+      </section>
+
+      <section id="blog" class="container">
+        <h2>Blog / Novinky</h2>
+        <div class="grid three">
+          <article class="card blog">
+            <h3>Rozhovor: Ako prebieha vyšetrenie karotíd</h3>
+            <p class="muted">Krátky rozhovor s angiológom o tom, čo čakať pri ultrazvukovom vyšetrení krčných tepien.</p>
+            <a href="#" class="btn btn-ghost">Čítať viac</a>
+          </article>
+          <article class="card blog">
+            <h3>Nové možnosti liečby kŕčových žíl</h3>
+            <p class="muted">Rádiofrekvenčná ablácia a lepiace techniky prinášajú rýchlejšie zotavenie.</p>
+            <a href="#" class="btn btn-ghost">Čítať viac</a>
+          </article>
+          <article class="card blog">
+            <h3>Tipy: Ako znížiť cholesterol prirodzene</h3>
+            <p class="muted">Zmeny v strave a pohybe, ktoré majú zmysel a sú podložené dôkazmi.</p>
+            <a href="#" class="btn btn-ghost">Čítať viac</a>
+          </article>
+        </div>
+      </section>
+
+      <section id="contact" class="contact container">
+        <h2>Kontakt</h2>
+        <form class="card form" name="contact">
+          <div class="form-row">
+            <label for="name">Meno</label>
+            <input id="name" name="name" type="text" placeholder="Vaše meno" required />
+          </div>
+          <div class="form-row">
+            <label for="email">E‑mail</label>
+            <input id="email" name="email" type="email" placeholder="vas@email.com" required />
+          </div>
+          <div class="form-row">
+            <label for="message">Správa</label>
+            <textarea id="message" name="message" rows="4" placeholder="Napíšte nám, s čím potrebujete pomôcť"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Odoslať</button>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-content">
+        <p>© <span id="year"></span> Cievy pre život • Edukačný obsah, nie náhrada lekárskej konzultácie.</p>
+        <nav class="footer-links">
+          <a href="#about">O ochoreniach</a>
+          <a href="#tools">Nástroje</a>
+          <a href="#contact">Kontakt</a>
+          <a href="https://www.escardio.org/" target="_blank" rel="noopener">Odborné zdroje (ESC)</a>
+        </nav>
+        <a href="#hero" class="back-to-top" aria-label="Späť hore">↑ Hore</a>
+      </div>
+    </footer>
+
     <script src="script.js" defer></script>
+  </body>
+  </html>
