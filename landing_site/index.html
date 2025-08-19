@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="sk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Moja Úvodná Stránka</title>
+    <meta name="description" content="Moderná a rýchla úvodná stránka s jasným CTA." />
+    <meta name="theme-color" content="#0ea5e9" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="container nav">
+        <a href="#hero" class="logo" aria-label="Domov">Brand</a>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+        <ul id="nav-menu" class="nav-links">
+          <li><a href="#features">Funkcie</a></li>
+          <li><a href="#pricing">Cenník</a></li>
+          <li><a href="#contact">Kontakt</a></li>
+          <li><a class="btn btn-sm" href="#cta">Začať</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <section id="hero" class="hero container">
+        <div class="hero-content">
+          <h1>Vytvorte si krásnu úvodnú stránku za pár minút</h1>
+          <p>Jednoduchá, rýchla a responzívna šablóna pripravená na prispôsobenie pre váš projekt alebo podnikanie.</p>
+          <div class="hero-actions" id="cta">
+            <a href="#pricing" class="btn btn-primary">Pozrieť cenník</a>
+            <a href="#features" class="btn btn-ghost">Zistiť viac</a>
+          </div>
+        </div>
+        <div class="hero-media" role="img" aria-label="Ilustračná grafika">
+          <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#0ea5e9" />
+                <stop offset="100%" stop-color="#22c55e" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="400" height="300" fill="url(#g)" rx="16" />
+            <g fill="rgba(255,255,255,0.9)">
+              <circle cx="80" cy="80" r="6" />
+              <circle cx="110" cy="60" r="4" />
+              <circle cx="130" cy="90" r="5" />
+            </g>
+            <rect x="40" y="200" width="320" height="24" rx="12" fill="rgba(255,255,255,0.85)" />
+          </svg>
+        </div>
+      </section>
+
+      <section id="features" class="features container">
+        <h2>Prečo si vybrať túto šablónu</h2>
+        <div class="grid three">
+          <article class="card">
+            <h3>Rýchlosť</h3>
+            <p>Žiadne frameworky naviac. Čisté HTML, CSS a trochu JavaScriptu.</p>
+          </article>
+          <article class="card">
+            <h3>Responzivita</h3>
+            <p>Vyzerá skvelo na mobile, tablete aj desktope bez ďalšej práce.</p>
+          </article>
+          <article class="card">
+            <h3>Prispôsobenie</h3>
+            <p>Farby, písma a sekcie ľahko upravíte podľa svojich potrieb.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="pricing" class="pricing container">
+        <h2>Cenník</h2>
+        <div class="grid three">
+          <article class="card price">
+            <h3>Starter</h3>
+            <p class="price-tag">€0</p>
+            <ul>
+              <li>Základná šablóna</li>
+              <li>Responzívny dizajn</li>
+              <li>Komunita</li>
+            </ul>
+            <a href="#contact" class="btn btn-primary btn-block">Vybrať</a>
+          </article>
+          <article class="card price highlight">
+            <h3>Pro</h3>
+            <p class="price-tag">€39</p>
+            <ul>
+              <li>Všetko zo Starter</li>
+              <li>Prioritná podpora</li>
+              <li>Extra komponenty</li>
+            </ul>
+            <a href="#contact" class="btn btn-primary btn-block">Vybrať</a>
+          </article>
+          <article class="card price">
+            <h3>Business</h3>
+            <p class="price-tag">€99</p>
+            <ul>
+              <li>Všetko z Pro</li>
+              <li>Komponenty na mieru</li>
+              <li>Konzultácie</li>
+            </ul>
+            <a href="#contact" class="btn btn-primary btn-block">Vybrať</a>
+          </article>
+        </div>
+      </section>
+
+      <section id="contact" class="contact container">
+        <h2>Kontakt</h2>
+        <form class="card form" name="contact">
+          <div class="form-row">
+            <label for="name">Meno</label>
+            <input id="name" name="name" type="text" placeholder="Vaše meno" required />
+          </div>
+          <div class="form-row">
+            <label for="email">E‑mail</label>
+            <input id="email" name="email" type="email" placeholder="vas@email.com" required />
+          </div>
+          <div class="form-row">
+            <label for="message">Správa</label>
+            <textarea id="message" name="message" rows="4" placeholder="Ako vám môžeme pomôcť?"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Odoslať</button>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-content">
+        <p>© <span id="year"></span> Brand. Všetky práva vyhradené.</p>
+        <a href="#hero" class="back-to-top" aria-label="Späť hore">↑ Hore</a>
+      </div>
+    </footer>
+
+    <script src="/script.js" defer></script>
+  </body>
+  </html>
+
