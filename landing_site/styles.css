@@ -105,12 +105,14 @@ a { color: inherit; text-decoration: none; }
 /* Sections */
 section { padding: 32px 0; }
 section h2 { font-size: 24px; margin: 0 0 16px; }
+ .section-lead { color: var(--muted); margin: 0 0 16px; }
 
 .grid {
   display: grid;
   gap: 16px;
 }
 .grid.three { grid-template-columns: repeat(3, 1fr); }
+.grid.two { grid-template-columns: repeat(2, 1fr); }
 
 .card {
   background: var(--panel);
@@ -121,6 +123,39 @@ section h2 { font-size: 24px; margin: 0 0 16px; }
 }
 .card h3 { margin: 0 0 8px; font-size: 18px; }
 .card p { margin: 0; color: var(--muted); }
+.icon { font-size: 24px; }
+
+/* Info grid */
+.infogrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+/* Steps / simple animations */
+.steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.step-anim { margin-top: 8px; height: 80px; display: grid; place-items: center; }
+.vessel { width: 100%; height: 12px; background: linear-gradient(90deg, #a11, #711); border-radius: 6px; position: relative; overflow: hidden; }
+.vessel .plaque { position: absolute; left: 18%; top: 1px; width: 14%; height: 10px; background: #d9b48f; border-radius: 6px; }
+.vessel .balloon { position: absolute; left: 15%; top: -6px; width: 0; height: 24px; border-radius: 12px; background: var(--brand); animation: inflate 2.6s infinite ease-in-out; }
+.vessel.stented { background: linear-gradient(90deg, #1a8, #0aa); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.25); }
+.vessel.evar { background: repeating-linear-gradient(90deg, #0aa, #0aa 8px, #066 8px, #066 16px); }
+.vessel.rfa { background: linear-gradient(90deg, #833, #a44); animation: pulse 1.8s infinite ease-in-out; }
+
+@keyframes inflate { 0%,60% { width: 0; } 70% { width: 24px; } 100% { width: 0; } }
+@keyframes pulse { 0%,100% { filter: brightness(0.9); } 50% { filter: brightness(1.15); } }
+
+/* Accordion */
+.accordion { margin-top: 12px; }
+.accordion-toggle { width: 100%; text-align: left; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); }
+.accordion-panel { margin-top: 8px; display: none; }
+.accordion-panel.open { display: block; }
+.accordion-panel details { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+
+/* Tools */
+.tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.calc form select, .calc form input { width: 100%; margin-top: 6px; }
+.calc-output { display: block; margin-top: 10px; color: var(--text); font-weight: 600; }
+.notice { color: var(--muted); font-size: 14px; }
+
+/* Footer links */
+.footer-links { display: flex; gap: 12px; align-items: center; }
 
 /* Pricing */
 .price { text-align: left; }
@@ -182,6 +217,9 @@ section h2 { font-size: 24px; margin: 0 0 16px; }
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; }
   .grid.three { grid-template-columns: repeat(2, 1fr); }
+  .infogrid { grid-template-columns: 1fr 1fr; }
+  .steps { grid-template-columns: 1fr; }
+  .tools-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 640px) {
   .nav-toggle { display: inline-block; }
@@ -200,5 +238,8 @@ section h2 { font-size: 24px; margin: 0 0 16px; }
   }
   .nav-links.open { display: flex; }
   .grid.three { grid-template-columns: 1fr; }
+  .grid.two { grid-template-columns: 1fr; }
+  .infogrid { grid-template-columns: 1fr; }
+  .tools-grid { grid-template-columns: 1fr; }
 }
 
