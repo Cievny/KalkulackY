@@ -39,6 +39,16 @@ docker run --rm -p 8080:80 cievy-pre-zivot
 
 Otvor: http://localhost:8080
 
+## Publikovanie (Vercel)
+
+- Najjednoduchšie: prihlás sa na Vercel, klikni "New Project" → Importuj repo → Framework: Other → Output directory: `.` → Deploy.
+- Alebo CLI:
+  ```bash
+  npm i -g vercel
+  vercel --cwd . --prod
+  ```
+- V `vercel.json` je nastavené čisté statické servovanie.
+
 ## Upozornenie
 
 Obsah je len edukačný a nenahrádza konzultáciu u lekára.
