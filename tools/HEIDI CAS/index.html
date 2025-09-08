@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heidi AI Pomôcka: USG Karotíd s Gemini Asistentom</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-print-color-adjust: exact;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                background-color: #fff;
+            }
+            .print-container {
+                box-shadow: none;
+                border: none;
+                margin: 0;
+                padding: 0;
+            }
+        }
+        .command {
+            font-family: monospace;
+            background-color: #eef2ff;
+            color: #4338ca;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .section-icon {
+            color: #4f46e5;
+        }
+        .tip-icon {
+             color: #f59e0b;
+        }
+        .gemini-icon {
+            background: -webkit-linear-gradient(45deg, #4285F4, #9B72CB, #D96570, #F2A60F);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 p-4 sm:p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 sm:p-10 rounded-2xl shadow-lg print-container border border-slate-200">
+        
+        <!-- Header -->
+        <header class="flex items-center justify-between border-b border-slate-200 pb-4 mb-6">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Heidi AI | Hlasová Pomôcka</h1>
+                <p class="text-slate-500 text-lg">USG Karotického a Vertebrálneho Riečiska</p>
+            </div>
+            <div class="text-4xl text-indigo-600">
+                <i class="fa-solid fa-microphone-lines"></i>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left Column -->
+            <div class="flex flex-col gap-8">
+                <!-- Section 1: Anamnesis -->
+                <section>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-3"><i class="fa-solid fa-clipboard-list w-6 text-center section-icon"></i>1. Začiatok vyšetrenia</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-600 uppercase">
+                                <tr>
+                                    <th class="p-3 rounded-l-lg">Príkaz</th>
+                                    <th class="p-3 rounded-r-lg">Príklad diktovania</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">Typ</td><td class="p-3"><span class="command">Typ cielené</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">Symptómy</td><td class="p-3"><span class="command">Symptómy vertigo</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">Riziká</td><td class="p-3"><span class="command">Riziká fajčiar</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">Medikácia</td><td class="p-3"><span class="command">Medikácia Atorvastatin</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">Farmakoterapia</td><td class="p-3"><span class="command">Farmakoterapia optimálna</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">Tlak</td><td class="p-3"><span class="command">Tlak pravá 120/80</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <!-- NEW Example Box for Section 1 -->
+                <div class="bg-slate-100 border border-slate-200 p-4 rounded-lg mt-4">
+                    <h3 class="font-bold mb-2 text-slate-700">Príklad diktovania úvodu:</h3>
+                    <p class="text-sm font-mono text-slate-600 leading-relaxed">"Typ skríningové... Riziká hypertenzia, diabetes... Medikácia Metformin, Amlodipin... Farmakoterapia suboptimálna... Tlak ľavá 145 na 90."</p>
+                </div>
+                 
+                <!-- Section 3: Tips -->
+                <section>
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-3"><i class="fa-solid fa-lightbulb w-6 text-center tip-icon"></i>Tipy pre úspech</h2>
+                    <ul class="space-y-3 text-slate-600">
+                        <li class="flex items-start gap-3"><i class="fa-solid fa-check mt-1 text-green-500"></i><div><span class="font-bold">Aktivujte sekciu</span> – Vždy začnite príkazom <span class="command">Pravá strana</span> alebo <span class="command">Ľavá strana</span>.</div></li>
+                        <li class="flex items-start gap-3"><i class="fa-solid fa-check mt-1 text-green-500"></i><div><span class="font-bold">Hovorte zreteľne</span> – Používajte jasné a stručné príkazy.</div></li>
+                        <li class="flex items-start gap-3"><i class="fa-solid fa-check mt-1 text-green-500"></i><div><span class="font-bold">Použite kľúčové slová</span> – AI je trénovaná na kľúčové slová z tabuliek.</div></li>
+                    </ul>
+                </section>
+            </div>
+
+            <!-- Right Column -->
+            <div class="flex flex-col gap-8">
+                <!-- Section 2: Sonography -->
+                <section>
+                     <h2 class="text-xl font-bold mb-4 flex items-center gap-3"><i class="fa-solid fa-wave-square w-6 text-center section-icon"></i>2. Sonografia</h2>
+                     <div class="p-3 bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg text-center mb-4">
+                        Aktivujte stranu príkazom: <span class="command">Pravá strana</span> alebo <span class="command">Ľavá strana</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                             <thead class="bg-slate-50 text-slate-600 uppercase">
+                                <tr>
+                                    <th class="p-3 rounded-l-lg">Cieľ</th>
+                                    <th class="p-3 rounded-r-lg">Príkaz</th>
+                                </tr>
+                            </thead>
+                             <tbody class="divide-y divide-slate-100">
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">ACC IMT</td><td class="p-3"><span class="command">ACC IMT 0.9</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">ACC PSV</td><td class="p-3"><span class="command">ACC PSV 80</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold text-red-600">ACI Nález</td><td class="p-3"><span class="command">ACI nález stenóza</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold text-red-600">ACI PSV / EDV</td><td class="p-3"><span class="command">ACI PSV 300</span> / <span class="command">EDV 150</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">Plát Lokalizácia</td><td class="p-3"><span class="command">Plát lokalizácia bulbus</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">Plát Echogenita</td><td class="p-3"><span class="command">Plát echogenita hypoechogénny</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">Plát Povrch</td><td class="p-3"><span class="command">Plát povrch ulcerovaný</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">ACE Nález</td><td class="p-3"><span class="command">ACE priechodná</span></td></tr>
+                                <tr class="hover:bg-slate-50"><td class="p-3 font-semibold">AV Tok</td><td class="p-3"><span class="command">AV tok retrográdny</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Example Box for Section 2 -->
+                <div class="bg-slate-100 border border-slate-200 p-4 rounded-lg mt-4">
+                    <h3 class="font-bold mb-2 text-slate-700">Príklad diktovania sonografie:</h3>
+                    <p class="text-sm font-mono text-slate-600 leading-relaxed">"Ľavá strana... ACC IMT 1.2... ACI nález stenóza... ACI PSV 310... ACI EDV 120... Plát lokalizácia odstup ACI... Plát echogenita hypoechogénny... Plát povrch ulcerovaný... AV tok antegrádny."</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gemini AI Assistant Section -->
+        <section class="mt-12 no-print">
+            <div class="border-t border-slate-200 pt-8">
+                 <h2 class="text-2xl font-bold mb-4 flex items-center gap-3 text-slate-900"><span class="text-3xl gemini-icon"><i class="fa-solid fa-sparkles"></i></span> Asistent na báze Gemini AI</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                <!-- Conclusion Generator -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-lg mb-2 text-slate-800">✨ Generátor Záveru Správy</h3>
+                    <p class="text-sm text-slate-500 mb-4">Zadajte kľúčové nálezy v bodoch. Gemini AI vytvorí profesionálny záver.</p>
+                    <textarea id="conclusion-input" class="w-full h-24 p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Napr.: ACI vľavo stenóza 80%, hypoechogénny ulcerovaný plát. ACI vpravo bez stenózy. AV antegrádne."></textarea>
+                    <button id="generate-conclusion-btn" class="mt-3 w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-medical"></i>
+                        <span>Generovať Záver</span>
+                        <div id="conclusion-loader" class="loader hidden"></div>
+                    </button>
+                    <div id="conclusion-output" class="mt-4 p-4 bg-white border border-slate-200 rounded-md text-sm text-slate-700 min-h-[100px] whitespace-pre-wrap"></div>
+                </div>
+
+                <!-- Patient Explanation Generator -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-lg mb-2 text-slate-800">✨ Vysvetlenie pre Pacienta</h3>
+                    <p class="text-sm text-slate-500 mb-4">Vložte odborný text. Gemini AI ho preloží do jednoduchej reči.</p>
+                     <textarea id="patient-input" class="w-full h-24 p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="Vložte sem odborný text vygenerovaný vľavo, alebo vlastný..."></textarea>
+                    <button id="generate-patient-btn" class="mt-3 w-full bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 transition-all flex items-center justify-center gap-2">
+                         <i class="fa-solid fa-user-doctor"></i>
+                         <span>Vysvetliť Pacientovi</span>
+                         <div id="patient-loader" class="loader hidden"></div>
+                    </button>
+                    <div id="patient-output" class="mt-4 p-4 bg-white border border-slate-200 rounded-md text-sm text-slate-700 min-h-[100px] whitespace-pre-wrap"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Print Button -->
+        <div class="mt-10 text-center no-print">
+            <button onclick="window.print()" class="bg-gray-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                <i class="fa-solid fa-print mr-2"></i>Vytlačiť Pôvodnú Pomôcku
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const conclusionBtn = document.getElementById('generate-conclusion-btn');
+        const patientBtn = document.getElementById('generate-patient-btn');
+        const conclusionInput = document.getElementById('conclusion-input');
+        const patientInput = document.getElementById('patient-input');
+        const conclusionOutput = document.getElementById('conclusion-output');
+        const patientOutput = document.getElementById('patient-output');
+        const conclusionLoader = document.getElementById('conclusion-loader');
+        const patientLoader = document.getElementById('patient-loader');
+
+        const apiKey = ""; // Canvas will provide the key
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+        async function callGemini(prompt, loaderElement, buttonElement, outputElement) {
+            loaderElement.classList.remove('hidden');
+            buttonElement.disabled = true;
+            outputElement.textContent = 'Generujem...';
+            
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const text = candidate.content.parts[0].text;
+                    outputElement.textContent = text;
+                    // Auto-fill patient input after conclusion is generated
+                    if (outputElement.id === 'conclusion-output') {
+                        patientInput.value = text;
+                    }
+                } else {
+                    outputElement.textContent = 'Nepodarilo sa získať platnú odpoveď od AI. Skontrolujte prosím formát odpovede.';
+                     console.error('Unexpected response structure:', result);
+                }
+
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                outputElement.textContent = 'Chyba pri komunikácii s AI. Skúste to prosím znova neskôr.';
+            } finally {
+                loaderElement.classList.add('hidden');
+                buttonElement.disabled = false;
+            }
+        }
+
+        conclusionBtn.addEventListener('click', () => {
+            const userInput = conclusionInput.value;
+            if (!userInput) {
+                conclusionOutput.textContent = 'Prosím, zadajte kľúčové nálezy.';
+                return;
+            }
+            const systemPrompt = "Si expert v angiológii. Na základe nasledujúcich kľúčových poznámok z ultrazvukového vyšetrenia karotíd napíš stručný, profesionálny a medicínsky presný záver do lekárskej správy v slovenčine. Používaj odbornú terminológiu.";
+            const fullPrompt = `${systemPrompt}\n\nKľúčové poznámky: "${userInput}"`;
+            callGemini(fullPrompt, conclusionLoader, conclusionBtn, conclusionOutput);
+        });
+
+        patientBtn.addEventListener('click', () => {
+            const userInput = patientInput.value;
+            if (!userInput) {
+                patientOutput.textContent = 'Prosím, vložte odborný text na vysvetlenie.';
+                return;
+            }
+             const systemPrompt = "Si lekár, ktorý vysvetľuje nález pacientovi. Prelož nasledujúci odborný medicínsky text do jednoduchej, zrozumiteľnej a upokojujúcej slovenčiny. Vyhni sa zložitému žargónu. Vysvetli, čo nález znamená a prečo je dôležitá navrhovaná liečba.";
+            const fullPrompt = `${systemPrompt}\n\nOdborný text: "${userInput}"`;
+            callGemini(fullPrompt, patientLoader, patientBtn, patientOutput);
+        });
+    </script>
+
+</body>
+</html>
+
