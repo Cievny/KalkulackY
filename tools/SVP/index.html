@@ -1,232 +1,528 @@
-<!DOCTYPE html>
-<html lang="sk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVP Klasifikácia Kalkulačka</title>
-    <!-- Import Tailwind CSS for modern styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Import Inter font for better typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        /* Custom styles to complement Tailwind */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8;
-        }
-        /* Style for the result area transition */
-        #result-area {
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: all 0.5s ease-in-out;
-            transform: translateY(20px);
-        }
-        #result-area.visible {
-            max-height: 500px; /* A large enough value to not clip content */
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .criteria-item {
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-            border: 1px solid #e5e7eb;
-        }
-        .criteria-item.checked {
-            background-color: #f5f3ff; /* Violet background on selection */
-            border-color: #c4b5fd;
-        }
-        /* Custom radio button appearance */
-        input[type="radio"] {
-            appearance: none;
-            -webkit-appearance: none;
-            width: 1.25rem;
-            height: 1.25rem;
-            border: 2px solid #d1d5db;
-            border-radius: 50%;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        input[type="radio"]:checked {
-            background-color: #8b5cf6;
-            border-color: #8b5cf6;
-            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
-        }
-    </style>
-</head>
-<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+import React, { useState } from 'react';
+import { AlertCircle, FileText, CheckCircle, ArrowRightLeft } from 'lucide-react';
 
-    <!-- Main calculator container -->
-    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-6 sm:p-10">
-        <div class="text-center">
-            <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-800">SVP Klasifikácia</h1>
-            <p class="mt-2 text-slate-500">Pre panvové žilové ochorenia</p>
-        </div>
+const SVPClassifier = () => {
+  const [symptoms, setSymptoms] = useState([]);
+  const [varices, setVarices] = useState([]);
+  const [anatomySegments, setAnatomySegments] = useState([]);
+  const [showDefinitions, setShowDefinitions] = useState(false);
+  const [mode, setMode] = useState('classify');
+  const [svpInput, setSvpInput] = useState('');
+  const [interpretation, setInterpretation] = useState(null);
 
-        <div class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-10">
-            
-            <!-- S (Symptoms) & V (Varices) Section -->
-            <div>
-                <!-- S (Symptoms) Section -->
-                <h2 class="text-xl font-bold text-slate-700 mb-4">S - Symptómy</h2>
-                <div id="s-list" class="space-y-3 mb-8">
-                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="s0" name="s_class" value="S0"><label for="s0" class="ml-3 cursor-pointer">S0: Žiadne symptómy</label></div>
-                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="s1" name="s_class" value="S1"><label for="s1" class="ml-3 cursor-pointer">S1: Bolesť v boku/hematuria</label></div>
-                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="s2" name="s_class" value="S2"><label for="s2" class="ml-3 cursor-pointer">S2: Chronická panvová bolesť</label></div>
-                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="s3" name="s_class" value="S3"><label for="s3" class="ml-3 cursor-pointer">S3: Symptómy dolných končatín</label></div>
-                </div>
+  const symptomOptions = [
+    { value: 'S0', label: 'S0 - Žiadne symptómy PeVD', description: 'Žiadne renálne, panvové ani extrapelvické symptómy' },
+    { value: 'S1', label: 'S1 - Renálne symptómy', description: 'Hematúria, bolesť v boku zhoršená státím/sedením' },
+    { value: 'S2', label: 'S2 - Chronická panvová bolesť', description: 'Bolesť >6 mesiacov, zhoršená státím, zlepšená ležaním' },
+    { value: 'S3a', label: 'S3a - Genitálne symptómy', description: 'Bolesť, diskomfort vulvy/skróta' },
+    { value: 'S3b', label: 'S3b - Nonsafénne žily nohy', description: 'Symptómy posteromediálneho stehna' },
+    { value: 'S3c', label: 'S3c - Žilová klaudikácia', description: 'Námahová bolesť dolných končatín' }
+  ];
 
-                <!-- V (Varices) Section -->
-                <h2 class="text-xl font-bold text-slate-700 mb-4">V - Varixy</h2>
-                <div id="v-list" class="space-y-3">
-                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="v0" name="v_class" value="V0"><label for="v0" class="ml-3 cursor-pointer">V0: Žiadne varixy</label></div>
-                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="v1" name="v_class" value="V1"><label for="v1" class="ml-3 cursor-pointer">V1: Varixy v oblasti renálnej žily</label></div>
-                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="v2" name="v_class" value="V2"><label for="v2" class="ml-3 cursor-pointer">V2: Panvové varixy (gonadálne, plexy)</label></div>
-                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="v3" name="v_class" value="V3"><label for="v3" class="ml-3 cursor-pointer">V3: Extrapelvické varixy</label></div>
-                </div>
-            </div>
+  const varicesOptions = [
+    { value: 'V0', label: 'V0 - Žiadne varixy', description: 'Žiadne brušné, panvové ani extrapelvické varixy' },
+    { value: 'V1', label: 'V1 - Renálne hilové varixy', description: 'Spojené s obštrukciou ľavej renálnej žily' },
+    { value: 'V2', label: 'V2 - Panvové varixy', description: 'Žily ≥5mm okolo vaječníka/maternice' },
+    { value: 'V3a', label: 'V3a - Genitálne varixy', description: 'Vulválne varixy, varikokéla' },
+    { value: 'V3b', label: 'V3b - Dolné končatiny panvového pôvodu', description: 'Varixy posteromediálneho stehna' }
+  ];
 
-            <!-- P (Pathophysiology) Builder Section -->
-            <div>
-                <h2 class="text-xl font-bold text-slate-700 mb-4">P - Patofyziológia</h2>
-                <div class="bg-slate-50 p-4 rounded-lg border">
-                    <div class="grid grid-cols-1 gap-4">
-                        <div>
-                            <label for="p_anatomy" class="block text-sm font-medium text-slate-700">Anatomický segment</label>
-                            <select id="p_anatomy" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md">
-                                <option value="LRV">LRV - Ľavá renálna žila</option>
-                                <option value="RRV">RRV - Pravá renálna žila</option>
-                                <option value="LGV">LGV - Ľavá gonadálna žila</option>
-                                <option value="RGV">RGV - Pravá gonadálna žila</option>
-                                <option value="LCIV">LCIV - Ľavá spoločná ilická véna</option>
-                                <option value="RCIV">RCIV - Pravá spoločná ilická véna</option>
-                                <option value="LEIV">LEIV - Ľavá externá ilická véna</option>
-                                <option value="REIV">REIV - Pravá externá ilická véna</option>
-                                <option value="LIIV">LIIV - Ľavá interná ilická véna</option>
-                                <option value="RIIV">RIIV - Pravá interná ilická véna</option>
-                                <option value="BGV">BGV - Broad ligament vein</option>
-                                <option value="PVP">PVP - Panvový venózny plexus</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700">Hemodynamika</label>
-                            <div class="flex space-x-4 mt-2" id="p_hemo_group">
-                                <label class="flex items-center"><input type="radio" name="p_hemo" value="R" checked class="mr-2"> R (Reflux)</label>
-                                <label class="flex items-center"><input type="radio" name="p_hemo" value="O" class="mr-2"> O (Obštrukcia)</label>
-                                <label class="flex items-center"><input type="radio" name="p_hemo" value="R,O" class="mr-2"> R+O</label>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-slate-700">Etiológia</label>
-                            <div class="flex space-x-4 mt-2" id="p_etio_group">
-                                <label class="flex items-center"><input type="radio" name="p_etio" value="NT" checked class="mr-2"> NT (Netrombotická)</label>
-                                <label class="flex items-center"><input type="radio" name="p_etio" value="T" class="mr-2"> T (Trombotická)</label>
-                            </div>
-                        </div>
-                    </div>
-                    <button id="add-p-segment" class="mt-4 w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors">Pridať P segment</button>
-                </div>
-                <!-- Display for added P segments -->
-                <div id="p-segments-display" class="mt-4 space-y-2">
-                    <!-- Segments will be added here by JS -->
-                </div>
-            </div>
-        </div>
+  const anatomyOptions = [
+    { value: 'IVC', label: 'IVC - Dolná dutá žila', laterality: false },
+    { value: 'LRV', label: 'LRV - Ľavá renálna žila', laterality: false },
+    { value: 'GV', label: 'GV - Gonadálne žily', laterality: true },
+    { value: 'CIV', label: 'CIV - Spoločné ilické žily', laterality: true },
+    { value: 'EIV', label: 'EIV - Vonkajšie ilické žily', laterality: true },
+    { value: 'IIV', label: 'IIV - Vnútorné ilické žily', laterality: true },
+    { value: 'PELV', label: 'PELV - Panvové únikové žily', laterality: false }
+  ];
 
-        <!-- Result Area -->
-        <div id="result-area" class="mt-10 p-6 rounded-xl bg-purple-500 border-2 border-purple-700 text-white text-center">
-            <!-- Content will be injected by JavaScript -->
-        </div>
+  const hemodynamicOptions = [
+    { value: 'O', label: 'O - Obštrukcia', description: '>50% zníženie prierezu' },
+    { value: 'R', label: 'R - Reflux', description: 'Retrográdny tok' },
+    { value: 'R,O', label: 'R,O - Reflux a Obštrukcia', description: 'Obe súčasne' }
+  ];
+
+  const etiologyOptions = [
+    { value: 'T', label: 'T - Trombotická', description: 'Z predchádzajúcej DVT' },
+    { value: 'NT', label: 'NT - Netrombotická', description: 'Degeneratívny proces/kompresia' },
+    { value: 'C', label: 'C - Vrodená', description: 'Vrodené malformácie' }
+  ];
+
+  const addAnatomySegment = () => {
+    setAnatomySegments([...anatomySegments, {
+      anatomy: '',
+      laterality: '',
+      hemodynamic: '',
+      etiology: ''
+    }]);
+  };
+
+  const updateAnatomySegment = (index, field, value) => {
+    const updated = [...anatomySegments];
+    updated[index][field] = value;
+    setAnatomySegments(updated);
+  };
+
+  const removeAnatomySegment = (index) => {
+    setAnatomySegments(anatomySegments.filter((_, i) => i !== index));
+  };
+
+  const generateClassification = () => {
+    const S = symptoms.length > 0 ? symptoms.join(',') : 'Sx';
+    const V = varices.length > 0 ? varices.join(',') : 'Vx';
+    
+    let P = '';
+    if (anatomySegments.length > 0) {
+      const pSegments = anatomySegments.map(seg => {
+        if (!seg.anatomy) return '';
+        let anatStr = seg.anatomy;
+        if (seg.laterality && seg.laterality !== 'bilateral') {
+          const prefix = seg.laterality === 'left' ? 'L' : 'R';
+          anatStr = prefix + seg.anatomy;
+        } else if (seg.laterality === 'bilateral') {
+          anatStr = 'B' + seg.anatomy;
+        }
+        const hemStr = seg.hemodynamic || 'x';
+        const etiStr = seg.etiology || 'x';
+        return `${anatStr},${hemStr},${etiStr}`;
+      }).filter(s => s).join('; ');
+      P = 'P' + pSegments;
+    } else {
+      P = 'Px';
+    }
+
+    return `${S}${V}${P}`;
+  };
+
+  const interpretSVP = (svpCode) => {
+    const result = {
+      symptoms: [],
+      varices: [],
+      pathophysiology: [],
+      clinicalDescription: ''
+    };
+
+    const sMatch = svpCode.match(/S([0-3][abc]?,?)+/);
+    if (sMatch) {
+      const sCodes = sMatch[0].substring(1).split(',');
+      sCodes.forEach(code => {
+        const symptom = symptomOptions.find(s => s.value === 'S' + code);
+        if (symptom) {
+          result.symptoms.push({
+            code: 'S' + code,
+            label: symptom.label,
+            description: symptom.description
+          });
+        }
+      });
+    }
+
+    const vMatch = svpCode.match(/V([0-3][abc]?,?)+/);
+    if (vMatch) {
+      const vCodes = vMatch[0].substring(1).split(',');
+      vCodes.forEach(code => {
+        const varix = varicesOptions.find(v => v.value === 'V' + code);
+        if (varix) {
+          result.varices.push({
+            code: 'V' + code,
+            label: varix.label,
+            description: varix.description
+          });
+        }
+      });
+    }
+
+    const pMatch = svpCode.match(/P(.+)/);
+    if (pMatch) {
+      const pParts = pMatch[1].split(';').map(p => p.trim());
+      pParts.forEach(part => {
+        const components = part.split(',');
+        if (components.length >= 3) {
+          let anatomy = components[0];
+          let laterality = '';
+          
+          if (anatomy.startsWith('L') || anatomy.startsWith('R') || anatomy.startsWith('B')) {
+            laterality = anatomy[0] === 'L' ? 'ľavá' : anatomy[0] === 'R' ? 'pravá' : 'bilaterálna';
+            anatomy = anatomy.substring(1);
+          }
+
+          const anatOpt = anatomyOptions.find(a => a.value === anatomy);
+          const hemOpt = hemodynamicOptions.find(h => h.value === components[1]);
+          const etiOpt = etiologyOptions.find(e => e.value === components[2]);
+
+          if (anatOpt) {
+            result.pathophysiology.push({
+              anatomy: anatOpt.label,
+              laterality: laterality,
+              hemodynamic: hemOpt ? hemOpt.label : components[1],
+              etiology: etiOpt ? etiOpt.label : components[2],
+              hemodynamicDesc: hemOpt ? hemOpt.description : '',
+              etiologyDesc: etiOpt ? etiOpt.description : ''
+            });
+          }
+        }
+      });
+    }
+
+    let patientDescription = [];
+    
+    if (result.symptoms.length > 0) {
+      patientDescription.push('**Klinický obraz:**\n');
+      
+      if (result.symptoms.some(s => s.code === 'S1')) {
+        patientDescription.push('Pacient/ka trpí renálnymi symptómami žilového pôvodu - mikrohematúriou alebo makrohematúriou spolu s bolesťou v ľavom boku alebo bruchu, ktorá sa zhoršuje pri státí, sedení alebo chôdzi.\n');
+      }
+      
+      if (result.symptoms.some(s => s.code === 'S2')) {
+        patientDescription.push('Prítomná je chronická panvová bolesť žilového pôvodu trvajúca viac ako 6 mesiacov. Bolesť sa zhoršuje pri státí a chôdzi, zlepšuje sa v ležiacej polohe. Vyšetrením možno vyvolať adnexálnu citlivosť, pacientka môže uvádzať postkoitálnu bolesť.\n');
+      }
+
+      if (result.symptoms.some(s => s.code === 'S3a')) {
+        patientDescription.push('Pacient/ka má lokalizované genitálne symptómy vrátane bolesti, diskomfortu, citlivosti, svrbenia alebo prípadného krvácania spojeného so žilami vonkajšieho genitálu (vulva/skrótum).\n');
+      }
+
+      if (result.symptoms.some(s => s.code === 'S3b')) {
+        patientDescription.push('Prítomné sú lokalizované symptómy spojené s nonsafénnymi žilami nohy panvového pôvodu - bolesť, diskomfort alebo citlivosť v oblasti posteromediálneho stehna.\n');
+      }
+
+      if (result.symptoms.some(s => s.code === 'S3c')) {
+        patientDescription.push('Pacient/ka trpí žilovou klaudikáciou - námahovou bolesťou v dolných končatinách, často opisovanou ako "sťahujúca" alebo "pukajúca" bolesť, ktorá sa uvoľňuje odpočinkom a zdvihnutím nôh.\n');
+      }
+    }
+
+    if (result.varices.length > 0) {
+      patientDescription.push('\n**Zobrazovacie nálezy - kŕčové žily:**\n');
+      
+      if (result.varices.some(v => v.code === 'V1')) {
+        patientDescription.push('Zobrazovacími metódami boli preukázané renálne hilové varixy, najčastejšie spojené s obštrukciou ľavej renálnej žily.\n');
+      }
+
+      if (result.varices.some(v => v.code === 'V2')) {
+        patientDescription.push('Prítomné sú panvové varixy - vinuté, dilatované žily s priemerom ≥5 mm okolo vaječníka a maternice.\n');
+      }
+
+      if (result.varices.some(v => v.code === 'V3a')) {
+        patientDescription.push('Detegované boli genitálne varixy (vulválne varixy alebo varikokéla).\n');
+      }
+
+      if (result.varices.some(v => v.code === 'V3b')) {
+        patientDescription.push('Prítomné sú kŕčové žily dolných končatín panvového pôvodu, typicky viditeľné nad posteromediálnym stehnom, vrátane možných sedacích varixov.\n');
+      }
+    }
+
+    if (result.pathophysiology.length > 0) {
+      patientDescription.push('\n**Patofyziologická analýza:**\n');
+      
+      result.pathophysiology.forEach(p => {
+        let segment = p.anatomy.split(' - ')[0];
+        if (p.laterality) segment = `${p.laterality} ${segment}`;
         
-        <!-- Action Buttons -->
-        <div class="mt-8">
-            <button id="reset-button" class="w-full bg-slate-200 text-slate-700 font-bold text-base py-3 px-6 rounded-lg hover:bg-slate-300 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-slate-300">
-                Resetovať
+        let pathDesc = '';
+        if (p.hemodynamic.includes('Obštrukcia') && p.etiology.includes('Netrombotická')) {
+          pathDesc = `V oblasti ${segment} je prítomná netrombotická obštrukcia (>50% zníženie prierezu), pravdepodobne spôsobená extrinzickou kompresiou okolitými arteriálnymi štruktúrami alebo hmotami.`;
+        } else if (p.hemodynamic.includes('Reflux') && p.etiology.includes('Netrombotická')) {
+          pathDesc = `V oblasti ${segment} bol detegovaný reflux (retrográdny tok) netrombotického pôvodu, vznikajúci z degeneratívneho procesu žilovej steny alebo proximálnej obštrukcie.`;
+        } else if (p.hemodynamic.includes('Reflux') && p.etiology.includes('Trombotická')) {
+          pathDesc = `V oblasti ${segment} je prítomný posttombotický reflux, vznikajúci z predchádzajúcej epizódy hlbokej žilovej trombózy.`;
+        } else if (p.hemodynamic.includes('Obštrukcia') && p.etiology.includes('Trombotická')) {
+          pathDesc = `V oblasti ${segment} je prítomná posttrombotická obštrukcia z predchádzajúcej hlbokej žilovej trombózy.`;
+        } else if (p.etiology.includes('Vrodená')) {
+          pathDesc = `V oblasti ${segment} bola diagnostikovaná vrodená vaskulárna malformácia.`;
+        }
+        
+        patientDescription.push(pathDesc + '\n');
+      });
+    }
+
+    result.patientDescription = patientDescription.join('');
+
+    return result;
+  };
+
+  const handleInterpretSVP = () => {
+    if (svpInput.trim()) {
+      const result = interpretSVP(svpInput.trim());
+      setInterpretation(result);
+    }
+  };
+
+  const getLateralityLabel = (anatomy) => {
+    const opt = anatomyOptions.find(o => o.value === anatomy);
+    return opt?.laterality;
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white rounded-xl shadow-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">SVP Klasifikačný Systém</h1>
+              <p className="text-gray-600">Panvové žilové poruchy (PeVD) - Symptoms-Varices-Pathophysiology</p>
+            </div>
+            <FileText className="w-12 h-12 text-indigo-600" />
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <AlertCircle className="w-5 h-5 text-blue-600 mr-2 mt-0.5" />
+              <div className="text-sm text-blue-800">
+                <strong>Dôležité:</strong> SVP je diskriminačný nástroj pre klasifikáciu klinickej prezentácie. 
+                Nie je určený na kvantitatívne meranie závažnosti. Pre pacientov so symptómami dolných končatín 
+                panvového pôvodu používať v spojení s CEAP klasifikáciou.
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setMode('classify')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                mode === 'classify' 
+                  ? 'bg-indigo-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              Klasifikovať pacienta
             </button>
+            <button
+              onClick={() => setMode('interpret')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                mode === 'interpret' 
+                  ? 'bg-indigo-600 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+              Interpretovať SVP kód
+            </button>
+          </div>
+
+          {mode === 'classify' && (
+            <button
+              onClick={() => setShowDefinitions(!showDefinitions)}
+              className="mb-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors"
+            >
+              {showDefinitions ? 'Skryť' : 'Zobraziť'} definície a kritériá
+            </button>
+          )}
         </div>
 
+        {mode === 'interpret' ? (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Interpretácia SVP klasifikácie</h2>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Zadajte SVP kód (napr. S2V2PBGV,R,NT)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={svpInput}
+                  onChange={(e) => setSvpInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleInterpretSVP()}
+                  placeholder="S2V2PBGV,R,NT"
+                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-mono text-lg"
+                />
+                <button
+                  onClick={handleInterpretSVP}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                >
+                  Interpretovať
+                </button>
+              </div>
+            </div>
+
+            {interpretation && (
+              <div className="space-y-4">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+                  <h3 className="font-bold text-lg text-gray-800 mb-3 flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    Komplexný popis pacientových ťažkostí
+                  </h3>
+                  <div className="prose prose-sm max-w-none whitespace-pre-line text-gray-700">
+                    {interpretation.patientDescription}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">1. Symptómy (S)</h2>
+              <div className="space-y-2">
+                {symptomOptions.map(option => (
+                  <label key={option.value} className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={symptoms.includes(option.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSymptoms([...symptoms, option.value]);
+                        } else {
+                          setSymptoms(symptoms.filter(s => s !== option.value));
+                        }
+                      }}
+                      className="mt-1 mr-3"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-800">{option.label}</div>
+                      {showDefinitions && (
+                        <div className="text-sm text-gray-600 mt-1">{option.description}</div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">2. Kŕčové žily (V)</h2>
+              <div className="space-y-2">
+                {varicesOptions.map(option => (
+                  <label key={option.value} className="flex items-start p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={varices.includes(option.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setVarices([...varices, option.value]);
+                        } else {
+                          setVarices(varices.filter(v => v !== option.value));
+                        }
+                      }}
+                      className="mt-1 mr-3"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-800">{option.label}</div>
+                      {showDefinitions && (
+                        <div className="text-sm text-gray-600 mt-1">{option.description}</div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">3. Patofyziológia (P)</h2>
+              
+              <div className="space-y-4">
+                {anatomySegments.map((segment, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Anatómia
+                        </label>
+                        <select
+                          value={segment.anatomy}
+                          onChange={(e) => updateAnatomySegment(index, 'anatomy', e.target.value)}
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        >
+                          <option value="">Vyberte...</option>
+                          {anatomyOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {getLateralityLabel(segment.anatomy) && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Lateralita
+                          </label>
+                          <select
+                            value={segment.laterality}
+                            onChange={(e) => updateAnatomySegment(index, 'laterality', e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                          >
+                            <option value="">Vyberte...</option>
+                            <option value="left">Ľavá (L)</option>
+                            <option value="right">Pravá (R)</option>
+                            <option value="bilateral">Bilaterálna (B)</option>
+                          </select>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Hemodynamika
+                        </label>
+                        <select
+                          value={segment.hemodynamic}
+                          onChange={(e) => updateAnatomySegment(index, 'hemodynamic', e.target.value)}
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        >
+                          <option value="">Vyberte...</option>
+                          {hemodynamicOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Etiológia
+                        </label>
+                        <select
+                          value={segment.etiology}
+                          onChange={(e) => updateAnatomySegment(index, 'etiology', e.target.value)}
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        >
+                          <option value="">Vyberte...</option>
+                          {etiologyOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => removeAnatomySegment(index)}
+                      className="mt-3 px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      Odstrániť segment
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={addAnatomySegment}
+                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              >
+                + Pridať anatomický segment
+              </button>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center mb-4">
+                <CheckCircle className="w-6 h-6 text-green-600 mr-2" />
+                <h2 className="text-xl font-bold text-gray-800">Výsledná klasifikácia</h2>
+              </div>
+              
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-6">
+                <div className="text-sm text-gray-600 mb-2">SVP Klasifikácia:</div>
+                <div className="text-3xl font-bold text-indigo-900 font-mono">
+                  {generateClassification()}
+                </div>
+              </div>
+
+              <div className="mt-4 text-sm text-gray-600">
+                <strong>Poznámka:</strong> "x" označuje nehodnotené domény. Pre kompletné hodnotenie 
+                musia byť všetky relevantné domény zadefinované na základe klinického vyšetrenia a zobrazovacích metód.
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
+  );
+};
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const resultArea = document.getElementById('result-area');
-        const svInputs = document.querySelectorAll('input[name="s_class"], input[name="v_class"]');
-        const addPSegmentBtn = document.getElementById('add-p-segment');
-        const pSegmentsDisplay = document.getElementById('p-segments-display');
-        const resetButton = document.getElementById('reset-button');
-        let pSegments = [];
-
-        const calculateAndDisplayResult = () => {
-            // Highlight S and V selections
-            svInputs.forEach(input => {
-                input.closest('.criteria-item').classList.toggle('checked', input.checked);
-            });
-
-            const sValue = document.querySelector('input[name="s_class"]:checked')?.value || '_';
-            const vValue = document.querySelector('input[name="v_class"]:checked')?.value || '_';
-            const pValue = pSegments.length > 0 ? pSegments.join('; ') : '_';
-            
-            const isComplete = sValue !== '_' && vValue !== '_' && pValue !== '_';
-
-            if (!isComplete) {
-                resultArea.classList.remove('visible');
-                return;
-            }
-
-            resultArea.innerHTML = `
-                <h2 class="text-2xl font-bold mb-2">Výsledná SVP Klasifikácia</h2>
-                <p class="text-xl sm:text-2xl font-mono p-3 bg-black bg-opacity-20 rounded-lg tracking-wider">${sValue} ${vValue} P<sub>${pValue}</sub></p>
-            `;
-
-            resultArea.classList.add('visible');
-        };
-
-        const renderPSegments = () => {
-            pSegmentsDisplay.innerHTML = '';
-            pSegments.forEach((segment, index) => {
-                const segmentDiv = document.createElement('div');
-                segmentDiv.className = 'flex justify-between items-center bg-purple-100 p-2 rounded-md text-sm';
-                segmentDiv.innerHTML = `
-                    <span class="font-mono">${segment}</span>
-                    <button data-index="${index}" class="remove-p-segment text-red-500 hover:text-red-700 font-bold">&times;</button>
-                `;
-                pSegmentsDisplay.appendChild(segmentDiv);
-            });
-            
-            // Add event listeners to new remove buttons
-            document.querySelectorAll('.remove-p-segment').forEach(button => {
-                button.addEventListener('click', function() {
-                    const indexToRemove = parseInt(this.dataset.index);
-                    pSegments.splice(indexToRemove, 1);
-                    renderPSegments();
-                    calculateAndDisplayResult();
-                });
-            });
-        };
-
-        addPSegmentBtn.addEventListener('click', () => {
-            const anatomy = document.getElementById('p_anatomy').value;
-            const hemo = document.querySelector('input[name="p_hemo"]:checked').value;
-            const etio = document.querySelector('input[name="p_etio"]:checked').value;
-            const newSegment = `${anatomy},${hemo},${etio}`;
-            pSegments.push(newSegment);
-            renderPSegments();
-            calculateAndDisplayResult();
-        });
-
-        svInputs.forEach(input => {
-            input.addEventListener('change', calculateAndDisplayResult);
-        });
-
-        resetButton.addEventListener('click', () => {
-            document.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
-            pSegments = [];
-            renderPSegments();
-            calculateAndDisplayResult();
-        });
-    });
-    </script>
-
-</body>
-</html>
+export default SVPClassifier;
