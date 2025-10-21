@@ -1,166 +1,106 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="sk">
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Cievny.sk – sandbox</title>
-  <style>
-    body{font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;max-width:900px;margin:40px auto;padding:0 16px}
-    section{border:1px solid #ddd;border-radius:10px;padding:16px;margin:20px 0}
-    input,select,button{padding:10px;border:1px solid #ccc;border-radius:8px}
-    button{cursor:pointer}
-    .row{display:flex;gap:8px;flex-wrap:wrap}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, monospace}
-  </style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cievny.sk | Váš sprievodca svetom cievneho zdravia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Definícia farebnej palety podľa manuálu */
+        :root {
+            --color-wine: #6A1B42; /* Tmavá Vinová / Jemne Fialová */
+            --color-green: #2E8339; /* Tmavá Lesná Zelená */
+            --color-beige: #F8F5F2; /* Svetlá Béžová (upravená pre lepší kontrast) */
+            --color-powder-gray: #E0E0E0; /* Púdrová Sivá (upravená pre web) */
+            --color-dark-gray: #333333; /* Tmavošedá */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-beige);
+            color: var(--color-dark-gray);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Aplikácia farieb na Tailwind triedy pre jednoduchšie použitie */
+        .bg-beige { background-color: var(--color-beige); }
+        .bg-wine { background-color: var(--color-wine); }
+        .bg-green { background-color: var(--color-green); }
+        .bg-powder-gray { background-color: var(--color-powder-gray); }
+        .bg-dark-gray { background-color: var(--color-dark-gray); }
+        
+        .text-wine { color: var(--color-wine); }
+        .text-green { color: var(--color-green); }
+        .text-dark-gray { color: var(--color-dark-gray); }
+        .text-beige { color: var(--color-beige); }
+        
+        .border-powder-gray { border-color: var(--color-powder-gray); }
+        .border-wine { border-color: var(--color-wine); }
 
-  <body>
-    <h1>Cievny.sk – sandbox</h1>
-    <p style="color:#555">Režim bez prihlásenia (iba testovacie, neprodukčné dáta).</p>
+        .btn-green {
+            background-color: var(--color-green);
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-green:hover {
+            background-color: #256a2e; /* Tmavší odtieň zelenej pre hover */
+        }
+    </style>
+</head>
+<body class="bg-beige">
 
-    <!-- 1) PACIENT -->
-    <section>
-      <h2>Nový pacient (sandbox)</h2>
-      <div class="row">
-        <input id="pseudo" placeholder="PSEUDO-ID (napr. PSEUDO-001)" style="flex:1 1 260px" />
-        <select id="sex">
-          <option value="M">M</option><option value="F">F</option><option value="X">X</option>
-        </select>
-        <input id="yob" type="number" placeholder="Rok narodenia (napr. 1979)" style="width:160px" />
-        <button id="savePatient">Uložiť pacienta</button>
-      </div>
-      <div id="patientMsg" style="margin-top:10px"></div>
-    </section>
-
-    <!-- 2) ABI/TTBI -->
-    <section>
-      <h2>ABI / TTBI (sandbox)</h2>
-      <div style="display:grid;gap:12px;max-width:560px">
-        <div>
-          <strong>Brachiálne tlaky</strong>
-          <div class="row">
-            <input id="sbp_r" type="number" placeholder="Right arm (mmHg)" />
-            <input id="sbp_l" type="number" placeholder="Left arm (mmHg)" />
-          </div>
+    <!-- 1. Hlavička (Navigácia) -->
+    <header class="bg-beige/80 sticky top-0 z-50 backdrop-blur-lg border-b border-powder-gray">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Logo -->
+            <a href="#" class="flex items-center space-x-2">
+                <svg width="24" height="24" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-green">
+                    <path d="M100 180 C140 140, 140 140, 100 100" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M100 100 C60 60, 60 60, 100 20" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M60 180 C80 140, 80 140, 100 100" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M140 180 C120 140, 120 140, 100 100" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M100 20 C80 50, 80 50, 60 60" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M100 20 C120 50, 120 50, 140 60" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                </svg>
+                <span class="text-2xl font-bold">
+                    <span class="text-wine">cievny</span><span class="text-green">.sk</span>
+                </span>
+            </a>
+            <!-- Navigačné linky pre desktop -->
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#" class="text-dark-gray hover:text-wine transition-colors">Ochorenia</a>
+                <a href="#" class="text-dark-gray hover:text-wine transition-colors">Diagnostika</a>
+                <a href="#" class="text-dark-gray hover:text-wine transition-colors">Liečba</a>
+                <a href="#" class="text-dark-gray hover:text-wine transition-colors">Mapa pomoci</a>
+            </nav>
+            <!-- CTA Tlačidlo -->
+            <a href="#" class="hidden md:inline-block btn-green font-semibold px-5 py-2 rounded-lg">
+                Pre lekárov
+            </a>
+            <!-- Hamburger menu pre mobil -->
+            <button class="md:hidden text-dark-gray">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
         </div>
-        <div>
-          <strong>Členkové tlaky</strong>
-          <div class="row">
-            <input id="abp_r" type="number" placeholder="Right ankle (mmHg)" />
-            <input id="abp_l" type="number" placeholder="Left ankle (mmHg)" />
-          </div>
+    </header>
+
+    <!-- Sekcia: Oznámenie o výstavbe -->
+    <div class="bg-wine text-center py-3 text-beige font-semibold">
+        <div class="container mx-auto px-6">
+            <p>🚀 Stránka je momentálne vo výstavbe. Ďakujeme za trpezlivosť, nový obsah pridávame každý deň!</p>
         </div>
-        <div>
-          <strong>Toe tlaky (voliteľné)</strong>
-          <div class="row">
-            <input id="tbp_r" type="number" placeholder="Right toe (mmHg)" />
-            <input id="tbp_l" type="number" placeholder="Left toe (mmHg)" />
-          </div>
-        </div>
-        <button id="calcAbi">Vypočítať a uložiť</button>
-        <div id="abiMsg" style="margin-top:8px"></div>
-        <pre id="abiOut" class="mono" style="margin:0"></pre>
-      </div>
-    </section>
+    </div>
+    
+    <!-- Obsah môže byť pridaný neskôr tu -->
+    <main class="flex-grow">
+        <!-- Budúci obsah -->
+    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-      // --- Supabase klient ---
-      const SUPABASE_URL  = "https://ktdvgmwrqwznuikehpmk.supabase.co";
-      const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0ZHZnbXdycXd6bnVpa2VocG1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUwMzg3MTUsImV4cCI6MjA3MDYxNDcxNX0.2YvdIUC41fYsXsT_zJyf2VKvOi2obsJ27fRewQEajmE";
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-      // --- Pomocné ---
-      function inRange(x,min,max){ return typeof x==='number' && !Number.isNaN(x) && x>=min && x<=max; }
-      function abiCategory(v){
-        if(v==null) return '—';
-        if(v>1.4) return 'Nezkomprimovateľné (calc.)';
-        if(v>=1.00) return 'Normálne';
-        if(v>=0.90) return 'Hraničné';
-        if(v>=0.70) return 'Mierne';
-        if(v>=0.40) return 'Stredné';
-        return 'Ťažké';
-      }
-      function tbiCategory(v){
-        if(v==null) return '—';
-        if(v>=0.70) return 'Normálne';
-        if(v>=0.64) return 'Hraničné';
-        if(v>=0.30) return 'Abnormálne';
-        return 'Ťažko abnormálne';
-      }
-
-      // --- 1) Uloženie pacienta (public insert) ---
-      document.getElementById('savePatient').onclick = async () => {
-        const pseudo = document.getElementById('pseudo').value.trim();
-        const sex    = document.getElementById('sex').value;
-        const yob    = Number(document.getElementById('yob').value);
-        const box = document.getElementById('patientMsg');
-
-        if(!pseudo){ box.style.color='#b00'; box.textContent='Vyplň PSEUDO‑ID.'; return; }
-
-        const { error } = await supabase.from('patient').insert({ pseudo_id:pseudo, sex, yob });
-        box.style.color = error ? '#b00' : '#0a0';
-        box.textContent = error ? ('Chyba: '+error.message) : 'Uložené ✅ – pozri tabuľku patient v Supabase.';
-      };
-
-      // --- 2) ABI/TTBI výpočet + uloženie do measurement (domain/name/value_numeric) ---
-      document.getElementById('calcAbi').onclick = async () => {
-        const msg = document.getElementById('abiMsg');
-        const out = document.getElementById('abiOut');
-        msg.textContent=''; out.textContent='';
-
-        const sbp_r = Number(document.getElementById('sbp_r').value);
-        const sbp_l = Number(document.getElementById('sbp_l').value);
-        const abp_r = Number(document.getElementById('abp_r').value);
-        const abp_l = Number(document.getElementById('abp_l').value);
-        const tbp_r_in = document.getElementById('tbp_r').value;
-        const tbp_l_in = document.getElementById('tbp_l').value;
-        const tbp_r = tbp_r_in ? Number(tbp_r_in) : null;
-        const tbp_l = tbp_l_in ? Number(tbp_l_in) : null;
-
-        // Validácie
-        const errs=[];
-        if(!inRange(sbp_r,60,240)) errs.push('Brach. R mimo 60–240');
-        if(!inRange(sbp_l,60,240)) errs.push('Brach. L mimo 60–240');
-        if(!inRange(abp_r,40,300)) errs.push('Ankle R mimo 40–300');
-        if(!inRange(abp_l,40,300)) errs.push('Ankle L mimo 40–300');
-        if(tbp_r_in && !inRange(tbp_r,20,200)) errs.push('Toe R mimo 20–200');
-        if(tbp_l_in && !inRange(tbp_l,20,200)) errs.push('Toe L mimo 20–200');
-        if(errs.length){ msg.style.color='#b00'; msg.textContent='Skontroluj vstupy: '+errs.join(', '); return; }
-
-        // Výpočet
-        const brachial_ref = Math.max(sbp_r, sbp_l);
-        const abpi_r = +(abp_r / brachial_ref).toFixed(2);
-        const abpi_l = +(abp_l / brachial_ref).toFixed(2);
-        const tbpi_r = tbp_r_in ? +(tbp_r / brachial_ref).toFixed(2) : null;
-        const tbpi_l = tbp_l_in ? +(tbp_l / brachial_ref).toFixed(2) : null;
-
-        // Pripravíme riadky na insert (podľa schémy: domain/name/value_numeric/unit)
-        const rows = [
-          { domain:'ABI',  name:'SBP_R',  value_numeric: sbp_r, unit:'mmHg' },
-          { domain:'ABI',  name:'SBP_L',  value_numeric: sbp_l, unit:'mmHg' },
-          { domain:'ABI',  name:'ABP_R',  value_numeric: abp_r, unit:'mmHg' },
-          { domain:'ABI',  name:'ABP_L',  value_numeric: abp_l, unit:'mmHg' },
-          { domain:'ABI',  name:'ABPI_R', value_numeric: abpi_r, unit:'ratio' },
-          { domain:'ABI',  name:'ABPI_L', value_numeric: abpi_l, unit:'ratio' },
-        ];
-        if(tbpi_r!==null) rows.push({ domain:'TTBI', name:'TBPI_R', value_numeric: tbpi_r, unit:'ratio' });
-        if(tbpi_l!==null) rows.push({ domain:'TTBI', name:'TBPI_L', value_numeric: tbpi_l, unit:'ratio' });
-
-        const { error } = await supabase.from('measurement').insert(rows);
-
-        if(error){ msg.style.color='#b00'; msg.textContent='Chyba uloženia: '+error.message; return; }
-
-        const lines = [
-          `Brach. referencia = max(${sbp_r}, ${sbp_l}) = ${brachial_ref} mmHg`,
-          `ABI R = ${abp_r} / ${brachial_ref} = ${abpi_r} → ${abiCategory(abpi_r)}`,
-          `ABI L = ${abp_l} / ${brachial_ref} = ${abpi_l} → ${abiCategory(abpi_l)}`
-        ];
-        if(tbpi_r!==null) lines.push(`TBI R = ${tbp_r} / ${brachial_ref} = ${tbpi_r} → ${tbiCategory(tbpi_r)}`);
-        if(tbpi_l!==null) lines.push(`TBI L = ${tbp_l} / ${brachial_ref} = ${tbpi_l} → ${tbiCategory(tbpi_l)}`);
-
-        msg.style.color='#0a0';
-        msg.textContent='Uložené ✅ (measurement).';
-        out.textContent=lines.join('\n');
-      };
-    </script>
-  </body>
+</body>
 </html>
+
