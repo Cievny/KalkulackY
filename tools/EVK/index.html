@@ -904,15 +904,79 @@ function genDRG(){
     add('8r880.1i','CERAB – kissing stenty AIC, 2 stenty: '+SL['i']);
   }
 
+  // ── Doplňujúce kódy 8r8x (počty zariadení) ──────────────────────────────
+  const supp=[];
+  function addS(code,desc){supp.push({code,desc,warn:false});}
+  function listCount(pfx){return document.querySelectorAll('#'+pfx+'_list .dyn-row').length;}
+  function suppCount(n,max){return Math.min(n-1,max);}
+
+  // 8r8x0 – celkový počet plain balónov (predilatácia + PTA + postdilatácia)
+  let plainBalloons=0;
+  if(document.getElementById('c_pred').checked) plainBalloons+=listCount('pred');
+  if(document.getElementById('c_pta').checked)  plainBalloons+=listCount('pta');
+  if(document.getElementById('c_stent').checked&&document.getElementById('c_post').checked) plainBalloons+=listCount('post');
+  if(plainBalloons>0){
+    const nc=suppCount(plainBalloons,4);
+    const nl=plainBalloons>=5?'5 a viac':plainBalloons;
+    addS('8r8x0.'+nc,'Počet plain balónov (PTA/pred/post): '+nl+' ks');
+  }
+
+  // 8r8x1 – počet DEB balónov (pre periférne tepny = prefix .0)
+  if(document.getElementById('c_deb').checked){
+    const n=listCount('deb');
+    if(n>0){
+      const nc=suppCount(n,4);
+      const nl=n>=5?'5 a viac':n;
+      addS('8r8x1.0'+nc,'Počet DEB balónov (periférne tepny): '+nl+' ks');
+    }
+  }
+
+  // 8r8x2 – počet cutting/scoring katétrov (vessel prep)
+  if(document.getElementById('c_vprep').checked){
+    const n=listCount('vprep');
+    if(n>0){
+      const nc=suppCount(n,4);
+      const nl=n>=5?'5 a viac':n;
+      addS('8r8x2.'+nc,'Počet cutting/scoring katétrov (vessel prep): '+nl+' ks');
+    }
+  }
+
+  // 8r8x3 – počet IVL balónov
+  if(document.getElementById('c_sw').checked){
+    const n=listCount('sw');
+    if(n>0){
+      const nc=suppCount(n,4);
+      const nl=n>=5?'5 a viac':n;
+      addS('8r8x3.'+nc,'Počet IVL Shockwave balónov: '+nl+' ks');
+    }
+  }
+
+  // 8r8x6 – počet aspiračných katétrov
+  if(document.getElementById('c_trom').checked&&document.getElementById('trom_aspir').checked){
+    addS('8r8x6.0','Počet aspiračných katétrov: 1 ks');
+  }
+
   // Render
   const out=document.getElementById('drg_output');
   if(!out)return;
-  if(!codes.length){out.innerHTML='<div class="drg-empty">Žiadne intervencie – vyplňte záložku Nález.</div>';return;}
-  let html='<table class="drg-table"><thead><tr><th style="width:145px">Kód MKCH</th><th>Popis</th></tr></thead><tbody>';
-  codes.forEach(({code,desc,warn})=>{
-    html+=`<tr><td class="drg-code-cell${warn?' drg-warn':''}">${code}</td><td${warn?' class="drg-warn"':''}>${desc}</td></tr>`;
-  });
-  html+='</tbody></table>';
+  if(!codes.length&&!supp.length){out.innerHTML='<div class="drg-empty">Žiadne intervencie – vyplňte záložku Nález.</div>';return;}
+  let html='';
+  if(codes.length){
+    html+='<div class="drg-section-hdr">Hlavné kódy</div>';
+    html+='<table class="drg-table"><thead><tr><th style="width:145px">Kód MKCH</th><th>Popis</th></tr></thead><tbody>';
+    codes.forEach(({code,desc,warn})=>{
+      html+=`<tr><td class="drg-code-cell${warn?' drg-warn':''}">${code}</td><td${warn?' class="drg-warn"':''}>${desc}</td></tr>`;
+    });
+    html+='</tbody></table>';
+  }
+  if(supp.length){
+    html+='<div class="drg-section-hdr" style="margin-top:16px">Doplňujúce kódy 8r8x (počty zariadení)</div>';
+    html+='<table class="drg-table"><thead><tr><th style="width:145px">Kód MKCH</th><th>Popis</th></tr></thead><tbody>';
+    supp.forEach(({code,desc})=>{
+      html+=`<tr><td class="drg-code-cell">${code}</td><td>${desc}</td></tr>`;
+    });
+    html+='</tbody></table>';
+  }
   out.innerHTML=html;
 }
 function copyDRG(){
