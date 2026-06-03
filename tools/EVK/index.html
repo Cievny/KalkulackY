@@ -831,9 +831,17 @@ function genDRG(){
   function add(code,desc,warn){codes.push({code,desc,warn:warn||false});}
   const SL=DRG_SUFFIX_LABEL;
 
+  // Predilatácia → generuje 8r800 (plain PTA) pre každú tepnu
+  if(document.getElementById('c_pred').checked){
+    [...new Set(drgListSuffixes('pred'))].forEach(s=>add('8r800.'+s,'Balónová angioplastika – predilatácia: '+SL[s]));
+  }
   // PTA
   if(document.getElementById('c_pta').checked){
-    [...new Set(drgListSuffixes('pta'))].forEach(s=>add('8r800.'+s,'Balónová angioplastika (PTA): '+SL[s]));
+    [...new Set(drgListSuffixes('pta'))].forEach(s=>{
+      // nepridávaj duplicitu ak už predilatácia vygenerovala rovnaký suffix
+      const alreadyAdded=codes.some(c=>c.code==='8r800.'+s&&c.desc.includes('predilatácia'));
+      if(!alreadyAdded)add('8r800.'+s,'Balónová angioplastika (PTA): '+SL[s]);
+    });
   }
   // DEB PTA
   if(document.getElementById('c_deb').checked){
