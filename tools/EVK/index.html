@@ -956,13 +956,36 @@ function genDRG(){
     addS('8r8x6.0','Počet aspiračných katétrov: 1 ks');
   }
 
+  // ── DSA diagnostické kódy (32xxx) ────────────────────────────────────────
+  const dsa=[];
+  function addD(code,desc){dsa.push({code,desc});}
+  const terr=g('territory');
+  const hasPelv=terr==='pelv'||terr==='both';
+  const hasFem=terr==='fem'||terr==='both';
+
+  if(hasPelv){
+    addD('32302.3','Angiografia aorty (aortografia)');
+    addD('32305',  'Artériografia panvových ciev');
+  }
+  if(hasFem){
+    addD('32306.2','Artériografia dolnej končatiny');
+  }
+
   // Render
   const out=document.getElementById('drg_output');
   if(!out)return;
-  if(!codes.length&&!supp.length){out.innerHTML='<div class="drg-empty">Žiadne intervencie – vyplňte záložku Nález.</div>';return;}
+  if(!codes.length&&!supp.length&&!dsa.length){out.innerHTML='<div class="drg-empty">Žiadne intervencie – vyplňte záložku Nález.</div>';return;}
   let html='';
+  if(dsa.length){
+    html+='<div class="drg-section-hdr">DSA – diagnostické kódy (angiografia)</div>';
+    html+='<table class="drg-table"><thead><tr><th style="width:145px">Kód</th><th>Popis</th></tr></thead><tbody>';
+    dsa.forEach(({code,desc})=>{
+      html+=`<tr><td class="drg-code-cell" style="color:#059669">${code}</td><td>${desc}</td></tr>`;
+    });
+    html+='</tbody></table>';
+  }
   if(codes.length){
-    html+='<div class="drg-section-hdr">Hlavné kódy</div>';
+    html+='<div class="drg-section-hdr" style="margin-top:16px">Hlavné intervenčné kódy (8r8xx)</div>';
     html+='<table class="drg-table"><thead><tr><th style="width:145px">Kód MKCH</th><th>Popis</th></tr></thead><tbody>';
     codes.forEach(({code,desc,warn})=>{
       html+=`<tr><td class="drg-code-cell${warn?' drg-warn':''}">${code}</td><td${warn?' class="drg-warn"':''}>${desc}</td></tr>`;
