@@ -330,57 +330,39 @@
         </div>
     </div>
 
-    <script type="module">
-        // Firebase Imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        // --- Supabase Setup ---
+        const SB_URL = 'https://ncqtiicfqhaturjlfxcj.supabase.co';
+        const SB_KEY = 'sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 
         // --- DOM Elements ---
         const getElement = (id) => document.getElementById(id);
         const getValue = (id) => getElement(id).value.trim();
 
-        // --- Firebase Setup ---
-        let db;
-        let auth;
-        let recordsCollection;
         const dbStatusEl = getElement('db-status');
         const saveDataBtn = getElement('save-data-btn');
 
-        try {
-            const firebaseConfig = JSON.parse(__firebase_config);
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                 await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                 await signInAnonymously(auth);
-            }
-
-            recordsCollection = collection(db, `artifacts/${appId}/public/data/cas_records`);
-            dbStatusEl.textContent = 'Pripojené k databáze';
-            dbStatusEl.classList.replace('bg-gray-200', 'bg-green-100');
-            dbStatusEl.classList.replace('text-gray-600', 'text-green-800');
-            saveDataBtn.disabled = false;
-            
-            onSnapshot(recordsCollection, (snapshot) => {
-                const records = [];
-                snapshot.forEach(doc => {
-                    records.push({ id: doc.id, ...doc.data() });
+        // Load existing records on startup
+        async function loadRecords() {
+            try {
+                const r = await fetch(`${SB_URL}/rest/v1/cas_vykony?order=created_at.desc&limit=100`, {
+                    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
                 });
+                if (!r.ok) throw new Error(r.status);
+                const records = await r.json();
                 renderTable(records);
-            });
-
-        } catch (error) {
-            console.error("Firebase initialization failed:", error);
-            dbStatusEl.textContent = 'Chyba pripojenia k databáze!';
-            dbStatusEl.classList.replace('bg-gray-200', 'bg-red-100');
-            dbStatusEl.classList.replace('text-gray-600', 'text-red-800');
+                dbStatusEl.textContent = 'Pripojené k databáze';
+                dbStatusEl.classList.replace('bg-gray-200', 'bg-green-100');
+                dbStatusEl.classList.replace('text-gray-600', 'text-green-800');
+                saveDataBtn.disabled = false;
+            } catch (error) {
+                console.error("Supabase load failed:", error);
+                dbStatusEl.textContent = 'Chyba pripojenia k databáze!';
+                dbStatusEl.classList.replace('bg-gray-200', 'bg-red-100');
+                dbStatusEl.classList.replace('text-gray-600', 'text-red-800');
+            }
         }
+        loadRecords();
 
         function parseRodneCislo(rc) {
             if (!rc) return null;
@@ -415,13 +397,12 @@
 
         const tableHeaderEl = getElement('data-table').querySelector('thead');
         const tableBodyEl = getElement('data-table').querySelector('tbody');
-        const dataHeaders = ["Datum_Zaznamu", "Rodne_Cislo", "Vek", "Pohlavie", "Lokalizacia_Lezie", "Typ_Platu", "Anestezia", "Strana_Pristupu", "Pungovana_Tepna", "Uvodny_Sheath", "Diag_Kateter", "Popis_Stenozy", "Percento_Stenozy", "Zavaznost_Stenozy", "Postup", "Interv_Sheath", "Interv_Vodic", "Emboloprotekcia", "Predilatacia_Vykonana", "Predilatacny_Balon", "Stent", "Domodelovanie_Vykonane", "Domodelovaci_Balon", "Uzatvaraci_System", "Poznamka_Hemostaza", "Text_Hemostazy", "Vysledok", "Zaver"];
+        const dataHeaders = ["datum_zaznamu", "vek", "pohlavie", "lokalizacia", "typ_platu", "anestazia", "strana_pristupu", "pungovana_tepna", "uvodny_sheath", "diag_kateter", "popis_stenozy", "percento_stenozy", "zavaznost_stenozy", "postup", "interv_sheath", "interv_vodic", "emboloprotekcia", "predilatacia_vykonana", "predilatacny_balon", "stent", "domodelovanie_vykonane", "domodelovaci_balon", "uzatvaraci_system", "vysledok", "zaver"];
 
         function renderTable(records) {
             tableHeaderEl.innerHTML = `<tr>${dataHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
             tableBodyEl.innerHTML = records
-                .sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0))
-                .map(record => `<tr>${dataHeaders.map(header => `<td>${record[header] || ''}</td>`).join('')}</tr>`).join('');
+                .map(record => `<tr>${dataHeaders.map(header => `<td>${record[header] ?? ''}</td>`).join('')}</tr>`).join('');
         }
 
         function getFormData() {
@@ -464,22 +445,55 @@
                 Text_Hemostazy: textHemostazy,
                 Vysledok: postup === 'intervencia' ? getValue('vysledok') : 'N/A',
                 Zaver: getValue('zaver_vykonu'),
-                createdAt: serverTimestamp()
             };
         }
 
         async function saveData() {
-            if (!db) { alert("Databáza nie je pripojená."); return; }
             saveDataBtn.disabled = true;
             saveDataBtn.textContent = 'Ukladám...';
             try {
-                await addDoc(recordsCollection, getFormData());
+                const fd = getFormData();
+                // Map to Supabase snake_case columns
+                const sbData = {
+                    datum_zaznamu: fd.Datum_Zaznamu,
+                    vek: fd.Vek && fd.Vek !== 'N/A' ? parseInt(fd.Vek) : null,
+                    pohlavie: fd.Pohlavie,
+                    lokalizacia: fd.Lokalizacia_Lezie,
+                    typ_platu: fd.Typ_Platu,
+                    anestazia: fd.Anestezia,
+                    strana_pristupu: fd.Strana_Pristupu,
+                    pungovana_tepna: fd.Pungovana_Tepna,
+                    uvodny_sheath: fd.Uvodny_Sheath,
+                    diag_kateter: fd.Diag_Kateter,
+                    popis_stenozy: fd.Popis_Stenozy,
+                    percento_stenozy: fd.Percento_Stenozy,
+                    zavaznost_stenozy: fd.Zavaznost_Stenozy,
+                    postup: fd.Postup,
+                    interv_sheath: fd.Interv_Sheath,
+                    interv_vodic: fd.Interv_Vodic,
+                    emboloprotekcia: fd.Emboloprotekcia,
+                    predilatacia_vykonana: fd.Predilatacia_Vykonana,
+                    predilatacny_balon: fd.Predilatacny_Balon,
+                    stent: fd.Stent,
+                    domodelovanie_vykonane: fd.Domodelovanie_Vykonane,
+                    domodelovaci_balon: fd.Domodelovaci_Balon,
+                    uzatvaraci_system: fd.Uzatvaraci_System,
+                    vysledok: fd.Vysledok,
+                    zaver: fd.Zaver
+                };
+                const r = await fetch(`${SB_URL}/rest/v1/cas_vykony`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Prefer': 'return=minimal' },
+                    body: JSON.stringify(sbData)
+                });
+                if (!r.ok) throw new Error(r.status);
                 const feedback = getElement('save-feedback');
                 feedback.style.opacity = 1;
                 setTimeout(() => { feedback.style.opacity = 0; }, 2000);
+                await loadRecords();
             } catch (error) {
-                console.error("Error adding document: ", error);
-                alert("Nastala chyba pri ukladaní dát.");
+                console.error("Error saving:", error);
+                alert("Nastala chyba pri ukladaní dát: " + error.message);
             } finally {
                 saveDataBtn.disabled = false;
                 saveDataBtn.textContent = 'Uložiť dáta pacienta';

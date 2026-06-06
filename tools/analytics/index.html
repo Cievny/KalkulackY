@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Štatistiky výkonov</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;padding:24px}
+h1{font-size:22px;font-weight:700;color:#1a2745;margin-bottom:4px}
+.subtitle{font-size:13px;color:#6b7280;margin-bottom:24px}
+.tabs{display:flex;gap:4px;margin-bottom:20px}
+.tab{padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#e5e7eb;color:#374151;transition:.15s}
+.tab.active{background:#1e40af;color:#fff}
+.section{display:none}.section.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-val{font-size:32px;font-weight:700;color:#1e40af}
+.stat-lbl{font-size:12px;color:#6b7280;margin-top:4px}
+.chart-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
+.chart-card h3{font-size:13px;font-weight:700;color:#374151;margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.chart-wrap{position:relative;height:260px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.row2{grid-template-columns:1fr}}
+.loading{text-align:center;padding:40px;color:#6b7280;font-size:14px}
+.err{background:#fee2e2;color:#991b1b;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px}
+.refresh-btn{padding:7px 16px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px}
+.refresh-btn:hover{background:#1737a0}
+</style>
+</head>
+<body>
+<h1>📊 Štatistiky výkonov – cievny.sk</h1>
+<p class="subtitle">EVK (endovaskulárne výkony) + CAS (karotická angioplastika)</p>
+<button class="refresh-btn" onclick="loadAll()">🔄 Obnoviť</button>
+<div id="err-box" class="err" style="display:none"></div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('evk',this)">EVK – Endovaskulárne</button>
+  <button class="tab" onclick="showTab('cas',this)">CAS – Karotídy</button>
+</div>
+
+<div id="sec-evk" class="section active">
+  <div id="evk-loading" class="loading">Načítavam...</div>
+  <div id="evk-content" style="display:none">
+    <div class="grid" id="evk-stats"></div>
+    <div class="row2">
+      <div class="chart-card"><h3>Výkony podľa mesiaca</h3><div class="chart-wrap"><canvas id="ch-evk-month"></canvas></div></div>
+      <div class="chart-card"><h3>Operatéri</h3><div class="chart-wrap"><canvas id="ch-evk-op"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Riečisko výkonu</h3><div class="chart-wrap"><canvas id="ch-evk-terr"></canvas></div></div>
+      <div class="chart-card"><h3>Typy intervencií</h3><div class="chart-wrap"><canvas id="ch-evk-interv"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Technický úspech</h3><div class="chart-wrap"><canvas id="ch-evk-tu"></canvas></div></div>
+      <div class="chart-card"><h3>Pohlavie</h3><div class="chart-wrap"><canvas id="ch-evk-sex"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="sec-cas" class="section">
+  <div id="cas-loading" class="loading">Načítavam...</div>
+  <div id="cas-content" style="display:none">
+    <div class="grid" id="cas-stats"></div>
+    <div class="row2">
+      <div class="chart-card"><h3>Výkony podľa mesiaca</h3><div class="chart-wrap"><canvas id="ch-cas-month"></canvas></div></div>
+      <div class="chart-card"><h3>Postup</h3><div class="chart-wrap"><canvas id="ch-cas-postup"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Lokalizácia</h3><div class="chart-wrap"><canvas id="ch-cas-lok"></canvas></div></div>
+      <div class="chart-card"><h3>Anestézia</h3><div class="chart-wrap"><canvas id="ch-cas-anes"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Pohlavie</h3><div class="chart-wrap"><canvas id="ch-cas-sex"></canvas></div></div>
+      <div class="chart-card"><h3>Výsledok</h3><div class="chart-wrap"><canvas id="ch-cas-vysl"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
+const COLORS=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6'];
+
+const charts={};
+function mkChart(id,type,labels,data,legend){
+  if(charts[id])charts[id].destroy();
+  const ctx=document.getElementById(id).getContext('2d');
+  charts[id]=new Chart(ctx,{
+    type,
+    data:{labels,datasets:[{data,backgroundColor:COLORS,borderColor:type==='bar'?COLORS[0]:COLORS,borderWidth:type==='bar'?0:2,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:legend!==false,position:'bottom',labels:{font:{size:11},boxWidth:14}}},scales:type==='bar'?{y:{beginAtZero:true,ticks:{stepSize:1}}}:{}}
+  });
+}
+
+function freq(arr,key){
+  const m={};arr.forEach(r=>{const v=(r[key]||'N/A').toString().trim();m[v]=(m[v]||0)+1;});return m;
+}
+function sortedFreq(arr,key,top=10){
+  const m=freq(arr,key);return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,top);
+}
+function statCard(label,value){
+  return `<div class="stat-card"><div class="stat-val">${value}</div><div class="stat-lbl">${label}</div></div>`;
+}
+function monthKey(d){if(!d)return null;const p=d.split(/[-T ]/);return p[0]+'-'+p[1];}
+
+async function fetchAll(table){
+  let all=[],offset=0;
+  while(true){
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.asc&limit=1000&offset=${offset}`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+    if(!r.ok)throw new Error(await r.text());
+    const chunk=await r.json();
+    all=all.concat(chunk);
+    if(chunk.length<1000)break;
+    offset+=1000;
+  }
+  return all;
+}
+
+async function loadEVK(){
+  document.getElementById('evk-loading').style.display='block';
+  document.getElementById('evk-content').style.display='none';
+  const rows=await fetchAll('evk_vykony');
+  document.getElementById('evk-loading').style.display='none';
+  document.getElementById('evk-content').style.display='block';
+
+  const avgAge=rows.filter(r=>r.vek).reduce((s,r)=>s+r.vek,0)/(rows.filter(r=>r.vek).length||1);
+  document.getElementById('evk-stats').innerHTML=
+    statCard('Celkový počet výkonov',rows.length)+
+    statCard('Priemerný vek',Math.round(avgAge)||'–')+
+    statCard('Unikátnych operatérov',[...new Set(rows.map(r=>r.operator).filter(Boolean))].length)+
+    statCard('Tech. úspech (úplný)',rows.filter(r=>(r.tech_uspech||'').includes('Technický úspech')).length);
+
+  // month chart
+  const months={};rows.forEach(r=>{const m=monthKey(r.datum||r.created_at);if(m)months[m]=(months[m]||0)+1;});
+  const mk=Object.keys(months).sort();mkChart('ch-evk-month','bar',mk,mk.map(m=>months[m]),false);
+
+  const ops=sortedFreq(rows,'operator');mkChart('ch-evk-op','doughnut',ops.map(x=>x[0]),ops.map(x=>x[1]));
+  const terr=sortedFreq(rows,'riecisko');mkChart('ch-evk-terr','doughnut',terr.map(x=>x[0]),terr.map(x=>x[1]));
+
+  // interventions - split by comma
+  const im={};rows.forEach(r=>(r.intervencie||'').split(',').forEach(i=>{const v=i.trim();if(v)im[v]=(im[v]||0)+1;}));
+  const ie=Object.entries(im).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  mkChart('ch-evk-interv','bar',ie.map(x=>x[0]),ie.map(x=>x[1]),false);
+
+  const tu=sortedFreq(rows,'tech_uspech');mkChart('ch-evk-tu','doughnut',tu.map(x=>x[0]),tu.map(x=>x[1]));
+  const sx=sortedFreq(rows,'pohlavie');mkChart('ch-evk-sex','doughnut',sx.map(x=>x[0]),sx.map(x=>x[1]));
+}
+
+async function loadCAS(){
+  document.getElementById('cas-loading').style.display='block';
+  document.getElementById('cas-content').style.display='none';
+  const rows=await fetchAll('cas_vykony');
+  document.getElementById('cas-loading').style.display='none';
+  document.getElementById('cas-content').style.display='block';
+
+  const avgAge=rows.filter(r=>r.vek).reduce((s,r)=>s+r.vek,0)/(rows.filter(r=>r.vek).length||1);
+  const intervRows=rows.filter(r=>r.postup==='intervencia');
+  document.getElementById('cas-stats').innerHTML=
+    statCard('Celkový počet výkonov',rows.length)+
+    statCard('Priemerný vek',Math.round(avgAge)||'–')+
+    statCard('Počet intervencií',intervRows.length)+
+    statCard('DSA (bez intervencie)',rows.filter(r=>r.postup==='dsa').length);
+
+  const months={};rows.forEach(r=>{const m=monthKey(r.datum_zaznamu||r.created_at);if(m)months[m]=(months[m]||0)+1;});
+  const mk=Object.keys(months).sort();mkChart('ch-cas-month','bar',mk,mk.map(m=>months[m]),false);
+
+  const pp=sortedFreq(rows,'postup');mkChart('ch-cas-postup','doughnut',pp.map(x=>x[0]),pp.map(x=>x[1]));
+  const lok=sortedFreq(rows,'lokalizacia');mkChart('ch-cas-lok','doughnut',lok.map(x=>x[0]),lok.map(x=>x[1]));
+  const anes=sortedFreq(rows,'anestazia');mkChart('ch-cas-anes','doughnut',anes.map(x=>x[0]),anes.map(x=>x[1]));
+  const sx=sortedFreq(rows,'pohlavie');mkChart('ch-cas-sex','doughnut',sx.map(x=>x[0]),sx.map(x=>x[1]));
+  const vy=sortedFreq(rows,'vysledok');mkChart('ch-cas-vysl','doughnut',vy.map(x=>x[0]),vy.map(x=>x[1]));
+}
+
+async function loadAll(){
+  document.getElementById('err-box').style.display='none';
+  try{await Promise.all([loadEVK(),loadCAS()]);}
+  catch(e){
+    const eb=document.getElementById('err-box');
+    eb.textContent='❌ Chyba načítania dát: '+e.message+'. Skontrolujte RLS politiky v Supabase.';
+    eb.style.display='block';
+    ['evk-loading','cas-loading'].forEach(id=>document.getElementById(id).style.display='none');
+  }
+}
+
+function showTab(name,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+loadAll();
+</script>
+</body>
+</html>

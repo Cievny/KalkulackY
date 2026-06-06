@@ -665,12 +665,23 @@ function collectStatsRow(){
   return {type:'vykon',row:[id,g('datum'),g('operator'),g('vek'),g('pohl')==='M'?'Muž':'Žena',g('ruth'),komor,tl,art+' '+g('strana'),g('anes'),[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join('+'),interv.join(', '),[...new Set(mat)].join(', '),tu?tu:'',komp,g('zaver')]};
 }
 
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
+async function saveToSupabase(table,data){
+  return fetch(`${SB_URL}/rest/v1/${table}`,{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},body:JSON.stringify(data)});
+}
 async function saveToSheets(){
-  const url=g('apps_script_url');if(!url){msg('cmsg','⚠️ Nastavte Apps Script URL','#b45309');return;}
   if(!g('id_suffix')){msg('cmsg','⚠️ Vyplňte ID výkonu','#b45309');return;}
   msg('cmsg','⏳ Ukladám...','#3b82f6');
-  try{const r=await fetch(url,{method:'POST',body:JSON.stringify(collectStatsRow())});const j=await r.json();if(j.status==='ok')msg('cmsg','✅ Uložené!','#1d6f42');else msg('cmsg','❌ Chyba: '+j.msg,'#dc2626');}
-  catch(e){msg('cmsg','❌ Chyba spojenia','#dc2626');}
+  const row=collectStatsRow().row;
+  const data={vykon_id:row[0],datum:row[1],operator:row[2],vek:row[3]?parseInt(row[3]):null,pohlavie:row[4],rutherford:row[5],komorbidity:row[6],riecisko:row[7],pristup:row[8],anestazia:row[9],kontrast:row[10],intervencie:row[11],materialy:row[12],tech_uspech:row[13],komplikacie:row[14],zaver:row[15]};
+  const tasks=[];
+  tasks.push(saveToSupabase('evk_vykony',data).then(r=>r.ok?'sb_ok':'sb_err:'+r.status).catch(()=>'sb_err'));
+  const url=g('apps_script_url');
+  if(url)tasks.push(fetch(url,{method:'POST',body:JSON.stringify(collectStatsRow())}).then(r=>r.json()).then(j=>j.status==='ok'?'gs_ok':'gs_err').catch(()=>'gs_err'));
+  const results=await Promise.all(tasks);
+  if(results.some(r=>r==='sb_ok'))msg('cmsg','✅ Uložené do štatistík!','#1d6f42');
+  else msg('cmsg','❌ Chyba uloženia','#dc2626');
 }
 async function saveFUToSheets(){
   const url=g('apps_script_url');if(!url){msg('fu_msg','⚠️ Nastavte Apps Script URL','#b45309');return;}
