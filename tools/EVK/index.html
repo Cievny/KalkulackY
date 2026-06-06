@@ -680,8 +680,8 @@ async function saveToSheets(){
   const url=g('apps_script_url');
   if(url)tasks.push(fetch(url,{method:'POST',body:JSON.stringify(collectStatsRow())}).then(r=>r.json()).then(j=>j.status==='ok'?'gs_ok':'gs_err').catch(()=>'gs_err'));
   const results=await Promise.all(tasks);
-  if(results.some(r=>r==='sb_ok'))msg('cmsg','✅ Uložené do štatistík!','#1d6f42');
-  else msg('cmsg','❌ Chyba uloženia','#dc2626');
+  if(results.some(r=>r==='sb_ok'||r==='gs_ok'))msg('cmsg','✅ Uložené do štatistík!','#1d6f42');
+  else msg('cmsg','❌ Chyba uloženia – skontrolujte Supabase tabuľky','#dc2626');
 }
 async function saveFUToSheets(){
   const url=g('apps_script_url');if(!url){msg('fu_msg','⚠️ Nastavte Apps Script URL','#b45309');return;}

@@ -360,6 +360,8 @@
                 dbStatusEl.textContent = 'Chyba pripojenia k databáze!';
                 dbStatusEl.classList.replace('bg-gray-200', 'bg-red-100');
                 dbStatusEl.classList.replace('text-gray-600', 'text-red-800');
+            } finally {
+                saveDataBtn.disabled = false;
             }
         }
         loadRecords();
