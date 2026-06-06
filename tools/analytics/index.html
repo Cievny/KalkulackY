@@ -27,6 +27,15 @@ h1{font-size:22px;font-weight:700;color:#1a2745;margin-bottom:4px}
 .err{background:#fee2e2;color:#991b1b;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px}
 .refresh-btn{padding:7px 16px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px}
 .refresh-btn:hover{background:#1737a0}
+.records-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.records-table th{background:#1a2745;color:#fff;padding:7px 10px;text-align:left;font-size:11px;white-space:nowrap}
+.records-table td{padding:6px 10px;border-bottom:1px solid #eef0f5;vertical-align:top;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.records-table tr:hover td{background:#f0f7ff}
+.del-btn{background:#fee2e2;color:#991b1b;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-weight:600}
+.del-btn:hover{background:#fca5a5}
+.tbl-wrap{overflow-x:auto;margin-top:8px}
+details summary{cursor:pointer;font-size:13px;font-weight:600;color:#1e40af;padding:8px 0;user-select:none}
+details summary:hover{color:#1737a0}
 </style>
 </head>
 <body>
@@ -56,6 +65,11 @@ h1{font-size:22px;font-weight:700;color:#1a2745;margin-bottom:4px}
       <div class="chart-card"><h3>Technický úspech</h3><div class="chart-wrap"><canvas id="ch-evk-tu"></canvas></div></div>
       <div class="chart-card"><h3>Pohlavie</h3><div class="chart-wrap"><canvas id="ch-evk-sex"></canvas></div></div>
     </div>
+    <div class="chart-card">
+      <details><summary>🗑️ Správa záznamov (vymazanie)</summary>
+      <div class="tbl-wrap"><table class="records-table"><thead id="evk-tbl-head"></thead><tbody id="evk-tbl-body"></tbody></table></div>
+      </details>
+    </div>
   </div>
 </div>
 
@@ -74,6 +88,11 @@ h1{font-size:22px;font-weight:700;color:#1a2745;margin-bottom:4px}
     <div class="row2">
       <div class="chart-card"><h3>Pohlavie</h3><div class="chart-wrap"><canvas id="ch-cas-sex"></canvas></div></div>
       <div class="chart-card"><h3>Výsledok</h3><div class="chart-wrap"><canvas id="ch-cas-vysl"></canvas></div></div>
+    </div>
+    <div class="chart-card">
+      <details><summary>🗑️ Správa záznamov (vymazanie)</summary>
+      <div class="tbl-wrap"><table class="records-table"><thead id="cas-tbl-head"></thead><tbody id="cas-tbl-body"></tbody></table></div>
+      </details>
     </div>
   </div>
 </div>
@@ -118,6 +137,24 @@ async function fetchAll(table){
   return all;
 }
 
+async function deleteRecord(table,id,reloadFn){
+  if(!confirm('Naozaj vymazať tento záznam?'))return;
+  const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`,{
+    method:'DELETE',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  });
+  if(r.ok)reloadFn();
+  else alert('Chyba pri mazaní: '+r.status);
+}
+
+function renderRecordTable(rows,headEl,bodyEl,cols,table,reloadFn){
+  headEl.innerHTML='<tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'<th></th></tr>';
+  bodyEl.innerHTML=rows.map(row=>
+    '<tr>'+cols.map(c=>`<td title="${row[c]??''}">${row[c]??''}</td>`).join('')+
+    `<td><button class="del-btn" onclick="deleteRecord('${table}','${row.id}',${reloadFn})">✕ Vymazať</button></td></tr>`
+  ).join('');
+}
+
 async function loadEVK(){
   document.getElementById('evk-loading').style.display='block';
   document.getElementById('evk-content').style.display='none';
@@ -146,6 +183,12 @@ async function loadEVK(){
 
   const tu=sortedFreq(rows,'tech_uspech');mkChart('ch-evk-tu','doughnut',tu.map(x=>x[0]),tu.map(x=>x[1]));
   const sx=sortedFreq(rows,'pohlavie');mkChart('ch-evk-sex','doughnut',sx.map(x=>x[0]),sx.map(x=>x[1]));
+
+  renderRecordTable(rows,
+    document.getElementById('evk-tbl-head'),
+    document.getElementById('evk-tbl-body'),
+    ['vykon_id','datum','operator','pohlavie','vek','riecisko','intervencie'],
+    'evk_vykony','loadEVK');
 }
 
 async function loadCAS(){
@@ -171,6 +214,12 @@ async function loadCAS(){
   const anes=sortedFreq(rows,'anestazia');mkChart('ch-cas-anes','doughnut',anes.map(x=>x[0]),anes.map(x=>x[1]));
   const sx=sortedFreq(rows,'pohlavie');mkChart('ch-cas-sex','doughnut',sx.map(x=>x[0]),sx.map(x=>x[1]));
   const vy=sortedFreq(rows,'vysledok');mkChart('ch-cas-vysl','doughnut',vy.map(x=>x[0]),vy.map(x=>x[1]));
+
+  renderRecordTable(rows,
+    document.getElementById('cas-tbl-head'),
+    document.getElementById('cas-tbl-body'),
+    ['datum_zaznamu','pohlavie','vek','lokalizacia','postup','stent','vysledok'],
+    'cas_vykony','loadCAS');
 }
 
 async function loadAll(){
