@@ -59,3 +59,49 @@ CREATE POLICY "anon insert evk"  ON evk_vykony FOR INSERT TO anon WITH CHECK (tr
 CREATE POLICY "anon select evk"  ON evk_vykony FOR SELECT TO anon USING (true);
 CREATE POLICY "anon insert cas"  ON cas_vykony FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon select cas"  ON cas_vykony FOR SELECT TO anon USING (true);
+
+-- =============================================
+-- MIGRATIONS: add missing columns
+-- =============================================
+
+-- evk_vykony: add detailed columns
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS diag TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_arteria TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_technika TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_smer TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_sposob TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_nav TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_kat TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_sheath TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_sheath_dlz TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS vodic TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS prechod_leziou TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS dsa_nalez TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS intervencie_detail TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS uzaver TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS hemostaza TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS femostop BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS strana TEXT;
+
+-- cas_vykony: add hemostaza columns
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS hemostaza_poznamka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS hemostaza_text TEXT;
+
+-- evk_followup: new table for follow-up visits
+CREATE TABLE IF NOT EXISTS evk_followup (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  vykon_id TEXT,
+  datum_kontroly TEXT,
+  casovy_bod TEXT,
+  rutherford TEXT,
+  abi NUMERIC,
+  patencia TEXT,
+  reintervencia BOOLEAN,
+  amputacia TEXT,
+  poznamka TEXT
+);
+ALTER TABLE evk_followup ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon insert followup" ON evk_followup FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon select followup" ON evk_followup FOR SELECT TO anon USING (true);
+CREATE POLICY "anon delete followup" ON evk_followup FOR DELETE TO anon USING (true);
