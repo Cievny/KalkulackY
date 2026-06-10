@@ -79,11 +79,19 @@ details summary:hover{color:#1737a0}
     <div class="grid" id="cas-stats"></div>
     <div class="row2">
       <div class="chart-card"><h3>Výkony podľa mesiaca</h3><div class="chart-wrap"><canvas id="ch-cas-month"></canvas></div></div>
-      <div class="chart-card"><h3>Postup</h3><div class="chart-wrap"><canvas id="ch-cas-postup"></canvas></div></div>
+      <div class="chart-card"><h3>Klinický stav</h3><div class="chart-wrap"><canvas id="ch-cas-klin"></canvas></div></div>
     </div>
     <div class="row2">
+      <div class="chart-card"><h3>Stenóza NASCET</h3><div class="chart-wrap"><canvas id="ch-cas-nascet"></canvas></div></div>
       <div class="chart-card"><h3>Lokalizácia</h3><div class="chart-wrap"><canvas id="ch-cas-lok"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Typ plátu</h3><div class="chart-wrap"><canvas id="ch-cas-plat"></canvas></div></div>
       <div class="chart-card"><h3>Anestézia</h3><div class="chart-wrap"><canvas id="ch-cas-anes"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Stent (značka)</h3><div class="chart-wrap"><canvas id="ch-cas-stent"></canvas></div></div>
+      <div class="chart-card"><h3>Emboloprotekcia</h3><div class="chart-wrap"><canvas id="ch-cas-embolo"></canvas></div></div>
     </div>
     <div class="row2">
       <div class="chart-card"><h3>Pohlavie</h3><div class="chart-wrap"><canvas id="ch-cas-sex"></canvas></div></div>
@@ -200,25 +208,47 @@ async function loadCAS(){
 
   const avgAge=rows.filter(r=>r.vek).reduce((s,r)=>s+r.vek,0)/(rows.filter(r=>r.vek).length||1);
   const intervRows=rows.filter(r=>r.postup==='intervencia');
+  const sympRows=rows.filter(r=>r.klinicky_stav&&r.klinicky_stav!=='asymptomatický');
   document.getElementById('cas-stats').innerHTML=
     statCard('Celkový počet výkonov',rows.length)+
     statCard('Priemerný vek',Math.round(avgAge)||'–')+
-    statCard('Počet intervencií',intervRows.length)+
-    statCard('DSA (bez intervencie)',rows.filter(r=>r.postup==='dsa').length);
+    statCard('Počet intervencií (CAS)',intervRows.length)+
+    statCard('Symptomatickí pacienti',sympRows.length)+
+    statCard('Asymptomatickí',rows.filter(r=>r.klinicky_stav==='asymptomatický').length)+
+    statCard('DSA (bez intervencie)',rows.filter(r=>r.postup==='dsa'||r.postup==='konzervativny').length);
 
   const months={};rows.forEach(r=>{const m=monthKey(r.datum_zaznamu||r.created_at);if(m)months[m]=(months[m]||0)+1;});
   const mk=Object.keys(months).sort();mkChart('ch-cas-month','bar',mk,mk.map(m=>months[m]),false);
 
-  const pp=sortedFreq(rows,'postup');mkChart('ch-cas-postup','doughnut',pp.map(x=>x[0]),pp.map(x=>x[1]));
+  // Klinický stav
+  const klin=sortedFreq(rows,'klinicky_stav');mkChart('ch-cas-klin','doughnut',klin.map(x=>x[0]),klin.map(x=>x[1]));
+
+  // NASCET – zoradíme logicky
+  const nascetOrder=['50-59%','60-69%','70-79%','80-89%','90-99%','subokluzia','oklúzia'];
+  const nascetFreq=freq(rows,'nascet_stenoza');
+  const nascetLabels=nascetOrder.filter(k=>nascetFreq[k]);
+  const nascetOther=Object.keys(nascetFreq).filter(k=>k&&k!=='N/A'&&!nascetOrder.includes(k));
+  const allNascet=[...nascetLabels,...nascetOther];
+  if(allNascet.length)mkChart('ch-cas-nascet','bar',allNascet,allNascet.map(k=>nascetFreq[k]),false);
+
   const lok=sortedFreq(rows,'lokalizacia');mkChart('ch-cas-lok','doughnut',lok.map(x=>x[0]),lok.map(x=>x[1]));
+  const plat=sortedFreq(rows,'typ_platu');mkChart('ch-cas-plat','doughnut',plat.map(x=>x[0]),plat.map(x=>x[1]));
   const anes=sortedFreq(rows,'anestazia');mkChart('ch-cas-anes','doughnut',anes.map(x=>x[0]),anes.map(x=>x[1]));
+
+  // Stenty – zo stent_znacka
+  const stentF=sortedFreq(intervRows,'stent_znacka');
+  if(stentF.length)mkChart('ch-cas-stent','doughnut',stentF.map(x=>x[0]),stentF.map(x=>x[1]));
+
+  // Emboloprotekcia
+  const embolo=sortedFreq(intervRows,'emboloprotekcia');mkChart('ch-cas-embolo','doughnut',embolo.map(x=>x[0]),embolo.map(x=>x[1]));
+
   const sx=sortedFreq(rows,'pohlavie');mkChart('ch-cas-sex','doughnut',sx.map(x=>x[0]),sx.map(x=>x[1]));
   const vy=sortedFreq(rows,'vysledok');mkChart('ch-cas-vysl','doughnut',vy.map(x=>x[0]),vy.map(x=>x[1]));
 
   renderRecordTable(rows,
     document.getElementById('cas-tbl-head'),
     document.getElementById('cas-tbl-body'),
-    ['datum_zaznamu','pohlavie','vek','lokalizacia','postup','stent','vysledok'],
+    ['datum_zaznamu','pohlavie','vek','klinicky_stav','nascet_stenoza','lokalizacia','stent_znacka','stent_velkost','emboloprotekcia','vysledok'],
     'cas_vykony','loadCAS');
 }
 
