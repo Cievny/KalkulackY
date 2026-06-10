@@ -370,6 +370,14 @@
         const SB_URL = 'https://ncqtiicfqhaturjlfxcj.supabase.co';
         const SB_KEY = 'sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 
+        async function saveToSupabase(table, data) {
+            return fetch(`${SB_URL}/rest/v1/${table}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Prefer': 'return=minimal' },
+                body: JSON.stringify(data)
+            });
+        }
+
         // --- DOM Elements ---
         const getElement = (id) => document.getElementById(id);
         const getValue = (id) => getElement(id).value.trim();
@@ -381,7 +389,7 @@
         async function loadRecords() {
             try {
                 const r = await fetch(`${SB_URL}/rest/v1/cas_vykony?order=created_at.desc&limit=100`, {
-                    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+                    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' }
                 });
                 if (!r.ok) throw new Error(r.status);
                 const records = await r.json();
@@ -437,9 +445,19 @@
         const dataHeaders = ["datum_zaznamu", "vek", "pohlavie", "lokalizacia", "typ_platu", "anestazia", "strana_pristupu", "pungovana_tepna", "uvodny_sheath", "diag_kateter", "popis_stenozy", "percento_stenozy", "zavaznost_stenozy", "postup", "interv_sheath", "interv_vodic", "emboloprotekcia", "predilatacia_vykonana", "predilatacny_balon", "stent", "domodelovanie_vykonane", "domodelovaci_balon", "uzatvaraci_system", "vysledok", "zaver"];
 
         function renderTable(records) {
-            tableHeaderEl.innerHTML = `<tr>${dataHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
+            tableHeaderEl.innerHTML = `<tr>${dataHeaders.map(h => `<th>${h}</th>`).join('')}<th></th></tr>`;
             tableBodyEl.innerHTML = records
-                .map(record => `<tr>${dataHeaders.map(header => `<td>${record[header] ?? ''}</td>`).join('')}</tr>`).join('');
+                .map(record => `<tr>${dataHeaders.map(header => `<td>${record[header] ?? ''}</td>`).join('')}<td><button onclick="deleteRecord('${record.id}')" style="background:#fee2e2;color:#991b1b;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-weight:600">✕</button></td></tr>`).join('');
+        }
+
+        async function deleteRecord(id) {
+            if (!confirm('Naozaj vymazať tento záznam?')) return;
+            const r = await fetch(`${SB_URL}/rest/v1/cas_vykony?id=eq.${id}`, {
+                method: 'DELETE',
+                headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+            });
+            if (r.ok) loadRecords();
+            else alert('Chyba pri mazaní: ' + r.status);
         }
 
         function getFormData() {
@@ -544,11 +562,7 @@
                     vysledok: fd.Vysledok,
                     zaver: fd.Zaver
                 };
-                const r = await fetch(`${SB_URL}/rest/v1/cas_vykony`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Prefer': 'return=minimal' },
-                    body: JSON.stringify(sbData)
-                });
+                const r = await saveToSupabase('cas_vykony', sbData);
                 if (!r.ok) throw new Error(r.status);
                 const feedback = getElement('save-feedback');
                 feedback.style.opacity = 1;
