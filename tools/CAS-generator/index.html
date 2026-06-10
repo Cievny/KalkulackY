@@ -410,14 +410,11 @@
         function getFormData() {
             const postup = getValue('postup_vykonu');
             const vykonatPredilataciu = getElement('vykonat_predilataciu').checked;
-            const balonPredilatacia = vykonatPredilataciu && postup === 'intervencia' ? `${getValue('balon_predilatacia_velkost')} (${getValue('balon_predilatacia_znacka')})` : 'N/A';
             const vykonatDomodelovanie = getElement('vykonat_domodelovanie').checked;
-            const balonDomodelovanie = vykonatDomodelovanie && postup === 'intervencia' ? `${getValue('balon_domodelovanie_velkost')} (${getValue('balon_domodelovanie_znacka')})` : 'N/A';
-            const stent = postup === 'intervencia' ? (getValue('stent_velkost') ? `${getValue('stent_velkost')} (${getValue('stent_znacka')})` : `(${getValue('stent_znacka')})`) : 'N/A';
             const vykonatHemostazu = getElement('vykonat_hemostazu').checked;
-            const textHemostazy = vykonatHemostazu ? getValue('hemostaza_text') : 'N/A';
             const popisStenozy = getValue('stenoza_typ_popisu');
-            
+            const isInterv = postup === 'intervencia';
+
             return {
                 Datum_Zaznamu: new Date().toLocaleString('sk-SK'),
                 Rodne_Cislo: getValue('rodne_cislo'),
@@ -434,18 +431,29 @@
                 Percento_Stenozy: popisStenozy === 'percentualna' ? getValue('stenoza_percenta') : 'N/A',
                 Zavaznost_Stenozy: popisStenozy === 'percentualna' ? getValue('stenoza_zavaznost') : 'N/A',
                 Postup: postup,
-                Interv_Sheath: postup === 'intervencia' ? `${getValue('sheath_intervencny_fr')} ${getValue('sheath_intervencny_dlzka')} (${getValue('sheath_intervencny_znacka')})` : 'N/A',
-                Interv_Vodic: postup === 'intervencia' ? `${getValue('vodic_intervencny_spec')} (${getValue('vodic_intervencny_brand')})` : 'N/A',
-                Emboloprotekcia: postup === 'intervencia' ? getValue('emboloprotekcia') : 'N/A',
-                Predilatacia_Vykonana: postup === 'intervencia' && vykonatPredilataciu ? 'Ano' : 'Nie',
-                Predilatacny_Balon: balonPredilatacia,
-                Stent: stent,
-                Domodelovanie_Vykonane: postup === 'intervencia' && vykonatDomodelovanie ? 'Ano' : 'Nie',
-                Domodelovaci_Balon: balonDomodelovanie,
+                Interv_Sheath: isInterv ? `${getValue('sheath_intervencny_fr')} ${getValue('sheath_intervencny_dlzka')} (${getValue('sheath_intervencny_znacka')})` : 'N/A',
+                Interv_Sheath_Fr: isInterv ? getValue('sheath_intervencny_fr') : 'N/A',
+                Interv_Sheath_Dlzka: isInterv ? getValue('sheath_intervencny_dlzka') : 'N/A',
+                Interv_Sheath_Znacka: isInterv ? getValue('sheath_intervencny_znacka') : 'N/A',
+                Interv_Vodic: isInterv ? `${getValue('vodic_intervencny_spec')} (${getValue('vodic_intervencny_brand')})` : 'N/A',
+                Interv_Vodic_Spec: isInterv ? getValue('vodic_intervencny_spec') : 'N/A',
+                Interv_Vodic_Znacka: isInterv ? getValue('vodic_intervencny_brand') : 'N/A',
+                Emboloprotekcia: isInterv ? getValue('emboloprotekcia') : 'N/A',
+                Predilatacia_Vykonana: isInterv && vykonatPredilataciu ? 'Ano' : 'Nie',
+                Predilatacny_Balon: isInterv && vykonatPredilataciu ? `${getValue('balon_predilatacia_velkost')} (${getValue('balon_predilatacia_znacka')})` : 'N/A',
+                Predilatacny_Balon_Velkost: isInterv && vykonatPredilataciu ? getValue('balon_predilatacia_velkost') : 'N/A',
+                Predilatacny_Balon_Znacka: isInterv && vykonatPredilataciu ? getValue('balon_predilatacia_znacka') : 'N/A',
+                Stent: isInterv ? (getValue('stent_velkost') ? `${getValue('stent_velkost')} (${getValue('stent_znacka')})` : `(${getValue('stent_znacka')})`) : 'N/A',
+                Stent_Velkost: isInterv ? getValue('stent_velkost') : 'N/A',
+                Stent_Znacka: isInterv ? getValue('stent_znacka') : 'N/A',
+                Domodelovanie_Vykonane: isInterv && vykonatDomodelovanie ? 'Ano' : 'Nie',
+                Domodelovaci_Balon: isInterv && vykonatDomodelovanie ? `${getValue('balon_domodelovanie_velkost')} (${getValue('balon_domodelovanie_znacka')})` : 'N/A',
+                Domodelovaci_Balon_Velkost: isInterv && vykonatDomodelovanie ? getValue('balon_domodelovanie_velkost') : 'N/A',
+                Domodelovaci_Balon_Znacka: isInterv && vykonatDomodelovanie ? getValue('balon_domodelovanie_znacka') : 'N/A',
                 Uzatvaraci_System: getValue('uzatvaraci_system'),
                 Poznamka_Hemostaza: vykonatHemostazu ? 'Ano' : 'Nie',
-                Text_Hemostazy: textHemostazy,
-                Vysledok: postup === 'intervencia' ? getValue('vysledok') : 'N/A',
+                Text_Hemostazy: vykonatHemostazu ? getValue('hemostaza_text') : 'N/A',
+                Vysledok: isInterv ? getValue('vysledok') : 'N/A',
                 Zaver: getValue('zaver_vykonu'),
             };
         }
@@ -455,7 +463,6 @@
             saveDataBtn.textContent = 'Ukladám...';
             try {
                 const fd = getFormData();
-                // Map to Supabase snake_case columns
                 const sbData = {
                     datum_zaznamu: fd.Datum_Zaznamu,
                     vek: fd.Vek && fd.Vek !== 'N/A' ? parseInt(fd.Vek) : null,
@@ -472,13 +479,24 @@
                     zavaznost_stenozy: fd.Zavaznost_Stenozy,
                     postup: fd.Postup,
                     interv_sheath: fd.Interv_Sheath,
+                    interv_sheath_fr: fd.Interv_Sheath_Fr,
+                    interv_sheath_dlzka: fd.Interv_Sheath_Dlzka,
+                    interv_sheath_znacka: fd.Interv_Sheath_Znacka,
                     interv_vodic: fd.Interv_Vodic,
+                    interv_vodic_spec: fd.Interv_Vodic_Spec,
+                    interv_vodic_znacka: fd.Interv_Vodic_Znacka,
                     emboloprotekcia: fd.Emboloprotekcia,
                     predilatacia_vykonana: fd.Predilatacia_Vykonana,
                     predilatacny_balon: fd.Predilatacny_Balon,
+                    predilatacny_balon_velkost: fd.Predilatacny_Balon_Velkost,
+                    predilatacny_balon_znacka: fd.Predilatacny_Balon_Znacka,
                     stent: fd.Stent,
+                    stent_velkost: fd.Stent_Velkost,
+                    stent_znacka: fd.Stent_Znacka,
                     domodelovanie_vykonane: fd.Domodelovanie_Vykonane,
                     domodelovaci_balon: fd.Domodelovaci_Balon,
+                    domodelovaci_balon_velkost: fd.Domodelovaci_Balon_Velkost,
+                    domodelovaci_balon_znacka: fd.Domodelovaci_Balon_Znacka,
                     uzatvaraci_system: fd.Uzatvaraci_System,
                     hemostaza_poznamka: fd.Poznamka_Hemostaza,
                     hemostaza_text: fd.Text_Hemostazy,

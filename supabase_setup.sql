@@ -83,9 +83,20 @@ ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS hemostaza TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS femostop BOOLEAN;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS strana TEXT;
 
--- cas_vykony: add hemostaza columns
+-- cas_vykony: add detailed material columns
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS hemostaza_poznamka TEXT;
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS hemostaza_text TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_sheath_fr TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_sheath_dlzka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_sheath_znacka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_vodic_spec TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_vodic_znacka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS predilatacny_balon_velkost TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS predilatacny_balon_znacka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS stent_velkost TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS stent_znacka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_velkost TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_znacka TEXT;
 
 -- evk_followup: new table for follow-up visits
 CREATE TABLE IF NOT EXISTS evk_followup (
