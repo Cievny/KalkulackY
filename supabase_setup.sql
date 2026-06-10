@@ -97,6 +97,9 @@ ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS stent_velkost TEXT;
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS stent_znacka TEXT;
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_velkost TEXT;
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_znacka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS klinicky_stav TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS nascet_stenoza TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS nascet_metoda TEXT;
 
 -- evk_followup: new table for follow-up visits
 CREATE TABLE IF NOT EXISTS evk_followup (

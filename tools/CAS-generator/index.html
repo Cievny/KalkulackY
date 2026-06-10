@@ -74,6 +74,41 @@
                                 <option value="zmiešaným AS plátom">zmiešaný</option>
                             </select>
                         </div>
+                        <div>
+                            <label for="klinicky_stav" class="input-label">Klinický stav</label>
+                            <select id="klinicky_stav">
+                                <option value="asymptomatický">Asymptomatický</option>
+                                <option value="TIA">TIA</option>
+                                <option value="CMP">CMP (iktus)</option>
+                                <option value="amaurosis fugax">Amaurosis fugax</option>
+                                <option value="minor stroke">Minor stroke</option>
+                                <option value="retinálna ischémia">Retinálna ischémia</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="nascet_stenoza" class="input-label">Stenóza NASCET (%)</label>
+                                <select id="nascet_stenoza">
+                                    <option value="">– nevyplnené –</option>
+                                    <option value="50-59%">50–59 %</option>
+                                    <option value="60-69%">60–69 %</option>
+                                    <option value="70-79%">70–79 %</option>
+                                    <option value="80-89%">80–89 %</option>
+                                    <option value="90-99%">90–99 %</option>
+                                    <option value="subokluzia">Subokluzia</option>
+                                    <option value="oklúzia">Oklúzia</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="nascet_metoda" class="input-label">Metóda merania</label>
+                                <select id="nascet_metoda">
+                                    <option value="DSA">DSA</option>
+                                    <option value="CTA">CTA</option>
+                                    <option value="MRA">MRA</option>
+                                    <option value="USG">USG</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -422,6 +457,9 @@
                 Pohlavie: getElement('pohlavie_display').textContent,
                 Lokalizacia_Lezie: getValue('lokalizacia'),
                 Typ_Platu: getElement('plat').options[getElement('plat').selectedIndex].text,
+                Klinicky_Stav: getValue('klinicky_stav'),
+                Nascet_Stenoza: getValue('nascet_stenoza'),
+                Nascet_Metoda: getValue('nascet_metoda'),
                 Anestezia: getValue('anestezia_typ'),
                 Strana_Pristupu: getValue('pristup_strana'),
                 Pungovana_Tepna: getValue('pristup_tepna'),
@@ -469,6 +507,9 @@
                     pohlavie: fd.Pohlavie,
                     lokalizacia: fd.Lokalizacia_Lezie,
                     typ_platu: fd.Typ_Platu,
+                    klinicky_stav: fd.Klinicky_Stav,
+                    nascet_stenoza: fd.Nascet_Stenoza,
+                    nascet_metoda: fd.Nascet_Metoda,
                     anestazia: fd.Anestezia,
                     strana_pristupu: fd.Strana_Pristupu,
                     pungovana_tepna: fd.Pungovana_Tepna,
