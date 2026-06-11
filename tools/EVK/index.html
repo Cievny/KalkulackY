@@ -265,6 +265,33 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   </div>
 </div>
 
+<!-- Reentry katétre -->
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_reentry" onchange="tB('reentry');gen()"><span>Reentry katéter</span></label>
+  <div class="tbody" id="b_reentry">
+    <div class="row r2">
+      <div class="f"><label>Device</label>
+        <select id="reentry_dev" onchange="gen()">
+          <option value="OSCAR (Biotronik)">OSCAR (Biotronik)</option>
+          <option value="Wingman (Reflow Medical)">Wingman (Reflow Medical)</option>
+          <option value="BeBack (Bentley)">BeBack (Bentley)</option>
+          <option value="vlastný">Vlastný</option>
+        </select>
+        <input type="text" id="reentry_dev_c" placeholder="Vlastný reentry katéter..." oninput="gen()" style="display:none;margin-top:4px">
+      </div>
+      <div class="f"><label>Počet použití</label>
+        <select id="reentry_n" onchange="gen()">
+          <option value="1">1×</option>
+          <option value="2">2×</option>
+          <option value="3">3×</option>
+          <option value="4">4×</option>
+        </select>
+      </div>
+    </div>
+    <div class="f"><label>Tepna</label>
+      <select id="reentry_tp" onchange="gen()"><option>– tepna –</option></select>
+    </div>
+  </div>
+</div>
 <!-- Vessel Preparation -->
 <div class="tog"><label class="thdr"><input type="checkbox" id="c_vprep" onchange="tB('vprep');gen()"><span>Vessel Preparation</span></label><div class="tbody" id="b_vprep"><div id="vprep_list"></div><button type="button" class="add-btn" onclick="addItem('vprep','balon_vprep')">＋ Pridať device</button></div></div>
 <!-- Predilatácia -->
@@ -616,6 +643,7 @@ function buildAutoZaver(){
   if(document.getElementById('c_pred').checked)interv.push('predilatácia');
   if(document.getElementById('c_atek').checked){const t=chk('atek_t');interv.push('aterektómia'+(t.length?' ('+t.join(', ')+')':''));}
   if(document.getElementById('c_sw').checked)interv.push('IVL Shockwave');
+  if(document.getElementById('c_reentry').checked){const dev=g('reentry_dev')==='vlastný'?(g('reentry_dev_c')||'reentry katéter'):g('reentry_dev');interv.push('reentry katéter ('+dev+')');}
   if(document.getElementById('c_trom').checked)interv.push('trombektómia');
   if(document.getElementById('c_pta').checked)interv.push('PTA');
   if(document.getElementById('c_deb').checked)interv.push('DEB PTA');
@@ -649,6 +677,7 @@ function collectStatsRow(){
   if(document.getElementById('c_pred').checked)interv.push('Predilatácia');
   if(document.getElementById('c_atek').checked)interv.push('Aterektómia');
   if(document.getElementById('c_sw').checked)interv.push('IVL');
+  if(document.getElementById('c_reentry').checked)interv.push('Reentry katéter');
   if(document.getElementById('c_trom').checked)interv.push('Trombektómia');
   if(document.getElementById('c_pta').checked)interv.push('PTA');
   if(document.getElementById('c_deb').checked)interv.push('DEB PTA');
@@ -744,6 +773,7 @@ function collectFullData(){
       if(document.getElementById('c_pred').checked)i.push('Predilatácia');
       if(document.getElementById('c_atek').checked)i.push('Aterektómia');
       if(document.getElementById('c_sw').checked)i.push('IVL');
+      if(document.getElementById('c_reentry').checked)i.push('Reentry katéter');
       if(document.getElementById('c_trom').checked)i.push('Trombektómia');
       if(document.getElementById('c_pta').checked)i.push('PTA');
       if(document.getElementById('c_deb').checked)i.push('DEB PTA');
@@ -932,6 +962,7 @@ function gen(){
 
 // ── DRG mapping ──────────────────────────────────────────────────────────────
 const DRG_SUFFIX_LABEL={i:'iné brušné a panvové tepny',n:'femorálne tepny',m:'cievy predkolenia',c:'aorta'};
+const ATEK_SUFFIX_LABEL={x:'iné brušné a panvové tepny',n:'femorálne tepny',m:'cievy predkolenia',c:'aorta'};
 function vesselSuffix(tp){
   if(!tp||tp==='– tepna –')return null;
   const t=tp.split(' ')[0];
@@ -939,6 +970,11 @@ function vesselSuffix(tp){
   if(['AFC','APF','AFS','P1','P2','P3'].includes(t))return'n';
   if(['ATA','ATP','AFib','TTF'].includes(t))return'm';
   return null;
+}
+function vesselSuffixAtek(tp){
+  // Aterektómia používa .x pre panvové (nie .i ako PTA)
+  const s=vesselSuffix(tp);
+  return s==='i'?'x':s;
 }
 function drgListSuffixes(pfx){
   const out=[];
@@ -969,9 +1005,22 @@ function genDRG(){
   if(document.getElementById('c_deb').checked){
     [...new Set(drgListSuffixes('deb'))].forEach(s=>add('8r801.'+s,'DEB PTA (balón uvoľňujúci lieky): '+SL[s]));
   }
-  // Vessel prep → cutting/scoring
+  // Vessel prep → cutting/scoring alebo SPUR (aterektómia)
   if(document.getElementById('c_vprep').checked){
-    [...new Set(drgListSuffixes('vprep'))].forEach(s=>add('8r802.'+s,'Vessel preparation (cutting/scoring balón): '+SL[s]));
+    const spurSuffixes=[], otherSuffixes=[];
+    document.querySelectorAll('#vprep_list .dyn-row').forEach(row=>{
+      const idx=row.dataset.idx,sel=document.getElementById('vprep_'+idx+'_s');
+      const nm=sel?sel.value:'';
+      const s=vesselSuffixAtek(g('vprep_'+idx+'_tp'));
+      if(nm==='Spur'||nm==='vlastný'&&(g('vprep_'+idx+'_s_c')||'').toLowerCase().includes('spur')){
+        if(s)spurSuffixes.push(s);
+      } else {
+        const ss=vesselSuffix(g('vprep_'+idx+'_tp'));
+        if(ss)otherSuffixes.push(ss);
+      }
+    });
+    [...new Set(otherSuffixes)].forEach(s=>add('8r802.'+s,'Vessel preparation (cutting/scoring balón): '+SL[s]));
+    [...new Set(spurSuffixes)].forEach(s=>add('8r810.'+s,'Perkutánna aterektómia (SPUR): '+(ATEK_SUFFIX_LABEL[s]||s)));
   }
   // IVL Shockwave
   if(document.getElementById('c_sw').checked){
@@ -979,12 +1028,19 @@ function genDRG(){
   }
   // Aterektómia
   if(document.getElementById('c_atek').checked){
-    const t=chk('atek_t'),s=vesselSuffix(g('atek_tp'));
-    const sl=s?SL[s]:'– doplňte tepnu';
+    const t=chk('atek_t'),s=vesselSuffixAtek(g('atek_tp'));
+    const sl=s?(ATEK_SUFFIX_LABEL[s]||s):'– doplňte tepnu';
     const warn=!s;
-    if(t.includes('orbitálna'))add('8r811.'+(s||'?'),'Rotačná aterektómia (Stealth 360 / orbitálna): '+sl,warn);
+    if(t.includes('orbitálna'))add('8r810.'+(s||'?'),'Perkutánna aterektómia (Stealth 360 / orbitálna): '+sl,warn);
     if(t.includes('laserová'))add('8r803.'+(s||'?'),'Laserová aterektómia (Turbo-Elite): '+sl,warn);
-    if(!t.length)add('8r810.'+(s||'?'),'Aterektómia: '+sl,warn);
+    if(!t.length)add('8r810.'+(s||'?'),'Perkutánna aterektómia: '+sl,warn);
+  }
+  // Reentry katétre
+  if(document.getElementById('c_reentry').checked){
+    const n=parseInt(g('reentry_n'))||1;
+    const dev=g('reentry_dev')||'reentry katéter';
+    if(n>=2)add('8r8x4.1','Perkutánna rekanalizácia, použitie 2 a viac reentry katétrov ('+dev+'): '+n+' ks');
+    else    add('8r8x4.0','Perkutánna rekanalizácia, použitie 1 reentry katétra ('+dev+')');
   }
   // Trombektómia
   if(document.getElementById('c_trom').checked){
@@ -1147,6 +1203,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
   document.getElementById('apps-script-code').textContent=AS_CODE;
   updateIdPrefix();buildPelvDSA();buildFemDSA();
+  document.getElementById('reentry_tp').innerHTML=vsel();
+  document.getElementById('reentry_dev').addEventListener('change',function(){document.getElementById('reentry_dev_c').style.display=this.value==='vlastný'?'block':'none';gen();});
   addItem('vprep','balon_vprep',true);
   addItem('pred','balon',true);
   addItem('pta','balon',true);
