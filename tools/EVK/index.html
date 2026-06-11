@@ -189,6 +189,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <select id="vodic" onchange="vVodic();gen()"><option>Advantage 0.014"</option><option>Advantage 0.018"</option><option>Command 0.014"</option><option>Command 0.018"</option><option>ZIP</option><option>J vodič 0.035"</option><option>vlastný</option></select>
   <input type="text" id="vodic_c" placeholder="Zadaj vodič..." oninput="gen()" style="display:none;margin-top:5px">
 </div>
+<div class="f"><label>Podporný katéter</label>
+  <select id="support_kat" onchange="chkVl('support_kat');gen()">
+    <option value="">– bez podporného katétra –</option>
+    <option>NaviCross (Terumo)</option>
+    <option>Berenstein</option>
+    <option>CXI (Cook)</option>
+    <option>Rubicon (Boston Scientific)</option>
+    <option>vlastný</option>
+  </select>
+  <input type="text" id="support_kat_c" placeholder="Vlastný katéter..." oninput="gen()" style="display:none;margin-top:5px">
+</div>
 
 <div id="pelv_int" style="display:none">
   <div class="pelv-divider">🔵 Panvové intervencie</div>
@@ -892,8 +903,10 @@ function gen(){
   L.push('INTERVENCIA:');
   const prec=chk('prec');
   const vodic=g('vodic')==='vlastný'?(g('vodic_c')||'vlastný vodič'):g('vodic');
-  if(prec.length)L.push('Cez léziu prechádzame '+prec.join(', ')+' vodičom '+vodic+' za podpory katétra.');
-  else L.push('Cez léziu prechádzame vodičom '+vodic+' za podpory katétra.');
+  const suppKat=g('support_kat')==='vlastný'?(g('support_kat_c')||'podporného katétra'):g('support_kat');
+  const suppPart=suppKat?' za podpory '+suppKat+'.':'.';
+  if(prec.length)L.push('Cez léziu prechádzame '+prec.join(', ')+' vodičom '+vodic+suppPart);
+  else L.push('Cez léziu prechádzame vodičom '+vodic+suppPart);
 
   if(sp){
     if(document.getElementById('c_kiss').checked){
