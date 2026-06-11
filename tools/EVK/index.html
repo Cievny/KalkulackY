@@ -279,28 +279,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <!-- Reentry katétre -->
 <div class="tog"><label class="thdr"><input type="checkbox" id="c_reentry" onchange="tB('reentry');gen()"><span>Reentry katéter</span></label>
   <div class="tbody" id="b_reentry">
-    <div class="row r2">
-      <div class="f"><label>Device</label>
-        <select id="reentry_dev" onchange="gen()">
-          <option value="OSCAR (Biotronik)">OSCAR (Biotronik)</option>
-          <option value="Wingman (Reflow Medical)">Wingman (Reflow Medical)</option>
-          <option value="BeBack (Bentley)">BeBack (Bentley)</option>
-          <option value="vlastný">Vlastný</option>
-        </select>
-        <input type="text" id="reentry_dev_c" placeholder="Vlastný reentry katéter..." oninput="gen()" style="display:none;margin-top:4px">
-      </div>
-      <div class="f"><label>Počet použití</label>
-        <select id="reentry_n" onchange="gen()">
-          <option value="1">1×</option>
-          <option value="2">2×</option>
-          <option value="3">3×</option>
-          <option value="4">4×</option>
-        </select>
-      </div>
-    </div>
-    <div class="f"><label>Tepna</label>
-      <select id="reentry_tp" onchange="gen()"><option>– tepna –</option></select>
-    </div>
+    <div id="reentry_list"></div>
+    <button type="button" class="add-btn" onclick="addItem('reentry','reentry')">＋ Pridať reentry katéter</button>
   </div>
 </div>
 <!-- Vessel Preparation -->
@@ -574,6 +554,20 @@ function addItem(pfx,kind,silent){
   } else if(kind==='balon_ivl'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
       <div class="row r2"><div class="f"><label>Priemer × Dĺžka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="60" oninput="gen()"></div></div><div class="f"><label>Počet pulzov</label><input type="number" id="${id}_u" placeholder="60" oninput="gen()"></div></div>`;
+  } else if(kind==='reentry'){
+    div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>
+      <div class="row r2" style="margin-bottom:6px">
+        <div class="f"><label>Device</label>
+          <select id="${id}_s" onchange="chkVl('${id}_s');gen()">
+            <option>OSCAR (Biotronik)</option>
+            <option>Wingman (Reflow Medical)</option>
+            <option>BeBack (Bentley)</option>
+            <option value="vlastný">vlastný</option>
+          </select>
+          <input type="text" id="${id}_s_c" placeholder="Vlastný..." oninput="gen()" style="display:none;margin-top:4px">
+        </div>
+        <div class="f"><label>Tepna</label><select id="${id}_tp" onchange="gen()">${vsel()}</select></div>
+      </div>`;
   } else {
     const opts=OPTS[kind]||OPTS.balon;
     const lbl=kind==='balon_vprep'?'Device':'Balón';
@@ -654,7 +648,7 @@ function buildAutoZaver(){
   if(document.getElementById('c_pred').checked)interv.push('predilatácia');
   if(document.getElementById('c_atek').checked){const t=chk('atek_t');interv.push('aterektómia'+(t.length?' ('+t.join(', ')+')':''));}
   if(document.getElementById('c_sw').checked)interv.push('IVL Shockwave');
-  if(document.getElementById('c_reentry').checked){const dev=g('reentry_dev')==='vlastný'?(g('reentry_dev_c')||'reentry katéter'):g('reentry_dev');interv.push('reentry katéter ('+dev+')');}
+  if(document.getElementById('c_reentry').checked){const rrows=document.querySelectorAll('#reentry_list .dyn-row');const rdevs=Array.from(rrows).map(row=>{const idx=row.dataset.idx,sel=document.getElementById('reentry_'+idx+'_s');return sel?(sel.value==='vlastný'?(g('reentry_'+idx+'_s_c')||'reentry katéter'):sel.value):'reentry katéter';});interv.push('reentry katéter ('+(rdevs.length?rdevs.join(', '):'reentry katéter')+')');}
   if(document.getElementById('c_trom').checked)interv.push('trombektómia');
   if(document.getElementById('c_pta').checked)interv.push('PTA');
   if(document.getElementById('c_deb').checked)interv.push('DEB PTA');
@@ -1050,10 +1044,17 @@ function genDRG(){
   }
   // Reentry katétre
   if(document.getElementById('c_reentry').checked){
-    const n=parseInt(g('reentry_n'))||1;
-    const dev=g('reentry_dev')||'reentry katéter';
-    if(n>=2)add('8r8x4.1','Perkutánna rekanalizácia, použitie 2 a viac reentry katétrov ('+dev+'): '+n+' ks');
-    else    add('8r8x4.0','Perkutánna rekanalizácia, použitie 1 reentry katétra ('+dev+')');
+    const rrows=document.querySelectorAll('#reentry_list .dyn-row');
+    const n=rrows.length||1;
+    const devNames=[];
+    rrows.forEach(row=>{
+      const idx=row.dataset.idx,sel=document.getElementById('reentry_'+idx+'_s');
+      const nm=sel?(sel.value==='vlastný'?(g('reentry_'+idx+'_s_c')||'reentry katéter'):sel.value):'reentry katéter';
+      devNames.push(nm);
+    });
+    const devStr=devNames.length?devNames.join(', '):'reentry katéter';
+    if(n>=2)add('8r8x4.1','Perkutánna rekanalizácia, použitie 2 a viac reentry katétrov ('+devStr+'): '+n+' ks');
+    else    add('8r8x4.0','Perkutánna rekanalizácia, použitie 1 reentry katétra ('+devStr+')');
   }
   // Trombektómia
   if(document.getElementById('c_trom').checked){
@@ -1216,8 +1217,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
   document.getElementById('apps-script-code').textContent=AS_CODE;
   updateIdPrefix();buildPelvDSA();buildFemDSA();
-  document.getElementById('reentry_tp').innerHTML=vsel();
-  document.getElementById('reentry_dev').addEventListener('change',function(){document.getElementById('reentry_dev_c').style.display=this.value==='vlastný'?'block':'none';gen();});
+  addItem('reentry','reentry',true);
   addItem('vprep','balon_vprep',true);
   addItem('pred','balon',true);
   addItem('pta','balon',true);
