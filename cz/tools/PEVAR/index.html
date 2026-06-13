@@ -48,6 +48,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .id-row{display:grid;grid-template-columns:auto 1fr;gap:5px;align-items:center}
 .id-prefix{font-weight:700;font-size:13px;color:#3b82f6;background:#f0f7ff;border:1.5px solid #3b82f6;border-radius:6px;padding:6px 10px;white-space:nowrap}
 @media print{.tabnav{display:none}.left{display:none}.right{border:none;height:auto;position:static}.btns{display:none}#out{border:none;font-family:inherit;font-size:13px;background:#fff}}
+details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:11.5px;color:#5a6a8a;font-weight:600;cursor:pointer;user-select:none;padding:5px 8px;background:#f7f8fc;border-radius:6px;border:1.5px solid #eef0f5;list-style:none;display:flex;align-items:center;gap:6px}details.komor-details>summary::-webkit-details-marker{display:none}details.komor-details[open]>summary .komor-arr{transform:rotate(90deg)}details.komor-details>summary .komor-arr{display:inline-block;transition:transform .2s;font-size:10px;color:#9ca3af}
 </style>
 </head>
 <body>
@@ -128,6 +129,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <label class="ck"><input type="radio" name="ind_typ" id="ind_urgentny" value="urgentnímu" onchange="gen()"><span>Urgentní</span></label>
   </div>
 </div>
+<details class="komor-details"><summary><span class="komor-arr">▶</span> 🏥 Komorbidity <span style="font-weight:400;color:#9ca3af;font-size:11px">(doplnit později)</span></summary>
 <div class="f"><div class="lbl">Komorbidity</div>
   <div id="komordiv">
     <div class="kom-item">
@@ -285,6 +287,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     </div>
   </div>
 </div>
+</details>
 <div class="f"><div class="lbl">Antitrombotická léčba pred výkonem</div>
   <div class="checks">
     <label class="ck"><input type="checkbox" class="atb" value="bez antitrombotik" onchange="gen()"> Bez</label>
