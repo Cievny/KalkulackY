@@ -355,10 +355,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 
 </div>
 <div class="right">
-  <div style="font-size:13px;font-weight:700;color:#1a2745">📄 Náhľad nálezu</div>
   <textarea id="out" spellcheck="false"></textarea>
-  <div class="btns"><button class="btn bc" onclick="copyTxt()">📋 Kopírovať</button><button class="btn bp" onclick="window.print()">🖨️ Tlač</button></div>
-  <button class="btn bs" style="margin-top:2px" onclick="saveToSheets()">📊 Uložiť do štatistiky</button>
+  <div class="btns">
+    <button class="btn bc" onclick="copyTxt()">📋 Kopírovať</button>
+    <button class="btn bp" onclick="saveToSheets()">💾 Uložiť</button>
+    <button class="btn bw" onclick="window.print()">🖨️ Tlač</button>
+  </div>
   <div id="cmsg"></div>
 </div>
 </div>
