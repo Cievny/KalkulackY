@@ -83,24 +83,34 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 </div>
 
 <script>
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
+const SB_HEAD={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+
 const COLS=['napady','riesenie','hotovo'];
 const COL_LABELS={napady:'💡 Nápady',riesenie:'🔧 V riešení',hotovo:'✅ Hotovo'};
-const STORAGE_KEY='cievny_ideas';
+let ITEMS=[];
 
-function load(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[];}catch{return[];}}
-function save(items){localStorage.setItem(STORAGE_KEY,JSON.stringify(items));}
+function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function loadItems(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/ideas?order=created_at.desc&limit=500`,{headers:SB_HEAD});
+    ITEMS=r.ok?await r.json():[];
+  }catch{ITEMS=[];}
+  render();
+}
 
 function render(){
-  const items=load();
   COLS.forEach(col=>{
     const container=document.getElementById('cards-'+col);
-    const colItems=items.filter(i=>i.col===col);
+    const colItems=ITEMS.filter(i=>i.col===col);
     document.getElementById('cnt-'+col).textContent=colItems.length;
     container.innerHTML='';
     colItems.forEach(item=>{
       const div=document.createElement('div');
       div.className='card';
-      const date=new Date(item.ts).toLocaleDateString('sk-SK',{day:'numeric',month:'short',year:'numeric'});
+      const date=new Date(item.created_at).toLocaleDateString('sk-SK',{day:'numeric',month:'short',year:'numeric'});
       const moveButtons=COLS.filter(c=>c!==col).map(c=>`<button class="btn-move" onclick="moveCard('${item.id}','${c}')">${COL_LABELS[c]}</button>`).join('');
       div.innerHTML=`<div class="card-text">${escHtml(item.text)}</div>
         <div class="card-meta">${date}</div>
@@ -110,36 +120,39 @@ function render(){
   });
 }
 
-function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-function addCard(col){
+async function addCard(col){
   const inp=document.getElementById('inp-'+col);
   const text=inp.value.trim();
   if(!text)return;
-  const items=load();
-  items.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2),col,text,ts:Date.now()});
-  save(items);
-  inp.value='';
-  render();
+  inp.disabled=true;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/ideas`,{method:'POST',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify({col,text})});
+    if(r.ok){inp.value='';await loadItems();}
+    else alert('Chyba pri ukladaní: '+r.status);
+  }catch(e){alert('Chyba siete: '+e.message);}
+  inp.disabled=false;inp.focus();
 }
 
-function moveCard(id,newCol){
-  const items=load();
-  const item=items.find(i=>i.id===id);
-  if(item){item.col=newCol;save(items);render();}
+async function moveCard(id,newCol){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify({col:newCol})});
+    if(r.ok)await loadItems();
+  }catch(e){alert('Chyba siete: '+e.message);}
 }
 
-function delCard(id){
+async function delCard(id){
   if(!confirm('Zmazať tento zápisok?'))return;
-  const items=load().filter(i=>i.id!==id);
-  save(items);render();
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD});
+    if(r.ok)await loadItems();
+  }catch(e){alert('Chyba siete: '+e.message);}
 }
 
 document.querySelectorAll('textarea').forEach(ta=>{
   ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey){const col=ta.id.replace('inp-','');addCard(col);}});
 });
 
-render();
+loadItems();
 </script>
 </body>
 </html>

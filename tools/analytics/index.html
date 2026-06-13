@@ -68,6 +68,10 @@ details summary:hover{color:#1737a0}
       <div class="chart-card"><h3>Technický úspech</h3><div class="chart-wrap"><canvas id="ch-evk-tu"></canvas></div></div>
       <div class="chart-card"><h3>Pohlavie</h3><div class="chart-wrap"><canvas id="ch-evk-sex"></canvas></div></div>
     </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Komplikácie (SVS)</h3><div class="chart-wrap"><canvas id="ch-evk-compl"></canvas></div></div>
+      <div class="chart-card"><h3>Clavien-Dindo</h3><div class="chart-wrap"><canvas id="ch-evk-clavien"></canvas></div></div>
+    </div>
     <div class="chart-card">
       <details><summary>🗑️ Správa záznamov (vymazanie)</summary>
       <div class="tbl-wrap"><table class="records-table"><thead id="evk-tbl-head"></thead><tbody id="evk-tbl-body"></tbody></table></div>
@@ -100,6 +104,10 @@ details summary:hover{color:#1737a0}
       <div class="chart-card"><h3>Pohlavie</h3><div class="chart-wrap"><canvas id="ch-cas-sex"></canvas></div></div>
       <div class="chart-card"><h3>Výsledok</h3><div class="chart-wrap"><canvas id="ch-cas-vysl"></canvas></div></div>
     </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Komplikácie (SVS)</h3><div class="chart-wrap"><canvas id="ch-cas-compl"></canvas></div></div>
+      <div class="chart-card"><h3>Clavien-Dindo</h3><div class="chart-wrap"><canvas id="ch-cas-clavien"></canvas></div></div>
+    </div>
     <div class="chart-card">
       <details><summary>🗑️ Správa záznamov (vymazanie)</summary>
       <div class="tbl-wrap"><table class="records-table"><thead id="cas-tbl-head"></thead><tbody id="cas-tbl-body"></tbody></table></div>
@@ -127,6 +135,10 @@ details summary:hover{color:#1737a0}
     <div class="row2">
       <div class="chart-card"><h3>Lekári</h3><div class="chart-wrap"><canvas id="ch-pevar-lekari"></canvas></div></div>
       <div class="chart-card"><h3>Indikácia</h3><div class="chart-wrap"><canvas id="ch-pevar-indik"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Komplikácie (SVS)</h3><div class="chart-wrap"><canvas id="ch-pevar-compl"></canvas></div></div>
+      <div class="chart-card"><h3>Clavien-Dindo</h3><div class="chart-wrap"><canvas id="ch-pevar-clavien"></canvas></div></div>
     </div>
     <div class="chart-card">
       <details><summary>🗑️ Správa záznamov (vymazanie)</summary>
@@ -163,6 +175,36 @@ function statCard(label,value){
 }
 function monthKey(d){if(!d)return null;const p=d.split(/[-T ]/);return p[0]+'-'+p[1];}
 
+// --- Štúdijné helpery ---
+const RAW={evk:[],cas:[],pevar:[]};
+function avgNum(rows,key,dec=1){
+  const v=rows.map(r=>r[key]).filter(x=>x!=null&&x!==''&&!isNaN(x)).map(Number);
+  if(!v.length)return null;
+  return (v.reduce((a,b)=>a+b,0)/v.length).toFixed(dec);
+}
+function complRows(rows){return rows.filter(r=>(r.komplikacie_struct||'').trim());}
+function complFreq(rows){
+  const m={};rows.forEach(r=>(r.komplikacie_struct||'').split(',').forEach(c=>{const v=c.trim();if(v)m[v]=(m[v]||0)+1;}));
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,12);
+}
+function exportCSV(rows,filename){
+  if(!rows||!rows.length){alert('Žiadne dáta na export.');return;}
+  const keys=[...new Set(rows.flatMap(r=>Object.keys(r)))];
+  const esc=v=>{if(v==null)return'';v=(''+v).replace(/"/g,'""');return /[";\n]/.test(v)?`"${v}"`:v;};
+  const csv=[keys.join(';'),...rows.map(r=>keys.map(k=>esc(r[k])).join(';'))].join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+}
+function ensureExportBtn(tool){
+  if(document.getElementById(tool+'-export'))return;
+  const stats=document.getElementById(tool+'-stats');
+  const b=document.createElement('button');
+  b.id=tool+'-export';b.className='refresh-btn';b.textContent='⬇️ Export CSV (SPSS/R)';
+  b.style.cssText='margin-bottom:12px';
+  b.onclick=()=>exportCSV(RAW[tool],tool+'_export_'+new Date().toISOString().slice(0,10)+'.csv');
+  stats.parentNode.insertBefore(b,stats);
+}
+
 async function fetchAll(table){
   let all=[],offset=0;
   while(true){
@@ -198,6 +240,7 @@ async function loadEVK(){
   document.getElementById('evk-loading').style.display='block';
   document.getElementById('evk-content').style.display='none';
   const rows=await fetchAll('evk_vykony');
+  RAW.evk=rows;ensureExportBtn('evk');
   document.getElementById('evk-loading').style.display='none';
   document.getElementById('evk-content').style.display='block';
 
@@ -206,7 +249,17 @@ async function loadEVK(){
     statCard('Celkový počet výkonov',rows.length)+
     statCard('Priemerný vek',Math.round(avgAge)||'–')+
     statCard('Unikátnych operatérov',[...new Set(rows.map(r=>r.operator).filter(Boolean))].length)+
-    statCard('Tech. úspech (úplný)',rows.filter(r=>(r.tech_uspech||'').includes('Technický úspech')).length);
+    statCard('Tech. úspech (úplný)',rows.filter(r=>(r.tech_uspech||'').includes('Technický úspech')).length)+
+    statCard('Ø dĺžka výkonu (min)',avgNum(rows,'proc_duration_min')||'–')+
+    statCard('Ø skiaskopia (min)',avgNum(rows,'fluoro_time_min')||'–')+
+    statCard('Ø kontrast (ml)',avgNum(rows,'contrast_ml',0)||'–')+
+    statCard('Ø DAP (Gy·cm²)',avgNum(rows,'dap',0)||'–')+
+    statCard('Komplikácie (n výkonov)',complRows(rows).length)+
+    statCard('Konverzie',rows.filter(r=>r.konverzia===true).length);
+
+  // Komplikácie + Clavien
+  const cf=complFreq(rows);if(cf.length)mkChart('ch-evk-compl','bar',cf.map(x=>x[0]),cf.map(x=>x[1]),false);
+  const cd=sortedFreq(rows.filter(r=>r.clavien_dindo),'clavien_dindo');if(cd.length)mkChart('ch-evk-clavien','doughnut',cd.map(x=>x[0]),cd.map(x=>x[1]));
 
   // month chart
   const months={};rows.forEach(r=>{const m=monthKey(r.datum||r.created_at);if(m)months[m]=(months[m]||0)+1;});
@@ -234,6 +287,7 @@ async function loadCAS(){
   document.getElementById('cas-loading').style.display='block';
   document.getElementById('cas-content').style.display='none';
   const rows=await fetchAll('cas_vykony');
+  RAW.cas=rows;ensureExportBtn('cas');
   document.getElementById('cas-loading').style.display='none';
   document.getElementById('cas-content').style.display='block';
 
@@ -246,7 +300,15 @@ async function loadCAS(){
     statCard('Počet intervencií (CAS)',intervRows.length)+
     statCard('Symptomatickí pacienti',sympRows.length)+
     statCard('Asymptomatickí',rows.filter(r=>r.klinicky_stav==='asymptomatický').length)+
-    statCard('DSA (bez intervencie)',rows.filter(r=>r.postup==='dsa'||r.postup==='konzervativny').length);
+    statCard('DSA (bez intervencie)',rows.filter(r=>r.postup==='dsa'||r.postup==='konzervativny').length)+
+    statCard('Ø dĺžka výkonu (min)',avgNum(rows,'proc_duration_min')||'–')+
+    statCard('Ø skiaskopia (min)',avgNum(rows,'fluoro_time_min')||'–')+
+    statCard('Ø kontrast (ml)',avgNum(rows,'contrast_ml',0)||'–')+
+    statCard('Komplikácie (n výkonov)',complRows(rows).length)+
+    statCard('Konverzie na CEA',rows.filter(r=>r.konverzia===true).length);
+
+  const cf=complFreq(rows);if(cf.length)mkChart('ch-cas-compl','bar',cf.map(x=>x[0]),cf.map(x=>x[1]),false);
+  const cd=sortedFreq(rows.filter(r=>r.clavien_dindo),'clavien_dindo');if(cd.length)mkChart('ch-cas-clavien','doughnut',cd.map(x=>x[0]),cd.map(x=>x[1]));
 
   const months={};rows.forEach(r=>{const m=monthKey(r.datum_zaznamu||r.created_at);if(m)months[m]=(months[m]||0)+1;});
   const mk=Object.keys(months).sort();mkChart('ch-cas-month','bar',mk,mk.map(m=>months[m]),false);
@@ -287,6 +349,7 @@ async function loadPEVAR(){
   document.getElementById('pevar-loading').style.display='block';
   document.getElementById('pevar-content').style.display='none';
   const rows=await fetchAll('pevar_vykony');
+  RAW.pevar=rows;ensureExportBtn('pevar');
   document.getElementById('pevar-loading').style.display='none';
   document.getElementById('pevar-content').style.display='block';
 
@@ -296,7 +359,15 @@ async function loadPEVAR(){
     statCard('Celkový počet výkonov',rows.length)+
     statCard('Priemerný vek',Math.round(avgAge)||'–')+
     statCard('Endoleak',endoleakRows.length)+
-    statCard('Symptomatickí',rows.filter(r=>r.symptomaticky).length);
+    statCard('Symptomatickí',rows.filter(r=>r.symptomaticky).length)+
+    statCard('Ø dĺžka výkonu (min)',avgNum(rows,'proc_duration_min')||'–')+
+    statCard('Ø skiaskopia (min)',avgNum(rows,'fluoro_time_min')||'–')+
+    statCard('Ø kontrast (ml)',avgNum(rows,'contrast_ml',0)||'–')+
+    statCard('Komplikácie (n výkonov)',complRows(rows).length)+
+    statCard('Konverzie',rows.filter(r=>r.konverzia===true).length);
+
+  const cf=complFreq(rows);if(cf.length)mkChart('ch-pevar-compl','bar',cf.map(x=>x[0]),cf.map(x=>x[1]),false);
+  const cd=sortedFreq(rows.filter(r=>r.clavien_dindo),'clavien_dindo');if(cd.length)mkChart('ch-pevar-clavien','doughnut',cd.map(x=>x[0]),cd.map(x=>x[1]));
 
   const months={};rows.forEach(r=>{const m=monthKey(r.datum_zaznamu||r.created_at);if(m)months[m]=(months[m]||0)+1;});
   const mk=Object.keys(months).sort();mkChart('ch-pevar-month','bar',mk,mk.map(m=>months[m]),false);
