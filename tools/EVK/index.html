@@ -150,8 +150,25 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       </div>
     </div>
 
+    <!-- AH -->
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_ah" onchange="kSub('ah');gen()"><span>Artériová hypertenzia (AH)</span></label>
+      <div class="kom-sub" id="ksub_ah">
+        <div class="sub-lbl">Kompenzácia</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="ah_komp" value="kompenzovaná" checked onchange="gen()"><span>Kompenzovaná</span></label>
+          <label class="ck"><input type="radio" name="ah_komp" value="nekompenzovaná" onchange="gen()"><span>Nekompenzovaná</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Liečba</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="ah_liecba" value="bez liečby" onchange="gen()"><span>Bez liečby</span></label>
+          <label class="ck"><input type="radio" name="ah_liecba" value="monoterapia" checked onchange="gen()"><span>Monoterapia</span></label>
+          <label class="ck"><input type="radio" name="ah_liecba" value="kombinovaná liečba" onchange="gen()"><span>Kombinovaná liečba</span></label>
+        </div>
+      </div>
+    </div>
+
     <!-- ostatné – zatiaľ bez rozvetvenia -->
-    <label class="ck"><input type="checkbox" value="HTA" onchange="gen()"> HTA</label>
     <label class="ck"><input type="checkbox" value="CHRI" onchange="gen()"> CHRI</label>
     <label class="ck"><input type="checkbox" value="ICHS" onchange="gen()"> ICHS</label>
     <label class="ck"><input type="checkbox" value="St.p.IM" onchange="gen()"> St.p.IM</label>
@@ -508,6 +525,11 @@ function getKomor(){
     const typ=document.querySelector('input[name="dm_typ"]:checked')?.value||'DM2';
     const liecba=document.querySelector('input[name="dm_liecba"]:checked')?.value||'OAD';
     list.push(typ+', liečba '+liecba);
+  }
+  if(document.getElementById('k_ah')?.checked){
+    const komp=document.querySelector('input[name="ah_komp"]:checked')?.value||'kompenzovaná';
+    const liecba=document.querySelector('input[name="ah_liecba"]:checked')?.value||'monoterapia';
+    list.push('AH – '+komp+', '+liecba);
   }
   document.querySelectorAll('#komordiv input[type=checkbox]:not([id^="k_"]):checked').forEach(e=>list.push(e.value));
   return list;
