@@ -266,3 +266,9 @@ ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_cerab        BOOLEAN;
 
 -- PEVAR: oprava duplicitného indikacia_typ → samostatný sg_konfiguracia
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sg_konfiguracia TEXT;
+
+-- PEVAR: uzáver triesla obojstranne (EVK/CAS logika)
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS kompresia_dx_min  INT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS kompresia_sin_min INT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS femostop_dx       BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS femostop_sin      BOOLEAN;

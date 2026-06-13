@@ -427,25 +427,51 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <!-- Uzáver -->
 <div class="card">
 <div class="st">Uzáver miesta vpichu</div>
+
+<div class="st" style="font-size:12px;margin:4px 0;color:#5a6a8a">Pravá strana (l.dx.)</div>
 <div class="row r2">
-  <div class="f"><label>Uzáver DX (l.dx.)</label>
+  <div class="f"><label>Kompresia DX (min)</label><input type="number" id="kompr_dx" min="0" placeholder="10" oninput="gen()"></div>
+  <div class="f"><label>Uzatváracie zariadenie DX</label>
     <select id="uzaver_dx_technika" onchange="gen()">
-      <option value="dotiahnutím sutúr Prostyle uzatváracieho zariadenia">ProStyle sutúra</option>
+      <option value="">Manuálna kompresia</option>
+      <option value="dotiahnutím sutúr ProStyle zariadenia">ProStyle sutúra</option>
       <option value="pomocou Manta systému">Manta systém</option>
-      <option value="manuálnou kompresiou">Manuálna kompresia</option>
-    </select>
-  </div>
-  <div class="f"><label>Uzáver SIN (l.sin.)</label>
-    <select id="uzaver_sin_technika" onchange="gen()">
-      <option value="dotiahnutím sutúr Prostyle uzatváracieho zariadenia">ProStyle sutúra</option>
-      <option value="pomocou Manta systému">Manta systém</option>
-      <option value="manuálnou kompresiou">Manuálna kompresia</option>
+      <option value="pomocou AngioSeal">AngioSeal</option>
+      <option value="pomocou FemoSeal">FemoSeal</option>
     </select>
   </div>
 </div>
-<div class="checks">
-  <label class="ck"><input type="checkbox" id="hemostaza_dx" checked onchange="gen()"><span>Hemostáza DX (PatchPro)</span></label>
-  <label class="ck"><input type="checkbox" id="hemostaza_sin" checked onchange="gen()"><span>Hemostáza SIN (PatchPro)</span></label>
+<div class="row r2">
+  <div class="f"><label>Hemostáza DX</label>
+    <select id="hemo_dx" onchange="gen()">
+      <option>ihneď</option><option>po manuálnej kompresii</option><option>za použitia PatchPro bandáže</option>
+    </select>
+  </div>
+  <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="femostop_dx" onchange="gen()"> Nasadený Femostop DX</label></div>
+</div>
+
+<div id="uzaver_sin_wrap">
+<div class="st" style="font-size:12px;margin:8px 0 4px;color:#5a6a8a">Ľavá strana (l.sin.)</div>
+<div class="row r2">
+  <div class="f"><label>Kompresia SIN (min)</label><input type="number" id="kompr_sin" min="0" placeholder="10" oninput="gen()"></div>
+  <div class="f"><label>Uzatváracie zariadenie SIN</label>
+    <select id="uzaver_sin_technika" onchange="gen()">
+      <option value="">Manuálna kompresia</option>
+      <option value="dotiahnutím sutúr ProStyle zariadenia">ProStyle sutúra</option>
+      <option value="pomocou Manta systému">Manta systém</option>
+      <option value="pomocou AngioSeal">AngioSeal</option>
+      <option value="pomocou FemoSeal">FemoSeal</option>
+    </select>
+  </div>
+</div>
+<div class="row r2">
+  <div class="f"><label>Hemostáza SIN</label>
+    <select id="hemo_sin" onchange="gen()">
+      <option>ihneď</option><option>po manuálnej kompresii</option><option>za použitia PatchPro bandáže</option>
+    </select>
+  </div>
+  <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="femostop_sin" onchange="gen()"> Nasadený Femostop SIN</label></div>
+</div>
 </div>
 </div>
 
@@ -686,10 +712,18 @@ function gen(){
   }
   if(chk('komponenty_ok'))agParts.push('Všetky komponenty dobre rozvinuté, bez stenózy.');
 
-  const uzaverLines=[];
-  const udt=g('uzaver_dx_technika');const ust=g('uzaver_sin_technika');
-  if(udt){let v='Miesto vpichu '+arteria+' l.dx. uzatvárame '+udt;if(chk('hemostaza_dx'))v+=', dosahujeme úplnú hemostázu pomocou PatchPro bandáži';uzaverLines.push(v+'.');}
-  if(ust){let v='Miesto vpichu '+arteria+' l.sin. uzatvárame '+ust;if(chk('hemostaza_sin'))v+=', dosahujeme úplnú hemostázu pomocou PatchPro bandáži';uzaverLines.push(v+'.');}
+  const sinWrap=document.getElementById('uzaver_sin_wrap');
+  if(sinWrap)sinWrap.style.display=isBifurk?'':'none';
+
+  const buildUzaver=(side,label)=>{
+    const uz=g('uzaver_'+side+'_technika'),kompr=g('kompr_'+side),hemo=g('hemo_'+side);
+    let v='Miesto vpichu '+arteria+' '+label+' '+(uz?('uzatvárame '+uz):('manuálne komprimujeme'+(kompr?' '+kompr+' min':'')));
+    if(hemo)v+=', hemostáza dosiahnutá '+hemo;
+    if(chk('femostop_'+side))v+=', nasadený Femostop';
+    return v+'.';
+  };
+  const uzaverLines=[buildUzaver('dx','l.dx.')];
+  if(isBifurk)uzaverLines.push(buildUzaver('sin','l.sin.'));
 
   const odp=g('odporucanie_cas');
   const zaver=g('zaver_vykonu');
@@ -774,10 +808,14 @@ async function saveToSupabase(){
     endoleak_typ:chk('endoleak_check')?g('endoleak_typ'):'',
     endoleak_zdroj:chk('endoleak_check')?g('endoleak_typ2_zdroj'):'',
     komponenty_ok:chk('komponenty_ok'),
-    uzaver_dx_technika:g('uzaver_dx_technika'),
-    uzaver_sin_technika:g('uzaver_sin_technika'),
-    hemostaza_dx:chk('hemostaza_dx'),
-    hemostaza_sin:chk('hemostaza_sin'),
+    uzaver_dx_technika:g('uzaver_dx_technika')||'Manuálna kompresia',
+    uzaver_sin_technika:document.querySelector('input[name="sg_typ"]:checked')?.value==='bifurkačného'?(g('uzaver_sin_technika')||'Manuálna kompresia'):'',
+    kompresia_dx_min:g('kompr_dx')?parseInt(g('kompr_dx')):null,
+    kompresia_sin_min:g('kompr_sin')?parseInt(g('kompr_sin')):null,
+    hemostaza_dx:g('hemo_dx'),
+    hemostaza_sin:g('hemo_sin'),
+    femostop_dx:chk('femostop_dx'),
+    femostop_sin:chk('femostop_sin'),
     odporucanie_cas:g('odporucanie_cas'),
     zaver_vykonu:g('zaver_vykonu'),
     lekari:g('lekari'),
