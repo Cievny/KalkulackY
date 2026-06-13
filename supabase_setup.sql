@@ -1,3 +1,13 @@
+-- ============================================================
+-- cievny.sk – Endovaskulárne nástroje (EVK / CAS / PEVAR)
+-- Kompletný idempotentný setup pre Supabase.
+-- Možno spustiť opakovane bez chýb (IF NOT EXISTS / DROP POLICY IF EXISTS).
+-- ============================================================
+
+-- ============================================================
+-- 1. TABUĽKY
+-- ============================================================
+
 -- EVK výkony
 CREATE TABLE IF NOT EXISTS evk_vykony (
   id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -30,41 +40,55 @@ CREATE TABLE IF NOT EXISTS cas_vykony (
   lokalizacia           TEXT,
   typ_platu             TEXT,
   anestazia             TEXT,
-  strana_pristupu       TEXT,
-  pungovana_tepna       TEXT,
-  uvodny_sheath         TEXT,
-  diag_kateter          TEXT,
-  popis_stenozy         TEXT,
-  percento_stenozy      TEXT,
-  zavaznost_stenozy     TEXT,
   postup                TEXT,
-  interv_sheath         TEXT,
-  interv_vodic          TEXT,
-  emboloprotekcia       TEXT,
-  predilatacia_vykonana TEXT,
-  predilatacny_balon    TEXT,
-  stent                 TEXT,
-  domodelovanie_vykonane TEXT,
-  domodelovaci_balon    TEXT,
   uzatvaraci_system     TEXT,
   vysledok              TEXT,
   zaver                 TEXT
 );
 
--- RLS: anon môže insertovať aj čítať
-ALTER TABLE evk_vykony ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cas_vykony ENABLE ROW LEVEL SECURITY;
+-- PEVAR výkony
+CREATE TABLE IF NOT EXISTS pevar_vykony (
+  id                        UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at                TIMESTAMPTZ DEFAULT NOW(),
+  vykon_id                  TEXT,
+  operator                  TEXT,
+  datum_zaznamu             TEXT,
+  vek                       INT,
+  pohlavie                  TEXT,
+  diagnoza                  TEXT,
+  zaver_vykonu              TEXT,
+  lekari                    TEXT
+);
 
-CREATE POLICY "anon insert evk"  ON evk_vykony FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "anon select evk"  ON evk_vykony FOR SELECT TO anon USING (true);
-CREATE POLICY "anon insert cas"  ON cas_vykony FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "anon select cas"  ON cas_vykony FOR SELECT TO anon USING (true);
+-- evk_followup – kontroly (pre budúce použitie)
+CREATE TABLE IF NOT EXISTS evk_followup (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  vykon_id TEXT,
+  datum_kontroly TEXT,
+  casovy_bod TEXT,
+  rutherford TEXT,
+  abi NUMERIC,
+  patencia TEXT,
+  reintervencia BOOLEAN,
+  amputacia TEXT,
+  poznamka TEXT
+);
 
--- =============================================
--- MIGRATIONS: add missing columns
--- =============================================
+-- ideas – zdieľaný zápisník nápadov
+CREATE TABLE IF NOT EXISTS ideas (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  col         TEXT NOT NULL DEFAULT 'napady',
+  text        TEXT NOT NULL,
+  author      TEXT
+);
 
--- evk_vykony: add detailed columns
+-- ============================================================
+-- 2. STĹPCE (ADD COLUMN IF NOT EXISTS – bezpečné opakovane)
+-- ============================================================
+
+-- --- EVK: prístup, materiály, DSA ---
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS diag TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_arteria TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_technika TEXT;
@@ -83,106 +107,7 @@ ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS hemostaza TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS femostop BOOLEAN;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS strana TEXT;
 
--- cas_vykony: add detailed material columns
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS hemostaza_poznamka TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS hemostaza_text TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_sheath_fr TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_sheath_dlzka TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_sheath_znacka TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_vodic_spec TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_vodic_znacka TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS predilatacny_balon_velkost TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS predilatacny_balon_znacka TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS stent_velkost TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS stent_znacka TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_velkost TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_znacka TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS klinicky_stav TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS nascet_stenoza TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS nascet_metoda TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS vykon_id TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS operator TEXT;
-
--- evk_followup: new table for follow-up visits
-CREATE TABLE IF NOT EXISTS evk_followup (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  vykon_id TEXT,
-  datum_kontroly TEXT,
-  casovy_bod TEXT,
-  rutherford TEXT,
-  abi NUMERIC,
-  patencia TEXT,
-  reintervencia BOOLEAN,
-  amputacia TEXT,
-  poznamka TEXT
-);
-ALTER TABLE evk_followup ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon insert followup" ON evk_followup FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "anon select followup" ON evk_followup FOR SELECT TO anon USING (true);
-CREATE POLICY "anon delete followup" ON evk_followup FOR DELETE TO anon USING (true);
-
--- pevar_vykony: PEVAR procedure registry
-CREATE TABLE IF NOT EXISTS pevar_vykony (
-  id                        UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  created_at                TIMESTAMPTZ DEFAULT NOW(),
-  datum_zaznamu             TEXT,
-  vek                       INT,
-  pohlavie                  TEXT,
-  diagnoza                  TEXT,
-  char_krehky               BOOLEAN,
-  char_polymorbidny         BOOLEAN,
-  symptomaticky             BOOLEAN,
-  indikacia_typ             TEXT,
-  anestezia_typ             TEXT,
-  pristup_strana            TEXT,
-  punkcia_arteria           TEXT,
-  punkcia_technika          TEXT,
-  usg_nav                   BOOLEAN,
-  rtg_nav                   BOOLEAN,
-  zabezpecenie_technika     TEXT,
-  sheath_velkost            TEXT,
-  vodic_typ                 TEXT,
-  sg_nazov                  TEXT,
-  sg_rozmery                TEXT,
-  contra_kateter_typ        TEXT,
-  komponent_dx_nazov        TEXT,
-  komponent_dx_rozmery      TEXT,
-  komponent_sin_nazov       TEXT,
-  komponent_sin_rozmery     TEXT,
-  implantacia_komentar      TEXT,
-  modelovanie_telo          BOOLEAN,
-  modelovanie_telo_balon    TEXT,
-  modelovanie_extenzie      BOOLEAN,
-  modelovanie_extenzie_balon TEXT,
-  modelovanie_extenzie_rozmer TEXT,
-  endoleak                  BOOLEAN,
-  endoleak_typ              TEXT,
-  endoleak_zdroj            TEXT,
-  komponenty_ok             BOOLEAN,
-  uzaver_dx_technika        TEXT,
-  uzaver_sin_technika       TEXT,
-  hemostaza_dx              BOOLEAN,
-  hemostaza_sin             BOOLEAN,
-  odporucanie_cas           TEXT,
-  zaver_vykonu              TEXT,
-  lekari                    TEXT
-);
-ALTER TABLE pevar_vykony ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "anon insert pevar" ON pevar_vykony FOR INSERT TO anon WITH CHECK (true);
-CREATE POLICY "anon select pevar" ON pevar_vykony FOR SELECT TO anon USING (true);
-CREATE POLICY "anon delete pevar"  ON pevar_vykony FOR DELETE TO anon USING (true);
-
--- pevar_vykony: add identification columns (if table already exists)
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS vykon_id TEXT;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS operator TEXT;
-
--- ============================================================
--- MIGRÁCIA 2026-06-13: štruktúrovaný zber pre štúdie (SVS/SVE)
--- Periprocedurálne metriky + komplikácie + Clavien-Dindo
--- ============================================================
-
--- EVK
+-- --- EVK: štúdijné (SVS/SVE) + baseline ---
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS proc_duration_min  INT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS fluoro_time_min    NUMERIC;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS dap                NUMERIC;
@@ -190,56 +115,9 @@ ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS contrast_ml        INT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS konverzia          BOOLEAN;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS clavien_dindo      TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS antitrombotika     TEXT;
 
--- CAS
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS proc_duration_min  INT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS fluoro_time_min    NUMERIC;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS dap                NUMERIC;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS contrast_ml        INT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS konverzia          BOOLEAN;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS clavien_dindo      TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS tech_uspech        TEXT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS femostop           BOOLEAN;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS kompresia_min      INT;
-ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS kontrast           TEXT;
-
--- PEVAR
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS proc_duration_min  INT;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS fluoro_time_min    NUMERIC;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS dap                NUMERIC;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS contrast_ml        INT;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS konverzia          BOOLEAN;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS clavien_dindo      TEXT;
-
--- ============================================================
--- Tabuľka NÁPADY (zdieľaný zápisník návrhov)
--- ============================================================
-CREATE TABLE IF NOT EXISTS ideas (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at  TIMESTAMPTZ DEFAULT NOW(),
-  col         TEXT NOT NULL DEFAULT 'napady',
-  text        TEXT NOT NULL,
-  author      TEXT
-);
-ALTER TABLE ideas ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "anon all ideas" ON ideas;
-CREATE POLICY "anon all ideas" ON ideas FOR ALL TO anon USING (true) WITH CHECK (true);
-
--- ============================================================
--- MIGRÁCIA 2026-06-13 (b): baseline parametre
--- ============================================================
-ALTER TABLE evk_vykony   ADD COLUMN IF NOT EXISTS antitrombotika   TEXT;
-ALTER TABLE cas_vykony   ADD COLUMN IF NOT EXISTS antitrombotika   TEXT;
-ALTER TABLE cas_vykony   ADD COLUMN IF NOT EXISTS cas_symptom_days INT;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS antitrombotika   TEXT;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sac_diameter_mm  NUMERIC;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS neck_length_mm   NUMERIC;
-
--- ============================================================
--- MIGRÁCIA 2026-06-13 (c): EVK materiály – flatten pre publikáciu
--- ============================================================
+-- --- EVK: materiály flatten (publikačné) ---
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS stent_count       INT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS stent_brands      TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS stent_types       TEXT;
@@ -264,11 +142,138 @@ ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_postdilat    BOOLEAN;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_kissing      BOOLEAN;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_cerab        BOOLEAN;
 
--- PEVAR: oprava duplicitného indikacia_typ → samostatný sg_konfiguracia
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sg_konfiguracia TEXT;
+-- --- CAS: identifikácia, prístup, DSA, materiály ---
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS vykon_id TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS operator TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS klinicky_stav TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS cas_symptom_days INT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS pristupova_arteria TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS strana_pristupu TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS pristup_smer TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS pristup_technika TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS pristup_sposob TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS navadzanie TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS uvodny_sheath TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS diag_kateter TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS nascet_stenoza_sin TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS nascet_metoda_sin TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS nascet_stenoza_dx TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS nascet_metoda_dx TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_sheath TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_sheath_fr TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_sheath_dlzka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_sheath_znacka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_vodic TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_vodic_spec TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS interv_vodic_znacka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS emboloprotekcia TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS predilatacia_vykonana TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS predilatacny_balon TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS predilatacny_balon_velkost TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS predilatacny_balon_znacka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS stent TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS stent_velkost TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS stent_znacka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovanie_vykonane TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_velkost TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_znacka TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS hemostaza_text TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS kompresia_min INT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS femostop BOOLEAN;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS kontrast TEXT;
 
--- PEVAR: uzáver triesla obojstranne (EVK/CAS logika)
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS kompresia_dx_min  INT;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS kompresia_sin_min INT;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS femostop_dx       BOOLEAN;
-ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS femostop_sin      BOOLEAN;
+-- --- CAS: štúdijné (SVS/SVE) + baseline ---
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS tech_uspech        TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS proc_duration_min  INT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS fluoro_time_min    NUMERIC;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS dap                NUMERIC;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS contrast_ml        INT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS konverzia          BOOLEAN;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS clavien_dindo      TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS antitrombotika     TEXT;
+
+-- --- PEVAR: identifikácia, prístup, materiály ---
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS char_krehky               BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS char_polymorbidny         BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS symptomaticky             BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS indikacia_typ             TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sg_konfiguracia           TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS anestezia_typ             TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS pristup_strana            TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS punkcia_arteria           TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS punkcia_technika          TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS usg_nav                   BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS rtg_nav                   BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS zabezpecenie_technika     TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sheath_velkost            TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS vodic_typ                 TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sg_nazov                  TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sg_rozmery                TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS contra_kateter_typ        TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS implantacia_komentar      TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS modelovanie_telo          BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS modelovanie_telo_balon    TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS modelovanie_extenzie      BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS modelovanie_extenzie_balon TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS modelovanie_extenzie_rozmer TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS endoleak                  BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS endoleak_typ              TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS endoleak_zdroj            TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS komponenty_ok             BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS uzaver_dx_technika        TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS uzaver_sin_technika       TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS kompresia_dx_min          INT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS kompresia_sin_min         INT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS hemostaza_dx              TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS hemostaza_sin             TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS femostop_dx               BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS femostop_sin              BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS odporucanie_cas           TEXT;
+
+-- --- PEVAR: štúdijné (SVS/SVE) + baseline ---
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS proc_duration_min  INT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS fluoro_time_min    NUMERIC;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS dap                NUMERIC;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS contrast_ml        INT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS konverzia          BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS clavien_dindo      TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS antitrombotika     TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sac_diameter_mm    NUMERIC;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS neck_length_mm     NUMERIC;
+
+-- ============================================================
+-- 3. RLS + POLITIKY (anon insert/select/delete) – idempotentné
+-- ============================================================
+ALTER TABLE evk_vykony   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cas_vykony   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pevar_vykony ENABLE ROW LEVEL SECURITY;
+ALTER TABLE evk_followup ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ideas        ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "anon all evk"      ON evk_vykony;
+DROP POLICY IF EXISTS "anon insert evk"   ON evk_vykony;
+DROP POLICY IF EXISTS "anon select evk"   ON evk_vykony;
+CREATE POLICY "anon all evk"   ON evk_vykony   FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "anon all cas"      ON cas_vykony;
+DROP POLICY IF EXISTS "anon insert cas"   ON cas_vykony;
+DROP POLICY IF EXISTS "anon select cas"   ON cas_vykony;
+CREATE POLICY "anon all cas"   ON cas_vykony   FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "anon all pevar"    ON pevar_vykony;
+DROP POLICY IF EXISTS "anon insert pevar" ON pevar_vykony;
+DROP POLICY IF EXISTS "anon select pevar" ON pevar_vykony;
+DROP POLICY IF EXISTS "anon delete pevar" ON pevar_vykony;
+CREATE POLICY "anon all pevar" ON pevar_vykony FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "anon insert followup" ON evk_followup;
+DROP POLICY IF EXISTS "anon select followup" ON evk_followup;
+DROP POLICY IF EXISTS "anon delete followup" ON evk_followup;
+DROP POLICY IF EXISTS "anon all followup"    ON evk_followup;
+CREATE POLICY "anon all followup" ON evk_followup FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "anon all ideas" ON ideas;
+CREATE POLICY "anon all ideas" ON ideas FOR ALL TO anon USING (true) WITH CHECK (true);
