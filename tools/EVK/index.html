@@ -268,7 +268,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         </div>
       </div>
     </div>
-    <label class="ck"><input type="checkbox" value="dyslipidémia" onchange="gen()"> Dyslipidémia</label>
+    <!-- Dyslipidémia -->
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_dysl" onchange="kSub('dysl');gen()"><span>Dyslipidémia</span></label>
+      <div class="kom-sub" id="ksub_dysl">
+        <div class="sub-lbl">Liečba</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="dysl_liecba" value="bez liečby" onchange="gen()"><span>Bez liečby</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="statín" checked onchange="gen()"><span>Statín</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="statín + ezetimib" onchange="gen()"><span>Statín + ezetimib</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="PCSK9 inhibítor" onchange="gen()"><span>PCSK9 inhibítor</span></label>
+        </div>
+      </div>
+    </div>
     <label class="ck"><input type="checkbox" value="CHOCHP" onchange="gen()"> CHOCHP</label>
     <label class="ck"><input type="checkbox" value="renálna insuficiencia" onchange="gen()"> Ren. insuficiencia</label>
     <label class="ck"><input type="checkbox" value="PAO" onchange="gen()"> PAO</label>
@@ -627,6 +639,10 @@ function getKomor(){
   if(document.getElementById('k_chri')?.checked){
     const res=calcEGFR();
     list.push(res?'CKD – '+res:'CKD');
+  }
+  if(document.getElementById('k_dysl')?.checked){
+    const liecba=document.querySelector('input[name="dysl_liecba"]:checked')?.value||'statín';
+    list.push('Dyslipidémia – '+liecba);
   }
   if(document.getElementById('k_obez')?.checked){
     const res=calcBMI();
