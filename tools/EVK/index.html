@@ -514,6 +514,50 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 </div>
 </div>
 
+<div class="card">
+<div class="st">📊 Štúdia – periprocedurálne dáta &amp; komplikácie (SVS/SVE)</div>
+<div style="font-size:11px;color:#6b7280;margin-bottom:8px">Štruktúrovaný zber pre publikácie. Needzáva do textu správy – ukladá sa len do databázy.</div>
+<div class="row r2">
+  <div class="f"><label>Dĺžka výkonu (min)</label><input type="number" id="st_dur" min="0" max="600" placeholder="napr. 45" oninput="gen()"></div>
+  <div class="f"><label>Skiaskopický čas (min)</label><input type="number" id="st_fluoro" min="0" max="300" step="0.1" placeholder="napr. 12.5" oninput="gen()"></div>
+</div>
+<div class="row r2">
+  <div class="f"><label>DAP (Gy·cm²)</label><input type="number" id="st_dap" min="0" step="0.1" placeholder="napr. 85" oninput="gen()"></div>
+  <div class="f"><label>Kontrast (ml)</label><input type="number" id="st_contrast" min="0" max="1000" placeholder="napr. 80" oninput="gen()"></div>
+</div>
+<div class="f"><div class="lbl">Komplikácie – prístupové miesto (≤30d)</div>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" class="st_cmp" value="hematóm" onchange="gen()"> Hematóm</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="pseudoaneuryzma" onchange="gen()"> Pseudoaneuryzma</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="AV fistula" onchange="gen()"> AV fistula</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="krvácanie s intervenciou" onchange="gen()"> Krvácanie s intervenciou</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="infekcia prístupu" onchange="gen()"> Infekcia</label>
+  </div>
+</div>
+<div class="f"><div class="lbl">Komplikácie – cieľová cieva</div>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" class="st_cmp" value="distálna embolizácia" onchange="gen()"> Distálna embolizácia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="flow-limit. disekcia" onchange="gen()"> Flow-limit. disekcia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="trombóza/oklúzia" onchange="gen()"> Trombóza/oklúzia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="perforácia/ruptúra" onchange="gen()"> Perforácia/ruptúra</label>
+  </div>
+</div>
+<div class="f"><div class="lbl">Systémové &amp; MACE/MALE (≤30d)</div>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" class="st_cmp" value="kontrastová nefropatia (CIN)" onchange="gen()"> CIN</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="IM ≤30d" onchange="gen()"> IM</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="CMP ≤30d" onchange="gen()"> CMP</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="major amputácia ≤30d" onchange="gen()"> Major amputácia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="urgentná reintervencia ≤30d" onchange="gen()"> Urgentná reintervencia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="úmrtie ≤30d" onchange="gen()"> Úmrtie ≤30d</label>
+  </div>
+</div>
+<div class="row r2">
+  <div class="f"><label>Konverzia na otvorený výkon</label><select id="st_konv" onchange="gen()"><option value="nie">nie</option><option value="áno">áno</option></select></div>
+  <div class="f"><label>Clavien-Dindo (najzávažnejšia)</label><select id="st_clavien" onchange="gen()"><option value="">žiadna</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtie)</option></select></div>
+</div>
+</div>
+
 </div>
 <div class="right">
   <textarea id="out" spellcheck="false"></textarea>
@@ -1053,7 +1097,14 @@ function collectFullData(){
     tech_uspech:([...document.querySelectorAll('input[name="tech_uspech"]:checked')][0]||{}).value||'',
     komplikacie:[...document.querySelectorAll('.komp_ck:checked')].map(e=>e.value).join(', ')+(g('komp_text')?' – '+g('komp_text'):''),
     zaver:g('zaver'),
-    strana:g('strana')
+    strana:g('strana'),
+    proc_duration_min:g('st_dur')?parseInt(g('st_dur')):null,
+    fluoro_time_min:g('st_fluoro')?parseFloat(g('st_fluoro')):null,
+    dap:g('st_dap')?parseFloat(g('st_dap')):null,
+    contrast_ml:g('st_contrast')?parseInt(g('st_contrast')):null,
+    komplikacie_struct:[...document.querySelectorAll('.st_cmp:checked')].map(e=>e.value).join(', '),
+    konverzia:g('st_konv')==='áno',
+    clavien_dindo:g('st_clavien')
   };
 }
 async function saveToSheets(){
