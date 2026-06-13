@@ -92,16 +92,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 </div>
 <div class="f"><label>Diagnóza</label><input type="text" id="diagnoza" value="komplexním postižením infrarenální aorty – AAA" oninput="gen()"></div>
 <div class="row r2">
-  <div class="f"><label>Průměr vaku (mm)</label><input type="number" id="sac_diameter_mm" min="0" max="200" step="0.1" placeholder="napr. 58" oninput="gen()"></div>
-  <div class="f"><label>Délka krčku (mm)</label><input type="number" id="neck_length_mm" min="0" max="100" step="0.1" placeholder="napr. 22" oninput="gen()"></div>
+  <div class="f"><label>Průměr vaku (mm)</label><input type="number" id="sac_diameter_mm" min="0" max="200" step="0.1" placeholder="např. 58" oninput="gen()"></div>
+  <div class="f"><label>Délka krčku (mm)</label><input type="number" id="neck_length_mm" min="0" max="100" step="0.1" placeholder="např. 22" oninput="gen()"></div>
 </div>
 <!-- Charakteristika krčku AAA – jen sběr, neukládá se do popisu -->
 <div class="thead" style="margin-top:6px"><label class="thdr"><input type="checkbox" id="c_neck" onchange="tB('neck')"><span>📐 Charakteristika krčku AAA (sběr pro studii)</span></label>
   <div class="tbody" id="b_neck">
     <div class="row r3">
-      <div class="f"><label>Průměr krčku proximální (mm)</label><input type="number" id="neck_diameter_mm" min="0" max="60" step="0.1" placeholder="napr. 24"></div>
-      <div class="f"><label>Infrarenální angulace α (°)</label><input type="number" id="neck_angle_alpha" min="0" max="180" step="1" placeholder="napr. 45"></div>
-      <div class="f"><label>Suprarenální angulace β (°)</label><input type="number" id="neck_angle_beta" min="0" max="180" step="1" placeholder="napr. 30"></div>
+      <div class="f"><label>Průměr krčku proximální (mm)</label><input type="number" id="neck_diameter_mm" min="0" max="60" step="0.1" placeholder="např. 24"></div>
+      <div class="f"><label>Infrarenální angulace α (°)</label><input type="number" id="neck_angle_alpha" min="0" max="180" step="1" placeholder="např. 45"></div>
+      <div class="f"><label>Suprarenální angulace β (°)</label><input type="number" id="neck_angle_beta" min="0" max="180" step="1" placeholder="např. 30"></div>
     </div>
     <div class="row r3">
       <div class="f"><label>Tvar krčku</label><select id="neck_shape"><option value="">–</option><option>rovný</option><option>kónický</option><option>reverzně kónický</option><option>soudkovitý</option></select></div>
@@ -109,8 +109,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <div class="f"><label>Trombus v krčku</label><select id="neck_thrombus"><option value="">–</option><option>žádný</option><option>&lt;25 %</option><option>25–50 %</option><option>&gt;50 %</option></select></div>
     </div>
     <div class="row r2">
-      <div class="f"><label>Distální landing AIC l.dx. (mm)</label><input type="number" id="iliac_diameter_dx" min="0" max="40" step="0.1" placeholder="napr. 14"></div>
-      <div class="f"><label>Distální landing AIC l.sin. (mm)</label><input type="number" id="iliac_diameter_sin" min="0" max="40" step="0.1" placeholder="napr. 13"></div>
+      <div class="f"><label>Distální landing AIC l.dx. (mm)</label><input type="number" id="iliac_diameter_dx" min="0" max="40" step="0.1" placeholder="např. 14"></div>
+      <div class="f"><label>Distální landing AIC l.sin. (mm)</label><input type="number" id="iliac_diameter_sin" min="0" max="40" step="0.1" placeholder="např. 13"></div>
     </div>
     <div class="f"><label>Vhodnost dle IFU</label><select id="neck_ifu"><option value="">–</option><option>v rámci IFU</option><option>mimo IFU (hostile neck)</option></select></div>
   </div>
@@ -168,7 +168,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <div class="kom-sub" id="ksub_chri">
         <div class="sub-lbl">Sérový kreatinin (µmol/L)</div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <input type="number" id="chri_krea" min="10" max="2000" step="1" placeholder="napr. 90"
+          <input type="number" id="chri_krea" min="10" max="2000" step="1" placeholder="např. 90"
                  style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
                  oninput="calcEGFR();gen()">
           <span id="chri_egfr_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
@@ -234,7 +234,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         </div>
         <div class="sub-lbl" style="margin-top:6px">Pack-years</div>
         <div style="display:flex;align-items:center;gap:8px">
-          <input type="number" id="faj_py" min="1" max="200" step="1" placeholder="napr. 30"
+          <input type="number" id="faj_py" min="1" max="200" step="1" placeholder="např. 30"
                  style="width:90px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
                  oninput="gen()">
           <span style="font-size:12px;color:#6b7280">pack-years</span>
@@ -246,7 +246,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <div class="kom-sub" id="ksub_obez">
         <div class="sub-lbl">BMI (kg/m²)</div>
         <div style="display:flex;align-items:center;gap:8px">
-          <input type="number" id="obez_bmi" min="30" max="80" step="0.1" placeholder="napr. 34"
+          <input type="number" id="obez_bmi" min="30" max="80" step="0.1" placeholder="např. 34"
                  style="width:90px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
                  oninput="calcBMI();gen()">
           <span id="obez_bmi_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
@@ -259,9 +259,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         <div class="sub-lbl">Léčba</div>
         <div class="checks">
           <label class="ck"><input type="radio" name="dysl_liecba" value="bez léčby" onchange="gen()"><span>Bez léčby</span></label>
-          <label class="ck"><input type="radio" name="dysl_liecba" value="statín" checked onchange="gen()"><span>Statín</span></label>
-          <label class="ck"><input type="radio" name="dysl_liecba" value="statín + ezetimib" onchange="gen()"><span>Statín + ezetimib</span></label>
-          <label class="ck"><input type="radio" name="dysl_liecba" value="PCSK9 inhibítor" onchange="gen()"><span>PCSK9 inhibítor</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="statin" checked onchange="gen()"><span>Statín</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="statin + ezetimib" onchange="gen()"><span>Statín + ezetimib</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="PCSK9 inhibitor" onchange="gen()"><span>PCSK9 inhibitor</span></label>
         </div>
       </div>
     </div>
@@ -287,7 +287,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 </div>
 <div class="f"><div class="lbl">Antitrombotická léčba pred výkonem</div>
   <div class="checks">
-    <label class="ck"><input type="checkbox" class="atb" value="bez antitrombotík" onchange="gen()"> Bez</label>
+    <label class="ck"><input type="checkbox" class="atb" value="bez antitrombotik" onchange="gen()"> Bez</label>
     <label class="ck"><input type="checkbox" class="atb" value="ASA" onchange="gen()"> ASA</label>
     <label class="ck"><input type="checkbox" class="atb" value="klopidogrel" onchange="gen()"> Klopidogrel</label>
     <label class="ck"><input type="checkbox" class="atb" value="DAPT (ASA+klopidogrel)" onchange="gen()"> DAPT</label>
@@ -337,7 +337,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="f"><label>Technika zajištění vpichu</label>
   <select id="zabezpecenie_technika" onchange="gen()">
     <option value="preclosure technikou">Standardní preclosure</option>
-    <option value="za použití preclosure techniky za použití ProStyle zariadenia">Preclosure s ProStyle</option>
+    <option value="za použití preclosure techniky za použití ProStyle zařízení">Preclosure s ProStyle</option>
     <option value="odebráním hloubky místa vpichu kalibračním dilatátorem pro Manta systém">Kalibrace pro Manta</option>
   </select>
 </div>
@@ -347,7 +347,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="card">
 <div class="st">Katetrizace a Implantace</div>
 <div class="f"><label>Katetrizace aorty</label>
-  <textarea id="katetrizacia_aorty" rows="2" oninput="gen()">Zleva zavádíme cez 8F puzdro 5F pig tail katétr do suprarenální aorty, sprava cez 8F puzdro Berenstein katétr do hrudnej aorty</textarea>
+  <textarea id="katetrizacia_aorty" rows="2" oninput="gen()">Zleva zavádíme přes 8F pouzdro 5F pig tail katétr do suprarenální aorty, zprava přes 8F pouzdro Berenstein katétr do hrudní aorty</textarea>
 </div>
 <div class="f"><label>Vodič</label>
   <select id="vodic_typ" onchange="gen()">
@@ -413,7 +413,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <div class="f"><label>Balón</label>
         <select id="modelovanie_extenzie_balon" onchange="gen()"><option>Atlas</option><option>Metacross</option><option>Mustang</option></select>
       </div>
-      <div class="f"><label>Velikost (mm)</label><input type="text" id="modelovanie_extenzie_rozmer" placeholder="napr. 12 a 18mm" oninput="gen()"></div>
+      <div class="f"><label>Velikost (mm)</label><input type="text" id="modelovanie_extenzie_rozmer" placeholder="např. 12 a 18mm" oninput="gen()"></div>
     </div>
   </div>
 </div>
@@ -432,7 +432,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       </div>
       <div class="f"><label>Zdroj (Typ II)</label>
         <select id="endoleak_typ2_zdroj" onchange="gen()">
-          <option value="cestou lumbálních tepien">Lumbální tepny</option>
+          <option value="cestou lumbálních tepen">Lumbální tepny</option>
           <option value="cestou akcesorní renální tepny">Akcesorní renální tepna</option>
         </select>
       </div>
@@ -455,7 +455,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="f"><label>Uzavírací zařízení DX</label>
     <select id="uzaver_dx_technika" onchange="gen()">
       <option value="">Manuální komprese</option>
-      <option value="dotažením sutur ProStyle zariadenia">ProStyle sutura</option>
+      <option value="dotažením sutur ProStyle zařízení">ProStyle sutura</option>
       <option value="pomocí Manta systému">Manta systém</option>
       <option value="pomocí AngioSeal">AngioSeal</option>
       <option value="pomocí FemoSeal">FemoSeal</option>
@@ -478,7 +478,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="f"><label>Uzavírací zařízení SIN</label>
     <select id="uzaver_sin_technika" onchange="gen()">
       <option value="">Manuální komprese</option>
-      <option value="dotažením sutur ProStyle zariadenia">ProStyle sutura</option>
+      <option value="dotažením sutur ProStyle zařízení">ProStyle sutura</option>
       <option value="pomocí Manta systému">Manta systém</option>
       <option value="pomocí AngioSeal">AngioSeal</option>
       <option value="pomocí FemoSeal">FemoSeal</option>
@@ -517,12 +517,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="st">📊 Studie – periprocedurální dáta &amp; komplikace (SVS/SVE)</div>
 <div style="font-size:11px;color:#6b7280;margin-bottom:8px">Strukturovaný sběr pro publikace. Nevstupuje do textu zprávy – ukládá se jen do databáze.</div>
 <div class="row r2">
-  <div class="f"><label>Délka výkonu (min)</label><input type="number" id="st_dur" min="0" max="600" placeholder="napr. 90" oninput="gen()"></div>
-  <div class="f"><label>Skiaskopický čas (min)</label><input type="number" id="st_fluoro" min="0" max="300" step="0.1" placeholder="napr. 22.5" oninput="gen()"></div>
+  <div class="f"><label>Délka výkonu (min)</label><input type="number" id="st_dur" min="0" max="600" placeholder="např. 90" oninput="gen()"></div>
+  <div class="f"><label>Skiaskopický čas (min)</label><input type="number" id="st_fluoro" min="0" max="300" step="0.1" placeholder="např. 22.5" oninput="gen()"></div>
 </div>
 <div class="row r2">
-  <div class="f"><label>DAP (Gy·cm²)</label><input type="number" id="st_dap" min="0" step="0.1" placeholder="napr. 180" oninput="gen()"></div>
-  <div class="f"><label>Kontrast (ml)</label><input type="number" id="st_contrast" min="0" max="1000" placeholder="napr. 120" oninput="gen()"></div>
+  <div class="f"><label>DAP (Gy·cm²)</label><input type="number" id="st_dap" min="0" step="0.1" placeholder="např. 180" oninput="gen()"></div>
+  <div class="f"><label>Kontrast (ml)</label><input type="number" id="st_contrast" min="0" max="1000" placeholder="např. 120" oninput="gen()"></div>
 </div>
 <div class="f"><div class="lbl">Přístupové místo (≤30d)</div>
   <div class="checks">
@@ -613,7 +613,7 @@ function getKomor(){
   }
   if(document.getElementById('k_obez')?.checked){const res=calcBMI();list.push(res?'Obezita – '+res:'Obezita');}
   if(document.getElementById('k_dysl')?.checked){
-    const liecba=document.querySelector('input[name="dysl_liecba"]:checked')?.value||'statín';
+    const liecba=document.querySelector('input[name="dysl_liecba"]:checked')?.value||'statin';
     list.push('Dyslipidémia – '+liecba);
   }
   if(document.getElementById('k_chochp')?.checked){
@@ -779,7 +779,7 @@ function addExtenzia(){
       </div>
       <div class="f"><label>Název</label><select id="${id}_nazov" onchange="gen()">${SG_OPTS}</select></div>
     </div>
-    <div class="f" style="margin-top:6px"><label>Rozmery (mm)</label><input type="text" id="${id}_rozmery" placeholder="napr. 16x80mm" oninput="gen()"></div>`;
+    <div class="f" style="margin-top:6px"><label>Rozmery (mm)</label><input type="text" id="${id}_rozmery" placeholder="např. 16x80mm" oninput="gen()"></div>`;
   cont.appendChild(div);gen();
 }
 function delExtenzia(idx){const r=document.querySelector('#extenzie_list [data-idx="'+idx+'"]');if(r)r.remove();gen();}

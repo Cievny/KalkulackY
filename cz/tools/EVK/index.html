@@ -129,7 +129,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="f"><label>Rutherford</label>
     <select id="ruth" onchange="gen()"><option value="">–</option><option value="0/0 – Asymptomatický">0/0 – Asymptomatický</option><option value="I/1 – Lehká klaudikace">I/1 – Lehká klaudikace</option><option value="I/2 – Střední klaudikace">I/2 – Střední klaudikace</option><option value="I/3 – Těžká klaudikace">I/3 – Těžká klaudikace</option><option value="II/4 – Ischemická klidová bolest">II/4 – Ischemická klidová bolest</option><option value="II/5 – Menší tkáňová strata">II/5 – Menší tkáňová strata</option><option value="III/6 – Větší tkáňová strata">III/6 – Větší tkáňová strata</option></select>
   </div>
-  <div class="f" style="grid-column:span 2"><label>Diagnóza / indikace</label><input type="text" id="diag" placeholder="napr. ICHDK, kritická ischemie levé DK" oninput="gen()"></div>
+  <div class="f" style="grid-column:span 2"><label>Diagnóza / indikace</label><input type="text" id="diag" placeholder="např. ICHDK, kritická ischemie levé DK" oninput="gen()"></div>
 </div>
 <div class="f"><div class="lbl">Komorbidity</div>
   <div id="komordiv">
@@ -178,7 +178,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <div class="kom-sub" id="ksub_chri">
         <div class="sub-lbl">Sérový kreatinin (µmol/L)</div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <input type="number" id="chri_krea" min="10" max="2000" step="1" placeholder="napr. 90"
+          <input type="number" id="chri_krea" min="10" max="2000" step="1" placeholder="např. 90"
                  style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
                  oninput="calcEGFR();gen()">
           <span id="chri_egfr_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
@@ -248,7 +248,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         </div>
         <div class="sub-lbl" style="margin-top:6px">Pack-years</div>
         <div style="display:flex;align-items:center;gap:8px">
-          <input type="number" id="faj_py" min="1" max="200" step="1" placeholder="napr. 30"
+          <input type="number" id="faj_py" min="1" max="200" step="1" placeholder="např. 30"
                  style="width:90px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
                  oninput="gen()">
           <span style="font-size:12px;color:#6b7280">pack-years</span>
@@ -261,7 +261,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <div class="kom-sub" id="ksub_obez">
         <div class="sub-lbl">BMI (kg/m²)</div>
         <div style="display:flex;align-items:center;gap:8px">
-          <input type="number" id="obez_bmi" min="30" max="80" step="0.1" placeholder="napr. 34"
+          <input type="number" id="obez_bmi" min="30" max="80" step="0.1" placeholder="např. 34"
                  style="width:90px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
                  oninput="calcBMI();gen()">
           <span id="obez_bmi_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
@@ -275,8 +275,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         <div class="sub-lbl">Léčba</div>
         <div class="checks">
           <label class="ck"><input type="radio" name="dysl_liecba" value="bez léčby" onchange="gen()"><span>Bez léčby</span></label>
-          <label class="ck"><input type="radio" name="dysl_liecba" value="statín" checked onchange="gen()"><span>Statín</span></label>
-          <label class="ck"><input type="radio" name="dysl_liecba" value="statín + ezetimib" onchange="gen()"><span>Statín + ezetimib</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="statin" checked onchange="gen()"><span>Statín</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="statin + ezetimib" onchange="gen()"><span>Statín + ezetimib</span></label>
           <label class="ck"><input type="radio" name="dysl_liecba" value="PCSK9 inhibítor" onchange="gen()"><span>PCSK9 inhibítor</span></label>
         </div>
       </div>
@@ -521,7 +521,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <span>Závěr / Doporučení</span>
   <button type="button" onclick="resetZaver()" style="font-size:10px;padding:2px 7px;border:1px solid #dde1ea;border-radius:4px;background:#f7f8fc;cursor:pointer;color:#5a6a8a">🔄 Auto</button>
 </label>
-  <textarea id="zaver" rows="4" placeholder="napr. Výkon bez komplikací, DAPT, kontrola za 3 mesiace..." oninput="zaverManual=true;gen()"></textarea>
+  <textarea id="zaver" rows="4" placeholder="např. Výkon bez komplikací, DAPT, kontrola za 3 mesiace..." oninput="zaverManual=true;gen()"></textarea>
 </div>
 </div>
 
@@ -529,12 +529,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="st">📊 Studie – periprocedurální dáta &amp; komplikace (SVS/SVE)</div>
 <div style="font-size:11px;color:#6b7280;margin-bottom:8px">Strukturovaný sběr pro publikace. Nevstupuje do textu zprávy – ukládá se jen do databáze.</div>
 <div class="row r2">
-  <div class="f"><label>Délka výkonu (min)</label><input type="number" id="st_dur" min="0" max="600" placeholder="napr. 45" oninput="gen()"></div>
-  <div class="f"><label>Skiaskopický čas (min)</label><input type="number" id="st_fluoro" min="0" max="300" step="0.1" placeholder="napr. 12.5" oninput="gen()"></div>
+  <div class="f"><label>Délka výkonu (min)</label><input type="number" id="st_dur" min="0" max="600" placeholder="např. 45" oninput="gen()"></div>
+  <div class="f"><label>Skiaskopický čas (min)</label><input type="number" id="st_fluoro" min="0" max="300" step="0.1" placeholder="např. 12.5" oninput="gen()"></div>
 </div>
 <div class="row r2">
-  <div class="f"><label>DAP (Gy·cm²)</label><input type="number" id="st_dap" min="0" step="0.1" placeholder="napr. 85" oninput="gen()"></div>
-  <div class="f"><label>Kontrast (ml)</label><input type="number" id="st_contrast" min="0" max="1000" placeholder="napr. 80" oninput="gen()"></div>
+  <div class="f"><label>DAP (Gy·cm²)</label><input type="number" id="st_dap" min="0" step="0.1" placeholder="např. 85" oninput="gen()"></div>
+  <div class="f"><label>Kontrast (ml)</label><input type="number" id="st_contrast" min="0" max="1000" placeholder="např. 80" oninput="gen()"></div>
 </div>
 <div class="f"><div class="lbl">Komplikace – přístupové místo (≤30d)</div>
   <div class="checks">
@@ -717,7 +717,7 @@ function getKomor(){
     list.push('CHOCHP – '+gold+', '+liecba);
   }
   if(document.getElementById('k_dysl')?.checked){
-    const liecba=document.querySelector('input[name="dysl_liecba"]:checked')?.value||'statín';
+    const liecba=document.querySelector('input[name="dysl_liecba"]:checked')?.value||'statin';
     list.push('Dyslipidémia – '+liecba);
   }
   if(document.getElementById('k_obez')?.checked){
