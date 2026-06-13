@@ -176,3 +176,53 @@ CREATE POLICY "anon delete pevar"  ON pevar_vykony FOR DELETE TO anon USING (tru
 -- pevar_vykony: add identification columns (if table already exists)
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS vykon_id TEXT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS operator TEXT;
+
+-- ============================================================
+-- MIGRÁCIA 2026-06-13: štruktúrovaný zber pre štúdie (SVS/SVE)
+-- Periprocedurálne metriky + komplikácie + Clavien-Dindo
+-- ============================================================
+
+-- EVK
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS proc_duration_min  INT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS fluoro_time_min    NUMERIC;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS dap                NUMERIC;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS contrast_ml        INT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS konverzia          BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS clavien_dindo      TEXT;
+
+-- CAS
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS proc_duration_min  INT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS fluoro_time_min    NUMERIC;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS dap                NUMERIC;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS contrast_ml        INT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS konverzia          BOOLEAN;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS clavien_dindo      TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS tech_uspech        TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS femostop           BOOLEAN;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS kompresia_min      INT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS kontrast           TEXT;
+
+-- PEVAR
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS proc_duration_min  INT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS fluoro_time_min    NUMERIC;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS dap                NUMERIC;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS contrast_ml        INT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS konverzia          BOOLEAN;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS clavien_dindo      TEXT;
+
+-- ============================================================
+-- Tabuľka NÁPADY (zdieľaný zápisník návrhov)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS ideas (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  col         TEXT NOT NULL DEFAULT 'napady',
+  text        TEXT NOT NULL,
+  author      TEXT
+);
+ALTER TABLE ideas ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon all ideas" ON ideas;
+CREATE POLICY "anon all ideas" ON ideas FOR ALL TO anon USING (true) WITH CHECK (true);
