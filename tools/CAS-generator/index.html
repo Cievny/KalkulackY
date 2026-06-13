@@ -101,38 +101,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     </select>
   </div>
 </div>
-<div class="row r2">
-  <div class="f"><label>Stenóza NASCET</label>
-    <select id="nascet_stenoza" onchange="gen()">
-      <option value="">– nevyplnené –</option>
-      <option value="50-59%">50–59 %</option>
-      <option value="60-69%">60–69 %</option>
-      <option value="70-79%">70–79 %</option>
-      <option value="80-89%">80–89 %</option>
-      <option value="90-99%">90–99 %</option>
-      <option value="subokluzia">Subokluzia</option>
-      <option value="oklúzia">Oklúzia</option>
-    </select>
-  </div>
-  <div class="f"><label>Metóda merania</label>
-    <select id="nascet_metoda" onchange="gen()">
-      <option>DSA</option><option>CTA</option><option>MRA</option><option>USG</option>
-    </select>
-  </div>
-</div>
-<div class="f">
-  <label>Kalkulačka NASCET <span style="font-size:10px;color:#6b7280;font-weight:400">(d_min / d_distal → %)</span></label>
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-    <input type="number" id="nascet_dmin" min="0.1" max="20" step="0.1" placeholder="d min (mm)"
-           style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
-           oninput="calcNASCET()">
-    <span style="font-size:13px;color:#6b7280">/</span>
-    <input type="number" id="nascet_ddist" min="0.1" max="20" step="0.1" placeholder="d distal (mm)"
-           style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
-           oninput="calcNASCET()">
-    <span id="nascet_calc_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
-  </div>
-</div>
 <div class="f"><label>Typ AS plátu</label>
   <select id="plat" onchange="gen()">
     <option value="mäkkým AS plátom (dif.dg. trombom)">mäkký (s dif.dg. trombom)</option>
@@ -357,6 +325,38 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     </select>
   </div>
 </div>
+<div class="f">
+  <label>Stenóza NASCET <span style="font-size:10px;color:#6b7280;font-weight:400">– kalkulačka (d_min / d_distal mm)</span></label>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+    <input type="number" id="nascet_dmin" min="0.1" max="20" step="0.1" placeholder="d min (mm)"
+           style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+           oninput="calcNASCET()">
+    <span style="font-size:13px;color:#6b7280">/</span>
+    <input type="number" id="nascet_ddist" min="0.1" max="20" step="0.1" placeholder="d distal (mm)"
+           style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+           oninput="calcNASCET()">
+    <span id="nascet_calc_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
+  </div>
+  <div class="row r2" style="margin-top:4px">
+    <div class="f"><label>Stupeň stenózy NASCET</label>
+      <select id="nascet_stenoza" onchange="gen()">
+        <option value="">– nevyplnené –</option>
+        <option value="50-59%">50–59 %</option>
+        <option value="60-69%">60–69 %</option>
+        <option value="70-79%">70–79 %</option>
+        <option value="80-89%">80–89 %</option>
+        <option value="90-99%">90–99 %</option>
+        <option value="subokluzia">Subokluzia</option>
+        <option value="oklúzia">Oklúzia</option>
+      </select>
+    </div>
+    <div class="f"><label>Metóda merania</label>
+      <select id="nascet_metoda" onchange="gen()">
+        <option>DSA</option><option>CTA</option><option>MRA</option><option>USG</option>
+      </select>
+    </div>
+  </div>
+</div>
 <div class="row r2">
   <div class="f"><label>ACE l.sin.</label>
     <select id="dsa_ace_sin" onchange="gen()">
@@ -549,10 +549,13 @@ function getCasDsa(){
   const lok=g('lokalizacia');
   const sides=lat==='bi'?['sin','dx']:lok.includes('sin.')?['sin']:['dx'];
   const lines=[];
+  const nascet=g('nascet_stenoza'),nascetMet=g('nascet_metoda');
   sides.forEach(s=>{
     const L=s==='sin'?'l.sin.':'l.dx.';
     const acc=g('dsa_acc_'+s),aci=g('dsa_aci_'+s+'_typ'),ace=g('dsa_ace_'+s),av=g('dsa_av_'+s);
-    let line='ACC '+L+' – '+acc+'; ACI '+L+' – '+aci+'; ACE '+L+' – '+ace;
+    let aciText=aci;
+    if(s==='sin'&&nascet)aciText+=', stenóza '+nascet+' NASCET ('+nascetMet+')';
+    let line='ACC '+L+' – '+acc+'; ACI '+L+' – '+aciText+'; ACE '+L+' – '+ace;
     if(av)line+='; AV '+L+' – '+av;
     lines.push(line);
   });
