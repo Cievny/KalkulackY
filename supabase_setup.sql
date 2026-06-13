@@ -236,3 +236,30 @@ ALTER TABLE cas_vykony   ADD COLUMN IF NOT EXISTS cas_symptom_days INT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS antitrombotika   TEXT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sac_diameter_mm  NUMERIC;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS neck_length_mm   NUMERIC;
+
+-- ============================================================
+-- MIGRÁCIA 2026-06-13 (c): EVK materiály – flatten pre publikáciu
+-- ============================================================
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS stent_count       INT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS stent_brands      TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS stent_types       TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS stent_sizes       TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS stent_segments    TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS balloon_count     INT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS balloon_brands    TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS balloon_sizes     TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS ivl_count         INT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS ivl_sizes         TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_vessel_prep  BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_predilat     BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_aterektomia  BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_ivl          BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_reentry      BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_trombektomia BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_pta          BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_deb          BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_stenting     BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_stentgraft   BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_postdilat    BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_kissing      BOOLEAN;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_cerab        BOOLEAN;

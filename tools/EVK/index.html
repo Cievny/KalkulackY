@@ -1059,6 +1059,39 @@ function collectFullData(){
     collectList('stent','stent');
     if(document.getElementById('c_post').checked)collectList('post','postdilat');
   }
+  // --- Flatten materiálov pre publikačnú analýzu ---
+  const sizeStr=it=>(it.priemer&&it.dlzka)?(it.priemer+'×'+it.dlzka):(it.priemer||it.dlzka||'');
+  const stents=interventionDetail.filter(i=>i.typ==='stent');
+  const balloonTypes=['vessel_prep','predilat','pta','deb','postdilat'];
+  const balloons=interventionDetail.filter(i=>balloonTypes.includes(i.typ));
+  const ivls=interventionDetail.filter(i=>i.typ==='ivl');
+  const jn=a=>a.filter(Boolean).join('; ');
+  const ck=id=>document.getElementById(id)?.checked||false;
+  const mat={
+    stent_count:stents.length,
+    stent_brands:jn(stents.map(s=>s.stent_nazov)),
+    stent_types:jn(stents.map(s=>s.stent_typ)),
+    stent_sizes:jn(stents.map(sizeStr)),
+    stent_segments:jn(stents.map(s=>(s.tepna||'')+(s.segment?' '+s.segment:''))),
+    balloon_count:balloons.length,
+    balloon_brands:jn(balloons.map(b=>b.nazov)),
+    balloon_sizes:jn(balloons.map(sizeStr)),
+    ivl_count:ivls.length,
+    ivl_sizes:jn(ivls.map(sizeStr)),
+    tech_vessel_prep:ck('c_vprep'),
+    tech_predilat:ck('c_pred'),
+    tech_aterektomia:ck('c_atek'),
+    tech_ivl:ck('c_sw'),
+    tech_reentry:ck('c_reentry'),
+    tech_trombektomia:ck('c_trom'),
+    tech_pta:ck('c_pta'),
+    tech_deb:ck('c_deb'),
+    tech_stenting:ck('c_stent'),
+    tech_stentgraft:ck('c_sg'),
+    tech_postdilat:ck('c_post'),
+    tech_kissing:ck('c_kiss'),
+    tech_cerab:ck('c_cerab')
+  };
   const artVal=g('access_art');
   const art=artVal==='vlastny'?(g('access_art_c')||''):artVal;
   const y=new Date().getFullYear();
@@ -1116,7 +1149,8 @@ function collectFullData(){
     komplikacie_struct:[...document.querySelectorAll('.st_cmp:checked')].map(e=>e.value).join(', '),
     konverzia:g('st_konv')==='áno',
     clavien_dindo:g('st_clavien'),
-    antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', ')
+    antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', '),
+    ...mat
   };
 }
 async function saveToSheets(){
