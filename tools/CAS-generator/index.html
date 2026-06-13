@@ -753,7 +753,6 @@ function gen(){
   const techUspech=document.querySelector('input[name="tech_uspech"]:checked')?.value||'';
   parts.push(uzaverText);
   if(g('vysledok'))parts.push('Výsledný obraz: '+g('vysledok')+'.');
-  if(techUspech)parts.push(techUspech+'.');
   parts.push(`Z: ${g('zaver_vykonu')}`);
   document.getElementById('out').value=parts.join('\n\n');
 }
