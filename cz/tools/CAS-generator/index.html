@@ -268,7 +268,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     </div>
   </div>
 </div>
-<div class="f"><div class="lbl">Antitrombotická léčba pred výkonom</div>
+<div class="f"><div class="lbl">Antitrombotická léčba pred výkonem</div>
   <div class="checks">
     <label class="ck"><input type="checkbox" class="atb" value="bez antitrombotík" onchange="gen()"> Bez</label>
     <label class="ck"><input type="checkbox" class="atb" value="ASA" onchange="gen()"> ASA</label>
@@ -286,7 +286,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="st">Přístup</div>
 <div class="row r3">
   <div class="f"><label>Přístupová tepna</label>
-    <select id="access_art" onchange="gen()"><option value="AFC">AFC</option><option value="a. brachialis">a. brachialis</option><option value="a. axillaris">a. axillaris</option><option value="vlastny">vlastné</option></select>
+    <select id="access_art" onchange="gen()"><option value="AFC">AFC</option><option value="a. brachialis">a. brachialis</option><option value="a. axillaris">a. axillaris</option><option value="vlastny">vlastní</option></select>
     <input type="text" id="access_art_c" placeholder="Vlastní tepna..." oninput="gen()" style="display:none;margin-top:5px">
   </div>
   <div class="f"><label>Strana</label><select id="strana" onchange="gen()"><option value="l.sin.">Levá (l.sin.)</option><option value="l.dx.">Pravá (l.dx.)</option></select></div>
@@ -379,7 +379,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="row r2">
   <div class="f"><label>ACE l.sin.</label>
     <select id="dsa_ace_sin" onchange="gen()">
-      <option value="priechodná">priechodná</option>
+      <option value="průchodná">průchodná</option>
       <option value="stenóza">stenóza</option><option value="okluze">okluze</option>
     </select>
   </div>
@@ -443,7 +443,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="row r2">
   <div class="f"><label>ACE l.dx.</label>
     <select id="dsa_ace_dx" onchange="gen()">
-      <option value="priechodná">priechodná</option>
+      <option value="průchodná">průchodná</option>
       <option value="stenóza">stenóza</option><option value="okluze">okluze</option>
     </select>
   </div>
@@ -464,7 +464,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="st">Postup</div>
 <div class="f">
   <select id="postup_vykonu" onchange="tShow('intervencia_container',this.value==='intervencia');gen()">
-    <option value="intervencia">Pristupujeme k intervencii</option>
+    <option value="intervencia">Přistupujeme k intervenci</option>
     <option value="konzervativny">Konzervativní postup</option>
   </select>
 </div>
@@ -547,7 +547,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="st">Uzávěr &amp; Hemostáza</div>
 <div class="row r2">
   <div class="f"><label>Komprese (min)</label><input type="number" id="kompr" placeholder="10" oninput="gen()"></div>
-  <div class="f"><label>Uzatváracie zařízení</label>
+  <div class="f"><label>Uzavírací zařízení</label>
     <select id="uzatvaraci_system" onchange="gen()">
       <option value="">Manuální komprese</option>
       <option>AngioSeal 6F</option><option>AngioSeal 8F</option>
@@ -617,7 +617,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 </div>
 <div class="row r2">
   <div class="f"><label>Konverze na CEA</label><select id="st_konv" onchange="gen()"><option value="nie">nie</option><option value="áno">áno</option></select></div>
-  <div class="f"><label>Clavien-Dindo (najzávažnejšia)</label><select id="st_clavien" onchange="gen()"><option value="">žádná</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtí)</option></select></div>
+  <div class="f"><label>Clavien-Dindo (nejzávažnější)</label><select id="st_clavien" onchange="gen()"><option value="">žádná</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtí)</option></select></div>
 </div>
 </div>
 
