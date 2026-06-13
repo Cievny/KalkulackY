@@ -565,6 +565,49 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="f"><label>Záver</label><input type="text" id="zaver_vykonu" value="CAS ACI l.dx. s dobrým efektom, bez komplikácii." oninput="gen()"></div>
 </div>
 
+<div class="card">
+<div class="st">📊 Štúdia – periprocedurálne dáta &amp; komplikácie (SVS/SVE)</div>
+<div style="font-size:11px;color:#6b7280;margin-bottom:8px">Štruktúrovaný zber pre publikácie. Nevstupuje do textu správy – ukladá sa len do databázy.</div>
+<div class="row r2">
+  <div class="f"><label>Dĺžka výkonu (min)</label><input type="number" id="st_dur" min="0" max="600" placeholder="napr. 45" oninput="gen()"></div>
+  <div class="f"><label>Skiaskopický čas (min)</label><input type="number" id="st_fluoro" min="0" max="300" step="0.1" placeholder="napr. 12.5" oninput="gen()"></div>
+</div>
+<div class="row r2">
+  <div class="f"><label>DAP (Gy·cm²)</label><input type="number" id="st_dap" min="0" step="0.1" placeholder="napr. 85" oninput="gen()"></div>
+  <div class="f"><label>Kontrast (ml)</label><input type="number" id="st_contrast" min="0" max="1000" placeholder="napr. 60" oninput="gen()"></div>
+</div>
+<div class="f"><div class="lbl">Neurologické komplikácie (≤30d)</div>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" class="st_cmp" value="TIA" onchange="gen()"> TIA</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="minor stroke ipsilaterálny" onchange="gen()"> Minor stroke ipsi.</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="major stroke ipsilaterálny" onchange="gen()"> Major stroke ipsi.</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="CMP kontralaterálna" onchange="gen()"> CMP kontralat.</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="hyperperfúzny syndróm" onchange="gen()"> Hyperperfúzny sy.</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="intrakraniálne krvácanie" onchange="gen()"> Intrakran. krvácanie</label>
+  </div>
+</div>
+<div class="f"><div class="lbl">Kardiálne &amp; hemodynamické (≤30d)</div>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" class="st_cmp" value="IM ≤30d" onchange="gen()"> IM</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="bradykardia/asystólia" onchange="gen()"> Bradykardia/asystólia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="hypotenzia s vazopresormi" onchange="gen()"> Hypotenzia (vazopresory)</label>
+  </div>
+</div>
+<div class="f"><div class="lbl">Prístupové miesto &amp; systémové</div>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" class="st_cmp" value="hematóm" onchange="gen()"> Hematóm</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="pseudoaneuryzma" onchange="gen()"> Pseudoaneuryzma</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="krvácanie s intervenciou" onchange="gen()"> Krvácanie s interv.</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="kontrastová nefropatia (CIN)" onchange="gen()"> CIN</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="úmrtie ≤30d" onchange="gen()"> Úmrtie ≤30d</label>
+  </div>
+</div>
+<div class="row r2">
+  <div class="f"><label>Konverzia na CEA</label><select id="st_konv" onchange="gen()"><option value="nie">nie</option><option value="áno">áno</option></select></div>
+  <div class="f"><label>Clavien-Dindo (najzávažnejšia)</label><select id="st_clavien" onchange="gen()"><option value="">žiadna</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtie)</option></select></div>
+</div>
+</div>
+
 </div><!-- end left -->
 
 <div class="right">
@@ -815,7 +858,18 @@ async function saveData(){
     hemostaza_poznamka:chk('vykonat_hemostazu')?'Ano':'Nie',
     hemostaza_text:chk('vykonat_hemostazu')?g('hemostaza_text'):'',
     vysledok:isInterv?g('vysledok'):'',
-    zaver:g('zaver_vykonu')
+    zaver:g('zaver_vykonu'),
+    femostop:chk('femostop'),
+    kompresia_min:g('kompr')?parseInt(g('kompr')):null,
+    tech_uspech:(document.querySelector('input[name="tech_uspech"]:checked')||{}).value||'',
+    proc_duration_min:g('st_dur')?parseInt(g('st_dur')):null,
+    fluoro_time_min:g('st_fluoro')?parseFloat(g('st_fluoro')):null,
+    dap:g('st_dap')?parseFloat(g('st_dap')):null,
+    contrast_ml:g('st_contrast')?parseInt(g('st_contrast')):null,
+    kontrast:[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join('+'),
+    komplikacie_struct:[...document.querySelectorAll('.st_cmp:checked')].map(e=>e.value).join(', '),
+    konverzia:g('st_konv')==='áno',
+    clavien_dindo:g('st_clavien')
   };
   msg('Ukladám...','#5a6a8a');
   try{
