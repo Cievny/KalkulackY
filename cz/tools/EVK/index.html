@@ -432,7 +432,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <div class="row r3">
       <div class="f"><label>Tepna</label><select id="atek_tp" onchange="gen()"><option value="">– tepna –</option><option>AIC l.sin.</option><option>AIC l.dx.</option><option>AIE l.sin.</option><option>AIE l.dx.</option><option>AII l.sin.</option><option>AII l.dx.</option><option>AFC l.sin.</option><option>AFC l.dx.</option><option>APF l.sin.</option><option>APF l.dx.</option><option>AFS l.sin.</option><option>AFS l.dx.</option><option>P1 l.sin.</option><option>P1 l.dx.</option><option>P2 l.sin.</option><option>P2 l.dx.</option><option>P3 l.sin.</option><option>P3 l.dx.</option><option>ATA l.sin.</option><option>ATA l.dx.</option><option>ATP l.sin.</option><option>ATP l.dx.</option><option>AFib l.sin.</option><option>AFib l.dx.</option><option>TTF l.sin.</option><option>TTF l.dx.</option></select></div>
       <div class="f"><label>Délka léze (cm)</label><input type="number" id="atek_d" step="0.5" placeholder="10" oninput="gen()"></div>
-      <div class="f"><label>Distální emboloprotekce</label><select id="atek_e" onchange="gen()"><option value="">nie</option><option>Spider FX</option><option>FilterWire EZ</option><option>Emboshield NAV6</option><option>vlastní filter</option></select></div>
+      <div class="f"><label>Distální emboloprotekce</label><select id="atek_e" onchange="gen()"><option value="">ne</option><option>Spider FX</option><option>FilterWire EZ</option><option>Emboshield NAV6</option><option>vlastní filter</option></select></div>
     </div>
   </div>
 </div>
@@ -489,7 +489,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <!-- Další -->
 <div class="tog"><label class="thdr"><input type="checkbox" id="c_dal" onchange="tB('dal');gen()"><span>Další nevyhnutné ošetření</span></label>
   <div class="tbody" id="b_dal">
-    <div class="f"><div class="lbl">Důvod</div><div class="checks"><label class="ck"><input type="checkbox" class="dal_d" value="prietok limitující disekcia" onchange="gen()"> Disekcia</label><label class="ck"><input type="checkbox" class="dal_d" value="perforace" onchange="gen()"> Perforace</label><label class="ck"><input type="checkbox" class="dal_d" value="extravazát" onchange="gen()"> Extravazát</label><label class="ck"><input type="checkbox" class="dal_d" value="reziduálne stenózy" onchange="gen()"> Reziduálne stenózy</label><label class="ck"><input type="checkbox" class="dal_d" value="spazmus" onchange="gen()"> Spazmus</label><label class="ck"><input type="checkbox" class="dal_d" value="recoil" onchange="gen()"> Recoil</label><label class="ck"><input type="checkbox" class="dal_d" value="trombóza" onchange="gen()"> Trombóza</label><label class="ck"><input type="checkbox" class="dal_d" value="distální embolizace" onchange="gen()"> Distální embolizace</label></div></div>
+    <div class="f"><div class="lbl">Důvod</div><div class="checks"><label class="ck"><input type="checkbox" class="dal_d" value="prietok limitující disekcia" onchange="gen()"> Disekce</label><label class="ck"><input type="checkbox" class="dal_d" value="perforace" onchange="gen()"> Perforace</label><label class="ck"><input type="checkbox" class="dal_d" value="extravazát" onchange="gen()"> Extravazát</label><label class="ck"><input type="checkbox" class="dal_d" value="reziduálne stenózy" onchange="gen()"> Reziduálne stenózy</label><label class="ck"><input type="checkbox" class="dal_d" value="spazmus" onchange="gen()"> Spazmus</label><label class="ck"><input type="checkbox" class="dal_d" value="recoil" onchange="gen()"> Recoil</label><label class="ck"><input type="checkbox" class="dal_d" value="trombóza" onchange="gen()"> Trombóza</label><label class="ck"><input type="checkbox" class="dal_d" value="distální embolizace" onchange="gen()"> Distální embolizace</label></div></div>
     <div class="f"><div class="lbl">Technika</div><div class="checks"><label class="ck"><input type="checkbox" class="dal_t" value="prolongovaná dilatace" onchange="gen()"> Prolongovaná dilatace</label><label class="ck"><input type="checkbox" class="dal_t" value="stenting" onchange="gen()"> Stenting</label><label class="ck"><input type="checkbox" class="dal_t" value="trombektomie" onchange="gen()"> Trombektomie</label><label class="ck"><input type="checkbox" class="dal_t" value="nutné chirurgické ošetření" onchange="gen()"> Chirurgické ošetření</label></div></div>
     <div class="f"><label>Poznámka</label><textarea id="dal_text" rows="2" placeholder="Volný text..." oninput="gen()"></textarea></div>
   </div>
@@ -542,7 +542,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <label class="ck"><input type="checkbox" class="st_cmp" value="pseudoaneuryzma" onchange="gen()"> Pseudoaneuryzma</label>
     <label class="ck"><input type="checkbox" class="st_cmp" value="AV fistula" onchange="gen()"> AV fistula</label>
     <label class="ck"><input type="checkbox" class="st_cmp" value="krvácení s intervenciou" onchange="gen()"> Krvácení s intervenciou</label>
-    <label class="ck"><input type="checkbox" class="st_cmp" value="infekcia přístupu" onchange="gen()"> Infekcia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="infekcia přístupu" onchange="gen()"> Infekce</label>
   </div>
 </div>
 <div class="f"><div class="lbl">Komplikace – cílová céva</div>
@@ -564,7 +564,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   </div>
 </div>
 <div class="row r2">
-  <div class="f"><label>Konverze na otevřený výkon</label><select id="st_konv" onchange="gen()"><option value="nie">nie</option><option value="áno">áno</option></select></div>
+  <div class="f"><label>Konverze na otevřený výkon</label><select id="st_konv" onchange="gen()"><option value="ne">ne</option><option value="ano">ano</option></select></div>
   <div class="f"><label>Clavien-Dindo (nejzávažnější)</label><select id="st_clavien" onchange="gen()"><option value="">žádná</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtí)</option></select></div>
 </div>
 </div>
@@ -1182,7 +1182,7 @@ function collectFullData(){
     dap:g('st_dap')?parseFloat(g('st_dap')):null,
     contrast_ml:g('st_contrast')?parseInt(g('st_contrast')):null,
     komplikacie_struct:[...document.querySelectorAll('.st_cmp:checked')].map(e=>e.value).join(', '),
-    konverzia:g('st_konv')==='áno',
+    konverzia:g('st_konv')==='ano',
     clavien_dindo:g('st_clavien'),
     antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', '),
     ...mat
