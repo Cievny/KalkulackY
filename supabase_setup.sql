@@ -119,3 +119,54 @@ ALTER TABLE evk_followup ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon insert followup" ON evk_followup FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon select followup" ON evk_followup FOR SELECT TO anon USING (true);
 CREATE POLICY "anon delete followup" ON evk_followup FOR DELETE TO anon USING (true);
+
+-- pevar_vykony: PEVAR procedure registry
+CREATE TABLE IF NOT EXISTS pevar_vykony (
+  id                        UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at                TIMESTAMPTZ DEFAULT NOW(),
+  datum_zaznamu             TEXT,
+  vek                       INT,
+  pohlavie                  TEXT,
+  diagnoza                  TEXT,
+  char_krehky               BOOLEAN,
+  char_polymorbidny         BOOLEAN,
+  symptomaticky             BOOLEAN,
+  indikacia_typ             TEXT,
+  anestezia_typ             TEXT,
+  pristup_strana            TEXT,
+  punkcia_arteria           TEXT,
+  punkcia_technika          TEXT,
+  usg_nav                   BOOLEAN,
+  rtg_nav                   BOOLEAN,
+  zabezpecenie_technika     TEXT,
+  sheath_velkost            TEXT,
+  vodic_typ                 TEXT,
+  sg_nazov                  TEXT,
+  sg_rozmery                TEXT,
+  contra_kateter_typ        TEXT,
+  komponent_dx_nazov        TEXT,
+  komponent_dx_rozmery      TEXT,
+  komponent_sin_nazov       TEXT,
+  komponent_sin_rozmery     TEXT,
+  implantacia_komentar      TEXT,
+  modelovanie_telo          BOOLEAN,
+  modelovanie_telo_balon    TEXT,
+  modelovanie_extenzie      BOOLEAN,
+  modelovanie_extenzie_balon TEXT,
+  modelovanie_extenzie_rozmer TEXT,
+  endoleak                  BOOLEAN,
+  endoleak_typ              TEXT,
+  endoleak_zdroj            TEXT,
+  komponenty_ok             BOOLEAN,
+  uzaver_dx_technika        TEXT,
+  uzaver_sin_technika       TEXT,
+  hemostaza_dx              BOOLEAN,
+  hemostaza_sin             BOOLEAN,
+  odporucanie_cas           TEXT,
+  zaver_vykonu              TEXT,
+  lekari                    TEXT
+);
+ALTER TABLE pevar_vykony ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "anon insert pevar" ON pevar_vykony FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon select pevar" ON pevar_vykony FOR SELECT TO anon USING (true);
+CREATE POLICY "anon delete pevar"  ON pevar_vykony FOR DELETE TO anon USING (true);

@@ -40,13 +40,14 @@ details summary:hover{color:#1737a0}
 </head>
 <body>
 <h1>📊 Štatistiky výkonov – cievny.sk</h1>
-<p class="subtitle">EVK (endovaskulárne výkony) + CAS (karotická angioplastika)</p>
+<p class="subtitle">EVK (endovaskulárne výkony) + CAS (karotická angioplastika) + PEVAR (aortálne stentgrafty)</p>
 <button class="refresh-btn" onclick="loadAll()">🔄 Obnoviť</button>
 <div id="err-box" class="err" style="display:none"></div>
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('evk',this)">EVK – Endovaskulárne</button>
   <button class="tab" onclick="showTab('cas',this)">CAS – Karotídy</button>
+  <button class="tab" onclick="showTab('pevar',this)">PEVAR – Aorta</button>
 </div>
 
 <div id="sec-evk" class="section active">
@@ -100,6 +101,34 @@ details summary:hover{color:#1737a0}
     <div class="chart-card">
       <details><summary>🗑️ Správa záznamov (vymazanie)</summary>
       <div class="tbl-wrap"><table class="records-table"><thead id="cas-tbl-head"></thead><tbody id="cas-tbl-body"></tbody></table></div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<div id="sec-pevar" class="section">
+  <div id="pevar-loading" class="loading">Načítavam...</div>
+  <div id="pevar-content" style="display:none">
+    <div class="grid" id="pevar-stats"></div>
+    <div class="row2">
+      <div class="chart-card"><h3>Výkony podľa mesiaca</h3><div class="chart-wrap"><canvas id="ch-pevar-month"></canvas></div></div>
+      <div class="chart-card"><h3>Pohlavie</h3><div class="chart-wrap"><canvas id="ch-pevar-sex"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Stentgraft (telo)</h3><div class="chart-wrap"><canvas id="ch-pevar-sg"></canvas></div></div>
+      <div class="chart-card"><h3>Anestézia</h3><div class="chart-wrap"><canvas id="ch-pevar-anes"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Zabezpečenie vpichu</h3><div class="chart-wrap"><canvas id="ch-pevar-zabezp"></canvas></div></div>
+      <div class="chart-card"><h3>Endoleak</h3><div class="chart-wrap"><canvas id="ch-pevar-endoleak"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Lekári</h3><div class="chart-wrap"><canvas id="ch-pevar-lekari"></canvas></div></div>
+      <div class="chart-card"><h3>Indikácia</h3><div class="chart-wrap"><canvas id="ch-pevar-indik"></canvas></div></div>
+    </div>
+    <div class="chart-card">
+      <details><summary>🗑️ Správa záznamov (vymazanie)</summary>
+      <div class="tbl-wrap"><table class="records-table"><thead id="pevar-tbl-head"></thead><tbody id="pevar-tbl-body"></tbody></table></div>
       </details>
     </div>
   </div>
@@ -252,14 +281,51 @@ async function loadCAS(){
     'cas_vykony','loadCAS');
 }
 
+async function loadPEVAR(){
+  document.getElementById('pevar-loading').style.display='block';
+  document.getElementById('pevar-content').style.display='none';
+  const rows=await fetchAll('pevar_vykony');
+  document.getElementById('pevar-loading').style.display='none';
+  document.getElementById('pevar-content').style.display='block';
+
+  const avgAge=rows.filter(r=>r.vek).reduce((s,r)=>s+r.vek,0)/(rows.filter(r=>r.vek).length||1);
+  const endoleakRows=rows.filter(r=>r.endoleak);
+  document.getElementById('pevar-stats').innerHTML=
+    statCard('Celkový počet výkonov',rows.length)+
+    statCard('Priemerný vek',Math.round(avgAge)||'–')+
+    statCard('Endoleak',endoleakRows.length)+
+    statCard('Symptomatickí',rows.filter(r=>r.symptomaticky).length);
+
+  const months={};rows.forEach(r=>{const m=monthKey(r.datum_zaznamu||r.created_at);if(m)months[m]=(months[m]||0)+1;});
+  const mk=Object.keys(months).sort();mkChart('ch-pevar-month','bar',mk,mk.map(m=>months[m]),false);
+
+  const sx=sortedFreq(rows,'pohlavie');mkChart('ch-pevar-sex','doughnut',sx.map(x=>x[0]),sx.map(x=>x[1]));
+  const sg=sortedFreq(rows,'sg_nazov');mkChart('ch-pevar-sg','doughnut',sg.map(x=>x[0]),sg.map(x=>x[1]));
+  const an=sortedFreq(rows,'anestezia_typ');mkChart('ch-pevar-anes','doughnut',an.map(x=>x[0]),an.map(x=>x[1]));
+  const zb=sortedFreq(rows,'zabezpecenie_technika');mkChart('ch-pevar-zabezp','doughnut',zb.map(x=>x[0]),zb.map(x=>x[1]));
+
+  // Endoleak breakdown
+  const elRows=rows.map(r=>({...r,el_label:r.endoleak?(r.endoleak_typ?'Typ '+r.endoleak_typ:'áno'):'bez endoleaku'}));
+  const el=sortedFreq(elRows,'el_label');mkChart('ch-pevar-endoleak','doughnut',el.map(x=>x[0]),el.map(x=>x[1]));
+
+  const lk=sortedFreq(rows,'lekari');mkChart('ch-pevar-lekari','doughnut',lk.map(x=>x[0]),lk.map(x=>x[1]));
+  const ind=sortedFreq(rows,'indikacia_typ');mkChart('ch-pevar-indik','doughnut',ind.map(x=>x[0]),ind.map(x=>x[1]));
+
+  renderRecordTable(rows,
+    document.getElementById('pevar-tbl-head'),
+    document.getElementById('pevar-tbl-body'),
+    ['datum_zaznamu','pohlavie','vek','diagnoza','sg_nazov','sg_rozmery','endoleak','endoleak_typ','lekari'],
+    'pevar_vykony','loadPEVAR');
+}
+
 async function loadAll(){
   document.getElementById('err-box').style.display='none';
-  try{await Promise.all([loadEVK(),loadCAS()]);}
+  try{await Promise.all([loadEVK(),loadCAS(),loadPEVAR()]);}
   catch(e){
     const eb=document.getElementById('err-box');
     eb.textContent='❌ Chyba načítania dát: '+e.message+'. Skontrolujte RLS politiky v Supabase.';
     eb.style.display='block';
-    ['evk-loading','cas-loading'].forEach(id=>document.getElementById(id).style.display='none');
+    ['evk-loading','cas-loading','pevar-loading'].forEach(id=>document.getElementById(id).style.display='none');
   }
 }
 
