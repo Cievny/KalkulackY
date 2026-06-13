@@ -94,6 +94,26 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="f"><label>Priemer vaku (mm)</label><input type="number" id="sac_diameter_mm" min="0" max="200" step="0.1" placeholder="napr. 58" oninput="gen()"></div>
   <div class="f"><label>Dĺžka krčka (mm)</label><input type="number" id="neck_length_mm" min="0" max="100" step="0.1" placeholder="napr. 22" oninput="gen()"></div>
 </div>
+<!-- Charakteristika krčka AAA – len zber, neukladá sa do popisu -->
+<div class="thead" style="margin-top:6px"><label class="thdr"><input type="checkbox" id="c_neck" onchange="tB('neck')"><span>📐 Charakteristika krčka AAA (zber pre štúdiu)</span></label>
+  <div class="tbody" id="b_neck">
+    <div class="row r3">
+      <div class="f"><label>Priemer krčka proximálny (mm)</label><input type="number" id="neck_diameter_mm" min="0" max="60" step="0.1" placeholder="napr. 24"></div>
+      <div class="f"><label>Infrarenálna angulácia α (°)</label><input type="number" id="neck_angle_alpha" min="0" max="180" step="1" placeholder="napr. 45"></div>
+      <div class="f"><label>Suprarenálna angulácia β (°)</label><input type="number" id="neck_angle_beta" min="0" max="180" step="1" placeholder="napr. 30"></div>
+    </div>
+    <div class="row r3">
+      <div class="f"><label>Tvar krčka</label><select id="neck_shape"><option value="">–</option><option>rovný</option><option>kónický</option><option>reverzne kónický</option><option>súdkovitý</option></select></div>
+      <div class="f"><label>Kalcifikácia krčka</label><select id="neck_calcification"><option value="">–</option><option>žiadna</option><option>&lt;25 %</option><option>25–50 %</option><option>&gt;50 %</option></select></div>
+      <div class="f"><label>Trombus v krčku</label><select id="neck_thrombus"><option value="">–</option><option>žiadny</option><option>&lt;25 %</option><option>25–50 %</option><option>&gt;50 %</option></select></div>
+    </div>
+    <div class="row r2">
+      <div class="f"><label>Distálna landing AIC l.dx. (mm)</label><input type="number" id="iliac_diameter_dx" min="0" max="40" step="0.1" placeholder="napr. 14"></div>
+      <div class="f"><label>Distálna landing AIC l.sin. (mm)</label><input type="number" id="iliac_diameter_sin" min="0" max="40" step="0.1" placeholder="napr. 13"></div>
+    </div>
+    <div class="f"><label>Vhodnosť podľa IFU</label><select id="neck_ifu"><option value="">–</option><option>v rámci IFU</option><option>mimo IFU (hostile neck)</option></select></div>
+  </div>
+</div>
 <div class="f"><label>Charakteristika</label>
   <div class="checks">
     <label class="ck"><input type="checkbox" id="char_krehky" onchange="gen()"><span>Krehký/á</span></label>
@@ -842,6 +862,15 @@ async function saveToSupabase(){
     antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', '),
     sac_diameter_mm:g('sac_diameter_mm')?parseFloat(g('sac_diameter_mm')):null,
     neck_length_mm:g('neck_length_mm')?parseFloat(g('neck_length_mm')):null,
+    neck_diameter_mm:g('neck_diameter_mm')?parseFloat(g('neck_diameter_mm')):null,
+    neck_angle_alpha:g('neck_angle_alpha')?parseInt(g('neck_angle_alpha')):null,
+    neck_angle_beta:g('neck_angle_beta')?parseInt(g('neck_angle_beta')):null,
+    neck_shape:g('neck_shape'),
+    neck_calcification:g('neck_calcification'),
+    neck_thrombus:g('neck_thrombus'),
+    iliac_diameter_dx:g('iliac_diameter_dx')?parseFloat(g('iliac_diameter_dx')):null,
+    iliac_diameter_sin:g('iliac_diameter_sin')?parseFloat(g('iliac_diameter_sin')):null,
+    neck_ifu:g('neck_ifu'),
     sg_diameter_prox_mm:sgNums[0]??null,
     sg_length_mm:sgNums[1]??null,
     sg_diameter_dist_mm:sgNums[2]??null,
