@@ -774,6 +774,18 @@ function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.t
 
 async function saveToSupabase(){
   const pristupVal=g('pristup_strana').split('|');
+  // --- Flatten materiálov pre publikačnú štatistiku ---
+  const extRows=[];
+  if(chk('c_extenzie')){
+    document.querySelectorAll('#extenzie_list .ext-row').forEach(row=>{
+      const idx=row.dataset.idx;
+      const naz=g('ext_'+idx+'_nazov'),roz=g('ext_'+idx+'_rozmery'),str=g('ext_'+idx+'_strana');
+      if(naz||roz)extRows.push({strana:str,nazov:naz,rozmery:roz});
+    });
+  }
+  const jn=a=>a.filter(Boolean).join('; ');
+  // Rozmery tela SG "18-166-16" → prox priemer / dĺžka / dist priemer
+  const sgNums=(g('sg_rozmery')||'').split(/[^0-9.]+/).filter(Boolean).map(Number);
   const payload={
     vykon_id:'PEVAR-'+new Date().getFullYear()+'-'+(g('id_suffix')||'???'),
     operator:g('operator'),
@@ -829,7 +841,15 @@ async function saveToSupabase(){
     clavien_dindo:g('st_clavien'),
     antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', '),
     sac_diameter_mm:g('sac_diameter_mm')?parseFloat(g('sac_diameter_mm')):null,
-    neck_length_mm:g('neck_length_mm')?parseFloat(g('neck_length_mm')):null
+    neck_length_mm:g('neck_length_mm')?parseFloat(g('neck_length_mm')):null,
+    sg_diameter_prox_mm:sgNums[0]??null,
+    sg_length_mm:sgNums[1]??null,
+    sg_diameter_dist_mm:sgNums[2]??null,
+    ext_count:extRows.length,
+    ext_brands:jn(extRows.map(e=>e.nazov)),
+    ext_sizes:jn(extRows.map(e=>e.rozmery)),
+    ext_strany:jn(extRows.map(e=>e.strana)),
+    extenzie_detail:JSON.stringify(extRows)
   };
   msg('Ukladám...','#5a6a8a');
   try{
