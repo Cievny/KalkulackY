@@ -302,6 +302,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     </div>
   </div>
 </div>
+<div class="f"><div class="lbl">Antitrombotická liečba pred výkonom</div>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" class="atb" value="bez antitrombotík" onchange="gen()"> Bez</label>
+    <label class="ck"><input type="checkbox" class="atb" value="ASA" onchange="gen()"> ASA</label>
+    <label class="ck"><input type="checkbox" class="atb" value="klopidogrel" onchange="gen()"> Klopidogrel</label>
+    <label class="ck"><input type="checkbox" class="atb" value="DAPT (ASA+klopidogrel)" onchange="gen()"> DAPT</label>
+    <label class="ck"><input type="checkbox" class="atb" value="DOAC" onchange="gen()"> DOAC</label>
+    <label class="ck"><input type="checkbox" class="atb" value="warfarín" onchange="gen()"> Warfarín</label>
+    <label class="ck"><input type="checkbox" class="atb" value="LMWH" onchange="gen()"> LMWH</label>
+  </div>
+</div>
 </div>
 
 <div class="card">
@@ -1104,7 +1115,8 @@ function collectFullData(){
     contrast_ml:g('st_contrast')?parseInt(g('st_contrast')):null,
     komplikacie_struct:[...document.querySelectorAll('.st_cmp:checked')].map(e=>e.value).join(', '),
     konverzia:g('st_konv')==='áno',
-    clavien_dindo:g('st_clavien')
+    clavien_dindo:g('st_clavien'),
+    antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', ')
   };
 }
 async function saveToSheets(){

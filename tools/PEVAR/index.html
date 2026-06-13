@@ -90,6 +90,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   </div>
 </div>
 <div class="f"><label>Diagnóza</label><input type="text" id="diagnoza" value="komplexným postihnutím infrarenálnej aorty – AAA" oninput="gen()"></div>
+<div class="row r2">
+  <div class="f"><label>Priemer vaku (mm)</label><input type="number" id="sac_diameter_mm" min="0" max="200" step="0.1" placeholder="napr. 58" oninput="gen()"></div>
+  <div class="f"><label>Dĺžka krčka (mm)</label><input type="number" id="neck_length_mm" min="0" max="100" step="0.1" placeholder="napr. 22" oninput="gen()"></div>
+</div>
 <div class="f"><label>Charakteristika</label>
   <div class="checks">
     <label class="ck"><input type="checkbox" id="char_krehky" onchange="gen()"><span>Krehký/á</span></label>
@@ -258,6 +262,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         </div>
       </div>
     </div>
+  </div>
+</div>
+<div class="f"><div class="lbl">Antitrombotická liečba pred výkonom</div>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" class="atb" value="bez antitrombotík" onchange="gen()"> Bez</label>
+    <label class="ck"><input type="checkbox" class="atb" value="ASA" onchange="gen()"> ASA</label>
+    <label class="ck"><input type="checkbox" class="atb" value="klopidogrel" onchange="gen()"> Klopidogrel</label>
+    <label class="ck"><input type="checkbox" class="atb" value="DAPT (ASA+klopidogrel)" onchange="gen()"> DAPT</label>
+    <label class="ck"><input type="checkbox" class="atb" value="DOAC" onchange="gen()"> DOAC</label>
+    <label class="ck"><input type="checkbox" class="atb" value="warfarín" onchange="gen()"> Warfarín</label>
+    <label class="ck"><input type="checkbox" class="atb" value="LMWH" onchange="gen()"> LMWH</label>
   </div>
 </div>
 </div>
@@ -796,7 +811,10 @@ async function saveToSupabase(){
     contrast_ml:g('st_contrast')?parseInt(g('st_contrast')):null,
     komplikacie_struct:[...document.querySelectorAll('.st_cmp:checked')].map(e=>e.value).join(', '),
     konverzia:g('st_konv')==='áno',
-    clavien_dindo:g('st_clavien')
+    clavien_dindo:g('st_clavien'),
+    antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', '),
+    sac_diameter_mm:g('sac_diameter_mm')?parseFloat(g('sac_diameter_mm')):null,
+    neck_length_mm:g('neck_length_mm')?parseFloat(g('neck_length_mm')):null
   };
   msg('Ukladám...','#5a6a8a');
   try{

@@ -226,3 +226,13 @@ CREATE TABLE IF NOT EXISTS ideas (
 ALTER TABLE ideas ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "anon all ideas" ON ideas;
 CREATE POLICY "anon all ideas" ON ideas FOR ALL TO anon USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- MIGRÁCIA 2026-06-13 (b): baseline parametre
+-- ============================================================
+ALTER TABLE evk_vykony   ADD COLUMN IF NOT EXISTS antitrombotika   TEXT;
+ALTER TABLE cas_vykony   ADD COLUMN IF NOT EXISTS antitrombotika   TEXT;
+ALTER TABLE cas_vykony   ADD COLUMN IF NOT EXISTS cas_symptom_days INT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS antitrombotika   TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sac_diameter_mm  NUMERIC;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS neck_length_mm   NUMERIC;
