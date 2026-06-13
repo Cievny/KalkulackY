@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="sk">
+<html lang="cs">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Prihlásenie – cievny.sk nástroje</title>
+<title>Přihlášení – cievny.sk nástroje</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1e3d;min-height:100vh;display:flex;align-items:center;justify-content:center;}
@@ -21,10 +21,10 @@ button:hover{background:#1737a0;}
 <body>
 <div class="box">
   <div class="logo">🫀 cievny.sk</div>
-  <div class="sub">Klinické nástroje – prihlásenie</div>
+  <div class="sub">Klinické nástroje – přihlášení (VFN)</div>
   <label for="pw">Heslo</label>
   <input type="password" id="pw" placeholder="••••••••" autofocus onkeydown="if(event.key==='Enter')doLogin()">
-  <button onclick="doLogin()">Prihlásiť sa</button>
+  <button onclick="doLogin()">Přihlásit se</button>
   <div id="login-msg"></div>
 </div>
 <script src="/cz/tools/auth.js"></script>
