@@ -261,6 +261,14 @@ ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS konverzia          BOOLEAN;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS clavien_dindo      TEXT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS antitrombotika     TEXT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS komorbidity        TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sg_diameter_prox_mm NUMERIC;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sg_length_mm        NUMERIC;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sg_diameter_dist_mm NUMERIC;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS ext_count           INTEGER;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS ext_brands          TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS ext_sizes           TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS ext_strany          TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS extenzie_detail     TEXT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sac_diameter_mm    NUMERIC;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS neck_length_mm     NUMERIC;
 
