@@ -301,6 +301,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <!-- DSA Nález -->
 <div class="card">
 <div class="st">DSA Nález</div>
+<div class="f"><div class="lbl">Kontrastná látka</div>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" class="kontr" value="Scanlux 370" onchange="gen()"> Scanlux 370</label>
+    <label class="ck"><input type="checkbox" class="kontr" value="Iomeron 350" onchange="gen()"> Iomeron 350</label>
+    <label class="ck"><input type="checkbox" class="kontr" value="Ultravist 300" onchange="gen()"> Ultravist 300</label>
+    <label class="ck"><input type="checkbox" class="kontr" value="Visipaque 270" onchange="gen()"> Visipaque 270</label>
+  </div>
+</div>
 <div class="f">
   <div class="checks">
     <label class="ck"><input type="radio" name="dsa_lat" value="sin" checked onchange="casDsaLat();gen()"><span>Ľavá (l.sin.)</span></label>
@@ -698,8 +706,9 @@ function gen(){
   const uvod=`${vekText} ${pacientText}${komor.length?' ('+komor.join(', ')+')':''} so symptomatickou kritickou stenózou ${aci} s ${plat} ${indText} k EVL:`.replace(/\s+/g,' ').trim();
 
   const dsaNalez=getCasDsa();
+  const kontr=[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join(', ');
   const postup=g('postup_vykonu');
-  let priebeh=`${pristupLine}\n\nDSA NÁLEZ:\n${dsaNalez}`;
+  let priebeh=`${pristupLine}${kontr?'\nKontrastná látka: '+kontr:''}\n\nDSA NÁLEZ:\n${dsaNalez}`;
 
   const parts=[uvod,priebeh];
   if(postup==='intervencia'){
