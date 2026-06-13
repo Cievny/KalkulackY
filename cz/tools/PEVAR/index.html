@@ -131,7 +131,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 </div>
 <details class="komor-details"><summary><span class="komor-arr">▶</span> 🏥 Komorbidity <span style="font-weight:400;color:#9ca3af;font-size:11px">(doplnit později)</span></summary>
 <div class="f"><div class="lbl">Komorbidity</div>
-  <div id="komordiv">
+  <div id="komordiv" autocomplete="off">
     <div class="kom-item">
       <label class="ck"><input type="checkbox" id="k_dm" onchange="kSub('dm');gen()"><span>Diabetes mellitus</span></label>
       <div class="kom-sub" id="ksub_dm">
@@ -902,14 +902,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   gen();
 });
 
-// Reset komorbidity stav pri kazdom nacitani (prehliadac si pamata stav)
-window.addEventListener('load', function(){
+// Reset komorbidity - pageshow pokryva aj back-navigation, kde load nestaci
+function resetKomor(){
   const det = document.querySelector('.komor-details');
-  if(det){ det.removeAttribute('open'); }
+  if(det) det.removeAttribute('open');
   document.querySelectorAll('#komordiv input[type=checkbox]').forEach(cb=>{ cb.checked=false; });
   document.querySelectorAll('.kom-sub').forEach(s=>s.classList.remove('on'));
-  document.querySelectorAll('.kom-sub .kom-item input[type=radio]').forEach(r=>{ r.checked=false; });
-});
+}
+window.addEventListener('pageshow', resetKomor);
+document.addEventListener('DOMContentLoaded', resetKomor);
 </script>
 </body>
 </html>
