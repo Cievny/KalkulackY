@@ -885,7 +885,7 @@ async function saveData(){
     vysledok:isInterv?g('vysledok'):'',
     zaver:g('zaver_vykonu'),
     femostop:chk('femostop'),
-    komprese_min:g('kompr')?parseInt(g('kompr')):null,
+    kompresia_min:g('kompr')?parseInt(g('kompr')):null,
     tech_uspech:(document.querySelector('input[name="tech_uspech"]:checked')||{}).value||'',
     proc_duration_min:g('st_dur')?parseInt(g('st_dur')):null,
     fluoro_time_min:g('st_fluoro')?parseFloat(g('st_fluoro')):null,
