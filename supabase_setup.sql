@@ -100,6 +100,8 @@ ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_znacka TEXT;
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS klinicky_stav TEXT;
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS nascet_stenoza TEXT;
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS nascet_metoda TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS vykon_id TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS operator TEXT;
 
 -- evk_followup: new table for follow-up visits
 CREATE TABLE IF NOT EXISTS evk_followup (
@@ -170,3 +172,7 @@ ALTER TABLE pevar_vykony ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "anon insert pevar" ON pevar_vykony FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon select pevar" ON pevar_vykony FOR SELECT TO anon USING (true);
 CREATE POLICY "anon delete pevar"  ON pevar_vykony FOR DELETE TO anon USING (true);
+
+-- pevar_vykony: add identification columns (if table already exists)
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS vykon_id TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS operator TEXT;

@@ -40,6 +40,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .dyn-row .del-btn-x:hover{color:#e53}
 .add-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;background:#eef3fc;border:1.5px dashed #3b82f6;border-radius:6px;font-size:12px;font-weight:600;color:#3b82f6;cursor:pointer;width:100%;justify-content:center;margin-top:4px}
 .add-btn:hover{background:#dbeafe}
+.id-row{display:grid;grid-template-columns:auto 1fr;gap:5px;align-items:center}
+.id-prefix{font-weight:700;font-size:13px;color:#3b82f6;background:#f0f7ff;border:1.5px solid #3b82f6;border-radius:6px;padding:6px 10px;white-space:nowrap}
 @media print{.tabnav{display:none}.left{display:none}.right{border:none;height:auto;position:static}.btns{display:none}#out{border:none;font-family:inherit;font-size:13px;background:#fff}}
 </style>
 </head>
@@ -51,11 +53,28 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="wrap">
 <div class="left">
 
+<!-- Identifikácia -->
+<div class="card">
+<div class="st">Identifikácia výkonu</div>
+<div class="row r3">
+  <div class="f"><label>ID výkonu</label>
+    <div class="id-row"><span class="id-prefix" id="id-prefix">PEVAR-2026-</span><input type="text" id="id_suffix" placeholder="001" oninput="updatePevarIdPrefix();gen()"></div>
+  </div>
+  <div class="f"><label>Operatér</label>
+    <select id="operator" onchange="gen()">
+      <option value="">– vybrať –</option>
+      <option>Vincze</option><option>Kocan</option><option>Nemiec</option>
+      <option>Fľak</option><option>Širila</option><option>Vařejka</option><option>Maďarič</option>
+    </select>
+  </div>
+  <div class="f"><label>Dátum</label><input type="date" id="datum_zaznamu" oninput="gen()"></div>
+</div>
+</div>
+
 <!-- Pacient -->
 <div class="card">
 <div class="st">Pacient a Indikácia</div>
-<div class="row r3">
-  <div class="f"><label>Dátum</label><input type="date" id="datum_zaznamu"></div>
+<div class="row r2">
   <div class="f"><label>Vek</label><input type="number" id="vek" placeholder="72" min="18" max="110" oninput="gen()"></div>
   <div class="f"><label>Pohlavie</label>
     <select id="pohlavie" onchange="gen()">
@@ -304,6 +323,7 @@ const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 function g(id){const el=document.getElementById(id);if(!el)return'';return el.value||'';}
 function chk(id){const el=document.getElementById(id);return el?el.checked:false;}
 function tB(id){const b=document.getElementById('b_'+id);if(b)b.classList.toggle('on');}
+function updatePevarIdPrefix(){document.getElementById('id-prefix').textContent='PEVAR-'+new Date().getFullYear()+'-';}
 
 function gen(){
   const vek=g('vek');
@@ -447,6 +467,8 @@ function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.t
 async function saveToSupabase(){
   const pristupVal=g('pristup_strana').split('|');
   const payload={
+    vykon_id:'PEVAR-'+new Date().getFullYear()+'-'+(g('id_suffix')||'???'),
+    operator:g('operator'),
     datum_zaznamu:g('datum_zaznamu')||new Date().toISOString().slice(0,10),
     vek:parseInt(g('vek'))||null,
     pohlavie:g('pohlavie'),
@@ -504,6 +526,7 @@ async function saveToSupabase(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
+  updatePevarIdPrefix();
   gen();
 });
 </script>

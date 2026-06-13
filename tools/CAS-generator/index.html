@@ -40,6 +40,32 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Input Form -->
             <div id="form-container">
+                <!-- Identifikácia výkonu -->
+                <div class="form-section">
+                    <h2>Identifikácia výkonu</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="input-label">ID výkonu</label>
+                            <div style="display:flex;align-items:center;gap:4px">
+                                <span id="id-prefix-cas" style="font-weight:700;font-size:14px;color:#3b82f6;background:#eff6ff;border:1.5px solid #3b82f6;border-radius:6px;padding:6px 10px;white-space:nowrap">CAS-2026-</span>
+                                <input type="text" id="id_suffix" placeholder="001" oninput="updateCasIdPrefix()">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="operator" class="input-label">Operatér</label>
+                            <select id="operator">
+                                <option value="">– vybrať –</option>
+                                <option>Vincze</option><option>Kocan</option><option>Nemiec</option>
+                                <option>Fľak</option><option>Širila</option><option>Vařejka</option><option>Maďarič</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="datum_zaznamu_id" class="input-label">Dátum</label>
+                            <input type="date" id="datum_zaznamu_id">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Pacient a Indikácia -->
                 <div class="form-section">
                     <h2>Pacient a Indikácia</h2>
@@ -382,6 +408,8 @@
         const getElement = (id) => document.getElementById(id);
         const getValue = (id) => getElement(id).value.trim();
 
+        function updateCasIdPrefix(){getElement('id-prefix-cas').textContent='CAS-'+new Date().getFullYear()+'-';}
+
         const dbStatusEl = getElement('db-status');
         const saveDataBtn = getElement('save-data-btn');
 
@@ -469,7 +497,9 @@
             const isInterv = postup === 'intervencia';
 
             return {
-                Datum_Zaznamu: new Date().toLocaleString('sk-SK'),
+                Datum_Zaznamu: getValue('datum_zaznamu_id')||new Date().toISOString().slice(0,10),
+                Vykon_Id: 'CAS-'+new Date().getFullYear()+'-'+(getValue('id_suffix')||'???'),
+                Operator: getValue('operator'),
                 Rodne_Cislo: getValue('rodne_cislo'),
                 Vek: getElement('vek_display').textContent,
                 Pohlavie: getElement('pohlavie_display').textContent,
@@ -520,6 +550,8 @@
             try {
                 const fd = getFormData();
                 const sbData = {
+                    vykon_id: fd.Vykon_Id,
+                    operator: fd.Operator,
                     datum_zaznamu: fd.Datum_Zaznamu,
                     vek: fd.Vek && fd.Vek !== 'N/A' ? parseInt(fd.Vek) : null,
                     pohlavie: fd.Pohlavie,
@@ -739,6 +771,8 @@
 
         // --- Initial Generation ---
         document.addEventListener('DOMContentLoaded', () => {
+            getElement('datum_zaznamu_id').value = new Date().toISOString().slice(0,10);
+            updateCasIdPrefix();
             updatePatientInfoFromRC();
             toggleOptions('stenoza_typ_popisu', 'stenoza_percenta_container', 'percentualna');
             toggleOptions('postup_vykonu', 'intervencia_container', 'intervencia');
