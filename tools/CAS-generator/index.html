@@ -301,13 +301,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <!-- DSA Nález -->
 <div class="card">
 <div class="st">DSA Nález</div>
-<div class="f"><label>Lateralita</label>
+<div class="f">
   <div class="checks">
-    <label class="ck"><input type="radio" name="dsa_lat" value="uni" checked onchange="casDsaLat();gen()"><span>Unilaterálna</span></label>
+    <label class="ck"><input type="radio" name="dsa_lat" value="sin" checked onchange="casDsaLat();gen()"><span>Ľavá (l.sin.)</span></label>
+    <label class="ck"><input type="radio" name="dsa_lat" value="dx" onchange="casDsaLat();gen()"><span>Pravá (l.dx.)</span></label>
     <label class="ck"><input type="radio" name="dsa_lat" value="bi" onchange="casDsaLat();gen()"><span>Bilaterálna</span></label>
   </div>
 </div>
 
+<div id="dsa_sin_wrap">
 <div class="st" style="font-size:12px;margin:8px 0 4px;color:#5a6a8a">Ľavá strana (l.sin.)</div>
 <div class="row r2">
   <div class="f"><label>ACC l.sin.</label>
@@ -327,10 +329,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 </div>
 <div class="f">
   <label>Stenóza NASCET <span style="font-size:10px;color:#6b7280;font-weight:400">– kalkulačka (d_min / d_distal mm)</span></label>
-  <div class="checks" style="margin-bottom:6px">
-    <label class="ck"><input type="radio" name="nascet_strana" value="sin" checked onchange="gen()"><span>Ľavá (l.sin.)</span></label>
-    <label class="ck"><input type="radio" name="nascet_strana" value="dx" onchange="gen()"><span>Pravá (l.dx.)</span></label>
-  </div>
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
     <input type="number" id="nascet_dmin" min="0.1" max="20" step="0.1" placeholder="d min (mm)"
            style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
@@ -377,8 +375,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     </select>
   </div>
 </div>
+</div>
 
-<div id="dsa_dx_wrap">
+<div id="dsa_dx_wrap" style="display:none">
 <div class="st" style="font-size:12px;margin:8px 0 4px;color:#5a6a8a">Pravá strana (l.dx.)</div>
 <div class="row r2">
   <div class="f"><label>ACC l.dx.</label>
@@ -544,17 +543,18 @@ function tB(id){const b=document.getElementById('b_'+id);if(b)b.classList.toggle
 function tShow(id,show){const el=document.getElementById(id);if(el)el.style.display=show?'':'none';}
 function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',3000);}
 function casDsaLat(){
-  const bi=document.querySelector('input[name="dsa_lat"]:checked')?.value==='bi';
-  const el=document.getElementById('dsa_dx_wrap');
-  if(el)el.style.display=bi?'block':'none';
+  const lat=document.querySelector('input[name="dsa_lat"]:checked')?.value||'sin';
+  const sinWrap=document.getElementById('dsa_sin_wrap');
+  const dxWrap=document.getElementById('dsa_dx_wrap');
+  if(sinWrap)sinWrap.style.display=(lat==='sin'||lat==='bi')?'block':'none';
+  if(dxWrap)dxWrap.style.display=(lat==='dx'||lat==='bi')?'block':'none';
 }
 function getCasDsa(){
-  const lat=document.querySelector('input[name="dsa_lat"]:checked')?.value||'uni';
-  const lok=g('lokalizacia');
-  const sides=lat==='bi'?['sin','dx']:lok.includes('sin.')?['sin']:['dx'];
+  const lat=document.querySelector('input[name="dsa_lat"]:checked')?.value||'sin';
+  const sides=lat==='bi'?['sin','dx']:lat==='sin'?['sin']:['dx'];
   const lines=[];
   const nascet=g('nascet_stenoza'),nascetMet=g('nascet_metoda');
-  const nascetStrana=document.querySelector('input[name="nascet_strana"]:checked')?.value||'sin';
+  const nascetStrana=lat==='bi'?'sin':lat;
   sides.forEach(s=>{
     const L=s==='sin'?'l.sin.':'l.dx.';
     const acc=g('dsa_acc_'+s),aci=g('dsa_aci_'+s+'_typ'),ace=g('dsa_ace_'+s),av=g('dsa_av_'+s);
@@ -786,6 +786,7 @@ async function saveData(){
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
   updateIdPrefix();
+  casDsaLat();
   gen();
 });
 </script>
