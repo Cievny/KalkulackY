@@ -822,6 +822,8 @@ function copyOut(){
 
 async function saveData(){
   const isInterv=g('postup_vykonu')==='intervencia';
+  // Rozdelenie veľkosti materiálu "8x20mm" → priemer / dĺžka (pre štatistiku)
+  const dimMM=(id,i)=>{const n=(g(id)||'').split(/[^0-9.]+/).filter(Boolean).map(Number);return n[i]!=null?n[i]:null;};
   const payload={
     vykon_id:'CAS-'+new Date().getFullYear()+'-'+(g('id_suffix')||'???'),
     operator:g('operator'),
@@ -863,13 +865,19 @@ async function saveData(){
     predilatacia_vykonana:isInterv&&chk('vykonat_predilataciu')?'Ano':'Nie',
     predilatacny_balon:isInterv&&chk('vykonat_predilataciu')?`${g('balon_predilatacia_velkost')} (${g('balon_predilatacia_znacka')})`:'',
     predilatacny_balon_velkost:isInterv&&chk('vykonat_predilataciu')?g('balon_predilatacia_velkost'):'',
+    predilatacny_balon_diameter_mm:isInterv&&chk('vykonat_predilataciu')?dimMM('balon_predilatacia_velkost',0):null,
+    predilatacny_balon_length_mm:isInterv&&chk('vykonat_predilataciu')?dimMM('balon_predilatacia_velkost',1):null,
     predilatacny_balon_znacka:isInterv&&chk('vykonat_predilataciu')?g('balon_predilatacia_znacka'):'',
     stent:isInterv?`${g('stent_velkost')} (${g('stent_znacka')})`:'',
     stent_velkost:isInterv?g('stent_velkost'):'',
+    stent_diameter_mm:isInterv?dimMM('stent_velkost',0):null,
+    stent_length_mm:isInterv?dimMM('stent_velkost',1):null,
     stent_znacka:isInterv?g('stent_znacka'):'',
     domodelování_vykonane:isInterv&&chk('vykonat_domodelování')?'Ano':'Nie',
     domodelovaci_balon:isInterv&&chk('vykonat_domodelování')?`${g('balon_domodelování_velkost')} (${g('balon_domodelování_znacka')})`:'',
     domodelovaci_balon_velkost:isInterv&&chk('vykonat_domodelování')?g('balon_domodelování_velkost'):'',
+    domodelovaci_balon_diameter_mm:isInterv&&chk('vykonat_domodelování')?dimMM('balon_domodelování_velkost',0):null,
+    domodelovaci_balon_length_mm:isInterv&&chk('vykonat_domodelování')?dimMM('balon_domodelování_velkost',1):null,
     domodelovaci_balon_znacka:isInterv&&chk('vykonat_domodelování')?g('balon_domodelování_znacka'):'',
     uzatvaraci_system:g('uzatvaraci_system'),
     hemostaza_poznamka:chk('vykonat_hemostazu')?'Ano':'Nie',
