@@ -35,6 +35,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .bp{background:#1e40af;color:#fff}.bp:hover{background:#1737a0}
 .bs{background:#7c3aed;color:#fff}.bs:hover{background:#6d28d9}
 #cmsg{font-size:11px;text-align:center;min-height:16px}
+.dyn-row{background:#f7f8fc;border:1.5px solid #eef0f5;border-radius:7px;padding:10px;margin-bottom:7px;position:relative}
+.dyn-row .del-btn-x{position:absolute;top:7px;right:7px;background:none;border:none;font-size:15px;cursor:pointer;color:#aab;padding:0 3px}
+.dyn-row .del-btn-x:hover{color:#e53}
+.add-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;background:#eef3fc;border:1.5px dashed #3b82f6;border-radius:6px;font-size:12px;font-weight:600;color:#3b82f6;cursor:pointer;width:100%;justify-content:center;margin-top:4px}
+.add-btn:hover{background:#dbeafe}
 @media print{.tabnav{display:none}.left{display:none}.right{border:none;height:auto;position:static}.btns{display:none}#out{border:none;font-family:inherit;font-size:13px;background:#fff}}
 </style>
 </head>
@@ -133,25 +138,31 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   </select>
 </div>
 
+<div class="f"><label>Typ SG tela</label>
+  <div class="checks">
+    <label class="ck"><input type="radio" name="sg_typ" id="sg_bifurkacny" value="bifurkačného" checked onchange="gen()"><span>Bifurkačný</span></label>
+    <label class="ck"><input type="radio" name="sg_typ" id="sg_unilateralny" value="unilaterálneho" onchange="gen()"><span>Unilaterálny</span></label>
+  </div>
+</div>
 <div class="row r2">
   <div class="f"><label>Stentgraft – názov</label>
     <select id="sg_nazov" onchange="gen()">
-      <option>Endurant</option><option>Cook Alpha</option><option>ALTO</option>
+      <option>Endurant</option><option>Cook Alpha</option><option>ALTO</option><option>MINOS</option><option>Incraft</option>
     </select>
   </div>
   <div class="f"><label>Rozmery SG tela (mm)</label><input type="text" id="sg_rozmery" value="18-166-16" oninput="gen()"></div>
 </div>
 
+<div id="contra_section">
 <div class="f"><label>Katéter kontralaterálnej nožičky</label>
   <select id="contra_kateter_typ" onchange="gen()">
     <option>Berenstein</option><option>C1</option><option>SIM</option><option>Vertebrálnym</option><option>Shepherd Hook</option>
   </select>
 </div>
-
 <div class="row r2">
   <div class="f"><label>Komponent DX – názov</label>
     <select id="komponent_dx_nazov" onchange="gen()">
-      <option>Ovation</option><option>Endurant</option><option>Cook</option>
+      <option>Ovation</option><option>Endurant</option><option>Cook</option><option>MINOS</option><option>Incraft</option>
     </select>
   </div>
   <div class="f"><label>Komponent DX – rozmery</label><input type="text" id="komponent_dx_rozmery" value="12x120mm" oninput="gen()"></div>
@@ -159,10 +170,20 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="row r2">
   <div class="f"><label>Komponent SIN – názov</label>
     <select id="komponent_sin_nazov" onchange="gen()">
-      <option>Ovation</option><option>Endurant</option><option>Cook</option>
+      <option>Ovation</option><option>Endurant</option><option>Cook</option><option>MINOS</option><option>Incraft</option>
     </select>
   </div>
   <div class="f"><label>Komponent SIN – rozmery</label><input type="text" id="komponent_sin_rozmery" value="12x140mm" oninput="gen()"></div>
+</div>
+</div>
+
+<!-- Extenzie -->
+<div class="tog">
+  <label class="thdr"><input type="checkbox" id="c_extenzie" onchange="tB('extenzie');gen()"><span>Extenzie</span></label>
+  <div class="tbody" id="b_extenzie">
+    <div id="extenzie_list"></div>
+    <button type="button" class="add-btn" onclick="addExtenzia()">＋ Pridať extenziu</button>
+  </div>
 </div>
 
 <div class="f"><label>Ďalší postup / Komplikácie</label>
@@ -316,22 +337,39 @@ function gen(){
   const sheath=g('sheath_velkost');
   const pristupText=`${anestezia}, ${technika}${nav}, pungujeme ${arteria} ${stranaSkr}. Zabezpečujeme miesta vpichu ${zabezp} ${stranaText} a zavádzame ${stranaText} ${sheath} sheath.`;
 
+  const sgTyp=document.querySelector('input[name="sg_typ"]:checked')?.value||'bifurkačného';
+  const isBifurk=sgTyp==='bifurkačného';
+  // show/hide contra section
+  const contraSection=document.getElementById('contra_section');
+  if(contraSection)contraSection.style.display=isBifurk?'':'none';
+
   const katAorty=g('katetrizacia_aorty');
   const vodic=g('vodic_typ');
   const sgNazov=g('sg_nazov');
   const sgRozmery=g('sg_rozmery');
-  const contraKat=g('contra_kateter_typ');
-  const kDx=g('komponent_dx_nazov');const kDxR=g('komponent_dx_rozmery');
-  const kSin=g('komponent_sin_nazov');const kSinR=g('komponent_sin_rozmery');
   const komentar=g('implantacia_komentar');
+
   const katLines=[
     katAorty?(katAorty+', po ktorom zavádzame '+vodic+'.'):('Zavádzame '+vodic+'.'),
-    'Sprava zavádzame hlavné telo bifurkačného stentgraftu '+sgNazov+' ('+sgRozmery+'), pomocou DSA verifikujeme odstup renálnych tepien a implantujeme telo SG.',
-    contraKat+' katétrom a viacerými vodičmi katetrizujeme kontralaterálnu nožičku.',
-    'Sprava implantujeme distálnu komponentu '+kDx+' ('+kDxR+').',
-    'Zľava implantujeme distálnu komponentu '+kSin+' ('+kSinR+').',
-    komentar
-  ].filter(Boolean);
+    'Sprava zavádzame hlavné telo '+sgTyp+' stentgraftu '+sgNazov+' ('+sgRozmery+'), pomocou DSA verifikujeme odstup renálnych tepien a implantujeme telo SG.'
+  ];
+  if(isBifurk){
+    const contraKat=g('contra_kateter_typ');
+    const kDx=g('komponent_dx_nazov');const kDxR=g('komponent_dx_rozmery');
+    const kSin=g('komponent_sin_nazov');const kSinR=g('komponent_sin_rozmery');
+    katLines.push(contraKat+' katétrom a viacerými vodičmi katetrizujeme kontralaterálnu nožičku.');
+    katLines.push('Sprava implantujeme distálnu komponentu '+kDx+' ('+kDxR+').');
+    katLines.push('Zľava implantujeme distálnu komponentu '+kSin+' ('+kSinR+').');
+  }
+  // Extenzie
+  if(chk('c_extenzie')){
+    document.querySelectorAll('#extenzie_list .ext-row').forEach(row=>{
+      const idx=row.dataset.idx;
+      const naz=g('ext_'+idx+'_nazov');const roz=g('ext_'+idx+'_rozmery');const str=g('ext_'+idx+'_strana');
+      if(naz||roz)katLines.push((str?str+': ':'')+'Implantujeme extenziu '+naz+(roz?' ('+roz+')':'')+'.');
+    });
+  }
+  if(komentar)katLines.push(komentar);
 
   const modParts=[];
   if(chk('modelovanie_telo')){
@@ -376,6 +414,27 @@ function gen(){
   document.getElementById('out').value=parts.filter(Boolean).join('\n\n');
 }
 
+let extCnt=0;
+const SG_OPTS='<option>Ovation</option><option>Endurant</option><option>Cook</option><option>MINOS</option><option>Incraft</option>';
+function addExtenzia(){
+  const idx=extCnt++;
+  const id='ext_'+idx;
+  const cont=document.getElementById('extenzie_list');
+  const div=document.createElement('div');div.className='dyn-row ext-row';div.dataset.idx=idx;
+  div.innerHTML=`<button type="button" class="del-btn-x" onclick="delExtenzia(${idx})">✕</button>
+    <div class="row r2" style="margin-bottom:0">
+      <div class="f"><label>Strana</label>
+        <select id="${id}_strana" onchange="gen()">
+          <option value="">–</option><option value="Sprava">Sprava</option><option value="Zľava">Zľava</option><option value="Obojstranne">Obojstranne</option>
+        </select>
+      </div>
+      <div class="f"><label>Názov</label><select id="${id}_nazov" onchange="gen()">${SG_OPTS}</select></div>
+    </div>
+    <div class="f" style="margin-top:6px"><label>Rozmery (mm)</label><input type="text" id="${id}_rozmery" placeholder="napr. 16x80mm" oninput="gen()"></div>`;
+  cont.appendChild(div);gen();
+}
+function delExtenzia(idx){const r=document.querySelector('#extenzie_list [data-idx="'+idx+'"]');if(r)r.remove();gen();}
+
 function copyOut(){
   const out=document.getElementById('out');
   out.select();
@@ -407,6 +466,7 @@ async function saveToSupabase(){
     vodic_typ:g('vodic_typ'),
     sg_nazov:g('sg_nazov'),
     sg_rozmery:g('sg_rozmery'),
+    indikacia_typ:(document.querySelector('input[name="sg_typ"]:checked')?.value||'')+' – '+(document.querySelector('input[name="ind_typ"]:checked')?.value||''),
     contra_kateter_typ:g('contra_kateter_typ'),
     komponent_dx_nazov:g('komponent_dx_nazov'),
     komponent_dx_rozmery:g('komponent_dx_rozmery'),
