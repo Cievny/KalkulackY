@@ -302,7 +302,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     </div>
   </div>
 </div>
-<div class="f"><div class="lbl">Antitrombotická léčba pred výkonom</div>
+<div class="f"><div class="lbl">Antitrombotická léčba pred výkonem</div>
   <div class="checks">
     <label class="ck"><input type="checkbox" class="atb" value="bez antitrombotík" onchange="gen()"> Bez</label>
     <label class="ck"><input type="checkbox" class="atb" value="ASA" onchange="gen()"> ASA</label>
@@ -319,7 +319,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="st">2. Přístup</div>
 <div class="row r3">
   <div class="f"><label>Přístupová tepna</label>
-    <select id="access_art" onchange="updateAccess();gen()"><option value="AFC">AFC</option><option value="a. brachialis">a. brachialis</option><option value="a. axillaris">a. axillaris</option><option value="vlastny">vlastné</option></select>
+    <select id="access_art" onchange="updateAccess();gen()"><option value="AFC">AFC</option><option value="a. brachialis">a. brachialis</option><option value="a. axillaris">a. axillaris</option><option value="vlastny">vlastní</option></select>
     <input type="text" id="access_art_c" placeholder="Vlastní tepna..." oninput="gen()" style="display:none;margin-top:5px">
   </div>
   <div class="f"><label>Strana</label><select id="strana" onchange="gen()"><option value="l.sin.">Levá (l.sin.)</option><option value="l.dx.">Pravá (l.dx.)</option></select></div>
@@ -418,7 +418,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         <label class="ck"><input type="radio" name="bezint_r" value="Nález nevhodný k endovaskulárnej léčbě (EVL)" onchange="chkBezIntVl();gen()"> Nález nevhodný k EVL</label>
         <label class="ck"><input type="radio" name="bezint_r" value="Doporučujeme cévně chirurgické konzílium" onchange="chkBezIntVl();gen()"> Doporučujeme cévně chirurgické konzílium</label>
         <label class="ck"><input type="radio" name="bezint_r" value="Doporučujeme konzervativní postup" onchange="chkBezIntVl();gen()"> Doporučujeme konzervativní postup</label>
-        <label class="ck"><input type="radio" name="bezint_r" value="vlastny" onchange="chkBezIntVl();gen()"> Vlastné</label>
+        <label class="ck"><input type="radio" name="bezint_r" value="vlastny" onchange="chkBezIntVl();gen()"> Vlastní</label>
       </div>
       <input type="text" id="bezint_vlastny" placeholder="Vlastní důvod..." oninput="gen()" style="display:none;margin-top:6px">
     </div>
@@ -500,7 +500,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="st">5. Uzávěr &amp; Hemostáza</div>
 <div class="row r2">
   <div class="f"><label>Komprese (min)</label><input type="number" id="kompr" placeholder="10" oninput="gen()"></div>
-  <div class="f"><label>Uzatváracie zařízení</label><select id="uzatv" onchange="gen()"><option value="">Manuální komprese</option><option>AngioSeal 6F</option><option>AngioSeal 8F</option><option>FemoSeal</option><option>ProStyle</option><option>MynxControl</option></select></div>
+  <div class="f"><label>Uzavírací zařízení</label><select id="uzatv" onchange="gen()"><option value="">Manuální komprese</option><option>AngioSeal 6F</option><option>AngioSeal 8F</option><option>FemoSeal</option><option>ProStyle</option><option>MynxControl</option></select></div>
 </div>
 <div class="row r2">
   <div class="f"><label>Hemostáza dosažena</label><select id="hemo" onchange="gen()"><option>ihneď</option><option>po manuálnej kompresii</option><option>za použití PatchPro bandáže</option></select></div>
@@ -545,7 +545,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <label class="ck"><input type="checkbox" class="st_cmp" value="infekcia přístupu" onchange="gen()"> Infekcia</label>
   </div>
 </div>
-<div class="f"><div class="lbl">Komplikace – cieľová céva</div>
+<div class="f"><div class="lbl">Komplikace – cílová céva</div>
   <div class="checks">
     <label class="ck"><input type="checkbox" class="st_cmp" value="distální embolizace" onchange="gen()"> Distální embolizace</label>
     <label class="ck"><input type="checkbox" class="st_cmp" value="flow-limit. disekcia" onchange="gen()"> Flow-limit. disekcia</label>
@@ -564,8 +564,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   </div>
 </div>
 <div class="row r2">
-  <div class="f"><label>Konverze na otvorený výkon</label><select id="st_konv" onchange="gen()"><option value="nie">nie</option><option value="áno">áno</option></select></div>
-  <div class="f"><label>Clavien-Dindo (najzávažnejšia)</label><select id="st_clavien" onchange="gen()"><option value="">žádná</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtí)</option></select></div>
+  <div class="f"><label>Konverze na otevřený výkon</label><select id="st_konv" onchange="gen()"><option value="nie">nie</option><option value="áno">áno</option></select></div>
+  <div class="f"><label>Clavien-Dindo (nejzávažnější)</label><select id="st_clavien" onchange="gen()"><option value="">žádná</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtí)</option></select></div>
 </div>
 </div>
 
@@ -598,7 +598,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <div class="f"><label>Patencia</label><select id="fu_pat"><option value="">–</option><option>primární patencia</option><option>asistovaná primární patencia</option><option>sekundární patencia</option><option>restenóza</option><option>okluze</option></select></div>
     <div class="row r2">
       <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="fu_reint"> Reintervencia</label></div>
-      <div class="f"><label class="ck" style="margin-bottom:5px"><input type="checkbox" id="fu_amput"> Amputace</label><select id="fu_amput_typ"><option value="">– typ –</option><option>veľká</option><option>malá</option></select></div>
+      <div class="f"><label class="ck" style="margin-bottom:5px"><input type="checkbox" id="fu_amput"> Amputace</label><select id="fu_amput_typ"><option value="">– typ –</option><option>velká</option><option>malá</option></select></div>
     </div>
     <div class="f"><label>Poznámka</label><textarea id="fu_pozn" rows="3" placeholder="Volný text..."></textarea></div>
   </div>
