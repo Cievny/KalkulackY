@@ -92,13 +92,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 
 <div class="card">
 <div class="st">Identifikácia výkonu</div>
-<div class="row r2">
+<div class="row r3">
   <div class="f"><label>ID výkonu</label>
     <div class="id-row"><span class="id-prefix" id="id-prefix">EVK-2025-</span><input type="text" id="id_suffix" placeholder="001" oninput="updateIdPrefix();gen()"></div>
   </div>
   <div class="f"><label>Operatér</label>
     <select id="operator" onchange="gen()"><option value="">– vybrať –</option><option>Vincze</option><option>Kocan</option><option>Nemiec</option><option>Fľak</option><option>Širila</option><option>Vařejka</option><option>Maďarič</option></select>
   </div>
+  <div class="f"><label>Dátum výkonu</label><input type="date" id="datum" onchange="gen()"></div>
 </div>
 </div>
 
@@ -112,11 +113,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 </div>
 
 <div class="card">
-<div class="st">1. Pacient &amp; Indikácia</div>
-<div class="row r3">
+<div class="st">Pacient &amp; Indikácia</div>
+<div class="row r2">
   <div class="f"><label>Vek</label><input type="number" id="vek" placeholder="70" oninput="gen()"></div>
   <div class="f"><label>Pohlavie</label><select id="pohl" onchange="gen()"><option value="M">Muž</option><option value="Z">Žena</option></select></div>
-  <div class="f"><label>Dátum výkonu</label><input type="date" id="datum" onchange="gen()"></div>
 </div>
 <div class="row r3">
   <div class="f"><label>Rutherford</label>

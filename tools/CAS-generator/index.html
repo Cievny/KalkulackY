@@ -71,10 +71,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="card">
 <div class="st">Pacient a Indikácia</div>
 <div class="row r2">
-  <div class="f"><label>Rodné číslo</label><input type="text" id="rodne_cislo" value="405101/123" placeholder="RRMMDD/XXXX" oninput="updateRC()"></div>
-  <div class="row r2" style="margin-bottom:0">
-    <div class="f"><label>Vek</label><div id="vek_display" style="padding:6px 9px;background:#f0f2f5;border-radius:6px;font-weight:600;font-size:13px;min-height:32px"></div></div>
-    <div class="f"><label>Pohlavie</label><div id="pohlavie_display" style="padding:6px 9px;background:#f0f2f5;border-radius:6px;font-weight:600;font-size:13px;min-height:32px"></div></div>
+  <div class="f"><label>Vek</label><input type="number" id="vek" placeholder="70" min="18" max="110" oninput="gen()"></div>
+  <div class="f"><label>Pohlavie</label>
+    <select id="pohlavie" onchange="gen()">
+      <option value="Muž">Muž</option>
+      <option value="Žena">Žena</option>
+    </select>
   </div>
 </div>
 <div class="row r2">
@@ -297,35 +299,11 @@ function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.t
 
 function updateIdPrefix(){document.getElementById('id-prefix').textContent='CAS-'+new Date().getFullYear()+'-';}
 
-function parseRC(rc){
-  if(!rc)return null;
-  const s=rc.replace(/\D/g,'');
-  if(s.length<9||s.length>10)return null;
-  let yr=parseInt(s.slice(0,2)),mo=parseInt(s.slice(2,4)),dy=parseInt(s.slice(4,6));
-  let gender='Muž';
-  if(mo>50){gender='Žena';mo-=50;}
-  const cy=new Date().getFullYear();
-  const fullYr=s.length===9?1900+yr:(yr>(cy%100)?1900+yr:2000+yr);
-  const bd=new Date(fullYr,mo-1,dy);
-  if(isNaN(bd.getTime())||bd>new Date())return null;
-  let age=cy-bd.getFullYear();
-  const m=new Date().getMonth()-bd.getMonth();
-  if(m<0||(m===0&&new Date().getDate()<bd.getDate()))age--;
-  return{age,gender};
-}
-
-function updateRC(){
-  const p=parseRC(g('rodne_cislo'));
-  document.getElementById('vek_display').textContent=p?p.age:'–';
-  document.getElementById('pohlavie_display').textContent=p?p.gender:'–';
-  gen();
-}
-
 function gen(){
-  const vek=document.getElementById('vek_display').textContent;
-  const pohlavie=document.getElementById('pohlavie_display').textContent;
+  const vek=g('vek');
+  const pohlavie=g('pohlavie');
   const jeZena=pohlavie==='Žena';
-  const vekText=(vek&&vek!=='–')?(vek+' '+(jeZena?'ročná':'ročný')):'';
+  const vekText=vek?(vek+' '+(jeZena?'ročná':'ročný')):'';
   const pacientText=jeZena?'pacientka':'pacient';
   const indText=jeZena?'indikovaná':'indikovaný';
   const lok=g('lokalizacia');
@@ -391,15 +369,13 @@ function copyOut(){
 }
 
 async function saveData(){
-  const vek=document.getElementById('vek_display').textContent;
-  const pohlavie=document.getElementById('pohlavie_display').textContent;
   const isInterv=g('postup_vykonu')==='intervencia';
   const payload={
     vykon_id:'CAS-'+new Date().getFullYear()+'-'+(g('id_suffix')||'???'),
     operator:g('operator'),
     datum_zaznamu:g('datum_zaznamu')||new Date().toISOString().slice(0,10),
-    vek:(vek&&vek!=='–')?parseInt(vek):null,
-    pohlavie:pohlavie!=='–'?pohlavie:'',
+    vek:parseInt(g('vek'))||null,
+    pohlavie:g('pohlavie'),
     lokalizacia:g('lokalizacia'),
     typ_platu:document.getElementById('plat').options[document.getElementById('plat').selectedIndex].text,
     klinicky_stav:g('klinicky_stav'),
@@ -454,7 +430,7 @@ async function saveData(){
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
   updateIdPrefix();
-  updateRC();
+  gen();
 });
 </script>
 </body>
