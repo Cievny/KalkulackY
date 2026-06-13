@@ -919,6 +919,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   casDsaLat();
   gen();
 });
+
+// Reset komorbidity stav pri kazdom nacitani (prehliadac si pamata stav)
+window.addEventListener('load', function(){
+  const det = document.querySelector('.komor-details');
+  if(det){ det.removeAttribute('open'); }
+  document.querySelectorAll('#komordiv input[type=checkbox]').forEach(cb=>{ cb.checked=false; });
+  document.querySelectorAll('.kom-sub').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.kom-sub .kom-item input[type=radio]').forEach(r=>{ r.checked=false; });
+});
 </script>
 </body>
 </html>
