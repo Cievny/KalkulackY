@@ -381,15 +381,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <label class="thdr"><input type="checkbox" id="c_kiss" onchange="tB('kiss');gen()"><span>Kissing stent technika</span></label>
     <div class="tbody" id="b_kiss">
       <div class="row r2">
-        <div><div class="subsec" style="margin-top:0">Stent l.sin.</div>
-          <div class="f"><label>Typ</label><select id="kiss_ts" onchange="gen()"><option value="">–</option><option>balónexpandibilní</option><option>samoexpandibilní</option><option>lékový (DES)</option></select></div>
-          <div class="f"><label>Název</label><select id="kiss_ns" onchange="chkVl('kiss_ns');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="kiss_ns_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px"></div>
-          <div class="f"><label>Průměr × Délka (mm)</label><div class="px-row"><input type="number" id="kiss_ps" placeholder="8" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="kiss_ds" placeholder="60" oninput="gen()"></div></div>
-        </div>
         <div><div class="subsec" style="margin-top:0">Stent l.dx.</div>
           <div class="f"><label>Typ</label><select id="kiss_td" onchange="gen()"><option value="">–</option><option>balónexpandibilní</option><option>samoexpandibilní</option><option>lékový (DES)</option></select></div>
           <div class="f"><label>Název</label><select id="kiss_nd" onchange="chkVl('kiss_nd');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="kiss_nd_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px"></div>
           <div class="f"><label>Průměr × Délka (mm)</label><div class="px-row"><input type="number" id="kiss_pd" placeholder="8" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="kiss_dd" placeholder="60" oninput="gen()"></div></div>
+        </div>
+        <div><div class="subsec" style="margin-top:0">Stent l.sin.</div>
+          <div class="f"><label>Typ</label><select id="kiss_ts" onchange="gen()"><option value="">–</option><option>balónexpandibilní</option><option>samoexpandibilní</option><option>lékový (DES)</option></select></div>
+          <div class="f"><label>Název</label><select id="kiss_ns" onchange="chkVl('kiss_ns');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="kiss_ns_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px"></div>
+          <div class="f"><label>Průměr × Délka (mm)</label><div class="px-row"><input type="number" id="kiss_ps" placeholder="8" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="kiss_ds" placeholder="60" oninput="gen()"></div></div>
         </div>
       </div>
     </div>
@@ -401,8 +401,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <div class="row r3"><div class="f"><label>Stent</label><select id="cerab_ao_n" onchange="chkVl('cerab_ao_n');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="cerab_ao_n_c" oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Průměr (mm)</label><input type="number" id="cerab_ao_p" placeholder="12" oninput="gen()"></div><div class="f"><label>Délka (mm)</label><input type="number" id="cerab_ao_d" placeholder="30" oninput="gen()"></div></div>
       <div class="subsec">Kissing stenty AIC</div>
       <div class="row r2">
-        <div><div class="bilat-hdr">l.sin.</div><div class="f"><label>Stent</label><select id="cerab_sin_n" onchange="chkVl('cerab_sin_n');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="cerab_sin_n_c" oninput="gen()" style="display:none;margin-top:4px"></div><div class="row r2" style="margin-bottom:0"><div class="f"><label>Průměr</label><input type="number" id="cerab_sin_p" placeholder="8" oninput="gen()"></div><div class="f"><label>Délka</label><input type="number" id="cerab_sin_d" placeholder="60" oninput="gen()"></div></div></div>
         <div><div class="bilat-hdr">l.dx.</div><div class="f"><label>Stent</label><select id="cerab_dx_n" onchange="chkVl('cerab_dx_n');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="cerab_dx_n_c" oninput="gen()" style="display:none;margin-top:4px"></div><div class="row r2" style="margin-bottom:0"><div class="f"><label>Průměr</label><input type="number" id="cerab_dx_p" placeholder="8" oninput="gen()"></div><div class="f"><label>Délka</label><input type="number" id="cerab_dx_d" placeholder="60" oninput="gen()"></div></div></div>
+        <div><div class="bilat-hdr">l.sin.</div><div class="f"><label>Stent</label><select id="cerab_sin_n" onchange="chkVl('cerab_sin_n');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="cerab_sin_n_c" oninput="gen()" style="display:none;margin-top:4px"></div><div class="row r2" style="margin-bottom:0"><div class="f"><label>Průměr</label><input type="number" id="cerab_sin_p" placeholder="8" oninput="gen()"></div><div class="f"><label>Délka</label><input type="number" id="cerab_sin_d" placeholder="60" oninput="gen()"></div></div></div>
       </div>
     </div>
   </div>
@@ -810,8 +810,8 @@ function buildPelvDSA(){
   PELV_VESSELS.forEach(([lbl,base])=>{
     const row=document.createElement('div');row.className='bilat-row';
     row.innerHTML=`<div class="bilat-lbl pelv">${lbl}</div>
-      <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${SO}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>
-      <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${SO}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
+      <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${SO}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>
+      <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${SO}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
     c.appendChild(row);
   });
 }
@@ -825,8 +825,8 @@ function buildFemDSA(){
       if(lat==='bilat'){
         const row=document.createElement('div');row.className='bilat-row';
         row.innerHTML=`<div class="bilat-lbl">${lbl}</div>
-          <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${SO}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>
-          <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${SO}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
+          <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${SO}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>
+          <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${SO}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
         c.appendChild(row);
       } else {
         const sid=lat==='sin'?base+'_s':base+'_d';
