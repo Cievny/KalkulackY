@@ -782,7 +782,7 @@ async function saveToSupabase(){
     vodic_typ:g('vodic_typ'),
     sg_nazov:g('sg_nazov'),
     sg_rozmery:g('sg_rozmery'),
-    indikacia_typ:(document.querySelector('input[name="sg_typ"]:checked')?.value||'')+' – '+(document.querySelector('input[name="ind_typ"]:checked')?.value||''),
+    sg_konfiguracia:document.querySelector('input[name="sg_typ"]:checked')?.value||'',
     contra_kateter_typ:g('contra_kateter_typ'),
     komponent_dx_nazov:g('komponent_dx_nazov'),
     komponent_dx_rozmery:g('komponent_dx_rozmery'),
