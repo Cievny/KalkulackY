@@ -204,7 +204,23 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         </div>
       </div>
     </div>
-    <label class="ck"><input type="checkbox" value="St.p.IM" onchange="gen()"> St.p.IM</label>
+    <!-- St.p. IM -->
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_im" onchange="kSub('im');gen()"><span>St.p. IM</span></label>
+      <div class="kom-sub" id="ksub_im">
+        <div class="sub-lbl">Obdobie</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="im_obdobie" value="nedávny (&lt;30 dní)" onchange="gen()"><span>Nedávny (&lt;30 dní)</span></label>
+          <label class="ck"><input type="radio" name="im_obdobie" value="starší" checked onchange="gen()"><span>Starší</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Liečba IM</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="im_liecba" value="konzervatívne" checked onchange="gen()"><span>Konzervatívne</span></label>
+          <label class="ck"><input type="radio" name="im_liecba" value="PCI" onchange="gen()"><span>PCI</span></label>
+          <label class="ck"><input type="radio" name="im_liecba" value="CABG" onchange="gen()"><span>CABG</span></label>
+        </div>
+      </div>
+    </div>
     <label class="ck"><input type="checkbox" value="CMP" onchange="gen()"> CMP</label>
     <label class="ck"><input type="checkbox" value="fajčiar" onchange="gen()"> Fajčiar</label>
     <label class="ck"><input type="checkbox" value="obezita" onchange="gen()"> Obezita</label>
@@ -567,6 +583,11 @@ function getKomor(){
   if(document.getElementById('k_chri')?.checked){
     const res=calcEGFR();
     list.push(res?'CKD – '+res:'CKD');
+  }
+  if(document.getElementById('k_im')?.checked){
+    const obdobie=document.querySelector('input[name="im_obdobie"]:checked')?.value||'starší';
+    const liecba=document.querySelector('input[name="im_liecba"]:checked')?.value||'konzervatívne';
+    list.push('St.p. IM – '+obdobie+', liečba '+liecba);
   }
   if(document.getElementById('k_ichs')?.checked){
     const forma=document.querySelector('input[name="ichs_forma"]:checked')?.value||'stabilná';
