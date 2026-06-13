@@ -100,6 +100,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <option value="retinálna ischémia">Retinálna ischémia</option>
     </select>
   </div>
+  <div class="f"><label>Čas od symptómov (dni)</label><input type="number" id="cas_symptom_days" min="0" max="3650" placeholder="napr. 7" oninput="gen()"></div>
 </div>
 <div class="f"><label>Typ AS plátu</label>
   <select id="plat" onchange="gen()">
@@ -264,6 +265,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         </div>
       </div>
     </div>
+  </div>
+</div>
+<div class="f"><div class="lbl">Antitrombotická liečba pred výkonom</div>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" class="atb" value="bez antitrombotík" onchange="gen()"> Bez</label>
+    <label class="ck"><input type="checkbox" class="atb" value="ASA" onchange="gen()"> ASA</label>
+    <label class="ck"><input type="checkbox" class="atb" value="klopidogrel" onchange="gen()"> Klopidogrel</label>
+    <label class="ck"><input type="checkbox" class="atb" value="DAPT (ASA+klopidogrel)" onchange="gen()"> DAPT</label>
+    <label class="ck"><input type="checkbox" class="atb" value="DOAC" onchange="gen()"> DOAC</label>
+    <label class="ck"><input type="checkbox" class="atb" value="warfarín" onchange="gen()"> Warfarín</label>
+    <label class="ck"><input type="checkbox" class="atb" value="LMWH" onchange="gen()"> LMWH</label>
   </div>
 </div>
 </div>
@@ -869,7 +881,9 @@ async function saveData(){
     kontrast:[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join('+'),
     komplikacie_struct:[...document.querySelectorAll('.st_cmp:checked')].map(e=>e.value).join(', '),
     konverzia:g('st_konv')==='áno',
-    clavien_dindo:g('st_clavien')
+    clavien_dindo:g('st_clavien'),
+    antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', '),
+    cas_symptom_days:g('cas_symptom_days')?parseInt(g('cas_symptom_days')):null
   };
   msg('Ukladám...','#5a6a8a');
   try{
