@@ -255,7 +255,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         </div>
       </div>
     </div>
-    <label class="ck"><input type="checkbox" value="obezita" onchange="gen()"> Obezita</label>
+    <!-- Obezita -->
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_obez" onchange="kSub('obez');gen()"><span>Obezita</span></label>
+      <div class="kom-sub" id="ksub_obez">
+        <div class="sub-lbl">BMI (kg/m²)</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="obez_bmi" min="30" max="80" step="0.1" placeholder="napr. 34"
+                 style="width:90px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+                 oninput="calcBMI();gen()">
+          <span id="obez_bmi_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
+        </div>
+      </div>
+    </div>
     <label class="ck"><input type="checkbox" value="dyslipidémia" onchange="gen()"> Dyslipidémia</label>
     <label class="ck"><input type="checkbox" value="CHOCHP" onchange="gen()"> CHOCHP</label>
     <label class="ck"><input type="checkbox" value="renálna insuficiencia" onchange="gen()"> Ren. insuficiencia</label>
@@ -616,6 +628,10 @@ function getKomor(){
     const res=calcEGFR();
     list.push(res?'CKD – '+res:'CKD');
   }
+  if(document.getElementById('k_obez')?.checked){
+    const res=calcBMI();
+    list.push(res?'Obezita – '+res:'Obezita');
+  }
   if(document.getElementById('k_faj')?.checked){
     const stav=document.querySelector('input[name="faj_stav"]:checked')?.value||'aktívny fajčiar';
     const py=document.getElementById('faj_py')?.value;
@@ -664,6 +680,18 @@ function calcEGFR(){
   else if(val>=15) stage='G4 (15–29)';
   else             stage='G5 (<15)';
   const txt=val+' ml/min/1,73m² → '+stage;
+  if(el) el.textContent=txt;
+  return txt;
+}
+function calcBMI(){
+  const bmi=parseFloat(document.getElementById('obez_bmi')?.value);
+  const el=document.getElementById('obez_bmi_result');
+  if(!bmi||bmi<30){if(el)el.textContent='';return'';}
+  let stupen;
+  if(bmi<35)      stupen='I. stupeň (30–34,9)';
+  else if(bmi<40) stupen='II. stupeň (35–39,9)';
+  else            stupen='III. stupeň (≥40)';
+  const txt='BMI '+bmi+' → '+stupen;
   if(el) el.textContent=txt;
   return txt;
 }
