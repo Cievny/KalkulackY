@@ -328,21 +328,86 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="row r2">
   <div class="f"><label>Dĺžka sheatu</label><select id="sheathdlz" onchange="gen()"><option value="">–</option><option>10 cm</option><option>25 cm</option><option>45 cm</option><option>55 cm</option><option>90 cm</option></select></div>
 </div>
-<div class="f"><label>Popis stenózy</label>
-  <select id="stenoza_typ_popisu" onchange="tShow('stenoza_percenta_container',this.value==='percentualna');gen()">
-    <option value="kriticka">Kritická odstupová stenóza</option>
-    <option value="percentualna">Stenóza v percentách</option>
-  </select>
 </div>
-<div id="stenoza_percenta_container" style="display:none">
-  <div class="row r2">
-    <div class="f"><label>Percento (%)</label><input type="number" id="stenoza_percenta" value="80" oninput="gen()"></div>
-    <div class="f"><label>Závažnosť</label>
-      <select id="stenoza_zavaznost" onchange="gen()">
-        <option value="závažná">závažná</option><option value="nezávažná">nezávažná</option>
-      </select>
-    </div>
+
+<!-- DSA Nález -->
+<div class="card">
+<div class="st">DSA Nález</div>
+<div class="f"><label>Lateralita</label>
+  <div class="checks">
+    <label class="ck"><input type="radio" name="dsa_lat" value="uni" checked onchange="casDsaLat();gen()"><span>Unilaterálna</span></label>
+    <label class="ck"><input type="radio" name="dsa_lat" value="bi" onchange="casDsaLat();gen()"><span>Bilaterálna</span></label>
   </div>
+</div>
+
+<div class="st" style="font-size:12px;margin:8px 0 4px;color:#5a6a8a">Ľavá strana (l.sin.)</div>
+<div class="row r2">
+  <div class="f"><label>ACC l.sin.</label>
+    <select id="dsa_acc_sin" onchange="gen()">
+      <option value="bez závažnej stenózy">bez závažnej stenózy</option>
+      <option value="stenóza">stenóza</option><option value="subokluzia">subokluzia</option><option value="oklúzia">oklúzia</option>
+    </select>
+  </div>
+  <div class="f"><label>ACI l.sin. – typ stenózy</label>
+    <select id="dsa_aci_sin_typ" onchange="gen()">
+      <option value="kritická odstupová stenóza">kritická odstupová stenóza</option>
+      <option value="významná stenóza">významná stenóza</option>
+      <option value="subokluzia">subokluzia</option>
+      <option value="oklúzia">oklúzia</option>
+    </select>
+  </div>
+</div>
+<div class="row r2">
+  <div class="f"><label>ACE l.sin.</label>
+    <select id="dsa_ace_sin" onchange="gen()">
+      <option value="priechodná">priechodná</option>
+      <option value="stenóza">stenóza</option><option value="oklúzia">oklúzia</option>
+    </select>
+  </div>
+  <div class="f"><label>AV l.sin.</label>
+    <select id="dsa_av_sin" onchange="gen()">
+      <option value="">– nevyplnené –</option>
+      <option value="bez závažnej stenózy">bez závažnej stenózy</option>
+      <option value="hypoplastická">hypoplastická</option>
+      <option value="stenóza">stenóza</option><option value="oklúzia">oklúzia</option>
+    </select>
+  </div>
+</div>
+
+<div id="dsa_dx_wrap">
+<div class="st" style="font-size:12px;margin:8px 0 4px;color:#5a6a8a">Pravá strana (l.dx.)</div>
+<div class="row r2">
+  <div class="f"><label>ACC l.dx.</label>
+    <select id="dsa_acc_dx" onchange="gen()">
+      <option value="bez závažnej stenózy">bez závažnej stenózy</option>
+      <option value="stenóza">stenóza</option><option value="subokluzia">subokluzia</option><option value="oklúzia">oklúzia</option>
+    </select>
+  </div>
+  <div class="f"><label>ACI l.dx. – typ stenózy</label>
+    <select id="dsa_aci_dx_typ" onchange="gen()">
+      <option value="kritická odstupová stenóza">kritická odstupová stenóza</option>
+      <option value="významná stenóza">významná stenóza</option>
+      <option value="subokluzia">subokluzia</option>
+      <option value="oklúzia">oklúzia</option>
+    </select>
+  </div>
+</div>
+<div class="row r2">
+  <div class="f"><label>ACE l.dx.</label>
+    <select id="dsa_ace_dx" onchange="gen()">
+      <option value="priechodná">priechodná</option>
+      <option value="stenóza">stenóza</option><option value="oklúzia">oklúzia</option>
+    </select>
+  </div>
+  <div class="f"><label>AV l.dx.</label>
+    <select id="dsa_av_dx" onchange="gen()">
+      <option value="">– nevyplnené –</option>
+      <option value="bez závažnej stenózy">bez závažnej stenózy</option>
+      <option value="hypoplastická">hypoplastická</option>
+      <option value="stenóza">stenóza</option><option value="oklúzia">oklúzia</option>
+    </select>
+  </div>
+</div>
 </div>
 </div>
 
@@ -474,6 +539,25 @@ function chk(id){const el=document.getElementById(id);return el?el.checked:false
 function tB(id){const b=document.getElementById('b_'+id);if(b)b.classList.toggle('on');}
 function tShow(id,show){const el=document.getElementById(id);if(el)el.style.display=show?'':'none';}
 function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',3000);}
+function casDsaLat(){
+  const bi=document.querySelector('input[name="dsa_lat"]:checked')?.value==='bi';
+  const el=document.getElementById('dsa_dx_wrap');
+  if(el)el.style.display=bi?'block':'none';
+}
+function getCasDsa(){
+  const lat=document.querySelector('input[name="dsa_lat"]:checked')?.value||'uni';
+  const lok=g('lokalizacia');
+  const sides=lat==='bi'?['sin','dx']:lok.includes('sin.')?['sin']:['dx'];
+  const lines=[];
+  sides.forEach(s=>{
+    const L=s==='sin'?'l.sin.':'l.dx.';
+    const acc=g('dsa_acc_'+s),aci=g('dsa_aci_'+s+'_typ'),ace=g('dsa_ace_'+s),av=g('dsa_av_'+s);
+    let line='ACC '+L+' – '+acc+'; ACI '+L+' – '+aci+'; ACE '+L+' – '+ace;
+    if(av)line+='; AV '+L+' – '+av;
+    lines.push(line);
+  });
+  return lines.join('\n');
+}
 function calcNASCET(){
   const dmin=parseFloat(document.getElementById('nascet_dmin')?.value);
   const ddist=parseFloat(document.getElementById('nascet_ddist')?.value);
@@ -586,15 +670,9 @@ function gen(){
   const komor=getKomor();
   const uvod=`${vekText} ${pacientText}${komor.length?' ('+komor.join(', ')+')':''} so symptomatickou kritickou stenózou ${aci} s ${plat} ${indText} k EVL:`.replace(/\s+/g,' ').trim();
 
-  let popisStenozy;
-  if(g('stenoza_typ_popisu')==='kriticka'){
-    popisStenozy=`na ktorej verifikujeme kritickú odstupovú stenózu ${aci}`;
-  } else {
-    popisStenozy=`na ktorej sa zobrazuje ${g('stenoza_percenta')}% ${g('stenoza_zavaznost')} stenóza ${aci}`;
-  }
-
+  const dsaNalez=getCasDsa();
   const postup=g('postup_vykonu');
-  let priebeh=`${pristupLine}\n\nDiagnostická angiografia: katetrizujeme ${acc} a ďalej ${aci}, ${popisStenozy}`;
+  let priebeh=`${pristupLine}\n\nDSA NÁLEZ:\n${dsaNalez}`;
 
   const parts=[uvod,priebeh];
   if(postup==='intervencia'){
