@@ -304,25 +304,29 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="card">
 <div class="st">Prístup</div>
 <div class="row r3">
-  <div class="f"><label>Anestézia</label><input type="text" id="anestezia_typ" value="lokálnej anestézii" oninput="gen()"></div>
-  <div class="f"><label>Úvodný sheath</label><input type="text" id="sheath_uvodny" value="5F" oninput="gen()"></div>
+  <div class="f"><label>Prístupová artéria</label>
+    <select id="access_art" onchange="gen()"><option value="AFC">AFC</option><option value="a. brachialis">a. brachialis</option><option value="a. axillaris">a. axillaris</option><option value="vlastny">vlastné</option></select>
+    <input type="text" id="access_art_c" placeholder="Vlastná artéria..." oninput="gen()" style="display:none;margin-top:5px">
+  </div>
+  <div class="f"><label>Strana</label><select id="strana" onchange="gen()"><option value="l.sin.">Ľavá (l.sin.)</option><option value="l.dx.">Pravá (l.dx.)</option></select></div>
+  <div class="f"><label>Technika</label><select id="tech" onchange="gen()"><option>prográdne</option><option>retrográdne</option></select></div>
+</div>
+<div class="row r3">
+  <div class="f"><label>Smer</label><select id="smer" onchange="gen()"><option>ipsilaterálna</option><option>kontralaterálna</option></select></div>
+  <div class="f"><label>Spôsob</label><select id="spos" onchange="gen()"><option>perkutánne</option><option>chirurgický cut-down</option></select></div>
+  <div class="f"><label>Anestézia</label><select id="anes" onchange="gen()"><option>LA</option><option>SA</option><option>GA</option></select></div>
+</div>
+<div class="row r3">
+  <div class="f"><label>Navádzanie</label><select id="nav" onchange="gen()"><option>USG/XA</option><option>USG</option><option>XA</option></select></div>
   <div class="f"><label>Diagnostický katéter</label>
     <select id="kateter_diag" onchange="gen()">
-      <option>Berenstein</option><option>SIM1</option><option>SIM2</option><option>Vittek</option><option>Vertebrálneho</option>
+      <option>Berenstein</option><option>JR 4</option><option>SIM1</option><option>SIM2</option><option>Vittek</option><option>Cobra</option><option>Vertebrálny</option>
     </select>
   </div>
+  <div class="f"><label>Sheath</label><select id="sheath" onchange="gen()"><option value="">bez sheatu</option><option>4 Fr</option><option>5 Fr</option><option>6 Fr</option><option>7 Fr</option><option>8 Fr</option></select></div>
 </div>
 <div class="row r2">
-  <div class="f"><label>Strana prístupu</label>
-    <select id="pristup_strana" onchange="gen()">
-      <option value="Sprava">Sprava</option><option value="Zľava">Zľava</option>
-    </select>
-  </div>
-  <div class="f"><label>Pungovaná tepna</label>
-    <select id="pristup_tepna" onchange="gen()">
-      <option value="AFC l.dx.">AFC l.dx.</option><option value="AFC l.sin.">AFC l.sin.</option>
-    </select>
-  </div>
+  <div class="f"><label>Dĺžka sheatu</label><select id="sheathdlz" onchange="gen()"><option value="">–</option><option>10 cm</option><option>25 cm</option><option>45 cm</option><option>55 cm</option><option>90 cm</option></select></div>
 </div>
 <div class="f"><label>Popis stenózy</label>
   <select id="stenoza_typ_popisu" onchange="tShow('stenoza_percenta_container',this.value==='percentualna');gen()">
@@ -571,11 +575,13 @@ function gen(){
   const strana=lok.includes('dx.')?'l.dx.':'l.sin.';
   const aci='ACI '+strana,acc='ACC '+strana,ace='ACE '+strana;
   const plat=document.getElementById('plat').options[document.getElementById('plat').selectedIndex].text;
-  const anestezia=g('anestezia_typ');
-  const sheathUv=g('sheath_uvodny');
+  const artVal=g('access_art'),art=artVal==='vlastny'?(g('access_art_c')||'vlastná artéria'):artVal;
   const katDiag=g('kateter_diag');
-  const pristup=g('pristup_strana');
-  const tepna=g('pristup_tepna');
+  const sh=g('sheath'),shd=g('sheathdlz');
+  const shText=sh?(sh+(shd?' '+shd:'')):'';
+  const pristupParts=[art+' '+g('strana'),g('smer'),g('tech'),g('spos'),'v '+g('anes'),'pod '+g('nav')+' navigáciou'].filter(Boolean);
+  const pristupLine='PRÍSTUP: '+pristupParts.join(', ')+', zavádzame '+katDiag+' katéter'+(shText?', sheath '+shText:'')+'.';
+  const anestezia=g('anes');
 
   const komor=getKomor();
   const uvod=`${vekText} ${pacientText}${komor.length?' ('+komor.join(', ')+')':''} so symptomatickou kritickou stenózou ${aci} s ${plat} ${indText} k EVL:`.replace(/\s+/g,' ').trim();
@@ -588,12 +594,11 @@ function gen(){
   }
 
   const postup=g('postup_vykonu');
-  let priebeh=`${pristup} po ${anestezia}, Seldingerovou technikou, retrográdne pungujeme ${tepna}, zavádzame ${sheathUv} sheath a pomocou ${katDiag} katétra katetrizujeme ${acc} a ďalej diagnostická angiografia, ${popisStenozy}`;
+  let priebeh=`${pristupLine}\n\nDiagnostická angiografia: katetrizujeme ${acc} a ďalej ${aci}, ${popisStenozy}`;
 
-  const parts=[uvod];
+  const parts=[uvod,priebeh];
   if(postup==='intervencia'){
-    priebeh+=` a pristupujeme k intervencii:`;
-    parts.push(priebeh);
+    parts[parts.length-1]+=` a pristupujeme k intervencii:`;
     const shInterv=`${g('sheath_intervencny_fr')} ${g('sheath_intervencny_dlzka')} (${g('sheath_intervencny_znacka')})`;
     const vodic=`${g('vodic_intervencny_spec')} (${g('vodic_intervencny_brand')})`;
     const embolo=g('emboloprotekcia');
@@ -610,8 +615,7 @@ function gen(){
     intervParts.push(impl);
     parts.push(`Zavádzame Storq vodič do ${ace}, vymieňame sheath za ${shInterv}, pomocou ${vodic} vodiča katetrizujeme ${aci} a zavádzame distálnu emboloprotekciu ${embolo}.\n${intervParts.join(', ')}.\nVýsledný angiografický obraz ${g('vysledok')}.`);
   } else {
-    priebeh+=`. Vzhľadom na nález volíme konzervatívny postup.`;
-    parts.push(priebeh);
+    parts[parts.length-1]+=`. Vzhľadom na nález volíme konzervatívny postup.`;
   }
 
   const uz=g('uzatvaraci_system');
@@ -643,10 +647,14 @@ async function saveData(){
     klinicky_stav:g('klinicky_stav'),
     nascet_stenoza:g('nascet_stenoza'),
     nascet_metoda:g('nascet_metoda'),
-    anestazia:g('anestezia_typ'),
-    strana_pristupu:g('pristup_strana'),
-    pungovana_tepna:g('pristup_tepna'),
-    uvodny_sheath:g('sheath_uvodny'),
+    anestazia:g('anes'),
+    pristupova_arteria:artVal==='vlastny'?g('access_art_c'):artVal,
+    strana_pristupu:g('strana'),
+    pristup_smer:g('smer'),
+    pristup_technika:g('tech'),
+    pristup_sposob:g('spos'),
+    navadzanie:g('nav'),
+    uvodny_sheath:g('sheath')+(g('sheathdlz')?' '+g('sheathdlz'):''),
     diag_kateter:g('kateter_diag'),
     popis_stenozy:g('stenoza_typ_popisu'),
     percento_stenozy:g('stenoza_typ_popisu')==='percentualna'?g('stenoza_percenta'):'',
