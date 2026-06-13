@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sk">
+<html lang="cs">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -55,24 +55,24 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
 <script>checkAuth();</script>
 
 <div class="wrap">
-  <h1>📁 Záznamy výkonov</h1>
-  <p class="page-sub">Vyhľadanie a dodatočná editácia výkonov (napr. doplnenie komplikácií).</p>
+  <h1>📁 Záznamy výkonů</h1>
+  <p class="page-sub">Vyhledání a dodatečná editace výkonů (např. doplnění komplikací).</p>
 
   <div class="toolbar">
     <select id="f_tool" onchange="render()">
-      <option value="">Všetky nástroje</option>
+      <option value="">Všechny nástroje</option>
       <option value="evk">EVK</option>
       <option value="cas">CAS</option>
       <option value="pevar">PEVAR</option>
     </select>
-    <input type="text" id="f_search" placeholder="Hľadať ID / operatéra..." oninput="render()">
-    <label class="chk"><input type="checkbox" id="f_miss" onchange="render()"> Len nedoplnené komplikácie</label>
-    <button class="btn btn-reload" onclick="loadAll()">↻ Načítať</button>
+    <input type="text" id="f_search" placeholder="Hledat ID / operatéra..." oninput="render()">
+    <label class="chk"><input type="checkbox" id="f_miss" onchange="render()"> Jen nedoplněné komplikace</label>
+    <button class="btn btn-reload" onclick="loadAll()">↻ Načíst</button>
   </div>
 
   <table>
-    <thead><tr><th>Nástroj</th><th>ID výkonu</th><th>Dátum</th><th>Operatér</th><th>Komplikácie</th></tr></thead>
-    <tbody id="tbody"><tr><td colspan="5" class="empty">Načítavam…</td></tr></tbody>
+    <thead><tr><th>Nástroj</th><th>ID výkonu</th><th>Datum</th><th>Operatér</th><th>Komplikace</th></tr></thead>
+    <tbody id="tbody"><tr><td colspan="5" class="empty">Načítám…</td></tr></tbody>
   </table>
 </div>
 
@@ -84,10 +84,10 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
     </div>
     <div class="modal-body" id="m_body"></div>
     <div class="modal-foot">
-      <button class="btn btn-del" onclick="delRecord()">🗑 Zmazať</button>
+      <button class="btn btn-del" onclick="delRecord()">🗑 Smazat</button>
       <span class="msg" id="m_msg"></span>
-      <button class="btn btn-cancel" onclick="closeModal()">Zrušiť</button>
-      <button class="btn btn-save" onclick="saveRecord()">💾 Uložiť zmeny</button>
+      <button class="btn btn-cancel" onclick="closeModal()">Zrušit</button>
+      <button class="btn btn-save" onclick="saveRecord()">💾 Uložit změny</button>
     </div>
   </div>
 </div>
@@ -109,7 +109,7 @@ let CURRENT=null; // {tool, table, data}
 function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 async function loadAll(){
-  document.getElementById('tbody').innerHTML='<tr><td colspan="5" class="empty">Načítavam…</td></tr>';
+  document.getElementById('tbody').innerHTML='<tr><td colspan="5" class="empty">Načítám…</td></tr>';
   ROWS=[];
   for(const [tool,table] of Object.entries(TABLES)){
     try{
@@ -140,7 +140,7 @@ function render(){
     return true;
   });
   const tb=document.getElementById('tbody');
-  if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">Žiadne záznamy.</td></tr>';return;}
+  if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">Žádné záznamy.</td></tr>';return;}
   tb.innerHTML='';
   rows.forEach((r,i)=>{
     const d=r.data;
@@ -153,7 +153,7 @@ function render(){
       <td>${escHtml(d.vykon_id||'—')}</td>
       <td>${escHtml(datum)}</td>
       <td>${escHtml(d.operator||'—')}</td>
-      <td>${ok?'<span class="st-ok">✅ doplnené</span>':'<span class="st-miss">⚠️ chýba</span>'}</td>`;
+      <td>${ok?'<span class="st-ok">✅ doplněno</span>':'<span class="st-miss">⚠️ chybí</span>'}</td>`;
     tb.appendChild(tr);
   });
 }
@@ -170,9 +170,9 @@ function openModal(r){
   const complFirst=keys.filter(k=>COMPL_KEYS.includes(k));
   const rest=keys.filter(k=>!COMPL_KEYS.includes(k));
   const addHdr=(t)=>{const h=document.createElement('div');h.className='sec-hdr';h.textContent=t;body.appendChild(h);};
-  addHdr('⚠️ Komplikácie / výsledok');
+  addHdr('⚠️ Komplikace / výsledek');
   complFirst.forEach(k=>body.appendChild(fldEl(k,d[k])));
-  addHdr('Ostatné polia záznamu');
+  addHdr('Ostatní pole záznamu');
   rest.forEach(k=>body.appendChild(fldEl(k,d[k])));
   document.getElementById('overlay').classList.add('show');
 }
@@ -209,29 +209,29 @@ async function saveRecord(){
   if(!CURRENT)return;
   const changes=collectChanges();
   const keys=Object.keys(changes);
-  if(!keys.length){msg('Žiadne zmeny.','#6b7280');return;}
-  msg('Ukladám…','#3b82f6');
+  if(!keys.length){msg('Žádné změny.','#6b7280');return;}
+  msg('Ukládám…','#3b82f6');
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${CURRENT.table}?id=eq.${CURRENT.data.id}`,
       {method:'PATCH',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify(changes)});
     if(r.ok){
       Object.assign(CURRENT.data,changes);
-      msg('✅ Uložené ('+keys.length+' polí)','#16a34a');
+      msg('✅ Uloženo ('+keys.length+' polí)','#16a34a');
       render();
       setTimeout(closeModal,800);
     }else{msg('Chyba '+r.status,'#dc2626');}
-  }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
+  }catch(e){msg('Chyba sítě: '+e.message,'#dc2626');}
 }
 
 async function delRecord(){
   if(!CURRENT)return;
-  if(!confirm('Naozaj zmazať tento záznam? Túto akciu nie je možné vrátiť.'))return;
-  msg('Mažem…','#dc2626');
+  if(!confirm('Opravdu smazat tento záznam? Tuto akci nelze vrátit.'))return;
+  msg('Mažu…','#dc2626');
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${CURRENT.table}?id=eq.${CURRENT.data.id}`,{method:'DELETE',headers:SB_HEAD});
     if(r.ok){ROWS=ROWS.filter(x=>x.data.id!==CURRENT.data.id);render();closeModal();}
     else msg('Chyba '+r.status,'#dc2626');
-  }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
+  }catch(e){msg('Chyba sítě: '+e.message,'#dc2626');}
 }
 
 function msg(t,c){const el=document.getElementById('m_msg');el.style.color=c;el.textContent=t;}
