@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="sk">
+<html lang="cs">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Endovaskulárny nález</title>
+<title>Endovaskulární nález</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13.5px;background:#f0f2f5;color:#1a1a2e}
@@ -98,38 +98,38 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="left">
 
 <div class="card">
-<div class="st">Identifikácia výkonu</div>
+<div class="st">Identifikace výkonu</div>
 <div class="row r3">
   <div class="f"><label>ID výkonu</label>
     <div class="id-row"><span class="id-prefix" id="id-prefix">EVK-2025-</span><input type="text" id="id_suffix" placeholder="001" oninput="updateIdPrefix();gen()"></div>
   </div>
   <div class="f"><label>Operatér</label>
-    <select id="operator" onchange="gen()"><option value="">– vybrať –</option><option>Vincze</option><option>Kocan</option><option>Nemiec</option><option>Fľak</option><option>Širila</option><option>Vařejka</option><option>Maďarič</option></select>
+    <select id="operator" onchange="gen()"><option value="">– vybrat –</option><option>Vincze</option><option>Kocan</option><option>Nemiec</option><option>Fľak</option><option>Širila</option><option>Vařejka</option><option>Maďarič</option></select>
   </div>
-  <div class="f"><label>Dátum výkonu</label><input type="date" id="datum" onchange="gen()"></div>
+  <div class="f"><label>Datum výkonu</label><input type="date" id="datum" onchange="gen()"></div>
 </div>
 </div>
 
 <div class="card">
-<div class="st">Riečisko výkonu</div>
+<div class="st">Řečiště výkonu</div>
 <select id="territory" class="terr-sel" onchange="updateTerritory();gen()">
   <option value="fem">Femoropopliteálne + predkolenie</option>
-  <option value="pelv">Panvové (aortoiliakálne)</option>
-  <option value="both">Panvové + Femoropopliteálne</option>
+  <option value="pelv">Pánevní (aortoiliakálne)</option>
+  <option value="both">Pánevní + Femoropopliteálne</option>
 </select>
 </div>
 
 <div class="card">
-<div class="st">Pacient &amp; Indikácia</div>
+<div class="st">Pacient &amp; Indikace</div>
 <div class="row r2">
-  <div class="f"><label>Vek</label><input type="number" id="vek" placeholder="70" oninput="gen()"></div>
-  <div class="f"><label>Pohlavie</label><select id="pohl" onchange="gen()"><option value="M">Muž</option><option value="Z">Žena</option></select></div>
+  <div class="f"><label>Věk</label><input type="number" id="vek" placeholder="70" oninput="gen()"></div>
+  <div class="f"><label>Pohlaví</label><select id="pohl" onchange="gen()"><option value="M">Muž</option><option value="Z">Žena</option></select></div>
 </div>
 <div class="row r3">
   <div class="f"><label>Rutherford</label>
-    <select id="ruth" onchange="gen()"><option value="">–</option><option value="0/0 – Asymptomatický">0/0 – Asymptomatický</option><option value="I/1 – Ľahká klaudikácia">I/1 – Ľahká klaudikácia</option><option value="I/2 – Stredná klaudikácia">I/2 – Stredná klaudikácia</option><option value="I/3 – Ťažká klaudikácia">I/3 – Ťažká klaudikácia</option><option value="II/4 – Ischemická kľudová bolesť">II/4 – Ischemická kľudová bolesť</option><option value="II/5 – Menšia tkanivová strata">II/5 – Menšia tkanivová strata</option><option value="III/6 – Väčšia tkanivová strata">III/6 – Väčšia tkanivová strata</option></select>
+    <select id="ruth" onchange="gen()"><option value="">–</option><option value="0/0 – Asymptomatický">0/0 – Asymptomatický</option><option value="I/1 – Lehká klaudikácia">I/1 – Lehká klaudikácia</option><option value="I/2 – Střední klaudikácia">I/2 – Střední klaudikácia</option><option value="I/3 – Těžká klaudikácia">I/3 – Těžká klaudikácia</option><option value="II/4 – Ischemická klidová bolest">II/4 – Ischemická klidová bolest</option><option value="II/5 – Menší tkanivová strata">II/5 – Menší tkanivová strata</option><option value="III/6 – Větší tkanivová strata">III/6 – Větší tkanivová strata</option></select>
   </div>
-  <div class="f" style="grid-column:span 2"><label>Diagnóza / indikácia</label><input type="text" id="diag" placeholder="napr. ICHDK, kritická ischémia ľavej DK" oninput="gen()"></div>
+  <div class="f" style="grid-column:span 2"><label>Diagnóza / indikace</label><input type="text" id="diag" placeholder="napr. ICHDK, kritická ischemie levé DK" oninput="gen()"></div>
 </div>
 <div class="f"><div class="lbl">Komorbidity</div>
   <div id="komordiv">
@@ -143,12 +143,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
           <label class="ck"><input type="radio" name="dm_typ" value="DM1" onchange="gen()"><span>DM1</span></label>
           <label class="ck"><input type="radio" name="dm_typ" value="DM2" checked onchange="gen()"><span>DM2</span></label>
         </div>
-        <div class="sub-lbl" style="margin-top:6px">Liečba</div>
+        <div class="sub-lbl" style="margin-top:6px">Léčba</div>
         <div class="checks">
-          <label class="ck"><input type="radio" name="dm_liecba" value="diétou" onchange="gen()"><span>Diéta</span></label>
+          <label class="ck"><input type="radio" name="dm_liecba" value="dietou" onchange="gen()"><span>Dieta</span></label>
           <label class="ck"><input type="radio" name="dm_liecba" value="OAD" checked onchange="gen()"><span>OAD</span></label>
           <label class="ck"><input type="radio" name="dm_liecba" value="inzulínom" onchange="gen()"><span>Inzulín</span></label>
-          <label class="ck"><input type="radio" name="dm_liecba" value="kombináciou OAD a inzulínu" onchange="gen()"><span>Kombinácia</span></label>
+          <label class="ck"><input type="radio" name="dm_liecba" value="kombinací OAD a inzulínu" onchange="gen()"><span>Kombinace</span></label>
         </div>
       </div>
     </div>
@@ -162,21 +162,21 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
           <label class="ck"><input type="radio" name="ah_komp" value="kompenzovaná" checked onchange="gen()"><span>Kompenzovaná</span></label>
           <label class="ck"><input type="radio" name="ah_komp" value="nekompenzovaná" onchange="gen()"><span>Nekompenzovaná</span></label>
         </div>
-        <div class="sub-lbl" style="margin-top:6px">Liečba</div>
+        <div class="sub-lbl" style="margin-top:6px">Léčba</div>
         <div class="checks">
-          <label class="ck"><input type="radio" name="ah_liecba" value="bez liečby" onchange="gen()"><span>Bez liečby</span></label>
+          <label class="ck"><input type="radio" name="ah_liecba" value="bez léčby" onchange="gen()"><span>Bez léčby</span></label>
           <label class="ck"><input type="radio" name="ah_liecba" value="monoterapia" checked onchange="gen()"><span>Monoterapia</span></label>
-          <label class="ck"><input type="radio" name="ah_liecba" value="kombinovaná liečba" onchange="gen()"><span>Kombinovaná liečba</span></label>
+          <label class="ck"><input type="radio" name="ah_liecba" value="kombinovaná léčba" onchange="gen()"><span>Kombinovaná léčba</span></label>
         </div>
       </div>
     </div>
 
-    <!-- ostatné – zatiaľ bez rozvetvenia -->
+    <!-- ostatní – zatiaľ bez rozvetvenia -->
     <!-- CHRI / CKD -->
     <div class="kom-item">
-      <label class="ck"><input type="checkbox" id="k_chri" onchange="kSub('chri');gen()"><span>Chronická renálna insuficiencia (CKD)</span></label>
+      <label class="ck"><input type="checkbox" id="k_chri" onchange="kSub('chri');gen()"><span>Chronická renální insuficiencia (CKD)</span></label>
       <div class="kom-sub" id="ksub_chri">
-        <div class="sub-lbl">Sérový kreatinín (µmol/L)</div>
+        <div class="sub-lbl">Sérový kreatinin (µmol/L)</div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <input type="number" id="chri_krea" min="10" max="2000" step="1" placeholder="napr. 90"
                  style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
@@ -192,12 +192,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <div class="kom-sub" id="ksub_ichs">
         <div class="sub-lbl">Forma</div>
         <div class="checks">
-          <label class="ck"><input type="radio" name="ichs_forma" value="stabilná" checked onchange="gen()"><span>Stabilná</span></label>
-          <label class="ck"><input type="radio" name="ichs_forma" value="nestabilná" onchange="gen()"><span>Nestabilná</span></label>
+          <label class="ck"><input type="radio" name="ichs_forma" value="stabilní" checked onchange="gen()"><span>Stabilní</span></label>
+          <label class="ck"><input type="radio" name="ichs_forma" value="nestabilní" onchange="gen()"><span>Nestabilní</span></label>
         </div>
         <div class="sub-lbl" style="margin-top:6px">St.p. revaskularizácii</div>
         <div class="checks">
-          <label class="ck"><input type="radio" name="ichs_revasc" value="bez revaskularizácie" checked onchange="gen()"><span>Nie</span></label>
+          <label class="ck"><input type="radio" name="ichs_revasc" value="bez revaskularizace" checked onchange="gen()"><span>Nie</span></label>
           <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. PCI" onchange="gen()"><span>PCI</span></label>
           <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. CABG" onchange="gen()"><span>CABG</span></label>
           <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. PCI+CABG" onchange="gen()"><span>PCI+CABG</span></label>
@@ -213,9 +213,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
           <label class="ck"><input type="radio" name="im_obdobie" value="nedávny (&lt;30 dní)" onchange="gen()"><span>Nedávny (&lt;30 dní)</span></label>
           <label class="ck"><input type="radio" name="im_obdobie" value="starší" checked onchange="gen()"><span>Starší</span></label>
         </div>
-        <div class="sub-lbl" style="margin-top:6px">Liečba IM</div>
+        <div class="sub-lbl" style="margin-top:6px">Léčba IM</div>
         <div class="checks">
-          <label class="ck"><input type="radio" name="im_liecba" value="konzervatívne" checked onchange="gen()"><span>Konzervatívne</span></label>
+          <label class="ck"><input type="radio" name="im_liecba" value="konzervativní" checked onchange="gen()"><span>Konzervativní</span></label>
           <label class="ck"><input type="radio" name="im_liecba" value="PCI" onchange="gen()"><span>PCI</span></label>
           <label class="ck"><input type="radio" name="im_liecba" value="CABG" onchange="gen()"><span>CABG</span></label>
         </div>
@@ -232,19 +232,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         </div>
         <div class="sub-lbl" style="margin-top:6px">Obdobie</div>
         <div class="checks">
-          <label class="ck"><input type="radio" name="cmp_obdobie" value="akútna (&lt;30 dní)" onchange="gen()"><span>Akútna (&lt;30 dní)</span></label>
+          <label class="ck"><input type="radio" name="cmp_obdobie" value="akutní (&lt;30 dní)" onchange="gen()"><span>Akutní (&lt;30 dní)</span></label>
           <label class="ck"><input type="radio" name="cmp_obdobie" value="anamnestická" checked onchange="gen()"><span>Anamnestická</span></label>
         </div>
       </div>
     </div>
-    <!-- Fajčiar -->
+    <!-- Kuřák -->
     <div class="kom-item">
-      <label class="ck"><input type="checkbox" id="k_faj" onchange="kSub('faj');gen()"><span>Fajčiar</span></label>
+      <label class="ck"><input type="checkbox" id="k_faj" onchange="kSub('faj');gen()"><span>Kuřák</span></label>
       <div class="kom-sub" id="ksub_faj">
         <div class="sub-lbl">Stav</div>
         <div class="checks">
-          <label class="ck"><input type="radio" name="faj_stav" value="aktívny fajčiar" checked onchange="gen()"><span>Aktívny</span></label>
-          <label class="ck"><input type="radio" name="faj_stav" value="ex-fajčiar" onchange="gen()"><span>Ex-fajčiar</span></label>
+          <label class="ck"><input type="radio" name="faj_stav" value="aktívny kuřák" checked onchange="gen()"><span>Aktívny</span></label>
+          <label class="ck"><input type="radio" name="faj_stav" value="ex-kuřák" onchange="gen()"><span>Ex-kuřák</span></label>
         </div>
         <div class="sub-lbl" style="margin-top:6px">Pack-years</div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -272,9 +272,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <div class="kom-item">
       <label class="ck"><input type="checkbox" id="k_dysl" onchange="kSub('dysl');gen()"><span>Dyslipidémia</span></label>
       <div class="kom-sub" id="ksub_dysl">
-        <div class="sub-lbl">Liečba</div>
+        <div class="sub-lbl">Léčba</div>
         <div class="checks">
-          <label class="ck"><input type="radio" name="dysl_liecba" value="bez liečby" onchange="gen()"><span>Bez liečby</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="bez léčby" onchange="gen()"><span>Bez léčby</span></label>
           <label class="ck"><input type="radio" name="dysl_liecba" value="statín" checked onchange="gen()"><span>Statín</span></label>
           <label class="ck"><input type="radio" name="dysl_liecba" value="statín + ezetimib" onchange="gen()"><span>Statín + ezetimib</span></label>
           <label class="ck"><input type="radio" name="dysl_liecba" value="PCSK9 inhibítor" onchange="gen()"><span>PCSK9 inhibítor</span></label>
@@ -285,24 +285,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <div class="kom-item">
       <label class="ck"><input type="checkbox" id="k_chochp" onchange="kSub('chochp');gen()"><span>CHOCHP</span></label>
       <div class="kom-sub" id="ksub_chochp">
-        <div class="sub-lbl">Závažnosť (GOLD)</div>
+        <div class="sub-lbl">Závažnost (GOLD)</div>
         <div class="checks">
           <label class="ck"><input type="radio" name="chochp_gold" value="GOLD I" checked onchange="gen()"><span>I</span></label>
           <label class="ck"><input type="radio" name="chochp_gold" value="GOLD II" onchange="gen()"><span>II</span></label>
           <label class="ck"><input type="radio" name="chochp_gold" value="GOLD III" onchange="gen()"><span>III</span></label>
           <label class="ck"><input type="radio" name="chochp_gold" value="GOLD IV" onchange="gen()"><span>IV</span></label>
         </div>
-        <div class="sub-lbl" style="margin-top:6px">Liečba</div>
+        <div class="sub-lbl" style="margin-top:6px">Léčba</div>
         <div class="checks">
           <label class="ck"><input type="radio" name="chochp_liecba" value="bronchodilatans" checked onchange="gen()"><span>Bronchodilatans</span></label>
           <label class="ck"><input type="radio" name="chochp_liecba" value="IKS+LABA" onchange="gen()"><span>IKS+LABA</span></label>
-          <label class="ck"><input type="radio" name="chochp_liecba" value="trojkombinácia" onchange="gen()"><span>Trojkombinácia</span></label>
+          <label class="ck"><input type="radio" name="chochp_liecba" value="trojkombinace" onchange="gen()"><span>Trojkombinace</span></label>
         </div>
       </div>
     </div>
   </div>
 </div>
-<div class="f"><div class="lbl">Antitrombotická liečba pred výkonom</div>
+<div class="f"><div class="lbl">Antitrombotická léčba pred výkonom</div>
   <div class="checks">
     <label class="ck"><input type="checkbox" class="atb" value="bez antitrombotík" onchange="gen()"> Bez</label>
     <label class="ck"><input type="checkbox" class="atb" value="ASA" onchange="gen()"> ASA</label>
@@ -316,39 +316,39 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 </div>
 
 <div class="card">
-<div class="st">2. Prístup</div>
+<div class="st">2. Přístup</div>
 <div class="row r3">
-  <div class="f"><label>Prístupová artéria</label>
+  <div class="f"><label>Přístupová artéria</label>
     <select id="access_art" onchange="updateAccess();gen()"><option value="AFC">AFC</option><option value="a. brachialis">a. brachialis</option><option value="a. axillaris">a. axillaris</option><option value="vlastny">vlastné</option></select>
     <input type="text" id="access_art_c" placeholder="Vlastná artéria..." oninput="gen()" style="display:none;margin-top:5px">
   </div>
-  <div class="f"><label>Strana</label><select id="strana" onchange="gen()"><option value="l.sin.">Ľavá (l.sin.)</option><option value="l.dx.">Pravá (l.dx.)</option></select></div>
+  <div class="f"><label>Strana</label><select id="strana" onchange="gen()"><option value="l.sin.">Levá (l.sin.)</option><option value="l.dx.">Pravá (l.dx.)</option></select></div>
   <div class="f"><label>Technika</label><select id="tech" onchange="gen()"><option>prográdne</option><option>retrográdne</option></select></div>
 </div>
 <div class="row r3">
-  <div class="f" id="smer_wrap"><label>Smer</label><select id="smer" onchange="gen()"><option>ipsilaterálna</option><option>kontralaterálna</option></select></div>
-  <div class="f"><label>Spôsob</label><select id="spos" onchange="gen()"><option>perkutánne</option><option>chirurgický cut-down</option></select></div>
-  <div class="f"><label>Anestézia</label><select id="anes" onchange="gen()"><option>LA</option><option>SA</option><option>GA</option></select></div>
+  <div class="f" id="smer_wrap"><label>Směr</label><select id="smer" onchange="gen()"><option>ipsilaterálna</option><option>kontralaterálna</option></select></div>
+  <div class="f"><label>Způsob</label><select id="spos" onchange="gen()"><option>perkutánne</option><option>chirurgický cut-down</option></select></div>
+  <div class="f"><label>Anestezie</label><select id="anes" onchange="gen()"><option>LA</option><option>SA</option><option>GA</option></select></div>
 </div>
 <div class="row r3">
-  <div class="f"><label>Navádzanie</label><select id="nav" onchange="gen()"><option>USG/XA</option><option>USG</option><option>XA</option></select></div>
-  <div class="f"><label>Katéter</label><select id="kat" onchange="gen()"><option>Berenstein</option><option>JR 4</option><option>Cobra</option><option>SOS</option><option>Vertebrál</option><option>Pigtail</option><option>vlastný</option></select></div>
+  <div class="f"><label>Navádění</label><select id="nav" onchange="gen()"><option>USG/XA</option><option>USG</option><option>XA</option></select></div>
+  <div class="f"><label>Katétr</label><select id="kat" onchange="gen()"><option>Berenstein</option><option>JR 4</option><option>Cobra</option><option>SOS</option><option>Vertebrál</option><option>Pigtail</option><option>vlastní</option></select></div>
   <div class="f"><label>Sheath</label><select id="sheath" onchange="gen()"><option value="">bez sheatu</option><option>4 Fr</option><option>5 Fr</option><option>6 Fr</option><option>7 Fr</option><option>8 Fr</option></select></div>
 </div>
 <div class="row r2">
-  <div class="f"><label>Dĺžka sheatu</label><select id="sheathdlz" onchange="gen()"><option value="">–</option><option>10 cm</option><option>25 cm</option><option>45 cm</option><option>55 cm</option><option>90 cm</option></select></div>
+  <div class="f"><label>Délka sheatu</label><select id="sheathdlz" onchange="gen()"><option value="">–</option><option>10 cm</option><option>25 cm</option><option>45 cm</option><option>55 cm</option><option>90 cm</option></select></div>
 </div>
 </div>
 
 <div class="card">
 <div class="st">3. DSA Nález</div>
-<div class="f"><div class="lbl">Kontrastná látka</div>
+<div class="f"><div class="lbl">Kontrastní látka</div>
   <div class="checks"><label class="ck"><input type="checkbox" class="kontr" value="Scanlux 370" onchange="gen()"> Scanlux 370</label><label class="ck"><input type="checkbox" class="kontr" value="Iomeron 350" onchange="gen()"> Iomeron 350</label><label class="ck"><input type="checkbox" class="kontr" value="Ultravist 300" onchange="gen()"> Ultravist 300</label><label class="ck"><input type="checkbox" class="kontr" value="CO2" onchange="gen()"> CO₂</label></div>
 </div>
 <div id="pelv_dsa" style="display:none"></div>
 <div id="fem_lat_wrap" style="margin-top:10px">
   <div class="f"><label>Lateralita – femoropopliteálne</label>
-    <select id="fem_lat" onchange="buildFemDSA();gen()"><option value="bilat">Bilaterálne (bilat.)</option><option value="sin">Ľavá (l.sin.)</option><option value="dx">Pravá (l.dx.)</option></select>
+    <select id="fem_lat" onchange="buildFemDSA();gen()"><option value="bilat">Bilaterálně (bilat.)</option><option value="sin">Levá (l.sin.)</option><option value="dx">Pravá (l.dx.)</option></select>
   </div>
 </div>
 <div id="fem_dsa"></div>
@@ -360,36 +360,36 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="checks"><label class="ck"><input type="checkbox" class="prec" value="intraluminálne" onchange="gen()"> Intraluminálne</label><label class="ck"><input type="checkbox" class="prec" value="subintimálne" onchange="gen()"> Subintimálne</label><label class="ck"><input type="checkbox" class="prec" value="kombinovane intra aj subintimálne" onchange="gen()"> Kombinovane</label></div>
 </div>
 <div class="f"><label>Vodič</label>
-  <select id="vodic" onchange="vVodic();gen()"><option>Advantage 0.014"</option><option>Advantage 0.018"</option><option>Command 0.014"</option><option>Command 0.018"</option><option>ZIP</option><option>J vodič 0.035"</option><option>vlastný</option></select>
+  <select id="vodic" onchange="vVodic();gen()"><option>Advantage 0.014"</option><option>Advantage 0.018"</option><option>Command 0.014"</option><option>Command 0.018"</option><option>ZIP</option><option>J vodič 0.035"</option><option>vlastní</option></select>
   <input type="text" id="vodic_c" placeholder="Zadaj vodič..." oninput="gen()" style="display:none;margin-top:5px">
 </div>
-<div class="f"><label>Podporný katéter</label>
+<div class="f"><label>Podporný katétr</label>
   <select id="support_kat" onchange="chkVl('support_kat');gen()">
     <option value="">– bez podporného katétra –</option>
     <option>NaviCross (Terumo)</option>
     <option>Berenstein</option>
     <option>CXI (Cook)</option>
     <option>Rubicon (Boston Scientific)</option>
-    <option>vlastný</option>
+    <option>vlastní</option>
   </select>
-  <input type="text" id="support_kat_c" placeholder="Vlastný katéter..." oninput="gen()" style="display:none;margin-top:5px">
+  <input type="text" id="support_kat_c" placeholder="Vlastní katétr..." oninput="gen()" style="display:none;margin-top:5px">
 </div>
 
 <div id="pelv_int" style="display:none">
-  <div class="pelv-divider">🔵 Panvové intervencie</div>
+  <div class="pelv-divider">🔵 Pánevní intervencie</div>
   <div class="tog pelv-tog">
     <label class="thdr"><input type="checkbox" id="c_kiss" onchange="tB('kiss');gen()"><span>Kissing stent technika</span></label>
     <div class="tbody" id="b_kiss">
       <div class="row r2">
         <div><div class="subsec" style="margin-top:0">Stent l.sin.</div>
-          <div class="f"><label>Typ</label><select id="kiss_ts" onchange="gen()"><option value="">–</option><option>balónexpandibilný</option><option>samoexpandibilný</option><option>liekový (DES)</option></select></div>
-          <div class="f"><label>Názov</label><select id="kiss_ns" onchange="chkVl('kiss_ns');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastný</option></select><input type="text" id="kiss_ns_c" placeholder="Vlastný..." oninput="gen()" style="display:none;margin-top:4px"></div>
-          <div class="f"><label>Priemer × Dĺžka (mm)</label><div class="px-row"><input type="number" id="kiss_ps" placeholder="8" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="kiss_ds" placeholder="60" oninput="gen()"></div></div>
+          <div class="f"><label>Typ</label><select id="kiss_ts" onchange="gen()"><option value="">–</option><option>balónexpandibilní</option><option>samoexpandibilní</option><option>lékový (DES)</option></select></div>
+          <div class="f"><label>Název</label><select id="kiss_ns" onchange="chkVl('kiss_ns');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="kiss_ns_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px"></div>
+          <div class="f"><label>Průměr × Délka (mm)</label><div class="px-row"><input type="number" id="kiss_ps" placeholder="8" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="kiss_ds" placeholder="60" oninput="gen()"></div></div>
         </div>
         <div><div class="subsec" style="margin-top:0">Stent l.dx.</div>
-          <div class="f"><label>Typ</label><select id="kiss_td" onchange="gen()"><option value="">–</option><option>balónexpandibilný</option><option>samoexpandibilný</option><option>liekový (DES)</option></select></div>
-          <div class="f"><label>Názov</label><select id="kiss_nd" onchange="chkVl('kiss_nd');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastný</option></select><input type="text" id="kiss_nd_c" placeholder="Vlastný..." oninput="gen()" style="display:none;margin-top:4px"></div>
-          <div class="f"><label>Priemer × Dĺžka (mm)</label><div class="px-row"><input type="number" id="kiss_pd" placeholder="8" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="kiss_dd" placeholder="60" oninput="gen()"></div></div>
+          <div class="f"><label>Typ</label><select id="kiss_td" onchange="gen()"><option value="">–</option><option>balónexpandibilní</option><option>samoexpandibilní</option><option>lékový (DES)</option></select></div>
+          <div class="f"><label>Název</label><select id="kiss_nd" onchange="chkVl('kiss_nd');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="kiss_nd_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px"></div>
+          <div class="f"><label>Průměr × Délka (mm)</label><div class="px-row"><input type="number" id="kiss_pd" placeholder="8" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="kiss_dd" placeholder="60" oninput="gen()"></div></div>
         </div>
       </div>
     </div>
@@ -398,15 +398,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <label class="thdr"><input type="checkbox" id="c_cerab" onchange="tB('cerab');gen()"><span>CERAB technika</span></label>
     <div class="tbody" id="b_cerab">
       <div class="subsec" style="margin-top:0">Aortálny cuff</div>
-      <div class="row r3"><div class="f"><label>Stent</label><select id="cerab_ao_n" onchange="chkVl('cerab_ao_n');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastný</option></select><input type="text" id="cerab_ao_n_c" oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Priemer (mm)</label><input type="number" id="cerab_ao_p" placeholder="12" oninput="gen()"></div><div class="f"><label>Dĺžka (mm)</label><input type="number" id="cerab_ao_d" placeholder="30" oninput="gen()"></div></div>
+      <div class="row r3"><div class="f"><label>Stent</label><select id="cerab_ao_n" onchange="chkVl('cerab_ao_n');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="cerab_ao_n_c" oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Průměr (mm)</label><input type="number" id="cerab_ao_p" placeholder="12" oninput="gen()"></div><div class="f"><label>Délka (mm)</label><input type="number" id="cerab_ao_d" placeholder="30" oninput="gen()"></div></div>
       <div class="subsec">Kissing stenty AIC</div>
       <div class="row r2">
-        <div><div class="bilat-hdr">l.sin.</div><div class="f"><label>Stent</label><select id="cerab_sin_n" onchange="chkVl('cerab_sin_n');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastný</option></select><input type="text" id="cerab_sin_n_c" oninput="gen()" style="display:none;margin-top:4px"></div><div class="row r2" style="margin-bottom:0"><div class="f"><label>Priemer</label><input type="number" id="cerab_sin_p" placeholder="8" oninput="gen()"></div><div class="f"><label>Dĺžka</label><input type="number" id="cerab_sin_d" placeholder="60" oninput="gen()"></div></div></div>
-        <div><div class="bilat-hdr">l.dx.</div><div class="f"><label>Stent</label><select id="cerab_dx_n" onchange="chkVl('cerab_dx_n');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastný</option></select><input type="text" id="cerab_dx_n_c" oninput="gen()" style="display:none;margin-top:4px"></div><div class="row r2" style="margin-bottom:0"><div class="f"><label>Priemer</label><input type="number" id="cerab_dx_p" placeholder="8" oninput="gen()"></div><div class="f"><label>Dĺžka</label><input type="number" id="cerab_dx_d" placeholder="60" oninput="gen()"></div></div></div>
+        <div><div class="bilat-hdr">l.sin.</div><div class="f"><label>Stent</label><select id="cerab_sin_n" onchange="chkVl('cerab_sin_n');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="cerab_sin_n_c" oninput="gen()" style="display:none;margin-top:4px"></div><div class="row r2" style="margin-bottom:0"><div class="f"><label>Průměr</label><input type="number" id="cerab_sin_p" placeholder="8" oninput="gen()"></div><div class="f"><label>Délka</label><input type="number" id="cerab_sin_d" placeholder="60" oninput="gen()"></div></div></div>
+        <div><div class="bilat-hdr">l.dx.</div><div class="f"><label>Stent</label><select id="cerab_dx_n" onchange="chkVl('cerab_dx_n');gen()"><option>AbsolutePro</option><option>Pulsar</option><option>Astron</option><option>BioMimics</option><option>BeGraft</option><option>Dynetic</option><option>Isthmus</option><option>vlastní</option></select><input type="text" id="cerab_dx_n_c" oninput="gen()" style="display:none;margin-top:4px"></div><div class="row r2" style="margin-bottom:0"><div class="f"><label>Průměr</label><input type="number" id="cerab_dx_p" placeholder="8" oninput="gen()"></div><div class="f"><label>Délka</label><input type="number" id="cerab_dx_d" placeholder="60" oninput="gen()"></div></div></div>
       </div>
     </div>
   </div>
-  <div class="fem-divider">Ostatné intervencie</div>
+  <div class="fem-divider">Ostatní intervencie</div>
 </div>
 
 <!-- Bez intervencie -->
@@ -415,142 +415,142 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="tbody" id="b_bezint">
     <div class="f"><div class="lbl">Dôvod</div>
       <div style="display:flex;flex-direction:column;gap:5px;margin-top:4px">
-        <label class="ck"><input type="radio" name="bezint_r" value="Nález nevhodný k endovaskulárnej liečbe (EVL)" onchange="chkBezIntVl();gen()"> Nález nevhodný k EVL</label>
-        <label class="ck"><input type="radio" name="bezint_r" value="Odporúčame cievnochirurgické konzílium" onchange="chkBezIntVl();gen()"> Odporúčame cievnochirurgické konzílium</label>
-        <label class="ck"><input type="radio" name="bezint_r" value="Odporúčame konzervatívny postup" onchange="chkBezIntVl();gen()"> Odporúčame konzervatívny postup</label>
+        <label class="ck"><input type="radio" name="bezint_r" value="Nález nevhodný k endovaskulárnej léčbě (EVL)" onchange="chkBezIntVl();gen()"> Nález nevhodný k EVL</label>
+        <label class="ck"><input type="radio" name="bezint_r" value="Doporučujeme cievnochirurgické konzílium" onchange="chkBezIntVl();gen()"> Doporučujeme cievnochirurgické konzílium</label>
+        <label class="ck"><input type="radio" name="bezint_r" value="Doporučujeme konzervativní postup" onchange="chkBezIntVl();gen()"> Doporučujeme konzervativní postup</label>
         <label class="ck"><input type="radio" name="bezint_r" value="vlastny" onchange="chkBezIntVl();gen()"> Vlastné</label>
       </div>
-      <input type="text" id="bezint_vlastny" placeholder="Vlastný dôvod..." oninput="gen()" style="display:none;margin-top:6px">
+      <input type="text" id="bezint_vlastny" placeholder="Vlastní dôvod..." oninput="gen()" style="display:none;margin-top:6px">
     </div>
   </div>
 </div>
 
-<!-- Aterektómia -->
-<div class="tog"><label class="thdr"><input type="checkbox" id="c_atek" onchange="tB('atek');gen()"><span>Aterektómia</span></label>
+<!-- Aterektomie -->
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_atek" onchange="tB('atek');gen()"><span>Aterektomie</span></label>
   <div class="tbody" id="b_atek">
     <div class="f"><div class="lbl">Typ</div><div class="checks"><label class="ck"><input type="checkbox" class="atek_t" value="orbitálna" onchange="gen()"> Orbitálna (Stealth 360)</label><label class="ck"><input type="checkbox" class="atek_t" value="laserová" onchange="gen()"> Laserová (Turbo-Elite)</label></div></div>
     <div class="row r3">
       <div class="f"><label>Tepna</label><select id="atek_tp" onchange="gen()"><option value="">– tepna –</option><option>AIC l.sin.</option><option>AIC l.dx.</option><option>AIE l.sin.</option><option>AIE l.dx.</option><option>AII l.sin.</option><option>AII l.dx.</option><option>AFC l.sin.</option><option>AFC l.dx.</option><option>APF l.sin.</option><option>APF l.dx.</option><option>AFS l.sin.</option><option>AFS l.dx.</option><option>P1 l.sin.</option><option>P1 l.dx.</option><option>P2 l.sin.</option><option>P2 l.dx.</option><option>P3 l.sin.</option><option>P3 l.dx.</option><option>ATA l.sin.</option><option>ATA l.dx.</option><option>ATP l.sin.</option><option>ATP l.dx.</option><option>AFib l.sin.</option><option>AFib l.dx.</option><option>TTF l.sin.</option><option>TTF l.dx.</option></select></div>
-      <div class="f"><label>Dĺžka lézie (cm)</label><input type="number" id="atek_d" step="0.5" placeholder="10" oninput="gen()"></div>
-      <div class="f"><label>Distálna emboloprotekccia</label><select id="atek_e" onchange="gen()"><option value="">nie</option><option>Spider FX</option><option>FilterWire EZ</option><option>Emboshield NAV6</option><option>vlastný filter</option></select></div>
+      <div class="f"><label>Délka léze (cm)</label><input type="number" id="atek_d" step="0.5" placeholder="10" oninput="gen()"></div>
+      <div class="f"><label>Distální emboloprotekce</label><select id="atek_e" onchange="gen()"><option value="">nie</option><option>Spider FX</option><option>FilterWire EZ</option><option>Emboshield NAV6</option><option>vlastní filter</option></select></div>
     </div>
   </div>
 </div>
 
-<!-- Trombektómia -->
-<div class="tog"><label class="thdr"><input type="checkbox" id="c_trom" onchange="tB('trom');gen()"><span>Endovaskulárna trombektómia</span></label>
+<!-- Trombektomie -->
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_trom" onchange="tB('trom');gen()"><span>Endovaskulárna trombektomie</span></label>
   <div class="tbody" id="b_trom">
-    <div class="f"><div class="lbl">Typ</div><div class="checks"><label class="ck"><input type="checkbox" id="trom_rotarex" onchange="toggleRotarex();gen()"> Rotačná (Rotarex)</label><label class="ck"><input type="checkbox" id="trom_aspir" onchange="toggleAspir();gen()"> Aspiračná</label></div></div>
-    <div id="rotarex_detail" style="display:none" class="sub-box"><div class="f"><label>Rotarex veľkosť</label><select id="rotarex_fr" onchange="gen()"><option value="6F">6F</option><option value="8F">8F</option></select></div></div>
-    <div id="aspir_detail" style="display:none" class="sub-box"><div class="row r2"><div class="f"><label>Aspiračný katéter</label><select id="aspir_kat" onchange="chkVl('aspir_kat');gen()"><option>Indigo</option><option>Sofia</option><option>BigLumen</option><option>Lightning</option><option>vlastný</option></select><input type="text" id="aspir_kat_c" placeholder="Vlastný katéter..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Veľkosť</label><select id="aspir_fr" onchange="gen()"><option value="5F">5F</option><option value="6F">6F</option><option value="8F">8F</option></select></div></div></div>
+    <div class="f"><div class="lbl">Typ</div><div class="checks"><label class="ck"><input type="checkbox" id="trom_rotarex" onchange="toggleRotarex();gen()"> Rotační (Rotarex)</label><label class="ck"><input type="checkbox" id="trom_aspir" onchange="toggleAspir();gen()"> Aspirační</label></div></div>
+    <div id="rotarex_detail" style="display:none" class="sub-box"><div class="f"><label>Rotarex velikost</label><select id="rotarex_fr" onchange="gen()"><option value="6F">6F</option><option value="8F">8F</option></select></div></div>
+    <div id="aspir_detail" style="display:none" class="sub-box"><div class="row r2"><div class="f"><label>Aspiračný katétr</label><select id="aspir_kat" onchange="chkVl('aspir_kat');gen()"><option>Indigo</option><option>Sofia</option><option>BigLumen</option><option>Lightning</option><option>vlastní</option></select><input type="text" id="aspir_kat_c" placeholder="Vlastní katétr..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Velikost</label><select id="aspir_fr" onchange="gen()"><option value="5F">5F</option><option value="6F">6F</option><option value="8F">8F</option></select></div></div></div>
     <div class="row r2" style="margin-top:8px">
       <div class="f"><label>Tepna</label><select id="trom_tp" onchange="gen()"><option>– tepna –</option><option>AIC l.sin.</option><option>AIC l.dx.</option><option>AIE l.sin.</option><option>AIE l.dx.</option><option>AII l.sin.</option><option>AII l.dx.</option><option>AFC l.sin.</option><option>AFC l.dx.</option><option>APF l.sin.</option><option>APF l.dx.</option><option>AFS l.sin.</option><option>AFS l.dx.</option><option>P1 l.sin.</option><option>P1 l.dx.</option><option>P2 l.sin.</option><option>P2 l.dx.</option><option>P3 l.sin.</option><option>P3 l.dx.</option><option>ATA l.sin.</option><option>ATA l.dx.</option><option>ATP l.sin.</option><option>ATP l.dx.</option><option>AFib l.sin.</option><option>AFib l.dx.</option><option>TTF l.sin.</option><option>TTF l.dx.</option></select></div>
-      <div class="f"><label>Segment</label><select id="trom_sg" onchange="gen()"><option value="">–</option><option>proximálny</option><option>stredný</option><option>distálny</option><option>celý</option></select></div>
+      <div class="f"><label>Segment</label><select id="trom_sg" onchange="gen()"><option value="">–</option><option>proximální</option><option>střední</option><option>distální</option><option>celý</option></select></div>
     </div>
   </div>
 </div>
 
 <!-- Reentry katétre -->
-<div class="tog"><label class="thdr"><input type="checkbox" id="c_reentry" onchange="tB('reentry');gen()"><span>Reentry katéter</span></label>
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_reentry" onchange="tB('reentry');gen()"><span>Reentry katétr</span></label>
   <div class="tbody" id="b_reentry">
     <div id="reentry_list"></div>
-    <button type="button" class="add-btn" onclick="addItem('reentry','reentry')">＋ Pridať reentry katéter</button>
+    <button type="button" class="add-btn" onclick="addItem('reentry','reentry')">＋ Přidat reentry katétr</button>
   </div>
 </div>
 <!-- Vessel Preparation -->
-<div class="tog"><label class="thdr"><input type="checkbox" id="c_vprep" onchange="tB('vprep');gen()"><span>Vessel Preparation</span></label><div class="tbody" id="b_vprep"><div id="vprep_list"></div><button type="button" class="add-btn" onclick="addItem('vprep','balon_vprep')">＋ Pridať device</button></div></div>
-<!-- Predilatácia -->
-<div class="tog"><label class="thdr"><input type="checkbox" id="c_pred" onchange="tB('pred');gen()"><span>Predilatácia PTA</span></label><div class="tbody" id="b_pred"><div id="pred_list"></div><button type="button" class="add-btn" onclick="addItem('pred','balon')">＋ Pridať balón</button></div></div>
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_vprep" onchange="tB('vprep');gen()"><span>Vessel Preparation</span></label><div class="tbody" id="b_vprep"><div id="vprep_list"></div><button type="button" class="add-btn" onclick="addItem('vprep','balon_vprep')">＋ Přidat device</button></div></div>
+<!-- Predilatace -->
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_pred" onchange="tB('pred');gen()"><span>Predilatace PTA</span></label><div class="tbody" id="b_pred"><div id="pred_list"></div><button type="button" class="add-btn" onclick="addItem('pred','balon')">＋ Přidat balón</button></div></div>
 <!-- IVL -->
-<div class="tog"><label class="thdr"><input type="checkbox" id="c_sw" onchange="tB('sw');gen()"><span>IVL Shockwave</span></label><div class="tbody" id="b_sw"><div id="sw_list"></div><button type="button" class="add-btn" onclick="addItem('sw','balon_ivl')">＋ Pridať balón IVL</button></div></div>
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_sw" onchange="tB('sw');gen()"><span>IVL Shockwave</span></label><div class="tbody" id="b_sw"><div id="sw_list"></div><button type="button" class="add-btn" onclick="addItem('sw','balon_ivl')">＋ Přidat balón IVL</button></div></div>
 <!-- PTA -->
-<div class="tog"><label class="thdr"><input type="checkbox" id="c_pta" onchange="tB('pta');gen()"><span>PTA (balónová angioplastika)</span></label><div class="tbody" id="b_pta"><div id="pta_list"></div><button type="button" class="add-btn" onclick="addItem('pta','balon')">＋ Pridať balón</button></div></div>
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_pta" onchange="tB('pta');gen()"><span>PTA (balónová angioplastika)</span></label><div class="tbody" id="b_pta"><div id="pta_list"></div><button type="button" class="add-btn" onclick="addItem('pta','balon')">＋ Přidat balón</button></div></div>
 <!-- DEB PTA -->
-<div class="tog"><label class="thdr"><input type="checkbox" id="c_deb" onchange="tB('deb');gen()"><span>DEB PTA</span></label><div class="tbody" id="b_deb"><div id="deb_list"></div><button type="button" class="add-btn" onclick="addItem('deb','balon_deb')">＋ Pridať balón</button></div></div>
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_deb" onchange="tB('deb');gen()"><span>DEB PTA</span></label><div class="tbody" id="b_deb"><div id="deb_list"></div><button type="button" class="add-btn" onclick="addItem('deb','balon_deb')">＋ Přidat balón</button></div></div>
 <!-- Stenting -->
 <div class="tog"><label class="thdr"><input type="checkbox" id="c_stent" onchange="tB('stent');gen()"><span>Stenting</span></label>
   <div class="tbody" id="b_stent">
-    <div id="stent_list"></div><button type="button" class="add-btn" onclick="addItem('stent','stent')">＋ Pridať stent</button>
-    <div style="margin-top:12px"><label class="ck"><input type="checkbox" id="c_post" onchange="togglePost();gen()"><span style="font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#7a8aaa">Postdilatácia</span></label></div>
-    <div id="post_section" style="display:none;margin-top:6px"><div id="post_list"></div><button type="button" class="add-btn" onclick="addItem('post','balon')">＋ Pridať balón</button></div>
+    <div id="stent_list"></div><button type="button" class="add-btn" onclick="addItem('stent','stent')">＋ Přidat stent</button>
+    <div style="margin-top:12px"><label class="ck"><input type="checkbox" id="c_post" onchange="togglePost();gen()"><span style="font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#7a8aaa">Postdilatace</span></label></div>
+    <div id="post_section" style="display:none;margin-top:6px"><div id="post_list"></div><button type="button" class="add-btn" onclick="addItem('post','balon')">＋ Přidat balón</button></div>
   </div>
 </div>
 <!-- Stentgraft -->
 <div class="tog"><label class="thdr"><input type="checkbox" id="c_sg" onchange="tB('sg');gen()"><span>Stentgraft</span></label>
   <div class="tbody" id="b_sg">
-    <div class="row r3"><div class="f"><label>Typ</label><select id="sg_t" onchange="gen()"><option value="">–</option><option>balónexpandibilný</option><option>samoexpandibilný</option></select></div><div class="f"><label>Názov</label><select id="sg_n" onchange="chkVl('sg_n');gen()"><option>BeGraft</option><option>Viabahn</option><option>Fluency</option><option>Covera</option><option>vlastný</option></select><input type="text" id="sg_n_c" placeholder="Vlastný stentgraft..." oninput="gen()" style="display:none;margin-top:4px"></div></div>
-    <div class="row r2"><div class="f"><label>Priemer (mm)</label><input type="number" id="sg_p" placeholder="7" oninput="gen()"></div><div class="f"><label>Dĺžka (mm)</label><input type="number" id="sg_d" placeholder="100" oninput="gen()"></div></div>
+    <div class="row r3"><div class="f"><label>Typ</label><select id="sg_t" onchange="gen()"><option value="">–</option><option>balónexpandibilní</option><option>samoexpandibilní</option></select></div><div class="f"><label>Název</label><select id="sg_n" onchange="chkVl('sg_n');gen()"><option>BeGraft</option><option>Viabahn</option><option>Fluency</option><option>Covera</option><option>vlastní</option></select><input type="text" id="sg_n_c" placeholder="Vlastní stentgraft..." oninput="gen()" style="display:none;margin-top:4px"></div></div>
+    <div class="row r2"><div class="f"><label>Průměr (mm)</label><input type="number" id="sg_p" placeholder="7" oninput="gen()"></div><div class="f"><label>Délka (mm)</label><input type="number" id="sg_d" placeholder="100" oninput="gen()"></div></div>
     <div class="row r2" style="margin-top:4px">
       <div class="f"><label>Tepna</label><select id="sg_tp" onchange="gen()"><option>– tepna –</option><option>AIC l.sin.</option><option>AIC l.dx.</option><option>AIE l.sin.</option><option>AIE l.dx.</option><option>AII l.sin.</option><option>AII l.dx.</option><option>AFC l.sin.</option><option>AFC l.dx.</option><option>APF l.sin.</option><option>APF l.dx.</option><option>AFS l.sin.</option><option>AFS l.dx.</option><option>P1 l.sin.</option><option>P1 l.dx.</option><option>P2 l.sin.</option><option>P2 l.dx.</option><option>P3 l.sin.</option><option>P3 l.dx.</option><option>ATA l.sin.</option><option>ATA l.dx.</option><option>ATP l.sin.</option><option>ATP l.dx.</option><option>AFib l.sin.</option><option>AFib l.dx.</option><option>TTF l.sin.</option><option>TTF l.dx.</option></select></div>
-      <div class="f"><label>Segment</label><select id="sg_sg" onchange="gen()"><option value="">–</option><option>proximálny</option><option>stredný</option><option>distálny</option><option>celý</option></select></div>
+      <div class="f"><label>Segment</label><select id="sg_sg" onchange="gen()"><option value="">–</option><option>proximální</option><option>střední</option><option>distální</option><option>celý</option></select></div>
     </div>
   </div>
 </div>
-<!-- Ďalšie -->
-<div class="tog"><label class="thdr"><input type="checkbox" id="c_dal" onchange="tB('dal');gen()"><span>Ďalšie nevyhnutné ošetrenie</span></label>
+<!-- Další -->
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_dal" onchange="tB('dal');gen()"><span>Další nevyhnutné ošetrenie</span></label>
   <div class="tbody" id="b_dal">
-    <div class="f"><div class="lbl">Dôvod</div><div class="checks"><label class="ck"><input type="checkbox" class="dal_d" value="prietok limitujúca disekcia" onchange="gen()"> Disekcia</label><label class="ck"><input type="checkbox" class="dal_d" value="perforácia" onchange="gen()"> Perforácia</label><label class="ck"><input type="checkbox" class="dal_d" value="extravazát" onchange="gen()"> Extravazát</label><label class="ck"><input type="checkbox" class="dal_d" value="reziduálne stenózy" onchange="gen()"> Reziduálne stenózy</label><label class="ck"><input type="checkbox" class="dal_d" value="spazmus" onchange="gen()"> Spazmus</label><label class="ck"><input type="checkbox" class="dal_d" value="recoil" onchange="gen()"> Recoil</label><label class="ck"><input type="checkbox" class="dal_d" value="trombóza" onchange="gen()"> Trombóza</label><label class="ck"><input type="checkbox" class="dal_d" value="distálna embolizácia" onchange="gen()"> Distálna embolizácia</label></div></div>
-    <div class="f"><div class="lbl">Technika</div><div class="checks"><label class="ck"><input type="checkbox" class="dal_t" value="prolongovaná dilatácia" onchange="gen()"> Prolongovaná dilatácia</label><label class="ck"><input type="checkbox" class="dal_t" value="stenting" onchange="gen()"> Stenting</label><label class="ck"><input type="checkbox" class="dal_t" value="trombektómia" onchange="gen()"> Trombektómia</label><label class="ck"><input type="checkbox" class="dal_t" value="nutné chirurgické ošetrenie" onchange="gen()"> Chirurgické ošetrenie</label></div></div>
-    <div class="f"><label>Poznámka</label><textarea id="dal_text" rows="2" placeholder="Voľný text..." oninput="gen()"></textarea></div>
+    <div class="f"><div class="lbl">Dôvod</div><div class="checks"><label class="ck"><input type="checkbox" class="dal_d" value="prietok limitujúca disekcia" onchange="gen()"> Disekcia</label><label class="ck"><input type="checkbox" class="dal_d" value="perforace" onchange="gen()"> Perforace</label><label class="ck"><input type="checkbox" class="dal_d" value="extravazát" onchange="gen()"> Extravazát</label><label class="ck"><input type="checkbox" class="dal_d" value="reziduálne stenózy" onchange="gen()"> Reziduálne stenózy</label><label class="ck"><input type="checkbox" class="dal_d" value="spazmus" onchange="gen()"> Spazmus</label><label class="ck"><input type="checkbox" class="dal_d" value="recoil" onchange="gen()"> Recoil</label><label class="ck"><input type="checkbox" class="dal_d" value="trombóza" onchange="gen()"> Trombóza</label><label class="ck"><input type="checkbox" class="dal_d" value="distální embolizace" onchange="gen()"> Distální embolizace</label></div></div>
+    <div class="f"><div class="lbl">Technika</div><div class="checks"><label class="ck"><input type="checkbox" class="dal_t" value="prolongovaná dilatace" onchange="gen()"> Prolongovaná dilatace</label><label class="ck"><input type="checkbox" class="dal_t" value="stenting" onchange="gen()"> Stenting</label><label class="ck"><input type="checkbox" class="dal_t" value="trombektomie" onchange="gen()"> Trombektomie</label><label class="ck"><input type="checkbox" class="dal_t" value="nutné chirurgické ošetrenie" onchange="gen()"> Chirurgické ošetrenie</label></div></div>
+    <div class="f"><label>Poznámka</label><textarea id="dal_text" rows="2" placeholder="Volný text..." oninput="gen()"></textarea></div>
   </div>
 </div>
 </div>
 
 <div class="card">
-<div class="st">5. Uzáver &amp; Hemostáza</div>
+<div class="st">5. Uzávěr &amp; Hemostáza</div>
 <div class="row r2">
-  <div class="f"><label>Kompresia (min)</label><input type="number" id="kompr" placeholder="10" oninput="gen()"></div>
-  <div class="f"><label>Uzatváracie zariadenie</label><select id="uzatv" onchange="gen()"><option value="">Manuálna kompresia</option><option>AngioSeal 6F</option><option>AngioSeal 8F</option><option>FemoSeal</option><option>ProStyle</option><option>MynxControl</option></select></div>
+  <div class="f"><label>Komprese (min)</label><input type="number" id="kompr" placeholder="10" oninput="gen()"></div>
+  <div class="f"><label>Uzatváracie zariadenie</label><select id="uzatv" onchange="gen()"><option value="">Manuální komprese</option><option>AngioSeal 6F</option><option>AngioSeal 8F</option><option>FemoSeal</option><option>ProStyle</option><option>MynxControl</option></select></div>
 </div>
 <div class="row r2">
-  <div class="f"><label>Hemostáza dosiahnutá</label><select id="hemo" onchange="gen()"><option>ihneď</option><option>po manuálnej kompresii</option><option>za použitia PatchPro bandáže</option></select></div>
-  <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="femostop" onchange="gen()"> Nasadený Femostop</label></div>
+  <div class="f"><label>Hemostáza dosažena</label><select id="hemo" onchange="gen()"><option>ihneď</option><option>po manuálnej kompresii</option><option>za použitia PatchPro bandáže</option></select></div>
+  <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="femostop" onchange="gen()"> Nasazen Femostop</label></div>
 </div>
-<div class="f"><div class="lbl">Technický úspech</div>
+<div class="f"><div class="lbl">Technický úspěch</div>
   <div class="radio-group">
-    <label class="ck"><input type="radio" name="tech_uspech" value="Technický úspech" class="success-ok" onchange="gen()"> ✅ Technický úspech</label>
+    <label class="ck"><input type="radio" name="tech_uspech" value="Technický úspěch" class="success-ok" onchange="gen()"> ✅ Technický úspěch</label>
     <label class="ck"><input type="radio" name="tech_uspech" value="Parciálny úspech" class="success-part" onchange="gen()"> ⚠️ Parciálny úspech</label>
     <label class="ck"><input type="radio" name="tech_uspech" value="Technický neúspech" class="success-no" onchange="gen()"> ❌ Technický neúspech</label>
   </div>
 </div>
-<div class="f"><div class="lbl">Komplikácie</div>
-  <div class="checks"><label class="ck"><input type="checkbox" class="komp_ck" value="žiadne" onchange="gen()"> Žiadne</label><label class="ck"><input type="checkbox" class="komp_ck" value="hematóm" onchange="gen()"> Hematóm</label><label class="ck"><input type="checkbox" class="komp_ck" value="pseudoaneuryzma" onchange="gen()"> Pseudoaneuryzma</label><label class="ck"><input type="checkbox" class="komp_ck" value="perforácia" onchange="gen()"> Perforácia</label><label class="ck"><input type="checkbox" class="komp_ck" value="distálna embólia" onchange="gen()"> Distálna embólia</label><label class="ck"><input type="checkbox" class="komp_ck" value="flow-limitujúca disekcia" onchange="gen()"> Flow-limit. disekcia</label><label class="ck"><input type="checkbox" class="komp_ck" value="technicky neúspešná intervencia" onchange="gen()"> Tech. neúspešná interv.</label><label class="ck"><input type="checkbox" class="komp_ck" value="chirurgická konverzia" onchange="gen()"> Chir. konverzia</label><label class="ck"><input type="checkbox" class="komp_ck" value="exitus" onchange="gen()"> Exitus</label><label class="ck"><input type="checkbox" class="komp_ck" value="iné" onchange="gen()"> Iné</label></div>
-  <input type="text" id="komp_text" placeholder="Popis komplikácie..." oninput="gen()" style="margin-top:6px">
+<div class="f"><div class="lbl">Komplikace</div>
+  <div class="checks"><label class="ck"><input type="checkbox" class="komp_ck" value="žádné" onchange="gen()"> Žádné</label><label class="ck"><input type="checkbox" class="komp_ck" value="hematom" onchange="gen()"> Hematom</label><label class="ck"><input type="checkbox" class="komp_ck" value="pseudoaneuryzma" onchange="gen()"> Pseudoaneuryzma</label><label class="ck"><input type="checkbox" class="komp_ck" value="perforace" onchange="gen()"> Perforace</label><label class="ck"><input type="checkbox" class="komp_ck" value="distální embólia" onchange="gen()"> Distální embólia</label><label class="ck"><input type="checkbox" class="komp_ck" value="flow-limitujúca disekcia" onchange="gen()"> Flow-limit. disekcia</label><label class="ck"><input type="checkbox" class="komp_ck" value="technicky neúspešná intervencia" onchange="gen()"> Tech. neúspešná interv.</label><label class="ck"><input type="checkbox" class="komp_ck" value="chirurgická konverzia" onchange="gen()"> Chir. konverzia</label><label class="ck"><input type="checkbox" class="komp_ck" value="exitus" onchange="gen()"> Exitus</label><label class="ck"><input type="checkbox" class="komp_ck" value="iné" onchange="gen()"> Iné</label></div>
+  <input type="text" id="komp_text" placeholder="Popis komplikace..." oninput="gen()" style="margin-top:6px">
 </div>
 <div class="f"><label style="display:flex;align-items:center;justify-content:space-between">
-  <span>Záver / Odporúčanie</span>
+  <span>Závěr / Doporučení</span>
   <button type="button" onclick="resetZaver()" style="font-size:10px;padding:2px 7px;border:1px solid #dde1ea;border-radius:4px;background:#f7f8fc;cursor:pointer;color:#5a6a8a">🔄 Auto</button>
 </label>
-  <textarea id="zaver" rows="4" placeholder="napr. Výkon bez komplikácií, DAPT, kontrola za 3 mesiace..." oninput="zaverManual=true;gen()"></textarea>
+  <textarea id="zaver" rows="4" placeholder="napr. Výkon bez komplikací, DAPT, kontrola za 3 mesiace..." oninput="zaverManual=true;gen()"></textarea>
 </div>
 </div>
 
 <div class="card">
-<div class="st">📊 Štúdia – periprocedurálne dáta &amp; komplikácie (SVS/SVE)</div>
-<div style="font-size:11px;color:#6b7280;margin-bottom:8px">Štruktúrovaný zber pre publikácie. Needzáva do textu správy – ukladá sa len do databázy.</div>
+<div class="st">📊 Studie – periprocedurální dáta &amp; komplikace (SVS/SVE)</div>
+<div style="font-size:11px;color:#6b7280;margin-bottom:8px">Strukturovaný zber pre publikace. Needzáva do textu správy – ukladá sa len do databázy.</div>
 <div class="row r2">
-  <div class="f"><label>Dĺžka výkonu (min)</label><input type="number" id="st_dur" min="0" max="600" placeholder="napr. 45" oninput="gen()"></div>
+  <div class="f"><label>Délka výkonu (min)</label><input type="number" id="st_dur" min="0" max="600" placeholder="napr. 45" oninput="gen()"></div>
   <div class="f"><label>Skiaskopický čas (min)</label><input type="number" id="st_fluoro" min="0" max="300" step="0.1" placeholder="napr. 12.5" oninput="gen()"></div>
 </div>
 <div class="row r2">
   <div class="f"><label>DAP (Gy·cm²)</label><input type="number" id="st_dap" min="0" step="0.1" placeholder="napr. 85" oninput="gen()"></div>
   <div class="f"><label>Kontrast (ml)</label><input type="number" id="st_contrast" min="0" max="1000" placeholder="napr. 80" oninput="gen()"></div>
 </div>
-<div class="f"><div class="lbl">Komplikácie – prístupové miesto (≤30d)</div>
+<div class="f"><div class="lbl">Komplikace – přístupové miesto (≤30d)</div>
   <div class="checks">
-    <label class="ck"><input type="checkbox" class="st_cmp" value="hematóm" onchange="gen()"> Hematóm</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="hematom" onchange="gen()"> Hematom</label>
     <label class="ck"><input type="checkbox" class="st_cmp" value="pseudoaneuryzma" onchange="gen()"> Pseudoaneuryzma</label>
     <label class="ck"><input type="checkbox" class="st_cmp" value="AV fistula" onchange="gen()"> AV fistula</label>
-    <label class="ck"><input type="checkbox" class="st_cmp" value="krvácanie s intervenciou" onchange="gen()"> Krvácanie s intervenciou</label>
-    <label class="ck"><input type="checkbox" class="st_cmp" value="infekcia prístupu" onchange="gen()"> Infekcia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="krvácení s intervenciou" onchange="gen()"> Krvácení s intervenciou</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="infekcia přístupu" onchange="gen()"> Infekcia</label>
   </div>
 </div>
-<div class="f"><div class="lbl">Komplikácie – cieľová cieva</div>
+<div class="f"><div class="lbl">Komplikace – cieľová cieva</div>
   <div class="checks">
-    <label class="ck"><input type="checkbox" class="st_cmp" value="distálna embolizácia" onchange="gen()"> Distálna embolizácia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="distální embolizace" onchange="gen()"> Distální embolizace</label>
     <label class="ck"><input type="checkbox" class="st_cmp" value="flow-limit. disekcia" onchange="gen()"> Flow-limit. disekcia</label>
-    <label class="ck"><input type="checkbox" class="st_cmp" value="trombóza/oklúzia" onchange="gen()"> Trombóza/oklúzia</label>
-    <label class="ck"><input type="checkbox" class="st_cmp" value="perforácia/ruptúra" onchange="gen()"> Perforácia/ruptúra</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="trombóza/okluze" onchange="gen()"> Trombóza/okluze</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="perforace/ruptura" onchange="gen()"> Perforace/ruptura</label>
   </div>
 </div>
 <div class="f"><div class="lbl">Systémové &amp; MACE/MALE (≤30d)</div>
@@ -558,14 +558,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <label class="ck"><input type="checkbox" class="st_cmp" value="kontrastová nefropatia (CIN)" onchange="gen()"> CIN</label>
     <label class="ck"><input type="checkbox" class="st_cmp" value="IM ≤30d" onchange="gen()"> IM</label>
     <label class="ck"><input type="checkbox" class="st_cmp" value="CMP ≤30d" onchange="gen()"> CMP</label>
-    <label class="ck"><input type="checkbox" class="st_cmp" value="major amputácia ≤30d" onchange="gen()"> Major amputácia</label>
-    <label class="ck"><input type="checkbox" class="st_cmp" value="urgentná reintervencia ≤30d" onchange="gen()"> Urgentná reintervencia</label>
-    <label class="ck"><input type="checkbox" class="st_cmp" value="úmrtie ≤30d" onchange="gen()"> Úmrtie ≤30d</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="major amputace ≤30d" onchange="gen()"> Major amputace</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="urgentná reintervencia ≤30d" onchange="gen()"> Urgentní reintervencia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="úmrtí ≤30d" onchange="gen()"> Úmrtí ≤30d</label>
   </div>
 </div>
 <div class="row r2">
-  <div class="f"><label>Konverzia na otvorený výkon</label><select id="st_konv" onchange="gen()"><option value="nie">nie</option><option value="áno">áno</option></select></div>
-  <div class="f"><label>Clavien-Dindo (najzávažnejšia)</label><select id="st_clavien" onchange="gen()"><option value="">žiadna</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtie)</option></select></div>
+  <div class="f"><label>Konverze na otvorený výkon</label><select id="st_konv" onchange="gen()"><option value="nie">nie</option><option value="áno">áno</option></select></div>
+  <div class="f"><label>Clavien-Dindo (najzávažnejšia)</label><select id="st_clavien" onchange="gen()"><option value="">žádná</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtí)</option></select></div>
 </div>
 </div>
 
@@ -573,9 +573,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="right">
   <textarea id="out" spellcheck="false"></textarea>
   <div class="btns">
-    <button class="btn bc" onclick="copyTxt()">📋 Kopírovať</button>
-    <button class="btn bp" onclick="saveToSheets()">💾 Uložiť</button>
-    <button class="btn bw" onclick="window.print()">🖨️ Tlač</button>
+    <button class="btn bc" onclick="copyTxt()">📋 Kopírovat</button>
+    <button class="btn bp" onclick="saveToSheets()">💾 Uložit</button>
+    <button class="btn bw" onclick="window.print()">🖨️ Tisk</button>
   </div>
   <div id="cmsg"></div>
 </div>
@@ -586,23 +586,23 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div id="tab-fu" style="display:none">
 <div class="fullpage">
   <h2 style="font-size:16px;font-weight:700;color:#1a2745;margin-bottom:16px">📅 Follow-up záznamy</h2>
-  <div class="card"><div class="st">Identifikácia</div>
-    <div class="row r2"><div class="f"><label>ID výkonu</label><input type="text" id="fu_id" placeholder="EVK-2025-001"></div><div class="f"><label>Dátum kontroly</label><input type="date" id="fu_datum"></div></div>
+  <div class="card"><div class="st">Identifikace</div>
+    <div class="row r2"><div class="f"><label>ID výkonu</label><input type="text" id="fu_id" placeholder="EVK-2025-001"></div><div class="f"><label>Datum kontroly</label><input type="date" id="fu_datum"></div></div>
     <div class="f"><label>Časový bod</label><select id="fu_bod"><option value="1M">1 mesiac</option><option value="3M">3 mesiace</option><option value="6M">6 mesiacov</option><option value="12M">12 mesiacov</option><option value="24M">24 mesiacov</option></select></div>
   </div>
   <div class="card"><div class="st">Klinický stav</div>
     <div class="row r2">
-      <div class="f"><label>Rutherford follow-up</label><select id="fu_ruth"><option value="">–</option><option value="0/0 – Asymptomatický">0/0 – Asymptomatický</option><option value="I/1 – Ľahká klaudikácia">I/1 – Ľahká klaudikácia</option><option value="I/2 – Stredná klaudikácia">I/2 – Stredná klaudikácia</option><option value="I/3 – Ťažká klaudikácia">I/3 – Ťažká klaudikácia</option><option value="II/4 – Ischemická kľudová bolesť">II/4 – Ischemická kľudová bolesť</option><option value="II/5 – Menšia tkanivová strata">II/5 – Menšia tkanivová strata</option><option value="III/6 – Väčšia tkanivová strata">III/6 – Väčšia tkanivová strata</option></select></div>
+      <div class="f"><label>Rutherford follow-up</label><select id="fu_ruth"><option value="">–</option><option value="0/0 – Asymptomatický">0/0 – Asymptomatický</option><option value="I/1 – Lehká klaudikácia">I/1 – Lehká klaudikácia</option><option value="I/2 – Střední klaudikácia">I/2 – Střední klaudikácia</option><option value="I/3 – Těžká klaudikácia">I/3 – Těžká klaudikácia</option><option value="II/4 – Ischemická klidová bolest">II/4 – Ischemická klidová bolest</option><option value="II/5 – Menší tkanivová strata">II/5 – Menší tkanivová strata</option><option value="III/6 – Větší tkanivová strata">III/6 – Větší tkanivová strata</option></select></div>
       <div class="f"><label>ABI</label><input type="number" id="fu_abi" placeholder="0.85" step="0.01" min="0" max="2"></div>
     </div>
-    <div class="f"><label>Patencia</label><select id="fu_pat"><option value="">–</option><option>primárna patencia</option><option>asistovaná primárna patencia</option><option>sekundárna patencia</option><option>restenóza</option><option>oklúzia</option></select></div>
+    <div class="f"><label>Patencia</label><select id="fu_pat"><option value="">–</option><option>primárna patencia</option><option>asistovaná primárna patencia</option><option>sekundárna patencia</option><option>restenóza</option><option>okluze</option></select></div>
     <div class="row r2">
       <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="fu_reint"> Reintervencia</label></div>
-      <div class="f"><label class="ck" style="margin-bottom:5px"><input type="checkbox" id="fu_amput"> Amputácia</label><select id="fu_amput_typ"><option value="">– typ –</option><option>veľká</option><option>malá</option></select></div>
+      <div class="f"><label class="ck" style="margin-bottom:5px"><input type="checkbox" id="fu_amput"> Amputace</label><select id="fu_amput_typ"><option value="">– typ –</option><option>veľká</option><option>malá</option></select></div>
     </div>
-    <div class="f"><label>Poznámka</label><textarea id="fu_pozn" rows="3" placeholder="Voľný text..."></textarea></div>
+    <div class="f"><label>Poznámka</label><textarea id="fu_pozn" rows="3" placeholder="Volný text..."></textarea></div>
   </div>
-  <button class="btn bw" style="width:100%;padding:12px" onclick="saveFUToSheets()">📊 Uložiť follow-up</button>
+  <button class="btn bw" style="width:100%;padding:12px" onclick="saveFUToSheets()">📊 Uložit follow-up</button>
   <div id="fu_msg" style="font-size:12px;text-align:center;margin-top:8px;min-height:18px"></div>
 </div>
 </div>
@@ -613,14 +613,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <h2 style="font-size:16px;font-weight:700;color:#1a2745;margin-bottom:16px">⚙️ Nastavenia – Google Sheets</h2>
   <div class="card"><div class="st">Apps Script URL</div>
     <div class="f"><label>URL Web Appu</label><input type="text" id="apps_script_url" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveSettings()"></div>
-    <button class="btn bc" style="width:auto;padding:7px 16px;margin-top:4px" onclick="testConnection()">🔗 Otestovať</button>
+    <button class="btn bc" style="width:auto;padding:7px 16px;margin-top:4px" onclick="testConnection()">🔗 Otestovat</button>
     <div id="test_msg" style="font-size:12px;margin-top:6px;min-height:16px"></div>
   </div>
   <div class="card"><div class="st">Inštalácia</div>
-    <div class="step"><div class="step-num">1</div><div>Google Sheets → <strong>Rozšírenia → Apps Script</strong></div></div>
+    <div class="step"><div class="step-num">1</div><div>Google Sheets → <strong>Rozšíření → Apps Script</strong></div></div>
     <div class="step"><div class="step-num">2</div><div>Vložte kód nižšie, uložte</div></div>
     <div class="code-block" id="apps-script-code"></div>
-    <div class="step"><div class="step-num">3</div><div><strong>Nasadiť → Web App</strong> | Spustiť ako: Ja | Prístup: Ktokoľvek</div></div>
+    <div class="step"><div class="step-num">3</div><div><strong>Nasadit → Web App</strong> | Spustit ako: Ja | Přístup: Ktokoľvek</div></div>
     <div class="step"><div class="step-num">4</div><div>Skopírujte URL a vložte vyššie</div></div>
   </div>
 </div>
@@ -633,24 +633,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="drg-info">
     Kódy sú generované automaticky na základe vyplneného formulára v záložke <strong>Nález</strong>.<br>
     <strong>Stenting:</strong> kód závisí od počtu stentov a tepny – správne vyplňte „Tepna" pri každom stente.<br>
-    Predilatácia a postdilatácia pred/po stentingu sa <em>nekódujú</em> samostatne.
+    Predilatace a postdilatace pred/po stentingu sa <em>nekódujú</em> samostatne.
   </div>
   <div id="drg_output">
     <div class="drg-empty">Vyplňte intervencie v záložke Nález – kódy sa zobrazia automaticky.</div>
   </div>
-  <button class="drg-copy-btn" onclick="copyDRG()">📋 Kopírovať kódy</button>
+  <button class="drg-copy-btn" onclick="copyDRG()">📋 Kopírovat kódy</button>
   <div id="drg_cmsg" style="font-size:11px;text-align:center;min-height:16px;margin-top:6px"></div>
 </div>
 </div>
 
 <script>
-const SO='<option>bez závažnej stenózy</option><option>stenóza do 50%</option><option>stenóza 50–70%</option><option>stenóza 70–90%</option><option>kritická stenóza >90%</option><option>oklúzia</option><option>vlastný popis</option>';
-const OPTS={balon:['Jade','Armada','Passeo','CrossTella','vlastný'],balon_deb:['MagicTouch','Elutax','Selution SLR','IN.PACT','vlastný'],balon_vprep:['Chocolate','Cutting balloon','AngioSculpt','Spur','Wolverine','vlastný'],stent:['AbsolutePro','Pulsar','Astron','BioMimics','Supera','Eluvia','Nitides','Dynetic','Isthmus','vlastný']};
-const STENT_TYP=['balónexpandibilný','samoexpandibilný','liekový (DES)'];
+const SO='<option>bez závažné stenózy</option><option>stenóza do 50%</option><option>stenóza 50–70%</option><option>stenóza 70–90%</option><option>kritická stenóza >90%</option><option>okluze</option><option>vlastní popis</option>';
+const OPTS={balon:['Jade','Armada','Passeo','CrossTella','vlastní'],balon_deb:['MagicTouch','Elutax','Selution SLR','IN.PACT','vlastní'],balon_vprep:['Chocolate','Cutting balloon','AngioSculpt','Spur','Wolverine','vlastní'],stent:['AbsolutePro','Pulsar','Astron','BioMimics','Supera','Eluvia','Nitides','Dynetic','Isthmus','vlastní']};
+const STENT_TYP=['balónexpandibilní','samoexpandibilní','lékový (DES)'];
 const VESSEL_OPTS=['– tepna –','AIC l.sin.','AIC l.dx.','AIE l.sin.','AIE l.dx.','AII l.sin.','AII l.dx.','AFC l.sin.','AFC l.dx.','APF l.sin.','APF l.dx.','AFS l.sin.','AFS l.dx.','P1 l.sin.','P1 l.dx.','P2 l.sin.','P2 l.dx.','P3 l.sin.','P3 l.dx.','ATA l.sin.','ATA l.dx.','ATP l.sin.','ATP l.dx.','AFib l.sin.','AFib l.dx.','TTF l.sin.','TTF l.dx.'];
-const SEG_OPTS=['–','proximálny','stredný','distálny','celý'];
+const SEG_OPTS=['–','proximální','střední','distální','celý'];
 const PELV_VESSELS=[['AIC','v_AIC'],['AIE','v_AIE'],['AII','v_AII']];
-const FEM_GROUPS=[{st:'Femorálne riečisko',vs:[['AFC','f_AFC'],['APF','f_APF'],['AFS','f_AFS']]},{st:'Popliteálne riečisko',vs:[['P1','p_P1'],['P2','p_P2'],['P3','p_P3']]},{st:'Predkolenie',vs:[['ATA','d_ATA'],['ATP','d_ATP'],['AFib','d_AFib'],['TTF','d_TTF']]}];
+const FEM_GROUPS=[{st:'Femorálne řečiště',vs:[['AFC','f_AFC'],['APF','f_APF'],['AFS','f_AFS']]},{st:'Popliteálne řečiště',vs:[['P1','p_P1'],['P2','p_P2'],['P3','p_P3']]},{st:'Predkolenie',vs:[['ATA','d_ATA'],['ATP','d_ATP'],['AFib','d_AFib'],['TTF','d_TTF']]}];
 let cnts={}, zaverManual=false;
 
 function vsel(){return VESSEL_OPTS.map(o=>`<option>${o}</option>`).join('');}
@@ -663,19 +663,19 @@ const AS_CODE=`function doPost(e) {
     let sheet, headers;
     if (data.type === 'vykon') {
       sheet = ss.getSheetByName('Výkony') || ss.insertSheet('Výkony');
-      headers = ['ID','Dátum','Operatér','Vek','Pohlavie','Rutherford',
-        'Komorbidity','Riečisko','Prístup','Anestézia','Kontrast',
-        'Intervencie','Materiály','Tech. úspech','Komplikácie','Záver'];
+      headers = ['ID','Datum','Operatér','Věk','Pohlaví','Rutherford',
+        'Komorbidity','Řečiště','Přístup','Anestezie','Kontrast',
+        'Intervencie','Materiály','Tech. úspech','Komplikace','Závěr'];
     } else if (data.type === 'cas') {
       sheet = ss.getSheetByName('CAS') || ss.insertSheet('CAS');
-      headers = ['ID','Dátum','Operatér','Vek','Pohlavie','Lokalizácia',
-        'Plát','Anestézia','Strana','Tepna','Sheath úvod','Katéter',
+      headers = ['ID','Datum','Operatér','Věk','Pohlaví','Lokalizace',
+        'Plát','Anestezie','Strana','Tepna','Sheath úvod','Katétr',
         'Stenóza','Postup','Sheath interv.','Vodič','Emboloprotekcia',
-        'Predilatácia','Stent','Domodelovanie','Uzáver','Hemostáza','Záver'];
+        'Predilatace','Stent','Domodelování','Uzávěr','Hemostáza','Závěr'];
     } else {
       sheet = ss.getSheetByName('Follow-up') || ss.insertSheet('Follow-up');
-      headers = ['ID výkonu','Dátum kontroly','Čas. bod','Rutherford',
-        'ABI','Patencia','Reintervencia','Amputácia','Poznámka'];
+      headers = ['ID výkonu','Datum kontroly','Čas. bod','Rutherford',
+        'ABI','Patencia','Reintervencia','Amputace','Poznámka'];
     }
     if (sheet.getLastRow() === 0) sheet.appendRow(headers);
     sheet.appendRow(data.row);
@@ -700,7 +700,7 @@ function getKomor(){
   if(document.getElementById('k_dm')?.checked){
     const typ=document.querySelector('input[name="dm_typ"]:checked')?.value||'DM2';
     const liecba=document.querySelector('input[name="dm_liecba"]:checked')?.value||'OAD';
-    list.push(typ+', liečba '+liecba);
+    list.push(typ+', léčba '+liecba);
   }
   if(document.getElementById('k_ah')?.checked){
     const komp=document.querySelector('input[name="ah_komp"]:checked')?.value||'kompenzovaná';
@@ -725,7 +725,7 @@ function getKomor(){
     list.push(res?'Obezita – '+res:'Obezita');
   }
   if(document.getElementById('k_faj')?.checked){
-    const stav=document.querySelector('input[name="faj_stav"]:checked')?.value||'aktívny fajčiar';
+    const stav=document.querySelector('input[name="faj_stav"]:checked')?.value||'aktívny kuřák';
     const py=document.getElementById('faj_py')?.value;
     list.push(stav+(py?' ('+py+' pack-years)':''));
   }
@@ -736,13 +736,13 @@ function getKomor(){
   }
   if(document.getElementById('k_im')?.checked){
     const obdobie=document.querySelector('input[name="im_obdobie"]:checked')?.value||'starší';
-    const liecba=document.querySelector('input[name="im_liecba"]:checked')?.value||'konzervatívne';
-    list.push('St.p. IM – '+obdobie+', liečba '+liecba);
+    const liecba=document.querySelector('input[name="im_liecba"]:checked')?.value||'konzervativní';
+    list.push('St.p. IM – '+obdobie+', léčba '+liecba);
   }
   if(document.getElementById('k_ichs')?.checked){
-    const forma=document.querySelector('input[name="ichs_forma"]:checked')?.value||'stabilná';
-    const revasc=document.querySelector('input[name="ichs_revasc"]:checked')?.value||'bez revaskularizácie';
-    const r=revasc==='bez revaskularizácie'?'':'', txt='ICHS – '+forma+(revasc!=='bez revaskularizácie'?', '+revasc:'');
+    const forma=document.querySelector('input[name="ichs_forma"]:checked')?.value||'stabilní';
+    const revasc=document.querySelector('input[name="ichs_revasc"]:checked')?.value||'bez revaskularizace';
+    const r=revasc==='bez revaskularizace'?'':'', txt='ICHS – '+forma+(revasc!=='bez revaskularizace'?', '+revasc:'');
     list.push(txt);
   }
   document.querySelectorAll('#komordiv input[type=checkbox]:not([id^="k_"]):checked').forEach(e=>list.push(e.value));
@@ -787,14 +787,14 @@ function calcBMI(){
   if(el) el.textContent=txt;
   return txt;
 }
-function cC(id){const s=document.getElementById(id),i=document.getElementById(id+'_c');if(i)i.style.display=s&&s.value==='vlastný popis'?'block':'none';}
-function gV(id){const s=document.getElementById(id);if(!s)return'–';return s.value==='vlastný popis'?(g(id+'_c')||'(vlastný popis)'):s.value;}
-function vN(id){const s=document.getElementById(id);if(!s)return'';return s.value==='vlastný'?(g(id+'_c')||''):s.value;}
-function vVodic(){document.getElementById('vodic_c').style.display=g('vodic')==='vlastný'?'block':'none';}
+function cC(id){const s=document.getElementById(id),i=document.getElementById(id+'_c');if(i)i.style.display=s&&s.value==='vlastní popis'?'block':'none';}
+function gV(id){const s=document.getElementById(id);if(!s)return'–';return s.value==='vlastní popis'?(g(id+'_c')||'(vlastní popis)'):s.value;}
+function vN(id){const s=document.getElementById(id);if(!s)return'';return s.value==='vlastní'?(g(id+'_c')||''):s.value;}
+function vVodic(){document.getElementById('vodic_c').style.display=g('vodic')==='vlastní'?'block':'none';}
 function toggleRotarex(){document.getElementById('rotarex_detail').style.display=document.getElementById('trom_rotarex').checked?'block':'none';}
 function toggleAspir(){document.getElementById('aspir_detail').style.display=document.getElementById('trom_aspir').checked?'block':'none';}
 function togglePost(){document.getElementById('post_section').style.display=document.getElementById('c_post').checked?'block':'none';gen();}
-function chkVl(id){const s=document.getElementById(id),i=document.getElementById(id+'_c');if(i)i.style.display=s&&s.value==='vlastný'?'block':'none';}
+function chkVl(id){const s=document.getElementById(id),i=document.getElementById(id+'_c');if(i)i.style.display=s&&s.value==='vlastní'?'block':'none';}
 function selOpts(arr){return arr.map(o=>`<option>${o}</option>`).join('');}
 function chkBezIntVl(){const r=[...document.querySelectorAll('input[name="bezint_r"]:checked')][0];document.getElementById('bezint_vlastny').style.display=(r&&r.value==='vlastny')?'block':'none';}
 function resetZaver(){zaverManual=false;gen();}
@@ -803,7 +803,7 @@ function msg(id,txt,col){const m=document.getElementById(id);m.textContent=txt;m
 
 function buildPelvDSA(){
   const c=document.getElementById('pelv_dsa');c.innerHTML='';
-  const h=document.createElement('div');h.className='st';h.style.marginTop='12px';h.textContent='Panvové riečisko';c.appendChild(h);
+  const h=document.createElement('div');h.className='st';h.style.marginTop='12px';h.textContent='Pánevní řečiště';c.appendChild(h);
   const ao=document.createElement('div');
   ao.innerHTML=`<div style="display:grid;grid-template-columns:58px 1fr;gap:6px;align-items:center;margin-bottom:8px"><div class="bilat-lbl pelv" style="margin-top:0">Aorta</div><select id="v_Ao" onchange="cC('v_Ao');gen()">${SO}</select></div><input type="text" id="v_Ao_c" placeholder="Popis aorty..." oninput="gen()" style="display:none;margin-bottom:8px">`;
   c.appendChild(ao);
@@ -862,11 +862,11 @@ function addItem(pfx,kind,silent){
   const tpRow=`<div class="row r2" style="margin-bottom:6px"><div class="f"><label>Tepna</label><select id="${id}_tp" onchange="gen()">${vsel()}</select></div><div class="f"><label>Segment</label><select id="${id}_sg" onchange="gen()">${sgsel()}</select></div></div>`;
   if(kind==='stent'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
-      <div class="row r2" style="margin-bottom:6px"><div class="f"><label>Typ</label><select id="${id}_t" onchange="gen()"><option value="">–</option>${STENT_TYP.map(o=>`<option>${o}</option>`).join('')}</select></div><div class="f"><label>Názov</label><select id="${id}_n" onchange="chkVl('${id}_n');gen()">${selOpts(OPTS.stent)}</select><input type="text" id="${id}_n_c" placeholder="Vlastný..." oninput="gen()" style="display:none;margin-top:4px"></div></div>
-      <div class="row r2"><div class="f"><label>Priemer (mm)</label><input type="number" id="${id}_p" placeholder="7" oninput="gen()"></div><div class="f"><label>Dĺžka (mm)</label><input type="number" id="${id}_d" placeholder="100" oninput="gen()"></div></div>`;
+      <div class="row r2" style="margin-bottom:6px"><div class="f"><label>Typ</label><select id="${id}_t" onchange="gen()"><option value="">–</option>${STENT_TYP.map(o=>`<option>${o}</option>`).join('')}</select></div><div class="f"><label>Název</label><select id="${id}_n" onchange="chkVl('${id}_n');gen()">${selOpts(OPTS.stent)}</select><input type="text" id="${id}_n_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px"></div></div>
+      <div class="row r2"><div class="f"><label>Průměr (mm)</label><input type="number" id="${id}_p" placeholder="7" oninput="gen()"></div><div class="f"><label>Délka (mm)</label><input type="number" id="${id}_d" placeholder="100" oninput="gen()"></div></div>`;
   } else if(kind==='balon_ivl'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
-      <div class="row r2"><div class="f"><label>Priemer × Dĺžka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="60" oninput="gen()"></div></div><div class="f"><label>Počet pulzov</label><input type="number" id="${id}_u" placeholder="60" oninput="gen()"></div></div>`;
+      <div class="row r2"><div class="f"><label>Průměr × Délka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="60" oninput="gen()"></div></div><div class="f"><label>Počet pulzov</label><input type="number" id="${id}_u" placeholder="60" oninput="gen()"></div></div>`;
   } else if(kind==='reentry'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>
       <div class="row r2" style="margin-bottom:6px">
@@ -875,9 +875,9 @@ function addItem(pfx,kind,silent){
             <option>OSCAR (Biotronik)</option>
             <option>Wingman (Reflow Medical)</option>
             <option>BeBack (Bentley)</option>
-            <option value="vlastný">vlastný</option>
+            <option value="vlastní">vlastní</option>
           </select>
-          <input type="text" id="${id}_s_c" placeholder="Vlastný..." oninput="gen()" style="display:none;margin-top:4px">
+          <input type="text" id="${id}_s_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px">
         </div>
         <div class="f"><label>Tepna</label><select id="${id}_tp" onchange="gen()">${vsel()}</select></div>
       </div>`;
@@ -885,8 +885,8 @@ function addItem(pfx,kind,silent){
     const opts=OPTS[kind]||OPTS.balon;
     const lbl=kind==='balon_vprep'?'Device':'Balón';
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
-      <div class="row r2" style="margin-bottom:6px"><div class="f"><label>${lbl}</label><select id="${id}_s" onchange="chkVl('${id}_s');gen()">${selOpts(opts)}</select><input type="text" id="${id}_s_c" placeholder="Vlastný..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Priemer × Dĺžka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="80" oninput="gen()"></div></div></div>
-      <div class="row r2"><div class="f"><label>Inflácia (min)</label><input type="number" id="${id}_i" step="0.5" placeholder="3" oninput="gen()"></div><div class="f"><label>Tlak (ATM)</label><input type="number" id="${id}_a" placeholder="8" oninput="gen()"></div></div>`;
+      <div class="row r2" style="margin-bottom:6px"><div class="f"><label>${lbl}</label><select id="${id}_s" onchange="chkVl('${id}_s');gen()">${selOpts(opts)}</select><input type="text" id="${id}_s_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Průměr × Délka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="80" oninput="gen()"></div></div></div>
+      <div class="row r2"><div class="f"><label>Inflace (min)</label><input type="number" id="${id}_i" step="0.5" placeholder="3" oninput="gen()"></div><div class="f"><label>Tlak (ATM)</label><input type="number" id="${id}_a" placeholder="8" oninput="gen()"></div></div>`;
   }
   cont.appendChild(div);if(!silent)gen();
 }
@@ -898,23 +898,23 @@ function collectInterventionItems(){
   function rows(pfx){return document.querySelectorAll('#'+pfx+'_list .dyn-row');}
   function tp(id){return g(id+'_tp');}
   function sg(id){const v=g(id+'_sg');return v&&v!=='–'?v:'';}
-  function balloonDesc(id,label,nm){const p=g(id+'_p'),d=g(id+'_d'),inf=g(id+'_i'),atm=g(id+'_a');let s=label+nm;if(p&&d)s+=' '+p+'×'+d+' mm';if(inf)s+=', inflácia '+inf+' min';if(atm)s+=' pri '+atm+' ATM';return s;}
+  function balloonDesc(id,label,nm){const p=g(id+'_p'),d=g(id+'_d'),inf=g(id+'_i'),atm=g(id+'_a');let s=label+nm;if(p&&d)s+=' '+p+'×'+d+' mm';if(inf)s+=', inflace '+inf+' min';if(atm)s+=' pri '+atm+' ATM';return s;}
 
   if(document.getElementById('c_vprep').checked){rows('vprep').forEach(row=>{
     const idx=row.dataset.idx,id='vprep_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
-    const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný device'):sel.value;
+    const nm=sel.value==='vlastní'?(g(id+'_s_c')||'vlastní device'):sel.value;
     items.push({tp:tp(id),sg:sg(id),desc:'vessel preparation: '+balloonDesc(id,'',nm),order:1});
   });}
   if(document.getElementById('c_pred').checked){rows('pred').forEach(row=>{
     const idx=row.dataset.idx,id='pred_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
-    const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný balón'):sel.value;
-    items.push({tp:tp(id),sg:sg(id),desc:balloonDesc(id,'predilatácia PTA balónom ',nm),order:2});
+    const nm=sel.value==='vlastní'?(g(id+'_s_c')||'vlastní balón'):sel.value;
+    items.push({tp:tp(id),sg:sg(id),desc:balloonDesc(id,'predilatace PTA balónom ',nm),order:2});
   });}
   if(document.getElementById('c_trom').checked){
     const rot=document.getElementById('trom_rotarex').checked,asp=document.getElementById('trom_aspir').checked;
-    const typy=[];if(rot)typy.push('rotačná (Rotarex '+g('rotarex_fr')+')');
-    if(asp){const kat=g('aspir_kat')==='vlastný'?(g('aspir_kat_c')||'vlastný katéter'):g('aspir_kat');typy.push('aspiračná za použitia aspiračného katétra '+kat+' '+g('aspir_fr'));}
-    if(typy.length)items.push({tp:g('trom_tp'),sg:g('trom_sg')||'',desc:'endovaskulárna trombektómia: '+typy.join('; ')+', s odsatím materiálu',order:3});
+    const typy=[];if(rot)typy.push('rotační (Rotarex '+g('rotarex_fr')+')');
+    if(asp){const kat=g('aspir_kat')==='vlastní'?(g('aspir_kat_c')||'vlastní katétr'):g('aspir_kat');typy.push('aspirační za použitia aspiračného katétra '+kat+' '+g('aspir_fr'));}
+    if(typy.length)items.push({tp:g('trom_tp'),sg:g('trom_sg')||'',desc:'endovaskulárna trombektomie: '+typy.join('; ')+', s odsatím materiálu',order:3});
   }
   if(document.getElementById('c_sw').checked){rows('sw').forEach(row=>{
     const idx=row.dataset.idx,id='sw_'+idx;
@@ -924,31 +924,31 @@ function collectInterventionItems(){
   });}
   if(document.getElementById('c_pta').checked){rows('pta').forEach(row=>{
     const idx=row.dataset.idx,id='pta_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
-    const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný balón'):sel.value;
+    const nm=sel.value==='vlastní'?(g(id+'_s_c')||'vlastní balón'):sel.value;
     items.push({tp:tp(id),sg:sg(id),desc:balloonDesc(id,'PTA balónom ',nm),order:5});
   });}
   if(document.getElementById('c_deb').checked){rows('deb').forEach(row=>{
     const idx=row.dataset.idx,id='deb_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
-    const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný balón'):sel.value;
+    const nm=sel.value==='vlastní'?(g(id+'_s_c')||'vlastní balón'):sel.value;
     items.push({tp:tp(id),sg:sg(id),desc:balloonDesc(id,'DEB PTA balónom ',nm),order:6});
   });}
   if(document.getElementById('c_stent').checked){
     rows('stent').forEach(row=>{
       const idx=row.dataset.idx,id='stent_'+idx;const ns=document.getElementById(id+'_n');if(!ns)return;
-      const nm=ns.value==='vlastný'?(g(id+'_n_c')||'vlastný stent'):ns.value;
+      const nm=ns.value==='vlastní'?(g(id+'_n_c')||'vlastní stent'):ns.value;
       const t=g(id+'_t'),p=g(id+'_p'),d=g(id+'_d');
-      let s='implantácia '+(t?t+'ho stentu ':' stentu ')+nm;if(p&&d)s+=' '+p+'×'+d+' mm';
+      let s='implantace '+(t?t+'ho stentu ':' stentu ')+nm;if(p&&d)s+=' '+p+'×'+d+' mm';
       items.push({tp:tp(id),sg:sg(id),desc:s,order:7});
     });
     if(document.getElementById('c_post').checked){rows('post').forEach(row=>{
       const idx=row.dataset.idx,id='post_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
-      const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný balón'):sel.value;
-      items.push({tp:tp(id),sg:sg(id),desc:balloonDesc(id,'postdilatácia balónom ',nm),order:8});
+      const nm=sel.value==='vlastní'?(g(id+'_s_c')||'vlastní balón'):sel.value;
+      items.push({tp:tp(id),sg:sg(id),desc:balloonDesc(id,'postdilatace balónom ',nm),order:8});
     });}
   }
   if(document.getElementById('c_sg').checked){
     const t=g('sg_t'),n=vN('sg_n'),p=g('sg_p'),d=g('sg_d');
-    let s='stentgraft: implantácia'+(t?' '+t+'ho':'')+' stentgraftu'+(n?' '+n:'')+(p&&d?' '+p+'×'+d+' mm':'');
+    let s='stentgraft: implantace'+(t?' '+t+'ho':'')+' stentgraftu'+(n?' '+n:'')+(p&&d?' '+p+'×'+d+' mm':'');
     items.push({tp:g('sg_tp'),sg:g('sg_sg')||'',desc:s,order:9});
   }
   return items;
@@ -958,24 +958,24 @@ function buildAutoZaver(){
   if(document.getElementById('c_bezint').checked){const r=[...document.querySelectorAll('input[name="bezint_r"]:checked')][0];if(r)return (r.value==='vlastny'?g('bezint_vlastny'):r.value)+'.';}
   const interv=[];
   if(document.getElementById('c_vprep').checked)interv.push('vessel preparation');
-  if(document.getElementById('c_pred').checked)interv.push('predilatácia');
-  if(document.getElementById('c_atek').checked){const t=chk('atek_t');interv.push('aterektómia'+(t.length?' ('+t.join(', ')+')':''));}
+  if(document.getElementById('c_pred').checked)interv.push('predilatace');
+  if(document.getElementById('c_atek').checked){const t=chk('atek_t');interv.push('aterektomie'+(t.length?' ('+t.join(', ')+')':''));}
   if(document.getElementById('c_sw').checked)interv.push('IVL Shockwave');
-  if(document.getElementById('c_reentry').checked){const rrows=document.querySelectorAll('#reentry_list .dyn-row');const rdevs=Array.from(rrows).map(row=>{const idx=row.dataset.idx,sel=document.getElementById('reentry_'+idx+'_s');return sel?(sel.value==='vlastný'?(g('reentry_'+idx+'_s_c')||'reentry katéter'):sel.value):'reentry katéter';});interv.push('reentry katéter ('+(rdevs.length?rdevs.join(', '):'reentry katéter')+')');}
-  if(document.getElementById('c_trom').checked)interv.push('trombektómia');
+  if(document.getElementById('c_reentry').checked){const rrows=document.querySelectorAll('#reentry_list .dyn-row');const rdevs=Array.from(rrows).map(row=>{const idx=row.dataset.idx,sel=document.getElementById('reentry_'+idx+'_s');return sel?(sel.value==='vlastní'?(g('reentry_'+idx+'_s_c')||'reentry katétr'):sel.value):'reentry katétr';});interv.push('reentry katétr ('+(rdevs.length?rdevs.join(', '):'reentry katétr')+')');}
+  if(document.getElementById('c_trom').checked)interv.push('trombektomie');
   if(document.getElementById('c_pta').checked)interv.push('PTA');
   if(document.getElementById('c_deb').checked)interv.push('DEB PTA');
-  if(document.getElementById('c_stent').checked){const rows=document.querySelectorAll('#stent_list .dyn-row');const names=[];rows.forEach(row=>{const n=document.getElementById('stent_'+row.dataset.idx+'_n');if(n)names.push(n.value==='vlastný'?(g('stent_'+row.dataset.idx+'_n_c')||'stent'):n.value);});interv.push('stenting'+(names.length?' ('+[...new Set(names)].join(', ')+')':''));}
+  if(document.getElementById('c_stent').checked){const rows=document.querySelectorAll('#stent_list .dyn-row');const names=[];rows.forEach(row=>{const n=document.getElementById('stent_'+row.dataset.idx+'_n');if(n)names.push(n.value==='vlastní'?(g('stent_'+row.dataset.idx+'_n_c')||'stent'):n.value);});interv.push('stenting'+(names.length?' ('+[...new Set(names)].join(', ')+')':''));}
   if(document.getElementById('c_sg').checked)interv.push('stentgraft ('+vN('sg_n')+')');
   if(document.getElementById('c_kiss').checked)interv.push('kissing stent');
   if(document.getElementById('c_cerab').checked)interv.push('CERAB technika');
   const tu=[...document.querySelectorAll('input[name="tech_uspech"]:checked')][0];
-  const komp=chk('komp_ck').filter(k=>k!=='žiadne');
+  const komp=chk('komp_ck').filter(k=>k!=='žádné');
   let z='';
-  if(interv.length)z+='Vykonaná: '+interv.join(', ')+'. ';
+  if(interv.length)z+='Provedena: '+interv.join(', ')+'. ';
   if(tu)z+=tu+'. ';
-  if(komp.length)z+='Komplikácie: '+komp.join(', ')+'. ';
-  else if(tu&&tu!=='Technický neúspech')z+='Bez komplikácií. ';
+  if(komp.length)z+='Komplikace: '+komp.join(', ')+'. ';
+  else if(tu&&tu!=='Technický neúspech')z+='Bez komplikací. ';
   return z.trim();
 }
 
@@ -989,14 +989,14 @@ function copyTxt(){
 function collectStatsRow(){
   const y=new Date().getFullYear(),id='EVK-'+y+'-'+(g('id_suffix')||'???');
   const komor=getKomor().join(', ');
-  const terr=g('territory'),tl=terr==='fem'?'FP+predkolenie':terr==='pelv'?'Panvové':'Panvové+FP';
+  const terr=g('territory'),tl=terr==='fem'?'FP+predkolenie':terr==='pelv'?'Pánevní':'Pánevní+FP';
   const interv=[];
   if(document.getElementById('c_vprep').checked)interv.push('Vessel prep');
-  if(document.getElementById('c_pred').checked)interv.push('Predilatácia');
-  if(document.getElementById('c_atek').checked)interv.push('Aterektómia');
+  if(document.getElementById('c_pred').checked)interv.push('Predilatace');
+  if(document.getElementById('c_atek').checked)interv.push('Aterektomie');
   if(document.getElementById('c_sw').checked)interv.push('IVL');
-  if(document.getElementById('c_reentry').checked)interv.push('Reentry katéter');
-  if(document.getElementById('c_trom').checked)interv.push('Trombektómia');
+  if(document.getElementById('c_reentry').checked)interv.push('Reentry katétr');
+  if(document.getElementById('c_trom').checked)interv.push('Trombektomie');
   if(document.getElementById('c_pta').checked)interv.push('PTA');
   if(document.getElementById('c_deb').checked)interv.push('DEB PTA');
   if(document.getElementById('c_stent').checked)interv.push('Stenting');
@@ -1004,8 +1004,8 @@ function collectStatsRow(){
   if(document.getElementById('c_kiss').checked)interv.push('Kissing stent');
   if(document.getElementById('c_cerab').checked)interv.push('CERAB');
   const mat=[];
-  document.querySelectorAll('#stent_list .dyn-row').forEach(row=>{const n=document.getElementById('stent_'+row.dataset.idx+'_n');if(n&&n.value!=='vlastný')mat.push(n.value);});
-  document.querySelectorAll('#deb_list .dyn-row').forEach(row=>{const s=document.getElementById('deb_'+row.dataset.idx+'_s');if(s&&s.value!=='vlastný')mat.push(s.value);});
+  document.querySelectorAll('#stent_list .dyn-row').forEach(row=>{const n=document.getElementById('stent_'+row.dataset.idx+'_n');if(n&&n.value!=='vlastní')mat.push(n.value);});
+  document.querySelectorAll('#deb_list .dyn-row').forEach(row=>{const s=document.getElementById('deb_'+row.dataset.idx+'_s');if(s&&s.value!=='vlastní')mat.push(s.value);});
   const tu=[...document.querySelectorAll('input[name="tech_uspech"]:checked')][0];
   const komp=chk('komp_ck').join(', ')+(g('komp_text')?' – '+g('komp_text'):'');
   const artVal=g('access_art');const art=artVal==='vlastny'?(g('access_art_c')||'vlastná'):artVal;
@@ -1025,8 +1025,8 @@ function collectFullData(){
   const dsa={};
   dsaFields.forEach(f=>{
     const el=document.getElementById(f);
-    if(el&&el.value&&el.value!=='bez závažnej stenózy'){
-      const val=el.value==='vlastný popis'?(g(f+'_c')||el.value):el.value;
+    if(el&&el.value&&el.value!=='bez závažné stenózy'){
+      const val=el.value==='vlastní popis'?(g(f+'_c')||el.value):el.value;
       dsa[f]=val;
     }
   });
@@ -1038,14 +1038,14 @@ function collectFullData(){
       if(kind==='stent'){
         item.stent_typ=g(id+'_t');
         const ns=document.getElementById(id+'_n');
-        item.stent_nazov=ns?(ns.value==='vlastný'?(g(id+'_n_c')||''):ns.value):'';
-        item.priemer=g(id+'_p');item.dlzka=g(id+'_d');
+        item.stent_nazov=ns?(ns.value==='vlastní'?(g(id+'_n_c')||''):ns.value):'';
+        item.průměr=g(id+'_p');item.dlzka=g(id+'_d');
       }else if(kind==='ivl'){
-        item.priemer=g(id+'_p');item.dlzka=g(id+'_d');item.pulzy=g(id+'_u');
+        item.průměr=g(id+'_p');item.dlzka=g(id+'_d');item.pulzy=g(id+'_u');
       }else{
         const ss=document.getElementById(id+'_s');
-        item.nazov=ss?(ss.value==='vlastný'?(g(id+'_s_c')||''):ss.value):'';
-        item.priemer=g(id+'_p');item.dlzka=g(id+'_d');item.inflacia=g(id+'_i');item.atm=g(id+'_a');
+        item.nazov=ss?(ss.value==='vlastní'?(g(id+'_s_c')||''):ss.value):'';
+        item.průměr=g(id+'_p');item.dlzka=g(id+'_d');item.inflacia=g(id+'_i');item.atm=g(id+'_a');
       }
       interventionDetail.push(item);
     });
@@ -1059,33 +1059,33 @@ function collectFullData(){
     collectList('stent','stent');
     if(document.getElementById('c_post').checked)collectList('post','postdilat');
   }
-  // --- Fixné techniky (aterektómia, trombektómia, kissing, stentgraft, CERAB) ---
-  const nameOf=(sel)=>{const e=document.getElementById(sel);if(!e)return '';return e.value==='vlastný'?(g(sel+'_c')||''):e.value;};
+  // --- Fixné techniky (aterektomie, trombektomie, kissing, stentgraft, CERAB) ---
+  const nameOf=(sel)=>{const e=document.getElementById(sel);if(!e)return '';return e.value==='vlastní'?(g(sel+'_c')||''):e.value;};
   if(document.getElementById('c_atek').checked){
     interventionDetail.push({typ:'aterektomia',tepna:g('atek_tp'),dlzka_lezie:g('atek_d'),emboloprotekcia:g('atek_e')});
   }
   if(document.getElementById('c_trom').checked){
     const base={typ:'trombektomia',tepna:g('trom_tp'),segment:g('trom_sg')};
     if(document.getElementById('trom_rotarex').checked)interventionDetail.push({...base,metoda:'Rotarex',velkost:g('rotarex_fr')});
-    if(document.getElementById('trom_aspir').checked)interventionDetail.push({...base,metoda:'Aspiračná',kateter:nameOf('aspir_kat'),velkost:g('aspir_fr')});
+    if(document.getElementById('trom_aspir').checked)interventionDetail.push({...base,metoda:'Aspirační',kateter:nameOf('aspir_kat'),velkost:g('aspir_fr')});
   }
   if(document.getElementById('c_kiss').checked){
     ['s','d'].forEach(side=>{
       const nm=nameOf('kiss_n'+side);if(!nm&&!g('kiss_p'+side))return;
-      interventionDetail.push({typ:'stent',subtyp:'kissing',stent_typ:g('kiss_t'+side),stent_nazov:nm,priemer:g('kiss_p'+side),dlzka:g('kiss_d'+side)});
+      interventionDetail.push({typ:'stent',subtyp:'kissing',stent_typ:g('kiss_t'+side),stent_nazov:nm,průměr:g('kiss_p'+side),dlzka:g('kiss_d'+side)});
     });
   }
   if(document.getElementById('c_sg').checked){
-    interventionDetail.push({typ:'stentgraft',stent_typ:g('sg_t'),stent_nazov:nameOf('sg_n'),priemer:g('sg_p'),dlzka:g('sg_d'),tepna:g('sg_tp'),segment:g('sg_sg')});
+    interventionDetail.push({typ:'stentgraft',stent_typ:g('sg_t'),stent_nazov:nameOf('sg_n'),průměr:g('sg_p'),dlzka:g('sg_d'),tepna:g('sg_tp'),segment:g('sg_sg')});
   }
   if(document.getElementById('c_cerab').checked){
     [['ao','aorta'],['sin','l.sin.'],['dx','l.dx.']].forEach(([k,lab])=>{
       const nm=nameOf('cerab_'+k+'_n');if(!nm&&!g('cerab_'+k+'_p'))return;
-      interventionDetail.push({typ:'stentgraft',subtyp:'CERAB',segment:lab,stent_nazov:nm,priemer:g('cerab_'+k+'_p'),dlzka:g('cerab_'+k+'_d')});
+      interventionDetail.push({typ:'stentgraft',subtyp:'CERAB',segment:lab,stent_nazov:nm,průměr:g('cerab_'+k+'_p'),dlzka:g('cerab_'+k+'_d')});
     });
   }
-  // --- Flatten materiálov pre publikačnú analýzu ---
-  const sizeStr=it=>(it.priemer&&it.dlzka)?(it.priemer+'×'+it.dlzka):(it.priemer||it.dlzka||'');
+  // --- Flatten materiálů pre publikační analýzu ---
+  const sizeStr=it=>(it.průměr&&it.dlzka)?(it.průměr+'×'+it.dlzka):(it.průměr||it.dlzka||'');
   const stents=interventionDetail.filter(i=>i.typ==='stent');
   const balloonTypes=['vessel_prep','predilat','pta','deb','postdilat'];
   const balloons=interventionDetail.filter(i=>balloonTypes.includes(i.typ));
@@ -1139,7 +1139,7 @@ function collectFullData(){
     rutherford:g('ruth'),
     diag:g('diag'),
     komorbidity:getKomor().join(', '),
-    riecisko:g('territory')==='fem'?'FP+predkolenie':g('territory')==='pelv'?'Panvové':'Panvové+FP',
+    riecisko:g('territory')==='fem'?'FP+predkolenie':g('territory')==='pelv'?'Pánevní':'Pánevní+FP',
     pristup_arteria:art,
     pristup_technika:g('tech'),
     pristup_smer:g('smer'),
@@ -1150,17 +1150,17 @@ function collectFullData(){
     pristup_sheath_dlz:g('sheathdlz'),
     anestazia:g('anes'),
     kontrast:[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join('+'),
-    vodic:g('vodic')==='vlastný'?(g('vodic_c')||''):g('vodic'),
+    vodic:g('vodic')==='vlastní'?(g('vodic_c')||''):g('vodic'),
     prechod_leziou:[...document.querySelectorAll('.prec:checked')].map(e=>e.value).join(', '),
     dsa_nalez:JSON.stringify(dsa),
     intervencie:(()=>{
       const i=[];
       if(document.getElementById('c_vprep').checked)i.push('Vessel prep');
-      if(document.getElementById('c_pred').checked)i.push('Predilatácia');
-      if(document.getElementById('c_atek').checked)i.push('Aterektómia');
+      if(document.getElementById('c_pred').checked)i.push('Predilatace');
+      if(document.getElementById('c_atek').checked)i.push('Aterektomie');
       if(document.getElementById('c_sw').checked)i.push('IVL');
-      if(document.getElementById('c_reentry').checked)i.push('Reentry katéter');
-      if(document.getElementById('c_trom').checked)i.push('Trombektómia');
+      if(document.getElementById('c_reentry').checked)i.push('Reentry katétr');
+      if(document.getElementById('c_trom').checked)i.push('Trombektomie');
       if(document.getElementById('c_pta').checked)i.push('PTA');
       if(document.getElementById('c_deb').checked)i.push('DEB PTA');
       if(document.getElementById('c_stent').checked)i.push('Stenting');
@@ -1170,7 +1170,7 @@ function collectFullData(){
       return i.join(', ');
     })(),
     intervencie_detail:JSON.stringify(interventionDetail),
-    uzaver:g('uzatv')||'Manuálna kompresia',
+    uzaver:g('uzatv')||'Manuální komprese',
     hemostaza:g('hemo'),
     femostop:document.getElementById('femostop').checked,
     tech_uspech:([...document.querySelectorAll('input[name="tech_uspech"]:checked')][0]||{}).value||'',
@@ -1190,20 +1190,20 @@ function collectFullData(){
 }
 async function saveToSheets(){
   if(!g('id_suffix')){msg('cmsg','⚠️ Vyplňte ID výkonu','#b45309');return;}
-  msg('cmsg','⏳ Ukladám...','#3b82f6');
+  msg('cmsg','⏳ Ukládám...','#3b82f6');
   const fullData=collectFullData();
   const tasks=[];
   tasks.push(saveToSupabase('cz_evk_vykony',fullData).then(r=>r.ok?'sb_ok':'sb_err:'+r.status).catch(()=>'sb_err'));
   const url=g('apps_script_url');
   if(url)tasks.push(fetch(url,{method:'POST',body:JSON.stringify(collectStatsRow())}).then(r=>r.json()).then(j=>j.status==='ok'?'gs_ok':'gs_err').catch(()=>'gs_err'));
   const results=await Promise.all(tasks);
-  if(results.some(r=>r==='sb_ok'||r==='gs_ok'))msg('cmsg','✅ Uložené do štatistík!','#1d6f42');
+  if(results.some(r=>r==='sb_ok'||r==='gs_ok'))msg('cmsg','✅ Uloženo do statistik!','#1d6f42');
   else msg('cmsg','❌ Chyba uloženia – skontrolujte Supabase tabuľky','#dc2626');
 }
 async function saveFUToSheets(){
   const url=g('apps_script_url');
   if(!g('fu_id')){msg('fu_msg','⚠️ Vyplňte ID výkonu','#b45309');return;}
-  msg('fu_msg','⏳ Ukladám...','#3b82f6');
+  msg('fu_msg','⏳ Ukládám...','#3b82f6');
   const amput=document.getElementById('fu_amput').checked?(g('fu_amput_typ')||'áno'):'nie';
   const fuData={
     vykon_id:g('fu_id'),
@@ -1243,11 +1243,11 @@ function gen(){
   const L=[];
 
   L.push('SPRÁVA Z ENDOVASKULÁRNEHO VÝKONU');
-  const datum=g('datum');if(datum){const d=new Date(datum);L.push('Dátum: '+d.toLocaleDateString('sk-SK'));}
+  const datum=g('datum');if(datum){const d=new Date(datum);L.push('Datum: '+d.toLocaleDateString('sk-SK'));}
   const y=new Date().getFullYear(),suf=g('id_suffix');if(suf)L.push('ID: EVK-'+y+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
-  const tl=terr==='fem'?'Femoropopliteálne + predkolenie':terr==='pelv'?'Panvové (aortoiliakálne)':'Panvové + Femoropopliteálne';
-  L.push('Riečisko: '+tl);L.push('─'.repeat(46));
+  const tl=terr==='fem'?'Femoropopliteálne + predkolenie':terr==='pelv'?'Pánevní (aortoiliakálne)':'Pánevní + Femoropopliteálne';
+  L.push('Řečiště: '+tl);L.push('─'.repeat(46));
 
   const pi=[vek?vek+'-roč'+adj+' '+noun:noun,g('ruth')?'Rutherford '+g('ruth'):'',g('diag')].filter(Boolean);
   L.push('PACIENT: '+pi.join(', '));
@@ -1257,21 +1257,21 @@ function gen(){
   const isAFC=artVal==='AFC',sh=g('sheath'),shd=g('sheathdlz');
   let pr=[art+' '+g('strana')];if(isAFC)pr.push(g('smer'));
   pr.push(g('tech'),g('spos'),'v '+g('anes'),'pod '+g('nav')+' navigáciou');
-  let dev=[];if(sh)dev.push('sheath '+sh+(shd?' dĺžky '+shd:''));dev.push(g('kat')+' katéter');
-  pr.push('zavádzame '+dev.join(' a '));
+  let dev=[];if(sh)dev.push('sheath '+sh+(shd?' dĺžky '+shd:''));dev.push(g('kat')+' katétr');
+  pr.push('zavádíme '+dev.join(' a '));
   L.push('PRÍSTUP: '+pr.filter(Boolean).join(', ')+'.');
 
   const kontr=[...document.querySelectorAll('.kontr:checked')].map(e=>e.value);
   if(kontr.length)L.push('KONTRASTNÁ LÁTKA: '+kontr.join(' + kombin. s '));
 
   if(sp){
-    L.push('DSA NÁLEZ – Panvové riečisko:');
+    L.push('DSA NÁLEZ – Pánevní řečiště:');
     L.push('Aorta – '+gV('v_Ao')+'.');
     PELV_VESSELS.forEach(([lbl,base])=>L.push(lbl+' l.sin. – '+gV(base+'_s')+' / l.dx. – '+gV(base+'_d')+'.'));
   }
   if(sf){
     const lat=g('fem_lat')||'bilat',latL=lat==='bilat'?'bilat.':lat==='sin'?'l.sin.':'l.dx.';
-    L.push('DSA NÁLEZ – Femoropopliteálne riečisko ('+latL+'):');
+    L.push('DSA NÁLEZ – Femoropopliteálne řečiště ('+latL+'):');
     FEM_GROUPS.forEach(group=>{
       L.push(group.st+':');
       group.vs.forEach(([lbl,base],vi)=>{
@@ -1286,38 +1286,38 @@ function gen(){
 
   L.push('INTERVENCIA:');
   const prec=chk('prec');
-  const vodic=g('vodic')==='vlastný'?(g('vodic_c')||'vlastný vodič'):g('vodic');
-  const suppKat=g('support_kat')==='vlastný'?(g('support_kat_c')||'podporného katétra'):g('support_kat');
+  const vodic=g('vodic')==='vlastní'?(g('vodic_c')||'vlastní vodič'):g('vodic');
+  const suppKat=g('support_kat')==='vlastní'?(g('support_kat_c')||'podporného katétra'):g('support_kat');
   const suppPart=suppKat?' za podpory '+suppKat+'.':'.';
-  if(prec.length)L.push('Cez léziu prechádzame '+prec.join(', ')+' vodičom '+vodic+suppPart);
-  else L.push('Cez léziu prechádzame vodičom '+vodic+suppPart);
+  if(prec.length)L.push('Cez léziu procházíme '+prec.join(', ')+' vodičom '+vodic+suppPart);
+  else L.push('Cez léziu procházíme vodičom '+vodic+suppPart);
 
   if(sp){
     if(document.getElementById('c_kiss').checked){
       const ts=g('kiss_ts'),ns=vN('kiss_ns'),ps=g('kiss_ps'),ds=g('kiss_ds');
       const td=g('kiss_td'),nd=vN('kiss_nd'),pd=g('kiss_pd'),dd=g('kiss_dd');
-      L.push('Kissing stent technika: simultánna implantácia stentu '+(ts?ts+'ho ':'')+(ns||'–')+(ps&&ds?' '+ps+'×'+ds+' mm':'')+' l.sin. a stentu '+(td?td+'ho ':'')+(nd||'–')+(pd&&dd?' '+pd+'×'+dd+' mm':'')+' l.dx..');
+      L.push('Kissing stent technika: simultánna implantace stentu '+(ts?ts+'ho ':'')+(ns||'–')+(ps&&ds?' '+ps+'×'+ds+' mm':'')+' l.sin. a stentu '+(td?td+'ho ':'')+(nd||'–')+(pd&&dd?' '+pd+'×'+dd+' mm':'')+' l.dx..');
     }
     if(document.getElementById('c_cerab').checked){
       const aon=vN('cerab_ao_n'),aop=g('cerab_ao_p'),aod=g('cerab_ao_d');
       const sinn=vN('cerab_sin_n'),sinp=g('cerab_sin_p'),sind=g('cerab_sin_d');
       const dxn=vN('cerab_dx_n'),dxp=g('cerab_dx_p'),dxd=g('cerab_dx_d');
-      L.push('CERAB technika: implantácia aortálneho cuffu '+aon+(aop&&aod?' '+aop+'×'+aod+' mm':'')+', kissing stenty AIC: l.sin. '+sinn+(sinp&&sind?' '+sinp+'×'+sind+' mm':'')+' a l.dx. '+dxn+(dxp&&dxd?' '+dxp+'×'+dxd+' mm':'')+'.');
+      L.push('CERAB technika: implantace aortálneho cuffu '+aon+(aop&&aod?' '+aop+'×'+aod+' mm':'')+', kissing stenty AIC: l.sin. '+sinn+(sinp&&sind?' '+sinp+'×'+sind+' mm':'')+' a l.dx. '+dxn+(dxp&&dxd?' '+dxp+'×'+dxd+' mm':'')+'.');
     }
   }
 
   if(document.getElementById('c_bezint').checked){
     const r=[...document.querySelectorAll('input[name="bezint_r"]:checked')][0];
-    const val=r?(r.value==='vlastny'?(g('bezint_vlastny')||'vlastný dôvod'):r.value):'';
+    const val=r?(r.value==='vlastny'?(g('bezint_vlastny')||'vlastní dôvod'):r.value):'';
     if(val)L.push('Bez intervencie: '+val+'.');
   }
 
-  // Aterektómia a trombektómia – bez tepny (všeobecné)
+  // Aterektomie a trombektomie – bez tepny (všeobecné)
   if(document.getElementById('c_atek').checked){
     const t=chk('atek_t'),d=g('atek_d'),e=g('atek_e');
     const devMap={'orbitálna':'orbitálna (Stealth 360, Abbott)','laserová':'laserová (Turbo-Elite, Spectranetics)'};
     const typy=t.map(x=>devMap[x]||x);
-    L.push('Aterektómia'+(typy.length?': '+typy.join(' a '):'')+(d?', dĺžka lézie cca '+d+' cm':'')+(e?', za použitia distálnej emboloprotekccie ('+e+')':'')+'.');
+    L.push('Aterektomie'+(typy.length?': '+typy.join(' a '):'')+(d?', délka lézie cca '+d+' cm':'')+(e?', za použitia distální emboloprotekccie ('+e+')':'')+'.');
   }
   // GROUPED BY TEPNA (vessel prep, pred, IVL, PTA, DEB, stent, post)
   const allItems=collectInterventionItems();
@@ -1339,16 +1339,16 @@ function gen(){
   });
   if(noTepna.length){
     noTepna.sort((a,b)=>a.order-b.order);
-    L.push('Ostatné: '+noTepna.map(i=>i.desc).join('; ')+'.');
+    L.push('Ostatní: '+noTepna.map(i=>i.desc).join('; ')+'.');
   }
 
-  if(document.getElementById('c_dal').checked){const dov=chk('dal_d'),tec=chk('dal_t'),txt=g('dal_text');let s='Ďalšie ošetrenie';if(dov.length)s+=' – dôvod: '+dov.join(', ');if(tec.length)s+='; technika: '+tec.join(', ');if(txt)s+='. '+txt;L.push(s+'.');}
+  if(document.getElementById('c_dal').checked){const dov=chk('dal_d'),tec=chk('dal_t'),txt=g('dal_text');let s='Další ošetrenie';if(dov.length)s+=' – dôvod: '+dov.join(', ');if(tec.length)s+='; technika: '+tec.join(', ');if(txt)s+='. '+txt;L.push(s+'.');}
 
   L.push('UZÁVER:');
   let uz='';const kompr=g('kompr'),uzatv=g('uzatv'),hemo=g('hemo'),fs=document.getElementById('femostop').checked;
-  if(kompr)uz+='Kompresia v trvaní '+kompr+' min. ';
-  uz+=(uzatv?'Uzatváracie zariadenie: '+uzatv+'. ':'Manuálna kompresia. ');
-  uz+='Dosahujeme hemostázu '+hemo+(fs?', nasadený Femostop':'')+'.';;L.push(uz);
+  if(kompr)uz+='Komprese v trvaní '+kompr+' min. ';
+  uz+=(uzatv?'Uzatváracie zariadenie: '+uzatv+'. ':'Manuální komprese. ');
+  uz+='Dosahujeme hemostázu '+hemo+(fs?', nasazen Femostop':'')+'.';;L.push(uz);
 
   if(!zaverManual){const az=buildAutoZaver();if(az)document.getElementById('zaver').value=az;}
   L.push('ZÁVER:');
@@ -1358,8 +1358,8 @@ function gen(){
 }
 
 // ── DRG mapping ──────────────────────────────────────────────────────────────
-const DRG_SUFFIX_LABEL={i:'iné brušné a panvové tepny',n:'femorálne tepny',m:'cievy predkolenia',c:'aorta'};
-const ATEK_SUFFIX_LABEL={x:'iné brušné a panvové tepny',n:'femorálne tepny',m:'cievy predkolenia',c:'aorta'};
+const DRG_SUFFIX_LABEL={i:'iné břišní a pánevní tepny',n:'femorálne tepny',m:'cievy predkolenia',c:'aorta'};
+const ATEK_SUFFIX_LABEL={x:'iné břišní a pánevní tepny',n:'femorálne tepny',m:'cievy predkolenia',c:'aorta'};
 function vesselSuffix(tp){
   if(!tp||tp==='– tepna –')return null;
   const t=tp.split(' ')[0];
@@ -1369,7 +1369,7 @@ function vesselSuffix(tp){
   return null;
 }
 function vesselSuffixAtek(tp){
-  // Aterektómia používa .x pre panvové (nie .i ako PTA)
+  // Aterektomie používa .x pre pánevní (nie .i ako PTA)
   const s=vesselSuffix(tp);
   return s==='i'?'x':s;
 }
@@ -1386,15 +1386,15 @@ function genDRG(){
   function add(code,desc,warn){codes.push({code,desc,warn:warn||false});}
   const SL=DRG_SUFFIX_LABEL;
 
-  // Predilatácia → generuje 8r800 (plain PTA) pre každú tepnu
+  // Predilatace → generuje 8r800 (plain PTA) pre každú tepnu
   if(document.getElementById('c_pred').checked){
-    [...new Set(drgListSuffixes('pred'))].forEach(s=>add('8r800.'+s,'Balónová angioplastika – predilatácia: '+SL[s]));
+    [...new Set(drgListSuffixes('pred'))].forEach(s=>add('8r800.'+s,'Balónová angioplastika – predilatace: '+SL[s]));
   }
   // PTA
   if(document.getElementById('c_pta').checked){
     [...new Set(drgListSuffixes('pta'))].forEach(s=>{
-      // nepridávaj duplicitu ak už predilatácia vygenerovala rovnaký suffix
-      const alreadyAdded=codes.some(c=>c.code==='8r800.'+s&&c.desc.includes('predilatácia'));
+      // nepridávaj duplicitu ak už predilatace vygenerovala rovnaký suffix
+      const alreadyAdded=codes.some(c=>c.code==='8r800.'+s&&c.desc.includes('predilatace'));
       if(!alreadyAdded)add('8r800.'+s,'Balónová angioplastika (PTA): '+SL[s]);
     });
   }
@@ -1402,14 +1402,14 @@ function genDRG(){
   if(document.getElementById('c_deb').checked){
     [...new Set(drgListSuffixes('deb'))].forEach(s=>add('8r801.'+s,'DEB PTA (balón uvoľňujúci lieky): '+SL[s]));
   }
-  // Vessel prep → cutting/scoring alebo SPUR (aterektómia)
+  // Vessel prep → cutting/scoring alebo SPUR (aterektomie)
   if(document.getElementById('c_vprep').checked){
     const spurSuffixes=[], otherSuffixes=[];
     document.querySelectorAll('#vprep_list .dyn-row').forEach(row=>{
       const idx=row.dataset.idx,sel=document.getElementById('vprep_'+idx+'_s');
       const nm=sel?sel.value:'';
       const s=vesselSuffixAtek(g('vprep_'+idx+'_tp'));
-      if(nm==='Spur'||nm==='vlastný'&&(g('vprep_'+idx+'_s_c')||'').toLowerCase().includes('spur')){
+      if(nm==='Spur'||nm==='vlastní'&&(g('vprep_'+idx+'_s_c')||'').toLowerCase().includes('spur')){
         if(s)spurSuffixes.push(s);
       } else {
         const ss=vesselSuffix(g('vprep_'+idx+'_tp'));
@@ -1417,20 +1417,20 @@ function genDRG(){
       }
     });
     [...new Set(otherSuffixes)].forEach(s=>add('8r802.'+s,'Vessel preparation (cutting/scoring balón): '+SL[s]));
-    [...new Set(spurSuffixes)].forEach(s=>add('8r810.'+s,'Perkutánna aterektómia (SPUR): '+(ATEK_SUFFIX_LABEL[s]||s)));
+    [...new Set(spurSuffixes)].forEach(s=>add('8r810.'+s,'Perkutánna aterektomie (SPUR): '+(ATEK_SUFFIX_LABEL[s]||s)));
   }
   // IVL Shockwave
   if(document.getElementById('c_sw').checked){
     [...new Set(drgListSuffixes('sw'))].forEach(s=>add('8r804.'+s,'IVL Shockwave (litotripsia rázovou vlnou): '+SL[s]));
   }
-  // Aterektómia
+  // Aterektomie
   if(document.getElementById('c_atek').checked){
     const t=chk('atek_t'),s=vesselSuffixAtek(g('atek_tp'));
     const sl=s?(ATEK_SUFFIX_LABEL[s]||s):'– doplňte tepnu';
     const warn=!s;
-    if(t.includes('orbitálna'))add('8r810.'+(s||'?'),'Perkutánna aterektómia (Stealth 360 / orbitálna): '+sl,warn);
-    if(t.includes('laserová'))add('8r803.'+(s||'?'),'Laserová aterektómia (Turbo-Elite): '+sl,warn);
-    if(!t.length)add('8r810.'+(s||'?'),'Perkutánna aterektómia: '+sl,warn);
+    if(t.includes('orbitálna'))add('8r810.'+(s||'?'),'Perkutánna aterektomie (Stealth 360 / orbitálna): '+sl,warn);
+    if(t.includes('laserová'))add('8r803.'+(s||'?'),'Laserová aterektomie (Turbo-Elite): '+sl,warn);
+    if(!t.length)add('8r810.'+(s||'?'),'Perkutánna aterektomie: '+sl,warn);
   }
   // Reentry katétre
   if(document.getElementById('c_reentry').checked){
@@ -1439,23 +1439,23 @@ function genDRG(){
     const devNames=[];
     rrows.forEach(row=>{
       const idx=row.dataset.idx,sel=document.getElementById('reentry_'+idx+'_s');
-      const nm=sel?(sel.value==='vlastný'?(g('reentry_'+idx+'_s_c')||'reentry katéter'):sel.value):'reentry katéter';
+      const nm=sel?(sel.value==='vlastní'?(g('reentry_'+idx+'_s_c')||'reentry katétr'):sel.value):'reentry katétr';
       devNames.push(nm);
     });
-    const devStr=devNames.length?devNames.join(', '):'reentry katéter';
-    if(n>=2)add('8r8x4.1','Perkutánna rekanalizácia, použitie 2 a viac reentry katétrov ('+devStr+'): '+n+' ks');
-    else    add('8r8x4.0','Perkutánna rekanalizácia, použitie 1 reentry katétra ('+devStr+')');
+    const devStr=devNames.length?devNames.join(', '):'reentry katétr';
+    if(n>=2)add('8r8x4.1','Perkutánna rekanalizace, použitie 2 a viac reentry katétrov ('+devStr+'): '+n+' ks');
+    else    add('8r8x4.0','Perkutánna rekanalizace, použitie 1 reentry katétra ('+devStr+')');
   }
-  // Trombektómia
+  // Trombektomie
   if(document.getElementById('c_trom').checked){
     const s=vesselSuffix(g('trom_tp'));
     const sl=s?SL[s]:'– doplňte tepnu';
     const warn=!s;
     const rot=document.getElementById('trom_rotarex').checked;
     const asp=document.getElementById('trom_aspir').checked;
-    if(rot)add('8r821.'+(s||'?'),'Rotačná trombektómia a embolektómia (Rotarex): '+sl,warn);
-    if(asp)add('8r822.'+(s||'?'),'Aspiračná trombektómia a embolektómia: '+sl,warn);
-    if(!rot&&!asp)add('8r820.'+(s||'?'),'Trombektómia a embolektómia: '+sl,warn);
+    if(rot)add('8r821.'+(s||'?'),'Rotační trombektomie a embolektómia (Rotarex): '+sl,warn);
+    if(asp)add('8r822.'+(s||'?'),'Aspirační trombektomie a embolektómia: '+sl,warn);
+    if(!rot&&!asp)add('8r820.'+(s||'?'),'Trombektomie a embolektómia: '+sl,warn);
   }
   // Stenting – group by suffix + DES
   if(document.getElementById('c_stent').checked){
@@ -1463,7 +1463,7 @@ function genDRG(){
     document.querySelectorAll('#stent_list .dyn-row').forEach(row=>{
       const idx=row.dataset.idx,s=vesselSuffix(g('stent_'+idx+'_tp'));
       if(!s){codes.push({code:'8r880.?',desc:'Stenting – doplňte tepnu pre stent '+idx,warn:true});return;}
-      const des=g('stent_'+idx+'_t')==='liekový (DES)';
+      const des=g('stent_'+idx+'_t')==='lékový (DES)';
       const key=s+(des?'_des':'_non');
       if(!buckets[key])buckets[key]={s,des,n:0};
       buckets[key].n++;
@@ -1482,9 +1482,9 @@ function genDRG(){
     if(s)add('8r886.0'+s,'Stentgraft, 1 kus: '+SL[s]);
     else add('8r886.0?','Stentgraft – doplňte tepnu',true);
   }
-  // Kissing stent → 2 stenty do panvových tepien (suffix i)
+  // Kissing stent → 2 stenty do pánevních tepien (suffix i)
   if(document.getElementById('c_kiss').checked){
-    const des=g('kiss_ts')==='liekový (DES)'||g('kiss_td')==='liekový (DES)';
+    const des=g('kiss_ts')==='lékový (DES)'||g('kiss_td')==='lékový (DES)';
     const base=des?'8r881.':'8r880.';
     add(base+'1i','Kissing stent AIC ('+( des?'DES':'non-DES')+'), 2 stenty: '+SL['i']);
   }
@@ -1494,13 +1494,13 @@ function genDRG(){
     add('8r880.1i','CERAB – kissing stenty AIC, 2 stenty: '+SL['i']);
   }
 
-  // ── Doplňujúce kódy 8r8x (počty zariadení) ──────────────────────────────
+  // ── Doplňující kódy 8r8x (počty zariadení) ──────────────────────────────
   const supp=[];
   function addS(code,desc){supp.push({code,desc,warn:false});}
   function listCount(pfx){return document.querySelectorAll('#'+pfx+'_list .dyn-row').length;}
   function suppCount(n,max){return Math.min(n-1,max);}
 
-  // 8r8x0 – celkový počet plain balónov (predilatácia + PTA + postdilatácia)
+  // 8r8x0 – celkový počet plain balónov (predilatace + PTA + postdilatace)
   let plainBalloons=0;
   if(document.getElementById('c_pred').checked) plainBalloons+=listCount('pred');
   if(document.getElementById('c_pta').checked)  plainBalloons+=listCount('pta');
@@ -1555,16 +1555,16 @@ function genDRG(){
 
   if(hasPelv){
     addD('32302.3','Angiografia aorty (aortografia)');
-    addD('32305',  'Artériografia panvových ciev');
+    addD('32305',  'Artériografia pánevních ciev');
   }
   if(hasFem){
-    addD('32306.2','Artériografia dolnej končatiny');
+    addD('32306.2','Artériografia dolnej končetiny');
   }
 
   // Render
   const out=document.getElementById('drg_output');
   if(!out)return;
-  if(!codes.length&&!supp.length&&!dsa.length){out.innerHTML='<div class="drg-empty">Žiadne intervencie – vyplňte záložku Nález.</div>';return;}
+  if(!codes.length&&!supp.length&&!dsa.length){out.innerHTML='<div class="drg-empty">Žádné intervencie – vyplňte záložku Nález.</div>';return;}
   let html='';
   if(dsa.length){
     html+='<div class="drg-section-hdr">DSA – diagnostické kódy (angiografia)</div>';
@@ -1575,7 +1575,7 @@ function genDRG(){
     html+='</tbody></table>';
   }
   if(codes.length){
-    html+='<div class="drg-section-hdr" style="margin-top:16px">Hlavné intervenčné kódy (8r8xx)</div>';
+    html+='<div class="drg-section-hdr" style="margin-top:16px">Hlavní intervenčné kódy (8r8xx)</div>';
     html+='<table class="drg-table"><thead><tr><th style="width:145px">Kód MKCH</th><th>Popis</th></tr></thead><tbody>';
     codes.forEach(({code,desc,warn})=>{
       html+=`<tr><td class="drg-code-cell${warn?' drg-warn':''}">${code}</td><td${warn?' class="drg-warn"':''}>${desc}</td></tr>`;
@@ -1583,7 +1583,7 @@ function genDRG(){
     html+='</tbody></table>';
   }
   if(supp.length){
-    html+='<div class="drg-section-hdr" style="margin-top:16px">Doplňujúce kódy 8r8x (počty zariadení)</div>';
+    html+='<div class="drg-section-hdr" style="margin-top:16px">Doplňující kódy 8r8x (počty zariadení)</div>';
     html+='<table class="drg-table"><thead><tr><th style="width:145px">Kód MKCH</th><th>Popis</th></tr></thead><tbody>';
     supp.forEach(({code,desc})=>{
       html+=`<tr><td class="drg-code-cell">${code}</td><td>${desc}</td></tr>`;
