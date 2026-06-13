@@ -90,7 +90,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <button class="tnb active" id="tnb-nalez" onclick="showTab('nalez')">📋 Nález</button>
   <button class="tnb" id="tnb-drg" onclick="showTab('drg')">📊 DRG kódy</button>
   <button class="tnb" id="tnb-fu" onclick="showTab('fu')">📅 Follow-up</button>
-  <button class="tnb" id="tnb-set" onclick="showTab('set')">⚙️ Nastavenia</button>
 </nav>
 
 <div id="tab-nalez">
@@ -607,25 +606,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 </div>
 </div>
 
-<!-- NASTAVENIA -->
-<div id="tab-set" style="display:none">
-<div class="fullpage">
-  <h2 style="font-size:16px;font-weight:700;color:#1a2745;margin-bottom:16px">⚙️ Nastavenia – Google Sheets</h2>
-  <div class="card"><div class="st">Apps Script URL</div>
-    <div class="f"><label>URL Web Appu</label><input type="text" id="apps_script_url" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveSettings()"></div>
-    <button class="btn bc" style="width:auto;padding:7px 16px;margin-top:4px" onclick="testConnection()">🔗 Otestovať</button>
-    <div id="test_msg" style="font-size:12px;margin-top:6px;min-height:16px"></div>
-  </div>
-  <div class="card"><div class="st">Inštalácia</div>
-    <div class="step"><div class="step-num">1</div><div>Google Sheets → <strong>Rozšírenia → Apps Script</strong></div></div>
-    <div class="step"><div class="step-num">2</div><div>Vložte kód nižšie, uložte</div></div>
-    <div class="code-block" id="apps-script-code"></div>
-    <div class="step"><div class="step-num">3</div><div><strong>Nasadiť → Web App</strong> | Spustiť ako: Ja | Prístup: Ktokoľvek</div></div>
-    <div class="step"><div class="step-num">4</div><div>Skopírujte URL a vložte vyššie</div></div>
-  </div>
-</div>
-</div>
-
 <!-- DRG KÓDY TAB -->
 <div id="tab-drg" style="display:none">
 <div class="fullpage" style="max-width:860px">
@@ -656,41 +636,8 @@ let cnts={}, zaverManual=false;
 function vsel(){return VESSEL_OPTS.map(o=>`<option>${o}</option>`).join('');}
 function sgsel(){return SEG_OPTS.map(o=>`<option>${o}</option>`).join('');}
 
-const AS_CODE=`function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet, headers;
-    if (data.type === 'vykon') {
-      sheet = ss.getSheetByName('Výkony') || ss.insertSheet('Výkony');
-      headers = ['ID','Dátum','Operatér','Vek','Pohlavie','Rutherford',
-        'Komorbidity','Riečisko','Prístup','Anestézia','Kontrast',
-        'Intervencie','Materiály','Tech. úspech','Komplikácie','Záver'];
-    } else if (data.type === 'cas') {
-      sheet = ss.getSheetByName('CAS') || ss.insertSheet('CAS');
-      headers = ['ID','Dátum','Operatér','Vek','Pohlavie','Lokalizácia',
-        'Plát','Anestézia','Strana','Tepna','Sheath úvod','Katéter',
-        'Stenóza','Postup','Sheath interv.','Vodič','Emboloprotekcia',
-        'Predilatácia','Stent','Domodelovanie','Uzáver','Hemostáza','Záver'];
-    } else {
-      sheet = ss.getSheetByName('Follow-up') || ss.insertSheet('Follow-up');
-      headers = ['ID výkonu','Dátum kontroly','Čas. bod','Rutherford',
-        'ABI','Patencia','Reintervencia','Amputácia','Poznámka'];
-    }
-    if (sheet.getLastRow() === 0) sheet.appendRow(headers);
-    sheet.appendRow(data.row);
-    return ContentService
-      .createTextOutput(JSON.stringify({status:'ok'}))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({status:'error',msg:err.toString()}))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-function doGet(){return ContentService.createTextOutput('OK');}`;
 
-function showTab(t){['nalez','drg','fu','set'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';document.getElementById('tnb-'+id).classList.toggle('active',id===t);});if(t==='drg')genDRG();}
+function showTab(t){['nalez','drg','fu'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';document.getElementById('tnb-'+id).classList.toggle('active',id===t);});if(t==='drg')genDRG();}
 function g(id){return(document.getElementById(id)||{}).value||'';}
 const chk=cls=>[...document.querySelectorAll('.'+cls+':checked')].map(e=>e.value);
 function tB(id){const b=document.getElementById('b_'+id),c=document.getElementById('c_'+id);if(b)b.classList.toggle('on',c.checked);}
@@ -1226,14 +1173,6 @@ async function saveFUToSheets(){
   if(results.some(r=>r==='sb_ok'||r==='gs_ok'))msg('fu_msg','✅ Follow-up uložený!','#1d6f42');
   else msg('fu_msg','❌ Chyba uloženia','#dc2626');
 }
-async function testConnection(){
-  const url=g('apps_script_url');if(!url){msg('test_msg','⚠️ Vložte URL','#b45309');return;}
-  msg('test_msg','⏳ Testujem...','#3b82f6');
-  try{const r=await fetch(url);const t=await r.text();if(t.includes('OK'))msg('test_msg','✅ Spojenie funguje!','#1d6f42');else msg('test_msg','⚠️ Odpoveď: '+t.slice(0,50),'#b45309');}
-  catch(e){msg('test_msg','❌ Spojenie zlyhalo','#dc2626');}
-}
-function saveSettings(){try{localStorage.setItem('evk_apps_url',g('apps_script_url'));}catch(e){}}
-function loadSettings(){try{const u=localStorage.getItem('evk_apps_url');if(u)document.getElementById('apps_script_url').value=u;}catch(e){}}
 
 function gen(){
   const vek=g('vek'),pohl=g('pohl');
@@ -1605,7 +1544,6 @@ function copyDRG(){
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('datum').value=new Date().toISOString().slice(0,10);
   document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
-  document.getElementById('apps-script-code').textContent=AS_CODE;
   updateIdPrefix();buildPelvDSA();buildFemDSA();
   addItem('reentry','reentry',true);
   addItem('vprep','balon_vprep',true);
@@ -1615,7 +1553,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   addItem('sw','balon_ivl',true);
   addItem('stent','stent',true);
   addItem('post','balon',true);
-  updateTerritory();loadSettings();gen();
+  updateTerritory();gen();
 });
 </script>
 </body>
