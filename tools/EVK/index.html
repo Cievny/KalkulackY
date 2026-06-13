@@ -1059,12 +1059,40 @@ function collectFullData(){
     collectList('stent','stent');
     if(document.getElementById('c_post').checked)collectList('post','postdilat');
   }
+  // --- Fixné techniky (aterektómia, trombektómia, kissing, stentgraft, CERAB) ---
+  const nameOf=(sel)=>{const e=document.getElementById(sel);if(!e)return '';return e.value==='vlastný'?(g(sel+'_c')||''):e.value;};
+  if(document.getElementById('c_atek').checked){
+    interventionDetail.push({typ:'aterektomia',tepna:g('atek_tp'),dlzka_lezie:g('atek_d'),emboloprotekcia:g('atek_e')});
+  }
+  if(document.getElementById('c_trom').checked){
+    const base={typ:'trombektomia',tepna:g('trom_tp'),segment:g('trom_sg')};
+    if(document.getElementById('trom_rotarex').checked)interventionDetail.push({...base,metoda:'Rotarex',velkost:g('rotarex_fr')});
+    if(document.getElementById('trom_aspir').checked)interventionDetail.push({...base,metoda:'Aspiračná',kateter:nameOf('aspir_kat'),velkost:g('aspir_fr')});
+  }
+  if(document.getElementById('c_kiss').checked){
+    ['s','d'].forEach(side=>{
+      const nm=nameOf('kiss_n'+side);if(!nm&&!g('kiss_p'+side))return;
+      interventionDetail.push({typ:'stent',subtyp:'kissing',stent_typ:g('kiss_t'+side),stent_nazov:nm,priemer:g('kiss_p'+side),dlzka:g('kiss_d'+side)});
+    });
+  }
+  if(document.getElementById('c_sg').checked){
+    interventionDetail.push({typ:'stentgraft',stent_typ:g('sg_t'),stent_nazov:nameOf('sg_n'),priemer:g('sg_p'),dlzka:g('sg_d'),tepna:g('sg_tp'),segment:g('sg_sg')});
+  }
+  if(document.getElementById('c_cerab').checked){
+    [['ao','aorta'],['sin','l.sin.'],['dx','l.dx.']].forEach(([k,lab])=>{
+      const nm=nameOf('cerab_'+k+'_n');if(!nm&&!g('cerab_'+k+'_p'))return;
+      interventionDetail.push({typ:'stentgraft',subtyp:'CERAB',segment:lab,stent_nazov:nm,priemer:g('cerab_'+k+'_p'),dlzka:g('cerab_'+k+'_d')});
+    });
+  }
   // --- Flatten materiálov pre publikačnú analýzu ---
   const sizeStr=it=>(it.priemer&&it.dlzka)?(it.priemer+'×'+it.dlzka):(it.priemer||it.dlzka||'');
   const stents=interventionDetail.filter(i=>i.typ==='stent');
   const balloonTypes=['vessel_prep','predilat','pta','deb','postdilat'];
   const balloons=interventionDetail.filter(i=>balloonTypes.includes(i.typ));
   const ivls=interventionDetail.filter(i=>i.typ==='ivl');
+  const sgs=interventionDetail.filter(i=>i.typ==='stentgraft');
+  const atrs=interventionDetail.filter(i=>i.typ==='aterektomia');
+  const troms=interventionDetail.filter(i=>i.typ==='trombektomia');
   const jn=a=>a.filter(Boolean).join('; ');
   const ck=id=>document.getElementById(id)?.checked||false;
   const mat={
@@ -1078,6 +1106,13 @@ function collectFullData(){
     balloon_sizes:jn(balloons.map(sizeStr)),
     ivl_count:ivls.length,
     ivl_sizes:jn(ivls.map(sizeStr)),
+    sg_count:sgs.length,
+    sg_brands:jn(sgs.map(s=>s.stent_nazov)),
+    sg_sizes:jn(sgs.map(sizeStr)),
+    aterektomia_count:atrs.length,
+    aterektomia_detail:jn(atrs.map(a=>(a.tepna||'')+(a.dlzka_lezie?' '+a.dlzka_lezie+'cm':''))),
+    trombektomia_count:troms.length,
+    trombektomia_detail:jn(troms.map(t=>(t.metoda||'')+(t.tepna?' '+t.tepna:''))),
     tech_vessel_prep:ck('c_vprep'),
     tech_predilat:ck('c_pred'),
     tech_aterektomia:ck('c_atek'),
