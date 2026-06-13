@@ -500,12 +500,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="card">
 <div class="st">Závěr</div>
 <div class="row r2">
-  <div class="f"><label>Kontrolné CTA</label>
+  <div class="f"><label>Kontrolní CTA</label>
     <select id="odporucanie_cas" onchange="gen()">
-      <option value="pred ukončením hospitalizace">Pred ukončením hospitalizace</option>
-      <option value="do mesiaca od výkonu" selected>Do mesiaca od výkonu</option>
-      <option value="do 3 mesiacov od výkonu">Do 3 mesiacov od výkonu</option>
-      <option value="do 6 mesiacov od výkonu">Do 6 mesiacov od výkonu</option>
+      <option value="před ukončením hospitalizace">Před ukončením hospitalizace</option>
+      <option value="do měsíce od výkonu" selected>Do měsíce od výkonu</option>
+      <option value="do 3 měsíců od výkonu">Do 3 měsíců od výkonu</option>
+      <option value="do 6 měsíců od výkonu">Do 6 měsíců od výkonu</option>
     </select>
   </div>
   <div class="f"><label>Lékaři</label><input type="text" id="lekari" value="MUDr. Vincze, MUDr. Širila" oninput="gen()"></div>
@@ -756,7 +756,7 @@ function gen(){
     katLines.join('\n'),
     [modText,...agParts].filter(Boolean).join(' '),
     uzaverLines.join('\n'),
-    'Doporučujeme prvé kontrolné CTA vyšetrenie '+odp+'.',
+    'Doporučujeme první kontrolní CTA vyšetření '+odp+'.',
     'Z: '+zaver,
     '\n'+lekari
   ];
