@@ -552,11 +552,11 @@ function getKomor(){
 function calcEGFR(){
   const krea=parseFloat(document.getElementById('chri_krea')?.value);
   const vek=parseInt(g('vek'));
-  const pohlavie=g('pohlavie');
+  const pohlavie=g('pohl');
   const el=document.getElementById('chri_egfr_result');
   if(!el)return;
   if(!krea||!vek||!pohlavie){el.textContent='';el.dataset.stage='';return;}
-  const female=pohlavie==='Žena';
+  const female=pohlavie==='Z';
   const A=female?0.7:0.9;
   const S=female?1.012:1.0;
   const ratio=krea/A;
