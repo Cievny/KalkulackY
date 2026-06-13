@@ -56,7 +56,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .fem-divider{font-size:11px;font-weight:700;color:#5a6a8a;text-transform:uppercase;letter-spacing:.7px;margin:10px 0 7px;padding-bottom:5px;border-bottom:2px solid #eef0f5}
 .id-row{display:grid;grid-template-columns:auto 1fr;gap:5px;align-items:center}
 .id-prefix{font-weight:700;font-size:14px;color:#3b82f6;background:#f0f7ff;border:1.5px solid #3b82f6;border-radius:6px;padding:6px 10px;white-space:nowrap}
-.radio-group{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:3px}
+.kom-item{margin-bottom:5px}
+.kom-sub{display:none;margin:5px 0 4px 22px;padding:7px 10px;background:#f0f7ff;border-left:3px solid #3b82f6;border-radius:0 6px 6px 0}
+.kom-sub.on{display:block}
+.kom-sub .sub-lbl{font-size:11px;font-weight:700;color:#5a6a8a;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.kom-sub .checks{gap:3px 10px}
 .success-ok{accent-color:#1d6f42}.success-part{accent-color:#b45309}.success-no{accent-color:#dc2626}
 .info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12.5px;line-height:1.6;color:#1e3a5f}
 .code-block{background:#1e293b;color:#e2e8f0;border-radius:8px;padding:14px;font-size:11.5px;font-family:'Courier New',monospace;white-space:pre;overflow-x:auto;margin:8px 0;line-height:1.5}
@@ -125,9 +129,28 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="f" style="grid-column:span 2"><label>Diagnóza / indikácia</label><input type="text" id="diag" placeholder="napr. ICHDK, kritická ischémia ľavej DK" oninput="gen()"></div>
 </div>
 <div class="f"><div class="lbl">Komorbidity</div>
-  <div class="checks" id="komordiv">
-    <label class="ck"><input type="checkbox" value="DM2T" onchange="gen()"> DM2T</label>
-    <label class="ck"><input type="checkbox" value="DM1T" onchange="gen()"> DM1T</label>
+  <div id="komordiv">
+
+    <!-- DM -->
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_dm" onchange="kSub('dm');gen()"><span>Diabetes mellitus</span></label>
+      <div class="kom-sub" id="ksub_dm">
+        <div class="sub-lbl">Typ</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="dm_typ" value="DM1" onchange="gen()"><span>DM1</span></label>
+          <label class="ck"><input type="radio" name="dm_typ" value="DM2" checked onchange="gen()"><span>DM2</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Liečba</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="dm_liecba" value="diétou" onchange="gen()"><span>Diéta</span></label>
+          <label class="ck"><input type="radio" name="dm_liecba" value="OAD" checked onchange="gen()"><span>OAD</span></label>
+          <label class="ck"><input type="radio" name="dm_liecba" value="inzulínom" onchange="gen()"><span>Inzulín</span></label>
+          <label class="ck"><input type="radio" name="dm_liecba" value="kombináciou OAD a inzulínu" onchange="gen()"><span>Kombinácia</span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ostatné – zatiaľ bez rozvetvenia -->
     <label class="ck"><input type="checkbox" value="HTA" onchange="gen()"> HTA</label>
     <label class="ck"><input type="checkbox" value="CHRI" onchange="gen()"> CHRI</label>
     <label class="ck"><input type="checkbox" value="ICHS" onchange="gen()"> ICHS</label>
@@ -478,6 +501,17 @@ function showTab(t){['nalez','drg','fu','set'].forEach(id=>{document.getElementB
 function g(id){return(document.getElementById(id)||{}).value||'';}
 const chk=cls=>[...document.querySelectorAll('.'+cls+':checked')].map(e=>e.value);
 function tB(id){const b=document.getElementById('b_'+id),c=document.getElementById('c_'+id);if(b)b.classList.toggle('on',c.checked);}
+function kSub(id){const s=document.getElementById('ksub_'+id),c=document.getElementById('k_'+id);if(s)s.classList.toggle('on',c.checked);}
+function getKomor(){
+  const list=[];
+  if(document.getElementById('k_dm')?.checked){
+    const typ=document.querySelector('input[name="dm_typ"]:checked')?.value||'DM2';
+    const liecba=document.querySelector('input[name="dm_liecba"]:checked')?.value||'OAD';
+    list.push(typ+', liečba '+liecba);
+  }
+  document.querySelectorAll('#komordiv input[type=checkbox]:not([id^="k_"]):checked').forEach(e=>list.push(e.value));
+  return list;
+}
 function cC(id){const s=document.getElementById(id),i=document.getElementById(id+'_c');if(i)i.style.display=s&&s.value==='vlastný popis'?'block':'none';}
 function gV(id){const s=document.getElementById(id);if(!s)return'–';return s.value==='vlastný popis'?(g(id+'_c')||'(vlastný popis)'):s.value;}
 function vN(id){const s=document.getElementById(id);if(!s)return'';return s.value==='vlastný'?(g(id+'_c')||''):s.value;}
@@ -679,7 +713,7 @@ function copyTxt(){
 
 function collectStatsRow(){
   const y=new Date().getFullYear(),id='EVK-'+y+'-'+(g('id_suffix')||'???');
-  const komor=[...document.querySelectorAll('#komordiv input:checked')].map(e=>e.value).join(', ');
+  const komor=getKomor().join(', ');
   const terr=g('territory'),tl=terr==='fem'?'FP+predkolenie':terr==='pelv'?'Panvové':'Panvové+FP';
   const interv=[];
   if(document.getElementById('c_vprep').checked)interv.push('Vessel prep');
@@ -761,7 +795,7 @@ function collectFullData(){
     pohlavie:g('pohl')==='M'?'Muž':'Žena',
     rutherford:g('ruth'),
     diag:g('diag'),
-    komorbidity:[...document.querySelectorAll('#komordiv input:checked')].map(e=>e.value).join(', '),
+    komorbidity:getKomor().join(', '),
     riecisko:g('territory')==='fem'?'FP+predkolenie':g('territory')==='pelv'?'Panvové':'Panvové+FP',
     pristup_arteria:art,
     pristup_technika:g('tech'),
@@ -852,7 +886,7 @@ function loadSettings(){try{const u=localStorage.getItem('evk_apps_url');if(u)do
 function gen(){
   const vek=g('vek'),pohl=g('pohl');
   const adj=pohl==='M'?'ný':'ná',noun=pohl==='M'?'pacient':'pacientka';
-  const komor=[...document.querySelectorAll('#komordiv input:checked')].map(e=>e.value);
+  const komor=getKomor();
   const terr=g('territory'),sp=terr==='pelv'||terr==='both',sf=terr==='fem'||terr==='both';
   const L=[];
 
