@@ -120,6 +120,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     </select>
   </div>
 </div>
+<div class="f">
+  <label>Kalkulačka NASCET <span style="font-size:10px;color:#6b7280;font-weight:400">(d_min / d_distal → %)</span></label>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <input type="number" id="nascet_dmin" min="0.1" max="20" step="0.1" placeholder="d min (mm)"
+           style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+           oninput="calcNASCET()">
+    <span style="font-size:13px;color:#6b7280">/</span>
+    <input type="number" id="nascet_ddist" min="0.1" max="20" step="0.1" placeholder="d distal (mm)"
+           style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+           oninput="calcNASCET()">
+    <span id="nascet_calc_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
+  </div>
+</div>
 <div class="f"><label>Typ AS plátu</label>
   <select id="plat" onchange="gen()">
     <option value="mäkkým AS plátom (dif.dg. trombom)">mäkký (s dif.dg. trombom)</option>
@@ -457,6 +470,22 @@ function chk(id){const el=document.getElementById(id);return el?el.checked:false
 function tB(id){const b=document.getElementById('b_'+id);if(b)b.classList.toggle('on');}
 function tShow(id,show){const el=document.getElementById(id);if(el)el.style.display=show?'':'none';}
 function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',3000);}
+function calcNASCET(){
+  const dmin=parseFloat(document.getElementById('nascet_dmin')?.value);
+  const ddist=parseFloat(document.getElementById('nascet_ddist')?.value);
+  const el=document.getElementById('nascet_calc_result');
+  const sel=document.getElementById('nascet_stenoza');
+  if(!dmin||!ddist||ddist<=0||dmin>=ddist){if(el)el.textContent='';return;}
+  const pct=Math.round((1-dmin/ddist)*1000)/10;
+  let band='';
+  if(pct>=90)band='90-99%';
+  else if(pct>=80)band='80-89%';
+  else if(pct>=70)band='70-79%';
+  else if(pct>=60)band='60-69%';
+  else if(pct>=50)band='50-59%';
+  if(el)el.textContent=pct+' % NASCET'+(band?' → predvyplnené':'');
+  if(sel&&band){sel.value=band;gen();}
+}
 function kSub(id){const s=document.getElementById('ksub_'+id),c=document.getElementById('k_'+id);if(s)s.classList.toggle('on',c.checked);}
 function getKomor(){
   const list=[];
