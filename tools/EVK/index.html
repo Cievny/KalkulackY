@@ -281,7 +281,25 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         </div>
       </div>
     </div>
-    <label class="ck"><input type="checkbox" value="CHOCHP" onchange="gen()"> CHOCHP</label>
+    <!-- CHOCHP -->
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_chochp" onchange="kSub('chochp');gen()"><span>CHOCHP</span></label>
+      <div class="kom-sub" id="ksub_chochp">
+        <div class="sub-lbl">Závažnosť (GOLD)</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="chochp_gold" value="GOLD I" checked onchange="gen()"><span>I</span></label>
+          <label class="ck"><input type="radio" name="chochp_gold" value="GOLD II" onchange="gen()"><span>II</span></label>
+          <label class="ck"><input type="radio" name="chochp_gold" value="GOLD III" onchange="gen()"><span>III</span></label>
+          <label class="ck"><input type="radio" name="chochp_gold" value="GOLD IV" onchange="gen()"><span>IV</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Liečba</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="chochp_liecba" value="bronchodilatans" checked onchange="gen()"><span>Bronchodilatans</span></label>
+          <label class="ck"><input type="radio" name="chochp_liecba" value="IKS+LABA" onchange="gen()"><span>IKS+LABA</span></label>
+          <label class="ck"><input type="radio" name="chochp_liecba" value="trojkombinácia" onchange="gen()"><span>Trojkombinácia</span></label>
+        </div>
+      </div>
+    </div>
     <label class="ck"><input type="checkbox" value="renálna insuficiencia" onchange="gen()"> Ren. insuficiencia</label>
     <label class="ck"><input type="checkbox" value="PAO" onchange="gen()"> PAO</label>
   </div>
@@ -639,6 +657,11 @@ function getKomor(){
   if(document.getElementById('k_chri')?.checked){
     const res=calcEGFR();
     list.push(res?'CKD – '+res:'CKD');
+  }
+  if(document.getElementById('k_chochp')?.checked){
+    const gold=document.querySelector('input[name="chochp_gold"]:checked')?.value||'GOLD I';
+    const liecba=document.querySelector('input[name="chochp_liecba"]:checked')?.value||'bronchodilatans';
+    list.push('CHOCHP – '+gold+', '+liecba);
   }
   if(document.getElementById('k_dysl')?.checked){
     const liecba=document.querySelector('input[name="dysl_liecba"]:checked')?.value||'statín';
