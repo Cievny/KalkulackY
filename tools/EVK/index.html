@@ -186,7 +186,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         <div style="font-size:10px;color:#6b7280;margin-top:2px">CKD-EPI 2021 · vek a pohlavie z Pacient sekcie</div>
       </div>
     </div>
-    <label class="ck"><input type="checkbox" value="ICHS" onchange="gen()"> ICHS</label>
+    <!-- ICHS -->
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_ichs" onchange="kSub('ichs');gen()"><span>ICHS</span></label>
+      <div class="kom-sub" id="ksub_ichs">
+        <div class="sub-lbl">Forma</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="ichs_forma" value="stabilná" checked onchange="gen()"><span>Stabilná</span></label>
+          <label class="ck"><input type="radio" name="ichs_forma" value="nestabilná" onchange="gen()"><span>Nestabilná</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">St.p. revaskularizácii</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="ichs_revasc" value="bez revaskularizácie" checked onchange="gen()"><span>Nie</span></label>
+          <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. PCI" onchange="gen()"><span>PCI</span></label>
+          <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. CABG" onchange="gen()"><span>CABG</span></label>
+          <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. PCI+CABG" onchange="gen()"><span>PCI+CABG</span></label>
+        </div>
+      </div>
+    </div>
     <label class="ck"><input type="checkbox" value="St.p.IM" onchange="gen()"> St.p.IM</label>
     <label class="ck"><input type="checkbox" value="CMP" onchange="gen()"> CMP</label>
     <label class="ck"><input type="checkbox" value="fajčiar" onchange="gen()"> Fajčiar</label>
@@ -550,6 +567,12 @@ function getKomor(){
   if(document.getElementById('k_chri')?.checked){
     const res=calcEGFR();
     list.push(res?'CKD – '+res:'CKD');
+  }
+  if(document.getElementById('k_ichs')?.checked){
+    const forma=document.querySelector('input[name="ichs_forma"]:checked')?.value||'stabilná';
+    const revasc=document.querySelector('input[name="ichs_revasc"]:checked')?.value||'bez revaskularizácie';
+    const r=revasc==='bez revaskularizácie'?'':'', txt='ICHS – '+forma+(revasc!=='bez revaskularizácie'?', '+revasc:'');
+    list.push(txt);
   }
   document.querySelectorAll('#komordiv input[type=checkbox]:not([id^="k_"]):checked').forEach(e=>list.push(e.value));
   return list;
