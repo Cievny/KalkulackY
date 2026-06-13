@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS cz_ideas (
   text        TEXT NOT NULL,
   author      TEXT
 );
+ALTER TABLE cz_ideas ADD COLUMN IF NOT EXISTS note TEXT;
 
 -- ============================================================
 -- 2. STĹPCE (ADD COLUMN IF NOT EXISTS – bezpečné opakovane)
