@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulačka Karotického Arteriálneho Rizika (CAR)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+        .input-label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+            background-color: #F9FAFB;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #2563EB;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+        .radio-group label {
+            margin-right: 1rem;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .radio-group input {
+            margin-right: 0.5rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary {
+            width: 100%;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            background-color: #2563EB;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #1D4ED8;
+        }
+        .btn-secondary {
+            background-color: #E5E7EB;
+            color: #374151;
+        }
+        .btn-secondary:hover {
+            background-color: #D1D5DB;
+        }
+        .btn-tertiary {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
+        .btn-tertiary:hover {
+            background-color: #A7F3D0;
+        }
+        .result-box {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid;
+            text-align: center;
+        }
+        .result-box.eligible { background-color: #F0FDF4; border-color: #BBF7D0; color: #166534; }
+        .result-box.ineligible { background-color: #FFFBEB; border-color: #FDE68A; color: #92400E; }
+        .result-box.info { background-color: #EFF6FF; border-color: #BFDBFE; color: #1E40AF; }
+        .result-box.error { background-color: #FEF2F2; border-color: #FECACA; color: #991B1B; }
+        
+        .section-box {
+            margin-top: 2.5rem;
+            padding: 1.5rem;
+            background-color: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.75rem;
+        }
+        #report-output {
+            width: 100%;
+            min-height: 200px;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #D1D5DB;
+            background-color: white;
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-4xl bg-white p-8 rounded-xl shadow-lg">
+        <h1 class="text-2xl font-bold text-gray-800 text-center mb-2">Kalkulačka Karotického Arteriálneho Rizika (CAR)</h1>
+        <p class="text-center text-gray-500 mb-8">Nástroj na odhad rizika a generovanie lekárskej správy podľa ECST-2</p>
+
+        <form id="car-risk-form">
+            <div class="grid md:grid-cols-2 gap-x-8">
+                <!-- Stĺpec 1 -->
+                <div>
+                     <div class="input-group">
+                        <label class="input-label">Lateralizácia</label>
+                        <div class="radio-group mt-2">
+                            <label><input type="radio" name="laterality" value="Pravá" checked> Pravá</label>
+                            <label><input type="radio" name="laterality" value="Ľavá"> Ľavá</label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="stenosis" class="input-label">Stupeň stenózy (%)</label>
+                        <input type="number" id="stenosis" class="form-input" min="50" max="99" required placeholder="50-99 (podľa NASCET)">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Najzávažnejšia ipsilaterálna príhoda</label>
+                        <select id="event-type" class="form-select" required>
+                            <option value="">Vyberte...</option>
+                            <option value="asymptomatic">Pacient je asymptomatický</option>
+                            <option value="SM">Závažná neinvalidizujúca CMP (>7 dní)</option>
+                            <option value="S">Mierna CMP (24h–7 dní)</option>
+                            <option value="MT">Viacpočetné cerebrálne TIA (<24h)</option>
+                            <option value="T">Jedna cerebrálna TIA (<24h)</option>
+                            <option value="MO">Monokulárna TIA alebo CMP</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="days-since-event" class="input-label">Čas od poslednej príhody (dni)</label>
+                        <input type="number" id="days-since-event" class="form-input" min="0" placeholder="Počet dní">
+                    </div>
+                    <div class="input-group">
+                        <label for="age" class="input-label">Vek (roky)</label>
+                        <input type="number" id="age" class="form-input" min="18" required placeholder="Zadajte vek">
+                    </div>
+                </div>
+                <!-- Stĺpec 2 -->
+                <div>
+                    <div class="input-group">
+                        <label class="input-label">Pohlavie pacienta</label>
+                        <div class="radio-group mt-2">
+                            <label><input type="radio" name="gender" value="Male" checked> Muž</label>
+                            <label><input type="radio" name="gender" value="Female"> Žena</label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Je plát ulcerovaný?</label>
+                        <div class="radio-group mt-2">
+                            <label><input type="radio" name="ulceration" value="Yes"> Áno</label>
+                            <label><input type="radio" name="ulceration" value="No" checked> Nie</label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Takmer oklúzia (near occlusion)</label>
+                        <div class="radio-group mt-2">
+                            <label><input type="radio" name="near-occlusion" value="Yes"> Áno</label>
+                            <label><input type="radio" name="near-occlusion" value="No" checked> Nie</label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Diabetes mellitus</label>
+                        <div class="radio-group mt-2">
+                            <label><input type="radio" name="diabetes" value="Yes"> Áno</label>
+                            <label><input type="radio" name="diabetes" value="No" checked> Nie</label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Anamnéza infarktu myokardu (IM)</label>
+                        <div class="radio-group mt-2">
+                            <label><input type="radio" name="mi" value="Yes"> Áno</label>
+                            <label><input type="radio" name="mi" value="No" checked> Nie</label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Periférne vaskulárne ochorenie (PVD)</label>
+                        <div class="radio-group mt-2">
+                            <label><input type="radio" name="pvd" value="Yes"> Áno</label>
+                            <label><input type="radio" name="pvd" value="No" checked> Nie</label>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Hypertenzia (liečená)</label>
+                        <div class="radio-group mt-2">
+                            <label><input type="radio" name="hypertension" value="Yes"> Áno</label>
+                            <label><input type="radio" name="hypertension" value="No" checked> Nie</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-4">Vypočítať riziko</button>
+        </form>
+
+        <div id="result-container" class="hidden"></div>
+        
+        <div id="report-generator-section" class="section-box hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Generátor lekárskej správy</h2>
+            <div id="report-output" contenteditable="true"></div>
+            <div class="flex gap-4 mt-4">
+                <button id="generate-report-btn" class="btn btn-secondary">Aktualizovať správu</button>
+                <button id="copy-report-btn" class="btn btn-tertiary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard mr-2" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
+                    Kopírovať správu
+                </button>
+            </div>
+            <p id="copy-feedback" class="text-sm text-green-600 mt-2 h-4"></p>
+        </div>
+
+        <div class="section-box">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Pomôcka: Prepočet stenózy zo sonografie</h2>
+            <p class="text-gray-600 mb-4">Zadajte sonografické parametre na získanie odhadu stenózy podľa NASCET kritérií.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="psv-input" class="input-label text-sm">PSV v ACI (cm/s)</label>
+                    <input type="number" id="psv-input" class="form-input" placeholder="napr. 150">
+                </div>
+                <div>
+                    <label for="edv-input" class="input-label text-sm">EDV v ACI (cm/s)</label>
+                    <input type="number" id="edv-input" class="form-input" placeholder="napr. 60">
+                </div>
+                <div>
+                    <label for="ratio-input" class="input-label text-sm">Pomer ICA/CCA PSV</label>
+                    <input type="number" id="ratio-input" step="0.1" class="form-input" placeholder="napr. 2.5">
+                </div>
+            </div>
+            <button id="convert-stenosis-btn" class="btn btn-secondary w-full mt-4">Prepočítať na NASCET (%)</button>
+            <div id="conversion-result" class="mt-4 text-center"></div>
+            <p class="text-xs text-gray-500 mt-3">Odhad je založený na odporúčaniach publikovaných v <a href="https://www.elsevier.es/en-revista-neurologia-english-edition--495-articulo-ultrasound-measurement-carotid-stenosis-recommendations-S2173580813001259" target="_blank" class="underline hover:text-blue-600">tomto článku</a> (Tabuľka 1). Ide o klinickú pomôcku, nie presnú konverziu.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- Globálne premenné a pomocné funkcie ---
+        const allInputs = {};
+        const eventTypeMap = {
+            "asymptomatic": "Pacient je asymptomatický",
+            "SM": "Závažná neinvalidizujúca CMP (>7 dní)",
+            "S": "Mierna CMP (24h–7 dní)",
+            "MT": "Viacpočetné cerebrálne TIA (<24h)",
+            "T": "Jedna cerebrálna TIA (<24h)",
+            "MO": "Monokulárna TIA alebo CMP"
+        };
+        
+        // --- Výpočtové jadro ---
+        function calculateCarScore(tslev, plaqueUlcerated, sex, car, noccl, age, event, diabetes, mi, pvd, hypert) {
+            let val = 0;
+            if (sex === "Male") { val += (1 - 0.71854305) * 0.17618; } else { val += (0 - 0.71854305) * 0.17618; }
+            if (car > 0) { val += (car / 10 - 3.62661424) * 0.16201; }
+            if (noccl === "Yes") {
+                val += (1 - 0.03062914) * -0.71454;
+                val += (84.5 / 10 - 3.62661424) * 0.16201;
+            } else {
+                val += (0 - 0.03062914) * -0.71454;
+            }
+            if (age > 0) {
+                let currentAge = age < 40 ? 40 : age;
+                val += (currentAge / 10 - 6.23071192) * 0.10874;
+            }
+            if (tslev > -1) {
+                let currentTslev = tslev < 7 ? 7 : tslev;
+                val += (currentTslev / 7 - 8.881386) * -0.04214;
+            }
+            const eventContributions = { "MO": [0, 0, 0, 0], "T": [1, 0, 0, 0], "MT": [0, 1, 0, 0], "S": [0, 0, 1, 0], "SM": [0, 0, 0, 1] };
+            const eventCoefficients = [ { mean: 0.19784768, coef: 0.34097 }, { mean: 0.16970199, coef: 0.71518 }, { mean: 0.1763245, coef: 0.59875 }, { mean: 0.25082781, coef: 0.93125 } ];
+            const eventValues = eventContributions[event];
+            if (eventValues) {
+                for (let i = 0; i < eventValues.length; i++) { val += (eventValues[i] - eventCoefficients[i].mean) * eventCoefficients[i].coef; }
+            }
+            val += (diabetes === "Yes" ? 1 - 0.12003311 : 0 - 0.12003311) * 0.30055;
+            val += (mi === "Yes" ? 1 - 0.11258278 : 0 - 0.11258278) * 0.45166;
+            val += (pvd === "Yes" ? 1 - 0.17384106 : 0 - 0.17384106) * 0.16255;
+            val += (hypert === "Yes" ? 1 - 0.37168874 : 0 - 0.37168874) * 0.2167;
+            val += (plaqueUlcerated === "Yes" ? 1 - 0.67384106 : 0 - 0.67384106) * 0.70738;
+            const riskScore = (1 - Math.pow(0.90042, Math.exp(val))) * 100;
+            return riskScore;
+        }
+
+        function getResultMessage(originalRiskScore) {
+            if (isNaN(originalRiskScore)) return null;
+            let riskScore = Math.floor(originalRiskScore / 2);
+            if (riskScore < 5) { riskScore = 5; }
+            allInputs.finalRiskScore = riskScore;
+            if (riskScore < 20) {
+                allInputs.recommendation = "Zvážte randomizáciu v ECST-2.";
+                return { message: `5-ročné riziko je <strong>${riskScore}%</strong>. ${allInputs.recommendation}`, class: "eligible" };
+            } else {
+                allInputs.recommendation = "Zvážte okamžitú revaskularizáciu.";
+                return { message: `5-ročné riziko je <strong>${riskScore}%</strong>. ${allInputs.recommendation}`, class: "ineligible" };
+            }
+        }
+
+        // --- Logika hlavného formulára ---
+        document.getElementById('car-risk-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            // Zber dát
+            allInputs.laterality = formData.get('laterality');
+            allInputs.stenosis = document.getElementById('stenosis').value;
+            allInputs.age = document.getElementById('age').value;
+            allInputs.eventType = document.getElementById('event-type').value;
+            allInputs.daysSinceEvent = document.getElementById('days-since-event').value || 'N/A';
+            allInputs.gender = formData.get('gender');
+            allInputs.ulceration = formData.get('ulceration');
+            allInputs.nearOcclusion = formData.get('near-occlusion');
+            allInputs.diabetes = formData.get('diabetes');
+            allInputs.mi = formData.get('mi');
+            allInputs.pvd = formData.get('pvd');
+            allInputs.hypertension = formData.get('hypertension');
+
+            // Validácia
+            if (allInputs.eventType === "") { displayResult('error', 'Chyba', 'Musíte zvoliť typ príhody.'); return; }
+            if (allInputs.eventType !== 'asymptomatic' && allInputs.daysSinceEvent === 'N/A') { displayResult('error', 'Chyba', 'Pre symptomatických pacientov musíte zadať čas od poslednej príhody.'); return; }
+            if (!allInputs.stenosis || !allInputs.age) { displayResult('error', 'Chyba', 'Stupeň stenózy a vek sú povinné polia.'); return; }
+
+            const isAsymptomatic = allInputs.eventType === 'asymptomatic';
+            const isLongTermSymptomatic = parseInt(allInputs.daysSinceEvent, 10) > 180;
+
+            if (isAsymptomatic || isLongTermSymptomatic) {
+                const reason = isAsymptomatic ? "Pacient je asymptomatický." : "Od poslednej symptomatickej príhody uplynulo viac ako 180 dní.";
+                allInputs.finalRiskScore = '<=5';
+                allInputs.recommendation = "Pacient je vhodný pre zaradenie do štúdie ECST-2.";
+                displayResult('info', 'Nízke riziko - Vhodný pre ECST-2', `${reason} Predpokladané 5-ročné riziko ipsilaterálnej CMP pri medikamentóznej liečbe je nízke (≤5%). ${allInputs.recommendation}`);
+            } else {
+                const originalRisk = calculateCarScore(parseInt(allInputs.daysSinceEvent), allInputs.ulceration, allInputs.gender, parseInt(allInputs.stenosis), allInputs.nearOcclusion, parseInt(allInputs.age), allInputs.eventType, allInputs.diabetes, allInputs.mi, allInputs.pvd, allInputs.hypertension);
+                const result = getResultMessage(originalRisk);
+                if (result) { displayResult(result.class, 'Výsledok výpočtu', result.message); } 
+                else { displayResult('error', 'Chyba', 'Nepodarilo sa vypočítať riziko.'); }
+            }
+            
+            document.getElementById('report-generator-section').classList.remove('hidden');
+            generateMedicalReport();
+        });
+
+        function displayResult(type, title, message) {
+            const resultContainer = document.getElementById('result-container');
+            resultContainer.className = `result-box ${type}`;
+            resultContainer.innerHTML = `<h3 class="font-bold text-lg mb-2">${title}</h3><p>${message}</p>`;
+            resultContainer.classList.remove('hidden');
+        }
+        
+        // --- Generátor správy ---
+        function generateMedicalReport() {
+            const comorbidities = [
+                allInputs.diabetes === 'Yes' ? 'Diabetes mellitus' : null,
+                allInputs.mi === 'Yes' ? 'Stav po IM' : null,
+                allInputs.pvd === 'Yes' ? 'Periférne vaskulárne ochorenie' : null,
+                allInputs.hypertension === 'Yes' ? 'Liečená hypertenzia' : null
+            ].filter(Boolean).join(', ');
+
+            // GRAMATICKÁ KOREKCIA: Správne skloňovanie "pravá/ľavá"
+            const lateralityGenitive = allInputs.laterality === 'Pravá' ? 'pravej' : 'ľavej';
+
+            const reportText = `
+LEKÁRSKA SPRÁVA - HODNOTENIE KAROTICKÉHO RIZIKA
+-------------------------------------------------
+
+DEMOGRAFIA A ANAMNÉZA:
+- Pacient: ${allInputs.gender === 'Male' ? 'Muž' : 'Žena'}, Vek: ${allInputs.age} rokov
+- Komorbidity: ${comorbidities || 'Bez významných komorbidít'}
+
+KLINICKÝ STAV:
+- Prezentujúca príhoda: ${eventTypeMap[allInputs.eventType]}
+- Čas od poslednej príhody: ${allInputs.daysSinceEvent} dní
+
+NÁLEZ NA KAROTIDÁCH:
+- Postihnutá tepna: ${allInputs.laterality} ACI
+- Stupeň stenózy (NASCET): ${allInputs.stenosis}%
+- Ulcerácia plátu: ${allInputs.ulceration}
+- Takmer oklúzia: ${allInputs.nearOcclusion}
+
+VÝPOČET RIZIKA (ECST-2 CAR Score):
+- 5-ročné riziko ipsilaterálnej CMP: ${allInputs.finalRiskScore}%
+- Odporúčanie: ${allInputs.recommendation}
+
+ZÁVER:
+U ${allInputs.age}-ročného pacienta (${allInputs.gender === 'Male' ? 'muž' : 'žena'}) s ${allInputs.stenosis}% stenózou ${lateralityGenitive} ACI a anamnézou "${eventTypeMap[allInputs.eventType]}" bolo na základe CAR skóre stanovené 5-ročné riziko ipsilaterálnej CMP na ${allInputs.finalRiskScore}%.
+Odporúčanie: ${allInputs.recommendation}
+
+-------------------------------------------------
+Generované dňa: ${new Date().toLocaleDateString('sk-SK')}
+UPOZORNENIE: Tento výstup je založený na modeli ECST-2 a nenahrádza klinické rozhodnutie lekára.
+            `.trim();
+            
+            document.getElementById('report-output').textContent = reportText;
+        }
+
+        document.getElementById('report-generator-section').addEventListener('click', function(e){
+            if (e.target.id === 'generate-report-btn') {
+                generateMedicalReport();
+            }
+            if (e.target.id === 'copy-report-btn' || e.target.closest('#copy-report-btn')) {
+                const reportText = document.getElementById('report-output').textContent;
+                navigator.clipboard.writeText(reportText).then(() => {
+                    const feedback = document.getElementById('copy-feedback');
+                    feedback.textContent = 'Správa skopírovaná!';
+                    setTimeout(() => { feedback.textContent = ''; }, 2000);
+                });
+            }
+        });
+
+        // --- Logika prepočtu stenózy ---
+        document.getElementById('convert-stenosis-btn').addEventListener('click', function() {
+            const psv = document.getElementById('psv-input').value ? parseFloat(document.getElementById('psv-input').value) : null;
+            const edv = document.getElementById('edv-input').value ? parseFloat(document.getElementById('edv-input').value) : null;
+            const ratio = document.getElementById('ratio-input').value ? parseFloat(document.getElementById('ratio-input').value) : null;
+            const resultDiv = document.getElementById('conversion-result');
+
+            if (!psv) {
+                resultDiv.innerHTML = `<p class="text-red-600">Hodnota PSV je povinná pre odhad.</p>`;
+                return;
+            }
+
+            let estimatedNascet = 0;
+            let message = '';
+            let confidence = '';
+
+            if (psv < 125) {
+                message = `Odhadovaná stenóza <strong>< 50%</strong> (NASCET). Pre hlavný výpočet je potrebná hodnota ≥ 50%.`;
+                resultDiv.innerHTML = `<p class="text-blue-600">${message}</p>`;
+                return;
+            } 
+            
+            if (psv > 230) {
+                estimatedNascet = 75;
+                message = `Odhadovaná stenóza: ~<strong>${estimatedNascet}%</strong> (NASCET).`;
+                if (edv > 100 && ratio > 4.0) {
+                    confidence = '(Vysoká istota na základe sekundárnych kritérií)';
+                }
+            } else {
+                estimatedNascet = 60;
+                message = `Odhadovaná stenóza: ~<strong>${estimatedNascet}%</strong> (NASCET).`;
+                 if (edv >= 40 && edv <= 100 && ratio >= 2.0 && ratio <= 4.0) {
+                    confidence = '(Vysoká istota na základe sekundárnych kritérií)';
+                }
+            }
+            
+            resultDiv.innerHTML = `
+                <p class="text-gray-800">${message} <span class="text-sm text-gray-500">${confidence}</span></p>
+                <button id="use-converted-value" data-value="${estimatedNascet}" class="btn btn-tertiary mt-2">Použiť túto hodnotu</button>
+            `;
+        });
+        
+        document.getElementById('conversion-result').addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'use-converted-value') {
+                const valueToUse = e.target.getAttribute('data-value');
+                const stenosisInput = document.getElementById('stenosis');
+                stenosisInput.value = valueToUse;
+                stenosisInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                stenosisInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cievny.sk | Váš sprievodca svetom cievneho zdravia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Definícia farebnej palety podľa manuálu */
+        :root {
+            --color-wine: #6A1B42; /* Tmavá Vinová / Jemne Fialová */
+            --color-green: #2E8339; /* Tmavá Lesná Zelená */
+            --color-beige: #F8F5F2; /* Svetlá Béžová (upravená pre lepší kontrast) */
+            --color-powder-gray: #E0E0E0; /* Púdrová Sivá (upravená pre web) */
+            --color-dark-gray: #333333; /* Tmavošedá */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-beige);
+            color: var(--color-dark-gray);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Aplikácia farieb na Tailwind triedy pre jednoduchšie použitie */
+        .bg-beige { background-color: var(--color-beige); }
+        .bg-wine { background-color: var(--color-wine); }
+        .bg-green { background-color: var(--color-green); }
+        .bg-powder-gray { background-color: var(--color-powder-gray); }
+        .bg-dark-gray { background-color: var(--color-dark-gray); }
+        
+        .text-wine { color: var(--color-wine); }
+        .text-green { color: var(--color-green); }
+        .text-dark-gray { color: var(--color-dark-gray); }
+        .text-beige { color: var(--color-beige); }
+        
+        .border-powder-gray { border-color: var(--color-powder-gray); }
+        .border-wine { border-color: var(--color-wine); }
+
+        .btn-green {
+            background-color: var(--color-green);
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-green:hover {
+            background-color: #256a2e; /* Tmavší odtieň zelenej pre hover */
+        }
+    </style>
+</head>
+<body class="bg-beige">
+
+    <!-- 1. Hlavička (Navigácia) -->
+    <header class="bg-beige/80 sticky top-0 z-50 backdrop-blur-lg border-b border-powder-gray">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Logo -->
+            <a href="#" class="flex items-center space-x-2">
+                <svg width="24" height="24" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-green">
+                    <path d="M100 180 C140 140, 140 140, 100 100" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M100 100 C60 60, 60 60, 100 20" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M60 180 C80 140, 80 140, 100 100" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M140 180 C120 140, 120 140, 100 100" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M100 20 C80 50, 80 50, 60 60" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M100 20 C120 50, 120 50, 140 60" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                </svg>
+                <span class="text-2xl font-bold">
+                    <span class="text-wine">cievny</span><span class="text-green">.sk</span>
+                </span>
+            </a>
+            <!-- Navigačné linky pre desktop -->
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#" class="text-dark-gray hover:text-wine transition-colors">Ochorenia</a>
+                <a href="#" class="text-dark-gray hover:text-wine transition-colors">Diagnostika</a>
+                <a href="#" class="text-dark-gray hover:text-wine transition-colors">Liečba</a>
+                <a href="./prakticke-nastroje.html" class="text-dark-gray hover:text-wine transition-colors">Praktické Nástroje</a>
+            </nav>
+            <!-- CTA Tlačidlo -->
+            <a href="#" class="hidden md:inline-block btn-green font-semibold px-5 py-2 rounded-lg">
+                Pre lekárov
+            </a>
+            <!-- Hamburger menu pre mobil -->
+            <button class="md:hidden text-dark-gray">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Sekcia: Oznámenie o výstavbe -->
+    <div class="bg-wine text-center py-3 text-beige font-semibold">
+        <div class="container mx-auto px-6">
+            <p>🚀 Stránka je momentálne vo výstavbe. Ďakujeme za trpezlivosť, nový obsah pridávame každý deň!</p>
+        </div>
+    </div>
+    
+    <!-- Obsah môže byť pridaný neskôr tu -->
+    <main class="flex-grow">
+        <!-- Budúci obsah -->
+    </main>
+
+</body>
+</html>
+
+
+

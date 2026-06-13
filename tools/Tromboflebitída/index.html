@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manažment Povrchovej Tromboflebitídy (SVT)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .marker-indigo {
+            color: #4f46e5;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto max-w-4xl p-4 sm:p-6 md:p-8">
+
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Manažment Povrchovej Tromboflebitídy (SVT)</h1>
+            <p class="mt-2 text-lg text-gray-600">Logický algoritmus pre klinickú prax</p>
+        </header>
+
+        <!-- Step 1: Basic Info -->
+        <section id="zakladne_info" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8">
+            <h2 class="text-2xl font-bold text-indigo-700 mb-5 border-b pb-3">Krok 1: Základné zhodnotenie</h2>
+
+            <!-- Definition -->
+            <div class="mb-6">
+                <h3 class="font-semibold text-xl mb-2">Definícia a rizikové faktory</h3>
+                <p>Povrchová tromboflebitída (SVT) je zápalové ochorenie povrchových žíl (najčastejšie DK), spojené s trombózou. Prejavuje sa ako bolestivý, palpačne citlivý, erytematózny pruh alebo uzlík v priebehu žily, často na varikóznych žilách.</p>
+                <p class="mt-2"><span class="font-semibold">Rizikové faktory:</span> varixy, imobilizácia, onkologické ochorenia, trombofilné stavy, tehotenstvo, predchádzajúca VTE.</p>
+            </div>
+
+            <!-- Diagnosis -->
+            <div>
+                <h3 class="font-semibold text-xl mb-2">Diagnostika</h3>
+                <p>Diagnostika je primárne klinická. <strong class="text-indigo-600">Duplexná sonografia je kľúčová</strong> na vylúčenie HŽT alebo postihnutia v blízkosti junkcií. Až 20–30 % pacientov so SVT má súčasne HŽT alebo PE.</p>
+            </div>
+        </section>
+
+        <!-- Step 2: Uncomplicated Treatment -->
+        <section id="ambulantna_liecba" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8">
+            <h2 class="text-2xl font-bold text-indigo-700 mb-5 border-b pb-3">Krok 2: Manažment nekomplikovanej SVT</h2>
+            
+            <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg mb-5">
+                 <h3 class="font-semibold text-lg text-green-800">Nekomplikovaná, izolovaná SVT</h3>
+                 <p class="text-green-700">Týka sa trombózy <strong class="font-medium"><5 cm</strong>, ktorá je lokalizovaná ďaleko od safenofemorálnej alebo safenopopliteálnej junkcie a bez ďalších rizikových faktorov.</p>
+            </div>
+
+            <h4 class="font-semibold text-xl mb-2">Liečebný postup</h4>
+            <ul class="space-y-3 list-inside text-gray-700">
+                <li class="flex items-start"><span class="marker-indigo font-bold mr-3 mt-1">&#9679;</span>Symptomatická liečba (NSAID lokálne/systémovo).</li>
+                <li class="flex items-start"><span class="marker-indigo font-bold mr-3 mt-1">&#9679;</span>Kompresívna terapia.</li>
+                <li class="flex items-start"><span class="marker-indigo font-bold mr-3 mt-1">&#9679;</span>Mobilizácia pacienta.</li>
+            </ul>
+        </section>
+        
+        <!-- Step 3: Complicated Cases / Escalation -->
+        <section id="hospitalizacia" class="bg-white p-6 rounded-xl shadow-lg border border-red-200 mb-8">
+            <h2 class="text-2xl font-bold text-red-700 mb-4 flex items-center border-b pb-3">
+                 Krok 3: Komplikovaná SVT a eskalácia starostlivosti
+            </h2>
+            
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg mb-6">
+                 <h3 class="font-semibold text-lg text-yellow-800">SVT s vyšším rizikom (ambulantne)</h3>
+                 <p class="text-yellow-700">Týka sa trombózy <strong class="font-medium">>5 cm</strong>, v blízkosti junkcií alebo pri prítomnosti rizikových faktorov VTE, ale <strong class="font-medium">bez akútnych varovných príznakov</strong>.</p>
+                 <p class="mt-2 pl-1 text-gray-800">
+                    Liekom voľby je <strong class="font-semibold">fondaparinux 2,5 mg s.c. 1x denne počas 45 dní</strong>. Alternatívou je LMWH.
+                </p>
+            </div>
+
+            <h3 class="text-xl font-bold text-red-700 mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1.75-5.25a.75.75 0 000 1.5h3.5a.75.75 0 000-1.5h-3.5z" clip-rule="evenodd" />
+                </svg>
+                Indikácie pre Hospitalizáciu
+            </h3>
+            <p class="mb-5 text-gray-600">
+                Pri nasledujúcich varovných príznakoch je nutné ukončiť ambulantnú liečbu a odoslať pacienta na hospitalizáciu:
+            </p>
+             <ul class="space-y-4">
+                <li class="flex items-start">
+                    <span class="text-red-500 font-bold text-xl mr-3 mt-1">&#8227;</span>
+                    <div>
+                        <h4 class="font-semibold text-lg">Podozrenie na HŽT alebo PE</h4>
+                        <p class="text-gray-600 ml-1">Náhla dyspnoe, bolesť na hrudníku, synkopa, výrazný opuch končatiny.</p>
+                    </div>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-red-500 font-bold text-xl mr-3 mt-1">&#8227;</span>
+                    <div>
+                        <h4 class="font-semibold text-lg">Extenzívna SVT s vysokým rizikom</h4>
+                        <p class="text-gray-600 ml-1">Trombóza v oblasti <span class="font-medium">v. saphena magna</span> nad kolenom s dĺžkou <span class="font-medium">≥5 cm</span>, zasahujúca do blízkosti junkcie.</p>
+                    </div>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-red-500 font-bold text-xl mr-3 mt-1">&#8227;</span>
+                    <div>
+                        <h4 class="font-semibold text-lg">Závažné lokálne komplikácie</h4>
+                        <p class="text-gray-600 ml-1">Nekrotizujúca infekcia, absces, rozsiahla celulitída, septické prejavy.</p>
+                    </div>
+                </li>
+                 <li class="flex items-start">
+                    <span class="text-red-500 font-bold text-xl mr-3 mt-1">&#8227;</span>
+                    <div>
+                        <h4 class="font-semibold text-lg">Systémové príznaky</h4>
+                        <p class="text-gray-600 ml-1">Horúčka, triaška, tachykardia, hypotenzia.</p>
+                    </div>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-red-500 font-bold text-xl mr-3 mt-1">&#8227;</span>
+                    <div>
+                        <h4 class="font-semibold text-lg">Zlyhanie ambulantnej liečby</h4>
+                        <p class="text-gray-600 ml-1">Progresia nálezu napriek adekvátnej antikoagulačnej terapii.</p>
+                    </div>
+                </li>
+                <li class="flex items-start">
+                    <span class="text-red-500 font-bold text-xl mr-3 mt-1">&#8227;</span>
+                    <div>
+                        <h4 class="font-semibold text-lg">Závažné komorbidity</h4>
+                        <p class="text-gray-600 ml-1">Aktívna malignita, známa trombofília, komplikovaná gravidita.</p>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Summary -->
+        <section class="mb-8">
+            <div class="bg-indigo-50 border-l-4 border-indigo-500 text-indigo-800 p-4 rounded-r-lg" role="alert">
+                <h3 class="font-semibold text-xl mb-2">Zhrnutie</h3>
+                <p class="font-medium">SVT je časté, potenciálne závažné ochorenie. Kľúčová je správna diagnostika (vrátane USG), stratifikácia rizika a včasná antikoagulačná liečba podľa rozsahu a lokalizácie.</p>
+            </div>
+        </section>
+
+        <!-- References -->
+        <section id="referencie" class="bg-gray-100 p-6 rounded-xl shadow-inner">
+            <h2 class="text-xl font-bold mb-4">Referencie</h2>
+            <ul class="list-decimal list-inside text-sm text-gray-600 space-y-2">
+                <li>Triage of Patients With Venous and Lymphatic Diseases During the COVID-19 Pandemic... Parsi K, et al. Phlebology. 2020.</li>
+                <li>How I Treat Superficial Venous Thrombosis. Kitchens CS. Blood. 2011.</li>
+                <li>Clinical Significance of Superficial Vein Thrombosis. Leon L, et al. European Journal of Vascular and Endovascular Surgery. 2005.</li>
+                <li>Superficial Vein Thrombosis: A Current Approach to Management. Scott G, et al. British Journal of Haematology. 2015.</li>
+                <li>Diagnosis and Treatment of Lower Extremity Venous Thromboembolism: A Review. Chopard R, et al. JAMA. 2020.</li>
+                <li>Superficial Vein Thrombosis. Moreno-Rocha O, Obi AT. The Medical Clinics of North America. 2025.</li>
+                <li>Superficial Thrombophlebitis. Luis Rodríguez-Peralto J, et al. Seminars in Cutaneous Medicine and Surgery. 2007.</li>
+                <li>Epidemiology, Diagnosis, Treatment and Management of Superficial-Vein Thrombosis of the Legs. Decousus H, et al. Best Practice & Research. Clinical Haematology. 2012.</li>
+                <li>Treatment for Superficial Thrombophlebitis of the Leg. Di Nisio M, et al. The Cochrane Database of Systematic Reviews. 2018.</li>
+                <li>Treating Superficial Venous Thrombophlebitis. Lee JT, Kalani MA. Journal of the National Comprehensive Cancer Network : JNCCN. 2008.</li>
+                <li>Management of Superficial Vein Thrombosis and Thrombophlebitis: Status and Expert Opinion Document. Cesarone MR, et al. Angiology. 2007.</li>
+                <li>Superficial (Nodular) Thrombophlebitis as a Heterogeneous Entity... Gales L, et al. Journal of the European Academy of Dermatology and Venereology. 2023.</li>
+            </ul>
+        </section>
+
+    </div>
+
+</body>
+</html>
+

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dokumentácia Defektov Dolných Končatín</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-btn { transition: all 0.3s ease; }
+        .tab-btn.active { background-color: #4f46e5; color: white; border-color: #4f46e5; }
+        .section-header { font-size: 1.125rem; font-weight: 700; color: #1e3a8a; border-bottom: 2px solid #e0e7ff; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .risk-stage-1 { background-color: #dcfce7; border-left-color: #22c55e; } /* Very Low / No Defect */
+        .risk-stage-2 { background-color: #fef9c3; border-left-color: #facc15; } /* Low */
+        .risk-stage-3 { background-color: #fee2e2; border-left-color: #ef4444; } /* Moderate */
+        .risk-stage-4 { background-color: #f5d0fe; border-left-color: #a855f7;} /* High */
+        .risk-undefined { background-color: #f3f4f6; border-left-color: #6b7280; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-6xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Dokumentácia Defektov Dolných Končatín</h1>
+            <p class="mt-2 text-lg text-gray-600">Štruktúrovaný nástroj pre hodnotenie a WIfI klasifikáciu.</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="mb-8 border-b border-gray-200">
+            <nav class="flex justify-center -mb-px" aria-label="Tabs">
+                <button class="tab-btn active w-1/2 py-4 px-1 text-center border-b-2 font-medium text-lg" data-tab="right">
+                    Pravá DK
+                </button>
+                <button class="tab-btn w-1/2 py-4 px-1 text-center border-b-2 font-medium text-lg text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="left">
+                    Ľavá DK
+                </button>
+            </nav>
+        </div>
+
+        <!-- Dynamic Content Area -->
+        <div id="right-content" class="tab-content active"></div>
+        <div id="left-content" class="tab-content"></div>
+        
+        <!-- Report Generation Section -->
+        <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg mt-8">
+            <h2 class="text-2xl font-bold text-gray-900 text-center mb-6">Finálny Report</h2>
+            <div class="text-center">
+                <button id="generate-report-btn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition shadow-md">
+                    Generovať nález pre obe končatiny
+                </button>
+            </div>
+            <div id="report-output-container" class="mt-6 hidden">
+                 <label class="block text-sm font-medium text-gray-700 mb-2">Vygenerovaný nález:</label>
+                 <div class="relative">
+                    <textarea id="report-output" rows="25" class="w-full p-4 bg-gray-50 border border-gray-300 rounded-md readonly font-mono text-sm leading-relaxed" readonly></textarea>
+                    <button id="copy-report-btn" class="absolute top-2 right-2 bg-gray-300 text-gray-700 p-2 rounded-md hover:bg-gray-400 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" /><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2H6z" /></svg>
+                    </button>
+                 </div>
+                 <p id="copy-feedback" class="text-sm text-green-600 mt-2 h-4"></p>
+            </div>
+             <div class="text-center mt-8">
+                <button id="reset-btn" class="text-blue-600 hover:text-blue-800 font-semibold">Začať odznova</button>
+            </div>
+        </section>
+
+        <footer class="text-center mt-8 text-sm text-gray-500">
+            <p>Vytvorené na základe SVS WIfI klasifikácie a súvisiacich odporúčaní.</p>
+            <p>Tento nástroj slúži len ako edukačná a informačná pomôcka a nenahrádza odborný lekársky úsudok.</p>
+        </footer>
+    </div>
+
+<script>
+// --- TEMPLATE FOR CALCULATOR UI ---
+function getCalculatorHTML(side) {
+    return `
+    <form id="${side}-form" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+        <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <label class="flex items-center text-lg font-semibold text-blue-800 cursor-pointer">
+                <input type="checkbox" id="${side}-no-defect-check" class="mr-3 h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500">
+                Končatina je bez defektu
+            </label>
+        </div>
+
+        <div id="${side}-form-content" class="space-y-6">
+            <!-- 1. Lokalizácia -->
+            <section><h3 class="section-header">1. Lokalizácia</h3>
+                <select id="${side}-lokalizacia-select" class="w-full p-2 border rounded-md">
+                    <option value="">-- Vyberte angiozóm --</option>
+                    <optgroup label="Angiozóm a. tibialis anterior">
+                        <option value="Dorsum pedis (priehlavok)">Dorsum pedis (priehlavok)</option>
+                        <option value="Dorzálna strana prstov">Dorzálna strana prstov</option>
+                    </optgroup>
+                    <optgroup label="Angiozóm a. tibialis posterior">
+                        <option value="Mediálna päta (ramus calcanei medialis)">Mediálna päta (ramus calcanei medialis)</option>
+                        <option value="Mediálne prednožie/klenba (a. plantaris medialis)">Mediálne prednožie/klenba (a. plantaris medialis)</option>
+                        <option value="Laterálne prednožie/plantárna strana prstov (a. plantaris lateralis)">Laterálne prednožie/plantárna strana prstov (a. plantaris lateralis)</option>
+                    </optgroup>
+                    <optgroup label="Angiozóm a. peronea">
+                        <option value="Laterálna päta (ramus calcanei lateralis)">Laterálna päta (ramus calcanei lateralis)</option>
+                        <option value="Laterálny členok">Laterálny členok</option>
+                    </optgroup>
+                    <option value="ine">Iné (špecifikovať)</option>
+                </select>
+                <input type="text" id="${side}-lokalizacia-ine" placeholder="Špecifikujte inú lokalizáciu" class="w-full p-2 border rounded-md mt-2 hidden">
+            </section>
+
+            <!-- 2. Veľkosť -->
+            <section><h3 class="section-header">2. Veľkosť (mm)</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <input type="number" step="1" id="${side}-velkost-l" placeholder="Dĺžka" class="w-full p-2 border rounded-md">
+                    <input type="number" step="1" id="${side}-velkost-w" placeholder="Šírka" class="w-full p-2 border rounded-md">
+                    <input type="number" step="1" id="${side}-velkost-d" placeholder="Hĺbka" class="w-full p-2 border rounded-md">
+                </div>
+            </section>
+
+            <!-- 3. Tvar a okraje -->
+            <section><h3 class="section-header">3. Tvar a okraje</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select id="${side}-tvar" class="w-full p-2 border rounded-md"><option value="">-- Tvar --</option><option>Oválny</option><option>Okrúhly</option><option>Nepravidelný</option></select>
+                    <select id="${side}-okraje" class="w-full p-2 border rounded-md"><option value="">-- Okraje --</option><option>Ostré</option><option>Neostré</option><option>Podminované</option><option>Valovité</option></select>
+                </div>
+            </section>
+
+            <!-- 4. Spodina rany -->
+            <section><h3 class="section-header">4. Spodina rany (%)</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <div><label class="text-sm">Granulácia</label><input type="number" id="${side}-spodina-gran" placeholder="%" class="w-full p-2 border rounded-md"></div>
+                    <div><label class="text-sm">Fibrín</label><input type="number" id="${side}-spodina-fibrin" placeholder="%" class="w-full p-2 border rounded-md"></div>
+                    <div><label class="text-sm">Nekróza</label><input type="number" id="${side}-spodina-nekroza" placeholder="%" class="w-full p-2 border rounded-md"></div>
+                </div>
+            </section>
+
+            <!-- 5. Exsudát -->
+            <section><h3 class="section-header">5. Exsudát</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select id="${side}-exsudat-mnozstvo" class="w-full p-2 border rounded-md"><option value="">-- Množstvo --</option><option>Žiadny</option><option>Malý</option><option>Stredný</option><option>Veľký</option></select>
+                    <select id="${side}-exsudat-charakter" class="w-full p-2 border rounded-md"><option value="">-- Charakter --</option><option>Číry/Serózny</option><option>Hnisavý/Purulentný</option><option>Hemoragický</option><option>Séro-purulentný</option></select>
+                </div>
+            </section>
+
+            <!-- 6. Známky infekcie -->
+            <section><h3 class="section-header">6. Známky infekcie</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    ${getCheckbox(side, 'infekcia', 'Erytém')}
+                    ${getCheckbox(side, 'infekcia', 'Opuch/Indurácia')}
+                    ${getCheckbox(side, 'infekcia', 'Zápach')}
+                    ${getCheckbox(side, 'infekcia', 'Hnisavý výtok')}
+                    ${getCheckbox(side, 'infekcia', 'Lokálna bolesť')}
+                    ${getCheckbox(side, 'infekcia', 'Zvýšená teplota')}
+                </div>
+                <div class="mt-4"><h4 class="font-semibold mb-2">Systémové príznaky (SIRS)</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        ${getCheckbox(side, 'sirs', 'Horúčka/Hypotermia')}
+                        ${getCheckbox(side, 'sirs', 'Tachykardia >90/min')}
+                        ${getCheckbox(side, 'sirs', 'Tachypnoe >20/min')}
+                        ${getCheckbox(side, 'sirs', 'Zmeny v KO')}
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. Okolie rany -->
+            <section><h3 class="section-header">7. Okolie rany</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    ${getCheckbox(side, 'okolie', 'Macerácia')}
+                    ${getCheckbox(side, 'okolie', 'Indurácia')}
+                    ${getCheckbox(side, 'okolie', 'Pigmentácia')}
+                    ${getCheckbox(side, 'okolie', 'Kalus')}
+                    ${getCheckbox(side, 'okolie', 'Ekzém')}
+                    ${getCheckbox(side, 'okolie', 'Normálny nález')}
+                </div>
+            </section>
+
+            <!-- 8. Podminovanie / Tunelizácia -->
+            <section><h3 class="section-header">8. Podminovanie / Tunelizácia</h3>
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center"><input type="checkbox" id="${side}-podminovanie-check" class="mr-2">Prítomné</label>
+                    <input type="text" id="${side}-podminovanie-rozsah" placeholder="Rozsah v mm a lokalizácia" class="w-full p-2 border rounded-md">
+                </div>
+            </section>
+
+            <!-- 9. Cievny status -->
+            <section><h3 class="section-header">9. Cievny status (Ischémia)</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div><label class="text-sm">a. dors. pedis</label><select id="${side}-cievy-adp" class="w-full p-2 border rounded-md"><option>Hmatná</option><option>Nehmatná</option></select></div>
+                    <div><label class="text-sm">a. tib. post.</label><select id="${side}-cievy-atp" class="w-full p-2 border rounded-md"><option>Hmatná</option><option>Nehmatná</option></select></div>
+                    <div><label class="text-sm">ABI</label><input type="number" step="0.01" id="${side}-cievy-abi" placeholder="napr. 0.7" class="w-full p-2 border rounded-md"></div>
+                    <div><label class="text-sm">Toe Pressure</label><input type="number" id="${side}-cievy-tp" placeholder="mmHg" class="w-full p-2 border rounded-md"></div>
+                </div>
+            </section>
+
+            <!-- 10. Neurologický status -->
+            <section><h3 class="section-header">10. Neurologický status</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select id="${side}-neuro-senzorika" class="w-full p-2 border rounded-md"><option value="">-- Senzorika (Monofilament) --</option><option>Zachovaná</option><option>Znížená</option><option>Vymiznutá (strata protektívnej citlivosti)</option></select>
+                    <input type="text" id="${side}-neuro-motorika" placeholder="Motorika (napr. bez deformít, svalová sila plná)" class="w-full p-2 border rounded-md">
+                </div>
+            </section>
+            
+            <!-- WIfI Result -->
+            <section id="${side}-result-section" class="pt-6 border-t-4 border-indigo-200 mt-8">
+                 <h3 class="text-2xl font-bold text-gray-900 mb-4 text-center">Integrované WIfI Skóre</h3>
+                 <div id="${side}-result-card" class="result-card risk-undefined p-6 rounded-lg border-l-4">
+                    <h4 id="${side}-wifi-score" class="text-3xl font-bold text-center">W- I- fI-</h4>
+                    <p id="${side}-clinical-stage" class="text-xl font-semibold text-center mt-2">Klinické štádium: -</p>
+                    <p id="${side}-amputation-risk" class="text-md text-center mt-1">Riziko amputácie (1 rok): -</p>
+                </div>
+            </section>
+        </div>
+    </form>
+    `;
+}
+
+function getCheckbox(side, name, value) {
+    return `<label class="flex items-center"><input type="checkbox" name="${side}-${name}" value="${value}" class="mr-2">${value}</label>`;
+}
+
+// --- SCRIPT LOGIC ---
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- DATA & CONSTANTS ---
+    const riskMatrix = {
+        i0: { w0: [1,1,2,3], w1: [1,1,2,4], w2: [1,2,3,4], w3: [2,3,4,4] },
+        i1: { w0: [1,1,2,4], w1: [1,2,3,4], w2: [2,3,4,4], w3: [3,4,4,4] },
+        i2: { w0: [1,2,3,4], w1: [2,3,4,4], w2: [3,4,4,4], w3: [4,4,4,4] },
+        i3: { w0: [2,3,4,4], w1: [3,4,4,4], w2: [4,4,4,4], w3: [4,4,4,4] },
+    };
+    const riskStageLabels = { 1: "Veľmi nízke", 2: "Nízke", 3: "Stredné", 4: "Vysoké" };
+    const riskStageClasses = { 1: "risk-stage-1", 2: "risk-stage-2", 3: "risk-stage-3", 4: "risk-stage-4" };
+
+    // --- INITIALIZATION ---
+    document.getElementById('right-content').innerHTML = getCalculatorHTML('right');
+    document.getElementById('left-content').innerHTML = getCalculatorHTML('left');
+    
+    const reportOutputContainer = document.getElementById('report-output-container');
+    const reportOutput = document.getElementById('report-output');
+    const copyReportButton = document.getElementById('copy-report-btn');
+    const copyFeedback = document.getElementById('copy-feedback');
+
+    let reportData = {};
+    const sides = ['right', 'left'];
+
+    function initializeSideData(side) {
+        reportData[side] = { isDefectFree: false };
+    }
+    
+    function resetAll() {
+        sides.forEach(side => {
+            initializeSideData(side);
+            document.getElementById(`${side}-form`).reset();
+            document.getElementById(`${side}-lokalizacia-ine`).classList.add('hidden');
+            document.getElementById(`${side}-form-content`).classList.remove('hidden');
+            updateResultUI(side, { wifiScore: 'W- I- fI-', clinicalStage: 'Štádium -', amputationRisk: '-', riskClass: 'risk-undefined' });
+        });
+        reportOutputContainer.classList.add('hidden');
+        copyFeedback.textContent = '';
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === 'right'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.toggle('active', content.id === 'right-content'));
+    }
+    
+    sides.forEach(initializeSideData);
+
+    // --- EVENT LISTENERS ---
+    document.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `${e.target.dataset.tab}-content`);
+            });
+        });
+    });
+
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('input', () => {
+            const side = form.id.split('-')[0];
+            collectAndProcessData(side);
+        });
+    });
+    
+    document.querySelectorAll('select[id$="-lokalizacia-select"]').forEach(select => {
+        select.addEventListener('change', (e) => {
+            const side = e.target.id.split('-')[0];
+            const ineInput = document.getElementById(`${side}-lokalizacia-ine`);
+            ineInput.classList.toggle('hidden', e.target.value !== 'ine');
+        });
+    });
+
+    document.querySelectorAll('input[id$="-no-defect-check"]').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const side = e.target.id.split('-')[0];
+            const formContent = document.getElementById(`${side}-form-content`);
+            formContent.classList.toggle('hidden', e.target.checked);
+            reportData[side].isDefectFree = e.target.checked;
+
+            if (e.target.checked) {
+                updateResultUI(side, { wifiScore: 'Bez defektu', clinicalStage: 'N/A', amputationRisk: 'N/A', riskClass: 'risk-stage-1' });
+            } else {
+                collectAndProcessData(side);
+            }
+        });
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', resetAll);
+    document.getElementById('generate-report-btn').addEventListener('click', generateFullReport);
+    copyReportButton.addEventListener('click', copyReport);
+
+    // --- CORE LOGIC ---
+    function collectAndProcessData(side) {
+        if (reportData[side].isDefectFree) return;
+
+        const form = document.getElementById(`${side}-form`);
+        const data = {};
+        
+        const lokalizaciaSelect = form.querySelector(`#${side}-lokalizacia-select`);
+        data.lokalizacia = lokalizaciaSelect.value === 'ine' ? form.querySelector(`#${side}-lokalizacia-ine`).value : lokalizaciaSelect.value;
+        
+        data.velkostL = form.querySelector(`#${side}-velkost-l`).value;
+        data.velkostW = form.querySelector(`#${side}-velkost-w`).value;
+        data.velkostD = form.querySelector(`#${side}-velkost-d`).value;
+        data.tvar = form.querySelector(`#${side}-tvar`).value;
+        data.okraje = form.querySelector(`#${side}-okraje`).value;
+        data.spodinaGran = form.querySelector(`#${side}-spodina-gran`).value;
+        data.spodinaFibrin = form.querySelector(`#${side}-spodina-fibrin`).value;
+        data.spodinaNekroza = form.querySelector(`#${side}-spodina-nekroza`).value;
+        data.exsudatMnozstvo = form.querySelector(`#${side}-exsudat-mnozstvo`).value;
+        data.exsudatCharakter = form.querySelector(`#${side}-exsudat-charakter`).value;
+        data.infekciaZnaky = Array.from(form.querySelectorAll(`input[name="${side}-infekcia"]:checked`)).map(el => el.value);
+        data.sirsZnaky = Array.from(form.querySelectorAll(`input[name="${side}-sirs"]:checked`)).map(el => el.value);
+        data.okolie = Array.from(form.querySelectorAll(`input[name="${side}-okolie"]:checked`)).map(el => el.value);
+        data.podminovanie = form.querySelector(`#${side}-podminovanie-check`).checked;
+        data.podminovanieRozsah = form.querySelector(`#${side}-podminovanie-rozsah`).value;
+        data.cievyAdp = form.querySelector(`#${side}-cievy-adp`).value;
+        data.cievyAtp = form.querySelector(`#${side}-cievy-atp`).value;
+        data.cievyAbi = form.querySelector(`#${side}-cievy-abi`).value;
+        data.cievyTp = form.querySelector(`#${side}-cievy-tp`).value;
+        data.neuroSenzorika = form.querySelector(`#${side}-neuro-senzorika`).value;
+        data.neuroMotorika = form.querySelector(`#${side}-neuro-motorika`).value;
+
+        const wifiResult = calculateWIfI(data);
+        reportData[side] = { ...reportData[side], ...data, ...wifiResult };
+        updateResultUI(side, wifiResult);
+    }
+
+    function calculateWIfI(data) {
+        let wGrade = 0;
+        if (data.velkostL || data.velkostW) {
+            const depth = parseFloat(data.velkostD) / 10;
+            if (depth > 1.5) wGrade = 3; 
+            else if (depth > 0.5) wGrade = 2;
+            else wGrade = 1;
+        } else if (data.cievyAbi < 0.4 || data.cievyTp < 30) {
+            wGrade = 0;
+        }
+
+
+        const abi = parseFloat(data.cievyAbi);
+        const tp = parseFloat(data.cievyTp);
+        let iGrade = null;
+        if (!isNaN(tp)) {
+            if (tp >= 60) iGrade = 0; else if (tp >= 40) iGrade = 1; else if (tp >= 30) iGrade = 2; else iGrade = 3;
+        } else if (!isNaN(abi) && abi <= 1.3) {
+            if (abi >= 0.80) iGrade = 0; else if (abi >= 0.60) iGrade = 1; else if (abi >= 0.40) iGrade = 2; else iGrade = 3;
+        }
+
+        let fIGrade = 0;
+        if (data.sirsZnaky.length > 0) {
+            fIGrade = 3;
+        } else if (data.infekciaZnaky.length > 0) {
+            if (data.infekciaZnaky.includes('Hnisavý výtok') || data.infekciaZnaky.length > 2) {
+                fIGrade = 2;
+            } else {
+                fIGrade = 1;
+            }
+        }
+        
+        let wifiScore = `W${wGrade ?? '-'} I${iGrade ?? '-'} fI${fIGrade ?? '-'}`;
+        let clinicalStage = 'Štádium -', amputationRisk = '-', riskClass = 'risk-undefined';
+        if (wGrade !== null && iGrade !== null && fIGrade !== null) {
+            const stage = riskMatrix[`i${iGrade}`][`w${wGrade}`][fIGrade];
+            clinicalStage = `Štádium ${stage}`;
+            amputationRisk = riskStageLabels[stage];
+            riskClass = riskStageClasses[stage];
+        }
+
+        return { wGrade, iGrade, fIGrade, wifiScore, clinicalStage, amputationRisk, riskClass };
+    }
+
+    function updateResultUI(side, wifiResult) {
+        document.getElementById(`${side}-wifi-score`).textContent = wifiResult.wifiScore;
+        document.getElementById(`${side}-clinical-stage`).textContent = wifiResult.clinicalStage;
+        document.getElementById(`${side}-amputation-risk`).textContent = `Riziko amputácie (1 rok): ${wifiResult.amputationRisk}`;
+        document.getElementById(`${side}-result-card`).className = `result-card p-6 rounded-lg border-l-4 ${wifiResult.riskClass}`;
+    }
+
+    // --- REPORT GENERATION ---
+    function generateFullReport() {
+        sides.forEach(collectAndProcessData);
+        let fullReport = "NÁLEZ NA DOLNÝCH KONČATINÁCH\n============================================\n";
+        fullReport += generateSideReport('right', 'Pravá dolná končatina');
+        fullReport += "\n============================================\n";
+        fullReport += generateSideReport('left', 'Ľavá dolná končatina');
+        fullReport += "\n============================================\n";
+        fullReport += generateOverallConclusion();
+        reportOutput.value = fullReport.trim();
+        reportOutputContainer.classList.remove('hidden');
+    }
+
+    function generateSideReport(side, sideName) {
+        const data = reportData[side];
+        if (data.isDefectFree) {
+            return `${sideName.toUpperCase()}\n--------------------------------------------\nBez prítomnosti defektu.`;
+        }
+        if (!data.lokalizacia && !data.velkostL) {
+             return `${sideName.toUpperCase()}\n--------------------------------------------\nKončatina bez defektu.`;
+        }
+        
+        let r = `${sideName.toUpperCase()}\n--------------------------------------------\n`;
+        r += `1. Lokalizácia: ${data.lokalizacia || 'N/A'}\n`;
+        r += `2. Veľkosť: ${data.velkostL || 'N/A'} x ${data.velkostW || 'N/A'} x ${data.velkostD || 'N/A'} mm\n`;
+        r += `3. Tvar a okraje: ${data.tvar || 'N/A'}, okraje ${data.okraje || 'N/A'}\n`;
+        r += `4. Spodina rany: Granulácia ${data.spodinaGran || 0}%, Fibrín ${data.spodinaFibrin || 0}%, Nekróza ${data.spodinaNekroza || 0}%\n`;
+        r += `5. Exsudát: ${data.exsudatMnozstvo || 'N/A'}, ${data.exsudatCharakter || 'N/A'}\n`;
+        r += `6. Známky infekcie: ${data.infekciaZnaky.join(', ') || 'žiadne'}. SIRS: ${data.sirsZnaky.join(', ') || 'nie'}\n`;
+        r += `7. Okolie rany: ${data.okolie.join(', ') || 'N/A'}\n`;
+        r += `8. Podminovanie: ${data.podminovanie ? `áno, ${data.podminovanieRozsah || 'N/A'}` : 'nie'}\n`;
+        r += `9. Cievny status: ADP ${data.cievyAdp}, ATP ${data.cievyAtp}, ABI: ${data.cievyAbi || 'N/A'}, TP: ${data.cievyTp || 'N/A'} mmHg\n`;
+        r += `10. Neuro status: Senzorika: ${data.neuroSenzorika || 'N/A'}, Motorika: ${data.neuroMotorika || 'N/A'}\n\n`;
+        r += `SVS WIfI HODNOTENIE:\n`;
+        r += `- Skóre: ${data.wifiScore}\n`;
+        r += `- Klinické štádium: ${data.clinicalStage} (Riziko amputácie: ${data.amputationRisk})\n`;
+        
+        return r;
+    }
+
+    function generateOverallConclusion() {
+        const { right, left } = reportData;
+        let conclusion = "ZÁVER: ";
+        let findings = [];
+
+        if (right.isDefectFree) {
+            findings.push(`pravá DK bez defektu`);
+        } else if (right.clinicalStage && right.clinicalStage !== 'Štádium -') {
+            findings.push(`defekt na pravej DK - ${right.clinicalStage} (riziko ${right.amputationRisk.toLowerCase()})`);
+        }
+
+        if (left.isDefectFree) {
+            findings.push(`ľavá DK bez defektu`);
+        } else if (left.clinicalStage && left.clinicalStage !== 'Štádium -') {
+            findings.push(`defekt na ľavej DK - ${left.clinicalStage} (riziko ${left.amputationRisk.toLowerCase()})`);
+        }
+        
+        if (findings.length === 0) {
+            conclusion += "Obe končatiny bez defektu.";
+        } else {
+            conclusion += findings.join('; ') + ".";
+        }
+        return conclusion;
+    }
+
+    function copyReport() {
+        reportOutput.select();
+        try { document.execCommand('copy'); copyFeedback.textContent = 'Nález skopírovaný!'; setTimeout(() => { copyFeedback.textContent = ''; }, 2000); } 
+        catch (err) { copyFeedback.textContent = 'Kopírovanie zlyhalo.'; }
+    }
+
+    // --- INITIALIZE THE APP ---
+    resetAll();
+});
+</script>
+</body>
+</html>

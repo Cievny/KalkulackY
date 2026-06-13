@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Praktické Nástroje | Cievny.sk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-wine: #6A1B42;
+            --color-green: #2E8339;
+            --color-beige: #F8F5F2; a
+            --color-powder-gray: #E0E0E0;
+            --color-dark-gray: #333333;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-beige);
+            color: var(--color-dark-gray);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .bg-beige { background-color: var(--color-beige); }
+        .bg-wine { background-color: var(--color-wine); }
+        .bg-green { background-color: var(--color-green); }
+        .text-wine { color: var(--color-wine); }
+        .text-green { color: var(--color-green); }
+        .text-beige { color: var(--color-beige); }
+        .border-powder-gray { border-color: var(--color-powder-gray); }
+        .btn-green {
+            background-color: var(--color-green);
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-green:hover {
+            background-color: #256a2e;
+        }
+        .section-padding {
+            padding: 4rem 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .section-padding {
+                padding: 6rem 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-beige">
+
+    <!-- 1. Hlavička (Navigácia) -->
+    <header class="bg-beige/80 sticky top-0 z-50 backdrop-blur-lg border-b border-powder-gray">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- Logo odkazuje na hlavnú stránku -->
+            <a href="./index.html" class="flex items-center space-x-2">
+                <svg width="24" height="24" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-green">
+                    <path d="M100 180 C140 140, 140 140, 100 100" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M100 100 C60 60, 60 60, 100 20" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M60 180 C80 140, 80 140, 100 100" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M140 180 C120 140, 120 140, 100 100" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M100 20 C80 50, 80 50, 60 60" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M100 20 C120 50, 120 50, 140 60" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
+                </svg>
+                <span class="text-2xl font-bold">
+                    <span class="text-wine">cievny</span><span class="text-green">.sk</span>
+                </span>
+            </a>
+            <nav class="hidden md:flex items-center space-x-8">
+                <a href="#" class="text-dark-gray hover:text-wine transition-colors">Ochorenia</a>
+                <a href="#" class="text-dark-gray hover:text-wine transition-colors">Diagnostika</a>
+                <a href="#" class="text-dark-gray hover:text-wine transition-colors">Liečba</a>
+                <a href="./prakticke-nastroje.html" class="text-wine font-bold transition-colors">Praktické Nástroje</a>
+            </nav>
+            <a href="#" class="hidden md:inline-block btn-green font-semibold px-5 py-2 rounded-lg">
+                Pre lekárov
+            </a>
+            <button class="md:hidden text-dark-gray">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Obsah podstránky Praktické Nástroje -->
+    <main class="flex-grow">
+        <div class="section-padding">
+            <div class="container mx-auto">
+                <div class="text-center">
+                    <h1 class="text-4xl md:text-5xl font-bold text-wine">Praktické Nástroje a Kalkulačky</h1>
+                    <p class="mt-4 text-lg md:text-xl max-w-3xl mx-auto text-dark-gray">
+                        Jednoduché interaktívne programy, ktoré vám pomôžu lepšie porozumieť a sledovať vaše cievne zdravie.
+                    </p>
+                </div>
+
+                <!-- Príklady nástrojov -->
+                <div class="mt-16 max-w-4xl mx-auto space-y-8">
+                    <div id="bmi-calculator" class="bg-white p-6 rounded-lg shadow-md">
+                        <h2 class="text-2xl font-bold text-green">BMI Kalkulačka</h2>
+                        <p class="mt-2 text-dark-gray">Vypočítajte si svoj Body Mass Index (BMI), dôležitý ukazovateľ pri hodnotení rizika cievnych ochorení. Zadajte svoje údaje nižšie.</p>
+                        
+                        <!-- Interaktívna časť kalkulačky -->
+                        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="height" class="block text-sm font-medium text-dark-gray">Vaša výška (v cm)</label>
+                                <input type="number" id="height" name="height" class="mt-1 block w-full px-3 py-2 bg-white border border-powder-gray rounded-md shadow-sm focus:outline-none focus:ring-green focus:border-green" placeholder="napr. 180">
+                            </div>
+                            <div>
+                                <label for="weight" class="block text-sm font-medium text-dark-gray">Vaša váha (v kg)</label>
+                                <input type="number" id="weight" name="weight" class="mt-1 block w-full px-3 py-2 bg-white border border-powder-gray rounded-md shadow-sm focus:outline-none focus:ring-green focus:border-green" placeholder="napr. 75">
+                            </div>
+                        </div>
+                        <button id="calculate-bmi" class="mt-6 w-full sm:w-auto btn-green font-semibold px-6 py-2 rounded-lg">
+                            Vypočítať BMI
+                        </button>
+
+                        <!-- Oblasť pre výsledok -->
+                        <div id="bmi-result" class="mt-6 p-4 rounded-md bg-beige hidden">
+                            <h3 class="font-bold text-lg">Váš výsledok:</h3>
+                            <p class="text-2xl font-bold text-wine" id="bmi-value"></p>
+                            <p class="mt-1 font-semibold" id="bmi-category"></p>
+                            <p class="text-sm mt-2" id="bmi-interpretation"></p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h2 class="text-2xl font-bold text-green">Kalkulátor rizika SCORE2</h2>
+                        <p class="mt-2 text-dark-gray">Zistite svoje 10-ročné riziko fatálnej a nefatálnej kardiovaskulárnej príhody na základe európskych odporúčaní.</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h2 class="text-2xl font-bold text-green">Wellsovo skóre pre HŽT</h2>
+                        <p class="mt-2 text-dark-gray">Interaktívny dotazník na odhad pravdepodobnosti hlbokej žilovej trombózy (HŽT) na základe klinických príznakov. (Určené pre odbornú verejnosť).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('calculate-bmi').addEventListener('click', function() {
+            const heightInput = document.getElementById('height');
+            const weightInput = document.getElementById('weight');
+            const resultDiv = document.getElementById('bmi-result');
+            const bmiValueEl = document.getElementById('bmi-value');
+            const bmiCategoryEl = document.getElementById('bmi-category');
+            const bmiInterpretationEl = document.getElementById('bmi-interpretation');
+
+            const height = parseFloat(heightInput.value);
+            const weight = parseFloat(weightInput.value);
+
+            if (isNaN(height) || isNaN(weight) || height <= 0 || weight <= 0) {
+                alert('Prosím, zadajte platnú výšku a váhu.');
+                return;
+            }
+
+            const heightInMeters = height / 100;
+            const bmi = weight / (heightInMeters * heightInMeters);
+            const bmiRounded = bmi.toFixed(1);
+
+            bmiValueEl.textContent = `BMI: ${bmiRounded}`;
+
+            let category = '';
+            let interpretation = '';
+
+            if (bmi < 18.5) {
+                category = 'Podváha';
+                interpretation = 'Vaša hmotnosť je nižšia, ako by mala byť. Odporúčame konzultáciu s lekárom o možnostiach úpravy stravy.';
+                bmiCategoryEl.className = 'mt-1 font-semibold text-blue-600';
+            } else if (bmi >= 18.5 && bmi < 25) {
+                category = 'Normálna hmotnosť';
+                interpretation = 'Gratulujeme! Vaša hmotnosť je v optimálnom rozmedzí. Udržujte si zdravý životný štýl.';
+                bmiCategoryEl.className = 'mt-1 font-semibold text-green-600';
+            } else if (bmi >= 25 && bmi < 30) {
+                category = 'Nadváha';
+                interpretation = 'Vaša hmotnosť je vyššia, ako je optimálne, čo zvyšuje riziko cievnych ochorení. Zvážte úpravu stravovacích návykov a zvýšenie fyzickej aktivity.';
+                bmiCategoryEl.className = 'mt-1 font-semibold text-yellow-600';
+            } else {
+                category = 'Obezita';
+                interpretation = 'Vaša hmotnosť predstavuje významné riziko pre vaše zdravie, vrátane srdcovo-cievnych ochorení. Dôrazne odporúčame konzultáciu s vaším lekárom.';
+                bmiCategoryEl.className = 'mt-1 font-semibold text-red-600';
+            }
+
+            bmiCategoryEl.textContent = category;
+            bmiInterpretationEl.textContent = interpretation;
+            resultDiv.classList.remove('hidden');
+        });
+    </script>
+
+</body>
+</html>
+

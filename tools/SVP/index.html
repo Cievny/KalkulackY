@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVP Klasifikačný Systém - PeVD</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #EFF6FF 0%, #E0E7FF 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            color: #1F2937;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #6B7280;
+        }
+
+        .alert {
+            background: #DBEAFE;
+            border: 1px solid #93C5FD;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+            display: flex;
+            gap: 12px;
+        }
+
+        .alert-icon {
+            color: #2563EB;
+            flex-shrink: 0;
+        }
+
+        .alert-text {
+            color: #1E40AF;
+            font-size: 14px;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #4F46E5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4338CA;
+        }
+
+        .btn-secondary {
+            background: #F3F4F6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #E5E7EB;
+        }
+
+        .btn-active {
+            background: #4F46E5;
+            color: white;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section h2 {
+            color: #1F2937;
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .checkbox-item {
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: #F9FAFB;
+        }
+
+        .checkbox-item label {
+            display: flex;
+            cursor: pointer;
+        }
+
+        .checkbox-item input {
+            margin-right: 12px;
+            margin-top: 4px;
+        }
+
+        .anatomy-segment {
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 16px;
+            background: #F9FAFB;
+            margin-bottom: 16px;
+        }
+
+        .anatomy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .form-group select {
+            padding: 8px;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #4F46E5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-remove {
+            padding: 6px 12px;
+            background: transparent;
+            color: #DC2626;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-remove:hover {
+            background: #FEE2E2;
+        }
+
+        .result-box {
+            background: linear-gradient(135deg, #EEF2FF 0%, #E9D5FF 100%);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: #6B7280;
+            margin-bottom: 8px;
+        }
+
+        .result-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #312E81;
+            font-family: monospace;
+        }
+
+        .interpretation-input {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .interpretation-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        .interpretation-input input:focus {
+            outline: none;
+            border-color: #4F46E5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .interpretation-result {
+            background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+            border: 1px solid #86EFAC;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .interpretation-result h3 {
+            color: #065F46;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
+        .interpretation-text {
+            color: #374151;
+            line-height: 1.8;
+            white-space: pre-line;
+        }
+
+        .interpretation-text strong {
+            color: #111827;
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 4px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .description {
+            font-size: 14px;
+            color: #6B7280;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SVP Klasifikačný Systém</h1>
+            <p>Panvové žilové poruchy (PeVD) - Symptoms-Varices-Pathophysiology</p>
+            
+            <div class="alert">
+                <div class="alert-icon">ℹ️</div>
+                <div class="alert-text">
+                    <strong>Dôležité:</strong> SVP je diskriminačný nástroj pre klasifikáciu klinickej prezentácie. 
+                    Nie je určený na kvantitatívne meranie závažnosti. Pre pacientov so symptómami dolných končatín 
+                    panvového pôvodu používať v spojení s CEAP klasifikáciou.
+                </div>
+            </div>
+
+            <div class="mode-toggle">
+                <button class="btn btn-active" id="classifyBtn">📋 Klasifikovať pacienta</button>
+                <button class="btn btn-secondary" id="interpretBtn">🔄 Interpretovať SVP kód</button>
+            </div>
+
+            <button class="btn btn-secondary" id="toggleDefinitions">Zobraziť definície a kritériá</button>
+        </div>
+
+        <div id="classificationMode">
+            <div class="section">
+                <h2>1. Symptómy (S)</h2>
+                <div class="checkbox-group" id="symptomsGroup"></div>
+            </div>
+
+            <div class="section">
+                <h2>2. Kŕčové žily (V)</h2>
+                <div class="checkbox-group" id="varicesGroup"></div>
+            </div>
+
+            <div class="section">
+                <h2>3. Patofyziológia (P)</h2>
+                <div id="anatomySegments"></div>
+                <button class="btn btn-primary" id="addSegmentBtn">+ Pridať anatomický segment</button>
+            </div>
+
+            <div class="section">
+                <h2>✓ Výsledná klasifikácia</h2>
+                <div class="result-box">
+                    <div class="result-label">SVP Klasifikácia:</div>
+                    <div class="result-code" id="resultCode">SxVxPx</div>
+                </div>
+                <p style="margin-top: 16px; color: #6B7280; font-size: 14px;">
+                    <strong>Poznámka:</strong> "x" označuje nehodnotené domény.
+                </p>
+            </div>
+        </div>
+
+        <div id="interpretationMode" class="hidden">
+            <div class="section">
+                <h2>Interpretácia SVP klasifikácie</h2>
+                <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+                    Zadajte SVP kód (napr. S2V2PBGV,R,NT)
+                </label>
+                <div class="interpretation-input">
+                    <input type="text" id="svpInput" placeholder="S2V2PBGV,R,NT">
+                    <button class="btn btn-primary" id="interpretSvpBtn">Interpretovať</button>
+                </div>
+                <div id="interpretationResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var symptomOptions = [
+            { value: 'S0', label: 'S0 - Žiadne symptómy PeVD', description: 'Žiadne renálne, panvové ani extrapelvické symptómy' },
+            { value: 'S1', label: 'S1 - Renálne symptómy', description: 'Hematúria, bolesť v boku zhoršená státím/sedením' },
+            { value: 'S2', label: 'S2 - Chronická panvová bolesť', description: 'Bolesť >6 mesiacov, zhoršená státím, zlepšená ležaním' },
+            { value: 'S3a', label: 'S3a - Genitálne symptómy', description: 'Bolesť, diskomfort vulvy/skróta' },
+            { value: 'S3b', label: 'S3b - Nonsafénne žily nohy', description: 'Symptómy posteromediálneho stehna' },
+            { value: 'S3c', label: 'S3c - Žilová klaudikácia', description: 'Námahová bolesť dolných končatín' }
+        ];
+
+        var varicesOptions = [
+            { value: 'V0', label: 'V0 - Žiadne varixy', description: 'Žiadne brušné, panvové ani extrapelvické varixy' },
+            { value: 'V1', label: 'V1 - Renálne hilové varixy', description: 'Spojené s obštrukciou ľavej renálnej žily' },
+            { value: 'V2', label: 'V2 - Panvové varixy', description: 'Žily ≥5mm okolo vaječníka/maternice' },
+            { value: 'V3a', label: 'V3a - Genitálne varixy', description: 'Vulválne varixy, varikokéla' },
+            { value: 'V3b', label: 'V3b - Dolné končatiny panvového pôvodu', description: 'Varixy posteromediálneho stehna' }
+        ];
+
+        var anatomyOptions = [
+            { value: 'IVC', label: 'IVC - Dolná dutá žila', laterality: false },
+            { value: 'LRV', label: 'LRV - Ľavá renálna žila', laterality: false },
+            { value: 'GV', label: 'GV - Gonadálne žily', laterality: true },
+            { value: 'CIV', label: 'CIV - Spoločné ilické žily', laterality: true },
+            { value: 'EIV', label: 'EIV - Vonkajšie ilické žily', laterality: true },
+            { value: 'IIV', label: 'IIV - Vnútorné ilické žily', laterality: true },
+            { value: 'PELV', label: 'PELV - Panvové únikové žily', laterality: false }
+        ];
+
+        var hemodynamicOptions = [
+            { value: 'O', label: 'O - Obštrukcia', description: '>50% zníženie prierezu' },
+            { value: 'R', label: 'R - Reflux', description: 'Retrográdny tok' },
+            { value: 'R,O', label: 'R,O - Reflux a Obštrukcia', description: 'Obe súčasne' }
+        ];
+
+        var etiologyOptions = [
+            { value: 'T', label: 'T - Trombotická', description: 'Z predchádzajúcej DVT' },
+            { value: 'NT', label: 'NT - Netrombotická', description: 'Degeneratívny proces/kompresia' },
+            { value: 'C', label: 'C - Vrodená', description: 'Vrodené malformácie' }
+        ];
+
+        var selectedSymptoms = [];
+        var selectedVarices = [];
+        var anatomySegments = [];
+        var showDefinitions = false;
+
+        function init() {
+            renderSymptoms();
+            renderVarices();
+            setupEventListeners();
+        }
+
+        function renderSymptoms() {
+            var container = document.getElementById('symptomsGroup');
+            var html = '';
+            for (var i = 0; i < symptomOptions.length; i++) {
+                var opt = symptomOptions[i];
+                html += '<div class="checkbox-item">';
+                html += '<label>';
+                html += '<input type="checkbox" value="' + opt.value + '" onchange="updateSymptom(\'' + opt.value + '\', this.checked)">';
+                html += '<div>';
+                html += '<div style="font-weight: 500; color: #1F2937;">' + opt.label + '</div>';
+                html += '<div class="description ' + (showDefinitions ? '' : 'hidden') + '">' + opt.description + '</div>';
+                html += '</div></label></div>';
+            }
+            container.innerHTML = html;
+        }
+
+        function renderVarices() {
+            var container = document.getElementById('varicesGroup');
+            var html = '';
+            for (var i = 0; i < varicesOptions.length; i++) {
+                var opt = varicesOptions[i];
+                html += '<div class="checkbox-item">';
+                html += '<label>';
+                html += '<input type="checkbox" value="' + opt.value + '" onchange="updateVarices(\'' + opt.value + '\', this.checked)">';
+                html += '<div>';
+                html += '<div style="font-weight: 500; color: #1F2937;">' + opt.label + '</div>';
+                html += '<div class="description ' + (showDefinitions ? '' : 'hidden') + '">' + opt.description + '</div>';
+                html += '</div></label></div>';
+            }
+            container.innerHTML = html;
+        }
+
+        function updateSymptom(value, checked) {
+            if (checked) {
+                selectedSymptoms.push(value);
+            } else {
+                selectedSymptoms = selectedSymptoms.filter(function(s) { return s !== value; });
+            }
+            updateResult();
+        }
+
+        function updateVarices(value, checked) {
+            if (checked) {
+                selectedVarices.push(value);
+            } else {
+                selectedVarices = selectedVarices.filter(function(v) { return v !== value; });
+            }
+            updateResult();
+        }
+
+        function addAnatomySegment() {
+            anatomySegments.push({
+                anatomy: '',
+                laterality: '',
+                hemodynamic: '',
+                etiology: ''
+            });
+            renderAnatomySegments();
+        }
+
+        function renderAnatomySegments() {
+            var container = document.getElementById('anatomySegments');
+            var html = '';
+            
+            for (var idx = 0; idx < anatomySegments.length; idx++) {
+                var seg = anatomySegments[idx];
+                var anatOpt = null;
+                for (var i = 0; i < anatomyOptions.length; i++) {
+                    if (anatomyOptions[i].value === seg.anatomy) {
+                        anatOpt = anatomyOptions[i];
+                        break;
+                    }
+                }
+                var needsLaterality = anatOpt && anatOpt.laterality;
+                
+                html += '<div class="anatomy-segment"><div class="anatomy-grid">';
+                html += '<div class="form-group"><label>Anatómia</label>';
+                html += '<select onchange="updateSegment(' + idx + ', \'anatomy\', this.value)">';
+                html += '<option value="">Vyberte...</option>';
+                for (var i = 0; i < anatomyOptions.length; i++) {
+                    var opt = anatomyOptions[i];
+                    html += '<option value="' + opt.value + '"' + (seg.anatomy === opt.value ? ' selected' : '') + '>' + opt.label + '</option>';
+                }
+                html += '</select></div>';
+                
+                if (needsLaterality) {
+                    html += '<div class="form-group"><label>Lateralita</label>';
+                    html += '<select onchange="updateSegment(' + idx + ', \'laterality\', this.value)">';
+                    html += '<option value="">Vyberte...</option>';
+                    html += '<option value="left"' + (seg.laterality === 'left' ? ' selected' : '') + '>Ľavá (L)</option>';
+                    html += '<option value="right"' + (seg.laterality === 'right' ? ' selected' : '') + '>Pravá (R)</option>';
+                    html += '<option value="bilateral"' + (seg.laterality === 'bilateral' ? ' selected' : '') + '>Bilaterálna (B)</option>';
+                    html += '</select></div>';
+                }
+                
+                html += '<div class="form-group"><label>Hemodynamika</label>';
+                html += '<select onchange="updateSegment(' + idx + ', \'hemodynamic\', this.value)">';
+                html += '<option value="">Vyberte...</option>';
+                for (var i = 0; i < hemodynamicOptions.length; i++) {
+                    var opt = hemodynamicOptions[i];
+                    html += '<option value="' + opt.value + '"' + (seg.hemodynamic === opt.value ? ' selected' : '') + '>' + opt.label + '</option>';
+                }
+                html += '</select></div>';
+                
+                html += '<div class="form-group"><label>Etiológia</label>';
+                html += '<select onchange="updateSegment(' + idx + ', \'etiology\', this.value)">';
+                html += '<option value="">Vyberte...</option>';
+                for (var i = 0; i < etiologyOptions.length; i++) {
+                    var opt = etiologyOptions[i];
+                    html += '<option value="' + opt.value + '"' + (seg.etiology === opt.value ? ' selected' : '') + '>' + opt.label + '</option>';
+                }
+                html += '</select></div>';
+                
+                html += '</div>';
+                html += '<button class="btn-remove" onclick="removeSegment(' + idx + ')">Odstrániť segment</button>';
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function updateSegment(idx, field, value) {
+            anatomySegments[idx][field] = value;
+            renderAnatomySegments();
+            updateResult();
+        }
+
+        function removeSegment(idx) {
+            anatomySegments.splice(idx, 1);
+            renderAnatomySegments();
+            updateResult();
+        }
+
+        function updateResult() {
+            var S = selectedSymptoms.length > 0 ? selectedSymptoms.join(',') : 'Sx';
+            var V = selectedVarices.length > 0 ? selectedVarices.join(',') : 'Vx';
+            
+            var P = '';
+            if (anatomySegments.length > 0) {
+                var pSegments = [];
+                for (var i = 0; i < anatomySegments.length; i++) {
+                    var seg = anatomySegments[i];
+                    if (!seg.anatomy) continue;
+                    var anatStr = seg.anatomy;
+                    if (seg.laterality && seg.laterality !== 'bilateral') {
+                        var prefix = seg.laterality === 'left' ? 'L' : 'R';
+                        anatStr = prefix + seg.anatomy;
+                    } else if (seg.laterality === 'bilateral') {
+                        anatStr = 'B' + seg.anatomy;
+                    }
+                    var hemStr = seg.hemodynamic || 'x';
+                    var etiStr = seg.etiology || 'x';
+                    pSegments.push(anatStr + ',' + hemStr + ',' + etiStr);
+                }
+                P = 'P' + pSegments.join('; ');
+            } else {
+                P = 'Px';
+            }
+
+            document.getElementById('resultCode').textContent = S + V + P;
+        }
+
+        function interpretSVP() {
+            var svpCode = document.getElementById('svpInput').value.trim();
+            if (!svpCode) return;
+
+            var description = [];
+            
+            var sMatch = svpCode.match(/S([0-3][abc]?,?)+/);
+            if (sMatch) {
+                var sCodes = sMatch[0].substring(1).split(',');
+                description.push('<strong>Klinický obraz:</strong>\n');
+                
+                for (var i = 0; i < sCodes.length; i++) {
+                    var code = sCodes[i];
+                    if (code === '1') {
+                        description.push('Pacient/ka trpí renálnymi symptómami žilového pôvodu.\n');
+                    } else if (code === '2') {
+                        description.push('Prítomná je chronická panvová bolesť žilového pôvodu.\n');
+                    } else if (code === '3a') {
+                        description.push('Pacient/ka má lokalizované genitálne symptómy.\n');
+                    } else if (code === '3b') {
+                        description.push('Prítomné sú symptómy posteromediálneho stehna.\n');
+                    } else if (code === '3c') {
+                        description.push('Pacient/ka trpí žilovou klaudikáciou.\n');
+                    }
+                }
+            }
+
+            var vMatch = svpCode.match(/V([0-3][abc]?,?)+/);
+            if (vMatch) {
+                var vCodes = vMatch[0].substring(1).split(',');
+                description.push('\n<strong>Zobrazovacie nálezy:</strong>\n');
+                
+                for (var i = 0; i < vCodes.length; i++) {
+                    var code = vCodes[i];
+                    if (code === '1') {
+                        description.push('Renálne hilové varixy.\n');
+                    } else if (code === '2') {
+                        description.push('Panvové varixy.\n');
+                    } else if (code === '3a') {
+                        description.push('Genitálne varixy.\n');
+                    } else if (code === '3b') {
+                        description.push('Varixy dolných končatín.\n');
+                    }
+                }
+            }
+
+            var resultHtml = '<div class="interpretation-result">';
+            resultHtml += '<h3>✓ Popis pacientových ťažkostí</h3>';
+            resultHtml += '<div class="interpretation-text">' + description.join('') + '</div>';
+            resultHtml += '</div>';
+            
+            document.getElementById('interpretationResult').innerHTML = resultHtml;
+        }
+
+        function setupEventListeners() {
+            document.getElementById('classifyBtn').addEventListener('click', function() {
+                document.getElementById('classificationMode').classList.remove('hidden');
+                document.getElementById('interpretationMode').classList.add('hidden');
+                this.classList.add('btn-active');
+                this.classList.remove('btn-secondary');
+                document.getElementById('interpretBtn').classList.remove('btn-active');
+                document.getElementById('interpretBtn').classList.add('btn-secondary');
+            });
+
+            document.getElementById('interpretBtn').addEventListener('click', function() {
+                document.getElementById('classificationMode').classList.add('hidden');
+                document.getElementById('interpretationMode').classList.remove('hidden');
+                this.classList.add('btn-active');
+                this.classList.remove('btn-secondary');
+                document.getElementById('classifyBtn').classList.remove('btn-active');
+                document.getElementById('classifyBtn').classList.add('btn-secondary');
+            });
+
+            document.getElementById('addSegmentBtn').addEventListener('click', addAnatomySegment);
+            document.getElementById('interpretSvpBtn').addEventListener('click', interpretSVP);
+            
+            document.getElementById('svpInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') interpretSVP();
+            });
+
+            document.getElementById('toggleDefinitions').addEventListener('click', function() {
+                showDefinitions = !showDefinitions;
+                this.textContent = showDefinitions ? 'Skryť definície a kritériá' : 'Zobraziť definície a kritériá';
+                renderSymptoms();
+                renderVarices();
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
