@@ -1209,17 +1209,17 @@ function gen(){
   if(sp){
     L.push('DSA NÁLEZ – Panvové riečisko:');
     L.push('Aorta – '+gV('v_Ao')+'.');
-    PELV_VESSELS.forEach(([lbl,base])=>L.push(lbl+' l.sin. – '+gV(base+'_s')+' / l.dx. – '+gV(base+'_d')+'.'));
+    PELV_VESSELS.forEach(([lbl,base])=>L.push(lbl+' l.dx. – '+gV(base+'_d')+' / l.sin. – '+gV(base+'_s')+'.'));
   }
   if(sf){
     const lat=g('fem_lat')||'bilat',latL=lat==='bilat'?'bilat.':lat==='sin'?'l.sin.':'l.dx.';
-    L.push('DSA NÁLEZ – Femoropopliteálne riečisko ('+latL+'):');
-    FEM_GROUPS.forEach(group=>{
-      L.push(group.st+':');
+    L.push((sp?'\n':'')+'DSA NÁLEZ – Femoropopliteálne riečisko ('+latL+'):');
+    FEM_GROUPS.forEach((group,gi)=>{
+      L.push((gi>0?'\n':'')+group.st+':');
       group.vs.forEach(([lbl,base],vi)=>{
         const last=vi===group.vs.length-1;
         let line;
-        if(lat==='bilat')line=lbl+' l.sin. – '+gV(base+'_s')+' / l.dx. – '+gV(base+'_d');
+        if(lat==='bilat')line=lbl+' l.dx. – '+gV(base+'_d')+' / l.sin. – '+gV(base+'_s');
         else{const sid=lat==='sin'?'_s':'_d';line=lbl+' '+latL+' – '+gV(base+sid);}
         L.push(line+(last?'.':';'));
       });
