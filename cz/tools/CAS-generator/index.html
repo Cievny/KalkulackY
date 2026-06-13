@@ -330,70 +330,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   </div>
 </div>
 
-<div id="dsa_sin_wrap">
-<div class="st" style="font-size:12px;margin:8px 0 4px;color:#5a6a8a">Levá strana (l.sin.)</div>
-<div class="row r2">
-  <div class="f"><label>ACC l.sin.</label>
-    <select id="dsa_acc_sin" onchange="gen()">
-      <option value="bez závažné stenózy">bez závažné stenózy</option>
-      <option value="stenóza">stenóza</option><option value="subokluzia">subokluzia</option><option value="okluze">okluze</option>
-    </select>
-  </div>
-  <div class="f"><label>ACI l.sin. – typ stenózy</label>
-    <select id="dsa_aci_sin_typ" onchange="gen()">
-      <option value="kritická odstupová stenóza">kritická odstupová stenóza</option>
-      <option value="významná stenóza">významná stenóza</option>
-      <option value="subokluzia">subokluzia</option>
-      <option value="okluze">okluze</option>
-    </select>
-  </div>
-</div>
-<div class="f">
-  <label>Stenóza NASCET l.sin. <span style="font-size:10px;color:#6b7280;font-weight:400">(d_min / d_distal mm)</span></label>
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
-    <input type="number" id="nascet_dmin_sin" min="0.1" max="20" step="0.1" placeholder="d min (mm)"
-           style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
-           oninput="calcNASCET('sin')">
-    <span style="font-size:13px;color:#6b7280">/</span>
-    <input type="number" id="nascet_ddist_sin" min="0.1" max="20" step="0.1" placeholder="d distal (mm)"
-           style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
-           oninput="calcNASCET('sin')">
-    <span id="nascet_result_sin" style="font-size:12px;color:#1e40af;font-weight:600"></span>
-  </div>
-  <div class="row r2" style="margin-top:4px">
-    <div class="f"><label>Stupeň NASCET l.sin.</label>
-      <select id="nascet_stenoza_sin" onchange="gen()">
-        <option value="">– nevyplněné –</option>
-        <option value="50-59%">50–59 %</option><option value="60-69%">60–69 %</option>
-        <option value="70-79%">70–79 %</option><option value="80-89%">80–89 %</option>
-        <option value="90-99%">90–99 %</option><option value="subokluzia">Subokluzia</option><option value="okluze">Okluze</option>
-      </select>
-    </div>
-    <div class="f"><label>Metóda</label>
-      <select id="nascet_metoda_sin" onchange="gen()">
-        <option>DSA</option><option>CTA</option><option>MRA</option><option>USG</option>
-      </select>
-    </div>
-  </div>
-</div>
-<div class="row r2">
-  <div class="f"><label>ACE l.sin.</label>
-    <select id="dsa_ace_sin" onchange="gen()">
-      <option value="průchodná">průchodná</option>
-      <option value="stenóza">stenóza</option><option value="okluze">okluze</option>
-    </select>
-  </div>
-  <div class="f"><label>AV l.sin.</label>
-    <select id="dsa_av_sin" onchange="gen()">
-      <option value="">– nevyplněné –</option>
-      <option value="bez závažné stenózy">bez závažné stenózy</option>
-      <option value="hypoplastická">hypoplastická</option>
-      <option value="stenóza">stenóza</option><option value="okluze">okluze</option>
-    </select>
-  </div>
-</div>
-</div>
-
 <div id="dsa_dx_wrap" style="display:none">
 <div class="st" style="font-size:12px;margin:8px 0 4px;color:#5a6a8a">Pravá strana (l.dx.)</div>
 <div class="row r2">
@@ -449,6 +385,70 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   </div>
   <div class="f"><label>AV l.dx.</label>
     <select id="dsa_av_dx" onchange="gen()">
+      <option value="">– nevyplněné –</option>
+      <option value="bez závažné stenózy">bez závažné stenózy</option>
+      <option value="hypoplastická">hypoplastická</option>
+      <option value="stenóza">stenóza</option><option value="okluze">okluze</option>
+    </select>
+  </div>
+</div>
+</div>
+
+<div id="dsa_sin_wrap">
+<div class="st" style="font-size:12px;margin:8px 0 4px;color:#5a6a8a">Levá strana (l.sin.)</div>
+<div class="row r2">
+  <div class="f"><label>ACC l.sin.</label>
+    <select id="dsa_acc_sin" onchange="gen()">
+      <option value="bez závažné stenózy">bez závažné stenózy</option>
+      <option value="stenóza">stenóza</option><option value="subokluzia">subokluzia</option><option value="okluze">okluze</option>
+    </select>
+  </div>
+  <div class="f"><label>ACI l.sin. – typ stenózy</label>
+    <select id="dsa_aci_sin_typ" onchange="gen()">
+      <option value="kritická odstupová stenóza">kritická odstupová stenóza</option>
+      <option value="významná stenóza">významná stenóza</option>
+      <option value="subokluzia">subokluzia</option>
+      <option value="okluze">okluze</option>
+    </select>
+  </div>
+</div>
+<div class="f">
+  <label>Stenóza NASCET l.sin. <span style="font-size:10px;color:#6b7280;font-weight:400">(d_min / d_distal mm)</span></label>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+    <input type="number" id="nascet_dmin_sin" min="0.1" max="20" step="0.1" placeholder="d min (mm)"
+           style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+           oninput="calcNASCET('sin')">
+    <span style="font-size:13px;color:#6b7280">/</span>
+    <input type="number" id="nascet_ddist_sin" min="0.1" max="20" step="0.1" placeholder="d distal (mm)"
+           style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+           oninput="calcNASCET('sin')">
+    <span id="nascet_result_sin" style="font-size:12px;color:#1e40af;font-weight:600"></span>
+  </div>
+  <div class="row r2" style="margin-top:4px">
+    <div class="f"><label>Stupeň NASCET l.sin.</label>
+      <select id="nascet_stenoza_sin" onchange="gen()">
+        <option value="">– nevyplněné –</option>
+        <option value="50-59%">50–59 %</option><option value="60-69%">60–69 %</option>
+        <option value="70-79%">70–79 %</option><option value="80-89%">80–89 %</option>
+        <option value="90-99%">90–99 %</option><option value="subokluzia">Subokluzia</option><option value="okluze">Okluze</option>
+      </select>
+    </div>
+    <div class="f"><label>Metóda</label>
+      <select id="nascet_metoda_sin" onchange="gen()">
+        <option>DSA</option><option>CTA</option><option>MRA</option><option>USG</option>
+      </select>
+    </div>
+  </div>
+</div>
+<div class="row r2">
+  <div class="f"><label>ACE l.sin.</label>
+    <select id="dsa_ace_sin" onchange="gen()">
+      <option value="průchodná">průchodná</option>
+      <option value="stenóza">stenóza</option><option value="okluze">okluze</option>
+    </select>
+  </div>
+  <div class="f"><label>AV l.sin.</label>
+    <select id="dsa_av_sin" onchange="gen()">
       <option value="">– nevyplněné –</option>
       <option value="bez závažné stenózy">bez závažné stenózy</option>
       <option value="hypoplastická">hypoplastická</option>
