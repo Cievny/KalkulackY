@@ -528,9 +528,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="checks">
     <label class="ck"><input type="checkbox" class="st_cmp" value="hematom" onchange="gen()"> Hematom</label>
     <label class="ck"><input type="checkbox" class="st_cmp" value="pseudoaneuryzma" onchange="gen()"> Pseudoaneuryzma</label>
-    <label class="ck"><input type="checkbox" class="st_cmp" value="arteriálna disekcia přístupu" onchange="gen()"> Disekcia přístupu</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="arteriálna disekcia přístupu" onchange="gen()"> Disekce přístupu</label>
     <label class="ck"><input type="checkbox" class="st_cmp" value="krvácení s intervenciou" onchange="gen()"> Krvácení s interv.</label>
-    <label class="ck"><input type="checkbox" class="st_cmp" value="infekcia přístupu" onchange="gen()"> Infekcia</label>
+    <label class="ck"><input type="checkbox" class="st_cmp" value="infekcia přístupu" onchange="gen()"> Infekce</label>
   </div>
 </div>
 <div class="f"><div class="lbl">Graft / stentgraft (≤30d)</div>
@@ -552,7 +552,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   </div>
 </div>
 <div class="row r2">
-  <div class="f"><label>Konverze na otevřený výkon</label><select id="st_konv" onchange="gen()"><option value="nie">nie</option><option value="áno">áno</option></select></div>
+  <div class="f"><label>Konverze na otevřený výkon</label><select id="st_konv" onchange="gen()"><option value="ne">ne</option><option value="ano">ano</option></select></div>
   <div class="f"><label>Clavien-Dindo (nejzávažnější)</label><select id="st_clavien" onchange="gen()"><option value="">žádná</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtí)</option></select></div>
 </div>
 </div>
@@ -858,7 +858,7 @@ async function saveToSupabase(){
     dap:g('st_dap')?parseFloat(g('st_dap')):null,
     contrast_ml:g('st_contrast')?parseInt(g('st_contrast')):null,
     komplikacie_struct:[...document.querySelectorAll('.st_cmp:checked')].map(e=>e.value).join(', '),
-    konverzia:g('st_konv')==='áno',
+    konverzia:g('st_konv')==='ano',
     clavien_dindo:g('st_clavien'),
     antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', '),
     sac_diameter_mm:g('sac_diameter_mm')?parseFloat(g('sac_diameter_mm')):null,
