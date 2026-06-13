@@ -229,6 +229,12 @@ ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS popis_stenozy      TEXT;
 ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS percento_stenozy   TEXT;
 ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS zavaznost_stenozy  TEXT;
 ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS hemostaza_poznamka TEXT;
+ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS predilatacny_balon_diameter_mm NUMERIC;
+ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS predilatacny_balon_length_mm   NUMERIC;
+ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS stent_diameter_mm             NUMERIC;
+ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS stent_length_mm               NUMERIC;
+ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_diameter_mm NUMERIC;
+ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS domodelovaci_balon_length_mm   NUMERIC;
 
 -- --- PEVAR: identifikácia, prístup, materiály ---
 ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS char_krehky               BOOLEAN;
