@@ -23,6 +23,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .r2{grid-template-columns:1fr 1fr}.r3{grid-template-columns:1fr 1fr 1fr}
 .checks{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:3px}
 .ck{display:flex;align-items:center;gap:5px;font-size:12.5px;cursor:pointer;user-select:none;padding:2px 0}
+.kom-item{margin-bottom:5px}
+.kom-sub{display:none;margin:5px 0 4px 22px;padding:7px 10px;background:#f0f7ff;border-left:3px solid #3b82f6;border-radius:0 6px 6px 0}
+.kom-sub.on{display:block}
+.kom-sub .sub-lbl{font-size:11px;font-weight:700;color:#5a6a8a;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
 .ck input{width:auto;accent-color:#3b82f6;cursor:pointer}
 .tog{margin-bottom:7px;border:1.5px solid #eef0f5;border-radius:7px;overflow:hidden}
 .thdr{display:flex;align-items:center;gap:9px;padding:8px 11px;background:#f7f8fc;cursor:pointer;font-weight:600;font-size:13px}
@@ -97,6 +101,163 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="checks">
     <label class="ck"><input type="radio" name="ind_typ" id="ind_elektivny" value="elektívnemu" checked onchange="gen()"><span>Elektívny</span></label>
     <label class="ck"><input type="radio" name="ind_typ" id="ind_urgentny" value="urgentnému" onchange="gen()"><span>Urgentný</span></label>
+  </div>
+</div>
+<div class="f"><div class="lbl">Komorbidity</div>
+  <div id="komordiv">
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_dm" onchange="kSub('dm');gen()"><span>Diabetes mellitus</span></label>
+      <div class="kom-sub" id="ksub_dm">
+        <div class="sub-lbl">Typ</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="dm_typ" value="DM1" onchange="gen()"><span>DM1</span></label>
+          <label class="ck"><input type="radio" name="dm_typ" value="DM2" checked onchange="gen()"><span>DM2</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Liečba</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="dm_liecba" value="diétou" onchange="gen()"><span>Diéta</span></label>
+          <label class="ck"><input type="radio" name="dm_liecba" value="OAD" checked onchange="gen()"><span>OAD</span></label>
+          <label class="ck"><input type="radio" name="dm_liecba" value="inzulínom" onchange="gen()"><span>Inzulín</span></label>
+          <label class="ck"><input type="radio" name="dm_liecba" value="kombináciou OAD a inzulínu" onchange="gen()"><span>Kombinácia</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_ah" onchange="kSub('ah');gen()"><span>Artériová hypertenzia (AH)</span></label>
+      <div class="kom-sub" id="ksub_ah">
+        <div class="sub-lbl">Kompenzácia</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="ah_komp" value="kompenzovaná" checked onchange="gen()"><span>Kompenzovaná</span></label>
+          <label class="ck"><input type="radio" name="ah_komp" value="nekompenzovaná" onchange="gen()"><span>Nekompenzovaná</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Liečba</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="ah_liecba" value="bez liečby" onchange="gen()"><span>Bez liečby</span></label>
+          <label class="ck"><input type="radio" name="ah_liecba" value="monoterapia" checked onchange="gen()"><span>Monoterapia</span></label>
+          <label class="ck"><input type="radio" name="ah_liecba" value="kombinovaná liečba" onchange="gen()"><span>Kombinovaná liečba</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_chri" onchange="kSub('chri');gen()"><span>Chronická renálna insuficiencia (CKD)</span></label>
+      <div class="kom-sub" id="ksub_chri">
+        <div class="sub-lbl">Sérový kreatinín (µmol/L)</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <input type="number" id="chri_krea" min="10" max="2000" step="1" placeholder="napr. 90"
+                 style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+                 oninput="calcEGFR();gen()">
+          <span id="chri_egfr_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
+        </div>
+        <div style="font-size:10px;color:#6b7280;margin-top:2px">CKD-EPI 2021 · vek a pohlavie z Pacient sekcie</div>
+      </div>
+    </div>
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_ichs" onchange="kSub('ichs');gen()"><span>ICHS</span></label>
+      <div class="kom-sub" id="ksub_ichs">
+        <div class="sub-lbl">Forma</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="ichs_forma" value="stabilná" checked onchange="gen()"><span>Stabilná</span></label>
+          <label class="ck"><input type="radio" name="ichs_forma" value="nestabilná" onchange="gen()"><span>Nestabilná</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">St.p. revaskularizácii</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="ichs_revasc" value="bez revaskularizácie" checked onchange="gen()"><span>Nie</span></label>
+          <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. PCI" onchange="gen()"><span>PCI</span></label>
+          <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. CABG" onchange="gen()"><span>CABG</span></label>
+          <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. PCI+CABG" onchange="gen()"><span>PCI+CABG</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_im" onchange="kSub('im');gen()"><span>St.p. IM</span></label>
+      <div class="kom-sub" id="ksub_im">
+        <div class="sub-lbl">Obdobie</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="im_obdobie" value="nedávny (&lt;30 dní)" onchange="gen()"><span>Nedávny (&lt;30 dní)</span></label>
+          <label class="ck"><input type="radio" name="im_obdobie" value="starší" checked onchange="gen()"><span>Starší</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Liečba IM</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="im_liecba" value="konzervatívne" checked onchange="gen()"><span>Konzervatívne</span></label>
+          <label class="ck"><input type="radio" name="im_liecba" value="PCI" onchange="gen()"><span>PCI</span></label>
+          <label class="ck"><input type="radio" name="im_liecba" value="CABG" onchange="gen()"><span>CABG</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_cmp" onchange="kSub('cmp');gen()"><span>St.p. CMP</span></label>
+      <div class="kom-sub" id="ksub_cmp">
+        <div class="sub-lbl">Typ</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="cmp_typ" value="ischemická" checked onchange="gen()"><span>Ischemická</span></label>
+          <label class="ck"><input type="radio" name="cmp_typ" value="hemoragická" onchange="gen()"><span>Hemoragická</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Obdobie</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="cmp_obdobie" value="akútna (&lt;30 dní)" onchange="gen()"><span>Akútna (&lt;30 dní)</span></label>
+          <label class="ck"><input type="radio" name="cmp_obdobie" value="anamnestická" checked onchange="gen()"><span>Anamnestická</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_faj" onchange="kSub('faj');gen()"><span>Fajčiar</span></label>
+      <div class="kom-sub" id="ksub_faj">
+        <div class="sub-lbl">Stav</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="faj_stav" value="aktívny fajčiar" checked onchange="gen()"><span>Aktívny</span></label>
+          <label class="ck"><input type="radio" name="faj_stav" value="ex-fajčiar" onchange="gen()"><span>Ex-fajčiar</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Pack-years</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="faj_py" min="1" max="200" step="1" placeholder="napr. 30"
+                 style="width:90px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+                 oninput="gen()">
+          <span style="font-size:12px;color:#6b7280">pack-years</span>
+        </div>
+      </div>
+    </div>
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_obez" onchange="kSub('obez');gen()"><span>Obezita</span></label>
+      <div class="kom-sub" id="ksub_obez">
+        <div class="sub-lbl">BMI (kg/m²)</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="obez_bmi" min="30" max="80" step="0.1" placeholder="napr. 34"
+                 style="width:90px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+                 oninput="calcBMI();gen()">
+          <span id="obez_bmi_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
+        </div>
+      </div>
+    </div>
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_dysl" onchange="kSub('dysl');gen()"><span>Dyslipidémia</span></label>
+      <div class="kom-sub" id="ksub_dysl">
+        <div class="sub-lbl">Liečba</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="dysl_liecba" value="bez liečby" onchange="gen()"><span>Bez liečby</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="statín" checked onchange="gen()"><span>Statín</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="statín + ezetimib" onchange="gen()"><span>Statín + ezetimib</span></label>
+          <label class="ck"><input type="radio" name="dysl_liecba" value="PCSK9 inhibítor" onchange="gen()"><span>PCSK9 inhibítor</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_chochp" onchange="kSub('chochp');gen()"><span>CHOCHP</span></label>
+      <div class="kom-sub" id="ksub_chochp">
+        <div class="sub-lbl">Závažnosť (GOLD)</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="chochp_gold" value="GOLD I" checked onchange="gen()"><span>I</span></label>
+          <label class="ck"><input type="radio" name="chochp_gold" value="GOLD II" onchange="gen()"><span>II</span></label>
+          <label class="ck"><input type="radio" name="chochp_gold" value="GOLD III" onchange="gen()"><span>III</span></label>
+          <label class="ck"><input type="radio" name="chochp_gold" value="GOLD IV" onchange="gen()"><span>IV</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Liečba</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="chochp_liecba" value="bronchodilatans" checked onchange="gen()"><span>Bronchodilatans</span></label>
+          <label class="ck"><input type="radio" name="chochp_liecba" value="IKS+LABA" onchange="gen()"><span>IKS+LABA</span></label>
+          <label class="ck"><input type="radio" name="chochp_liecba" value="trojkombinácia" onchange="gen()"><span>Trojkombinácia</span></label>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 </div>
@@ -326,6 +487,77 @@ function g(id){const el=document.getElementById(id);if(!el)return'';return el.va
 function chk(id){const el=document.getElementById(id);return el?el.checked:false;}
 function tB(id){const b=document.getElementById('b_'+id);if(b)b.classList.toggle('on');}
 function updatePevarIdPrefix(){document.getElementById('id-prefix').textContent='PEVAR-'+new Date().getFullYear()+'-';}
+function kSub(id){const s=document.getElementById('ksub_'+id),c=document.getElementById('k_'+id);if(s)s.classList.toggle('on',c.checked);}
+function getKomor(){
+  const list=[];
+  if(document.getElementById('k_dm')?.checked){
+    const typ=document.querySelector('input[name="dm_typ"]:checked')?.value||'DM2';
+    const liecba=document.querySelector('input[name="dm_liecba"]:checked')?.value||'OAD';
+    list.push(typ+', liečba '+liecba);
+  }
+  if(document.getElementById('k_ah')?.checked){
+    const komp=document.querySelector('input[name="ah_komp"]:checked')?.value||'kompenzovaná';
+    const liecba=document.querySelector('input[name="ah_liecba"]:checked')?.value||'monoterapia';
+    list.push('AH – '+komp+', '+liecba);
+  }
+  if(document.getElementById('k_chri')?.checked){const res=calcEGFR();list.push(res?'CKD – '+res:'CKD');}
+  if(document.getElementById('k_ichs')?.checked){
+    const forma=document.querySelector('input[name="ichs_forma"]:checked')?.value||'stabilná';
+    const revasc=document.querySelector('input[name="ichs_revasc"]:checked')?.value||'bez revaskularizácie';
+    list.push('ICHS – '+forma+(revasc!=='bez revaskularizácie'?', '+revasc:''));
+  }
+  if(document.getElementById('k_im')?.checked){
+    const obdobie=document.querySelector('input[name="im_obdobie"]:checked')?.value||'starší';
+    const liecba=document.querySelector('input[name="im_liecba"]:checked')?.value||'konzervatívne';
+    list.push('St.p. IM – '+obdobie+', liečba '+liecba);
+  }
+  if(document.getElementById('k_cmp')?.checked){
+    const typ=document.querySelector('input[name="cmp_typ"]:checked')?.value||'ischemická';
+    const obdobie=document.querySelector('input[name="cmp_obdobie"]:checked')?.value||'anamnestická';
+    list.push('St.p. CMP – '+typ+', '+obdobie);
+  }
+  if(document.getElementById('k_faj')?.checked){
+    const stav=document.querySelector('input[name="faj_stav"]:checked')?.value||'aktívny fajčiar';
+    const py=document.getElementById('faj_py')?.value;
+    list.push(stav+(py?' ('+py+' pack-years)':''));
+  }
+  if(document.getElementById('k_obez')?.checked){const res=calcBMI();list.push(res?'Obezita – '+res:'Obezita');}
+  if(document.getElementById('k_dysl')?.checked){
+    const liecba=document.querySelector('input[name="dysl_liecba"]:checked')?.value||'statín';
+    list.push('Dyslipidémia – '+liecba);
+  }
+  if(document.getElementById('k_chochp')?.checked){
+    const gold=document.querySelector('input[name="chochp_gold"]:checked')?.value||'GOLD I';
+    const liecba=document.querySelector('input[name="chochp_liecba"]:checked')?.value||'bronchodilatans';
+    list.push('CHOCHP – '+gold+', '+liecba);
+  }
+  document.querySelectorAll('#komordiv input[type=checkbox]:not([id^="k_"]):checked').forEach(e=>list.push(e.value));
+  return list;
+}
+function calcEGFR(){
+  const kreaRaw=parseFloat(document.getElementById('chri_krea')?.value);
+  const krea=kreaRaw/88.42;
+  const vek=parseInt(g('vek'));
+  const pohlavie=g('pohlavie');
+  const el=document.getElementById('chri_egfr_result');
+  if(!kreaRaw||!vek||!pohlavie){if(el)el.textContent='';return'';}
+  const female=pohlavie==='Žena';
+  const A=female?0.7:0.9,S=female?1.012:1.0;
+  let B;if(female)B=krea<=0.7?-0.241:-1.200;else B=krea<=0.9?-0.302:-1.200;
+  const val=Math.round(142*Math.pow(krea/A,B)*Math.pow(0.9938,vek)*S*10)/10;
+  let stage;
+  if(val>=90)stage='G1 (≥90)';else if(val>=60)stage='G2 (60–89)';else if(val>=45)stage='G3a (45–59)';
+  else if(val>=30)stage='G3b (30–44)';else if(val>=15)stage='G4 (15–29)';else stage='G5 (<15)';
+  const txt=val+' ml/min/1,73m² → '+stage;
+  if(el)el.textContent=txt;return txt;
+}
+function calcBMI(){
+  const bmi=parseFloat(document.getElementById('obez_bmi')?.value);
+  const el=document.getElementById('obez_bmi_result');
+  if(!bmi||bmi<30){if(el)el.textContent='';return'';}
+  let stupen;if(bmi<35)stupen='I. stupeň (30–34,9)';else if(bmi<40)stupen='II. stupeň (35–39,9)';else stupen='III. stupeň (≥40)';
+  const txt='BMI '+bmi+' → '+stupen;if(el)el.textContent=txt;return txt;
+}
 
 function gen(){
   const vek=g('vek');
@@ -342,8 +574,9 @@ function gen(){
   if(chk('symptomaticky'))charParts.push(jeZena?'symptomatická':'symptomatický');
   const char=charParts.join(', ');
 
+  const komor=getKomor();
   const indTyp=document.querySelector('input[name="ind_typ"]:checked')?.value||'elektívnemu';
-  const uvod=[vekText,char,pacientText,diagnoza?'s '+diagnoza+',':'',indikaciaText+' k '+indTyp+' PEVAR:'].filter(Boolean).join(' ');
+  const uvod=[vekText,char,pacientText,komor.length?'('+komor.join(', ')+')':'',diagnoza?'s '+diagnoza+',':'',indikaciaText+' k '+indTyp+' PEVAR:'].filter(Boolean).join(' ');
 
   const anestezia=g('anestezia_typ');
   const pristupVal=g('pristup_strana').split('|');
