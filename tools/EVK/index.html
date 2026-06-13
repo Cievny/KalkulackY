@@ -174,10 +174,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <label class="ck"><input type="checkbox" id="k_chri" onchange="kSub('chri');gen()"><span>Chronická renálna insuficiencia (CKD)</span></label>
       <div class="kom-sub" id="ksub_chri">
         <div class="sub-lbl">Sérový kreatinín (µmol/L)</div>
-        <input type="number" id="chri_krea" min="10" max="2000" step="1" placeholder="napr. 90"
-               style="width:120px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
-               oninput="calcEGFR();gen()">
-        <div id="chri_egfr_result" style="margin-top:6px;font-size:12px;color:#1e40af;font-weight:600"></div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <input type="number" id="chri_krea" min="10" max="2000" step="1" placeholder="napr. 90"
+                 style="width:110px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+                 oninput="calcEGFR();gen()">
+          <span id="chri_egfr_result" style="font-size:12px;color:#1e40af;font-weight:600"></span>
+        </div>
         <div style="font-size:10px;color:#6b7280;margin-top:2px">CKD-EPI 2021 · vek a pohlavie z Pacient sekcie</div>
       </div>
     </div>
@@ -543,7 +545,7 @@ function getKomor(){
     list.push('AH – '+komp+', '+liecba);
   }
   if(document.getElementById('k_chri')?.checked){
-    const res=document.getElementById('chri_egfr_result')?.dataset?.stage||'';
+    const res=calcEGFR();
     list.push(res?'CKD – '+res:'CKD');
   }
   document.querySelectorAll('#komordiv input[type=checkbox]:not([id^="k_"]):checked').forEach(e=>list.push(e.value));
@@ -555,8 +557,7 @@ function calcEGFR(){
   const vek=parseInt(g('vek'));
   const pohlavie=g('pohl');
   const el=document.getElementById('chri_egfr_result');
-  if(!el)return;
-  if(!kreaRaw||!vek||!pohlavie){el.textContent='';el.dataset.stage='';return;}
+  if(!kreaRaw||!vek||!pohlavie){if(el)el.textContent='';return'';}
   const female=pohlavie==='Z';
   const A=female?0.7:0.9;
   const S=female?1.012:1.0;
@@ -567,14 +568,15 @@ function calcEGFR(){
   const egfr=142*Math.pow(ratio,B)*Math.pow(0.9938,vek)*S;
   const val=Math.round(egfr*10)/10;
   let stage;
-  if(val>=90)      stage='G1 (eGFR ≥90)';
-  else if(val>=60) stage='G2 (eGFR 60–89)';
-  else if(val>=45) stage='G3a (eGFR 45–59)';
-  else if(val>=30) stage='G3b (eGFR 30–44)';
-  else if(val>=15) stage='G4 (eGFR 15–29)';
-  else             stage='G5 (eGFR <15)';
-  el.textContent='eGFR: '+val+' ml/min/1,73m² → '+stage;
-  el.dataset.stage=stage;
+  if(val>=90)      stage='G1 (≥90)';
+  else if(val>=60) stage='G2 (60–89)';
+  else if(val>=45) stage='G3a (45–59)';
+  else if(val>=30) stage='G3b (30–44)';
+  else if(val>=15) stage='G4 (15–29)';
+  else             stage='G5 (<15)';
+  const txt=val+' ml/min/1,73m² → '+stage;
+  if(el) el.textContent=txt;
+  return txt;
 }
 function cC(id){const s=document.getElementById(id),i=document.getElementById(id+'_c');if(i)i.style.display=s&&s.value==='vlastný popis'?'block':'none';}
 function gV(id){const s=document.getElementById(id);if(!s)return'–';return s.value==='vlastný popis'?(g(id+'_c')||'(vlastný popis)'):s.value;}
