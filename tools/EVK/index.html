@@ -237,7 +237,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
         </div>
       </div>
     </div>
-    <label class="ck"><input type="checkbox" value="fajčiar" onchange="gen()"> Fajčiar</label>
+    <!-- Fajčiar -->
+    <div class="kom-item">
+      <label class="ck"><input type="checkbox" id="k_faj" onchange="kSub('faj');gen()"><span>Fajčiar</span></label>
+      <div class="kom-sub" id="ksub_faj">
+        <div class="sub-lbl">Stav</div>
+        <div class="checks">
+          <label class="ck"><input type="radio" name="faj_stav" value="aktívny fajčiar" checked onchange="gen()"><span>Aktívny</span></label>
+          <label class="ck"><input type="radio" name="faj_stav" value="ex-fajčiar" onchange="gen()"><span>Ex-fajčiar</span></label>
+        </div>
+        <div class="sub-lbl" style="margin-top:6px">Pack-years</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="faj_py" min="1" max="200" step="1" placeholder="napr. 30"
+                 style="width:90px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
+                 oninput="gen()">
+          <span style="font-size:12px;color:#6b7280">pack-years</span>
+        </div>
+      </div>
+    </div>
     <label class="ck"><input type="checkbox" value="obezita" onchange="gen()"> Obezita</label>
     <label class="ck"><input type="checkbox" value="dyslipidémia" onchange="gen()"> Dyslipidémia</label>
     <label class="ck"><input type="checkbox" value="CHOCHP" onchange="gen()"> CHOCHP</label>
@@ -598,6 +615,11 @@ function getKomor(){
   if(document.getElementById('k_chri')?.checked){
     const res=calcEGFR();
     list.push(res?'CKD – '+res:'CKD');
+  }
+  if(document.getElementById('k_faj')?.checked){
+    const stav=document.querySelector('input[name="faj_stav"]:checked')?.value||'aktívny fajčiar';
+    const py=document.getElementById('faj_py')?.value;
+    list.push(stav+(py?' ('+py+' pack-years)':''));
   }
   if(document.getElementById('k_cmp')?.checked){
     const typ=document.querySelector('input[name="cmp_typ"]:checked')?.value||'ischemická';
