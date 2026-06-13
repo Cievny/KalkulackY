@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Nápady & Návrhy – cievny.sk</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f7;min-height:100vh;}
+.board{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:20px;max-width:1200px;margin:0 auto;}
+.col{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:10px;}
+.col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.col-title{font-size:14px;font-weight:700;letter-spacing:.3px;}
+.col-count{font-size:11px;font-weight:600;background:#f0f2f7;color:#6b7280;border-radius:10px;padding:2px 8px;}
+.col-napady .col-title{color:#1e40af;}
+.col-riesenie .col-title{color:#b45309;}
+.col-hotovo .col-title{color:#166534;}
+.col-napady{border-top:3px solid #3b82f6;}
+.col-riesenie{border-top:3px solid #f59e0b;}
+.col-hotovo{border-top:3px solid #22c55e;}
+.card{background:#f8faff;border:1.5px solid #e5e9f5;border-radius:8px;padding:10px 12px;position:relative;cursor:default;}
+.card-text{font-size:13px;color:#1a2745;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+.card-meta{font-size:10px;color:#9ca3af;margin-top:6px;}
+.card-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.btn-move{font-size:11px;font-weight:600;padding:3px 8px;border:1.5px solid #dde1ea;border-radius:5px;background:#fff;cursor:pointer;color:#374151;}
+.btn-move:hover{background:#f0f2f7;}
+.btn-del{font-size:11px;font-weight:600;padding:3px 8px;border:1.5px solid #fca5a5;border-radius:5px;background:#fff;cursor:pointer;color:#dc2626;}
+.btn-del:hover{background:#fef2f2;}
+.add-area{margin-top:4px;}
+.add-area textarea{width:100%;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;outline:none;color:#1a2745;}
+.add-area textarea:focus{border-color:#3b82f6;}
+.btn-add{margin-top:6px;width:100%;padding:7px;background:#1e40af;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-add:hover{background:#1737a0;}
+h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
+.page-sub{font-size:13px;color:#6b7280;padding:4px 20px 0;}
+@media(max-width:700px){.board{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<script src="/tools/auth.js"></script>
+<script>checkAuth();</script>
+
+<h1>💡 Nápady & Návrhy na úpravy</h1>
+<p class="page-sub">Zápisník pre nápady, návrhy a plánované zmeny systému.</p>
+
+<div class="board">
+  <div class="col col-napady" id="col-napady">
+    <div class="col-header">
+      <span class="col-title">💡 Nápady</span>
+      <span class="col-count" id="cnt-napady">0</span>
+    </div>
+    <div id="cards-napady"></div>
+    <div class="add-area">
+      <textarea id="inp-napady" placeholder="Napíš nápad alebo návrh..."></textarea>
+      <button class="btn-add" onclick="addCard('napady')">+ Pridať</button>
+    </div>
+  </div>
+
+  <div class="col col-riesenie" id="col-riesenie">
+    <div class="col-header">
+      <span class="col-title">🔧 V riešení</span>
+      <span class="col-count" id="cnt-riesenie">0</span>
+    </div>
+    <div id="cards-riesenie"></div>
+    <div class="add-area">
+      <textarea id="inp-riesenie" placeholder="Čo sa práve rieši..."></textarea>
+      <button class="btn-add" onclick="addCard('riesenie')">+ Pridať</button>
+    </div>
+  </div>
+
+  <div class="col col-hotovo" id="col-hotovo">
+    <div class="col-header">
+      <span class="col-title">✅ Hotovo</span>
+      <span class="col-count" id="cnt-hotovo">0</span>
+    </div>
+    <div id="cards-hotovo"></div>
+    <div class="add-area">
+      <textarea id="inp-hotovo" placeholder="Dokončená úprava..."></textarea>
+      <button class="btn-add" onclick="addCard('hotovo')">+ Pridať</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLS=['napady','riesenie','hotovo'];
+const COL_LABELS={napady:'💡 Nápady',riesenie:'🔧 V riešení',hotovo:'✅ Hotovo'};
+const STORAGE_KEY='cievny_ideas';
+
+function load(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[];}catch{return[];}}
+function save(items){localStorage.setItem(STORAGE_KEY,JSON.stringify(items));}
+
+function render(){
+  const items=load();
+  COLS.forEach(col=>{
+    const container=document.getElementById('cards-'+col);
+    const colItems=items.filter(i=>i.col===col);
+    document.getElementById('cnt-'+col).textContent=colItems.length;
+    container.innerHTML='';
+    colItems.forEach(item=>{
+      const div=document.createElement('div');
+      div.className='card';
+      const date=new Date(item.ts).toLocaleDateString('sk-SK',{day:'numeric',month:'short',year:'numeric'});
+      const moveButtons=COLS.filter(c=>c!==col).map(c=>`<button class="btn-move" onclick="moveCard('${item.id}','${c}')">${COL_LABELS[c]}</button>`).join('');
+      div.innerHTML=`<div class="card-text">${escHtml(item.text)}</div>
+        <div class="card-meta">${date}</div>
+        <div class="card-actions">${moveButtons}<button class="btn-del" onclick="delCard('${item.id}')">🗑 Zmazať</button></div>`;
+      container.appendChild(div);
+    });
+  });
+}
+
+function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function addCard(col){
+  const inp=document.getElementById('inp-'+col);
+  const text=inp.value.trim();
+  if(!text)return;
+  const items=load();
+  items.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2),col,text,ts:Date.now()});
+  save(items);
+  inp.value='';
+  render();
+}
+
+function moveCard(id,newCol){
+  const items=load();
+  const item=items.find(i=>i.id===id);
+  if(item){item.col=newCol;save(items);render();}
+}
+
+function delCard(id){
+  if(!confirm('Zmazať tento zápisok?'))return;
+  const items=load().filter(i=>i.id!==id);
+  save(items);render();
+}
+
+document.querySelectorAll('textarea').forEach(ta=>{
+  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey){const col=ta.id.replace('inp-','');addCard(col);}});
+});
+
+render();
+</script>
+</body>
+</html>

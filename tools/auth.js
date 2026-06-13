@@ -43,6 +43,7 @@
     {href:'/tools/CAS-generator/',label:'CAS'},
     {href:'/tools/PEVAR/',label:'PEVAR'},
     {href:'/tools/analytics/',label:'📊 Štatistiky'},
+    {href:'/tools/ideas/',label:'💡 Nápady'},
   ];
 
   function injectNav(){
