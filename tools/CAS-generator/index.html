@@ -824,6 +824,7 @@ async function saveData(){
   const payload={
     vykon_id:'CAS-'+new Date().getFullYear()+'-'+(g('id_suffix')||'???'),
     operator:g('operator'),
+    komorbidity:getKomor().join(', '),
     datum_zaznamu:g('datum_zaznamu')||new Date().toISOString().slice(0,10),
     vek:parseInt(g('vek'))||null,
     pohlavie:g('pohlavie'),
