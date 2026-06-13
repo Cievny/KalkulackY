@@ -531,25 +531,37 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 
 <!-- Uzáver -->
 <div class="card">
-<div class="st">Uzáver a Záver</div>
-<div class="f"><label>Uzatvárací systém</label>
-  <select id="uzatvaraci_system" onchange="gen()">
-    <option>AngioSeal 6F</option><option>ProStyle</option><option>FemoSeal</option>
-    <option>MynxGrip</option><option>manuálne komprimujeme</option>
-  </select>
+<div class="st">Uzáver &amp; Hemostáza</div>
+<div class="row r2">
+  <div class="f"><label>Kompresia (min)</label><input type="number" id="kompr" placeholder="10" oninput="gen()"></div>
+  <div class="f"><label>Uzatváracie zariadenie</label>
+    <select id="uzatvaraci_system" onchange="gen()">
+      <option value="">Manuálna kompresia</option>
+      <option>AngioSeal 6F</option><option>AngioSeal 8F</option>
+      <option>FemoSeal</option><option>ProStyle</option><option>MynxControl</option>
+    </select>
+  </div>
 </div>
-<div class="tog">
-  <label class="thdr"><input type="checkbox" id="vykonat_hemostazu" checked onchange="tB('hemo_opt');gen()"><span>Poznámka o hemostáze</span></label>
-  <div class="tbody on" id="b_hemo_opt">
-    <div class="f">
-      <select id="hemostaza_text" onchange="gen()">
-        <option>dosahujeme úplnú hemostázu</option>
-        <option>dosahujeme hemostázu pomocou PatchPro bandáže</option>
-      </select>
-    </div>
+<div class="row r2">
+  <div class="f"><label>Hemostáza dosiahnutá</label>
+    <select id="hemostaza_text" onchange="gen()">
+      <option>ihneď</option>
+      <option>po manuálnej kompresii</option>
+      <option>za použitia PatchPro bandáže</option>
+    </select>
+  </div>
+  <div class="f" style="display:flex;align-items:center;padding-top:20px">
+    <label class="ck"><input type="checkbox" id="femostop" onchange="gen()"> Nasadený Femostop</label>
   </div>
 </div>
 <div class="f"><label>Výsledný obraz</label><input type="text" id="vysledok" value="pekný, bez perifernej embolizácie" oninput="gen()"></div>
+<div class="f"><div class="lbl">Technický úspech</div>
+  <div class="checks">
+    <label class="ck"><input type="radio" name="tech_uspech" value="Technický úspech" checked onchange="gen()"> ✅ Technický úspech</label>
+    <label class="ck"><input type="radio" name="tech_uspech" value="Parciálny úspech" onchange="gen()"> ⚠️ Parciálny úspech</label>
+    <label class="ck"><input type="radio" name="tech_uspech" value="Technický neúspech" onchange="gen()"> ❌ Technický neúspech</label>
+  </div>
+</div>
 <div class="f"><label>Záver</label><input type="text" id="zaver_vykonu" value="CAS ACI l.dx. s dobrým efektom, bez komplikácii." oninput="gen()"></div>
 </div>
 
@@ -732,11 +744,16 @@ function gen(){
     parts[parts.length-1]+=`. Vzhľadom na nález volíme konzervatívny postup.`;
   }
 
-  const uz=g('uzatvaraci_system');
-  let uzaverText=uz==='manuálne komprimujeme'?`Miesto vpichu ${uz}`:`Miesto vpichu uzatvárame pomocou ${uz}`;
-  if(chk('vykonat_hemostazu'))uzaverText+=`, ${g('hemostaza_text')}`;
+  const uzatv=g('uzatvaraci_system');
+  const kompr=g('kompr');
+  let uzaverText=uzatv?`Miesto vpichu uzatvárame pomocou ${uzatv}`:'Manuálna kompresia'+(kompr?' '+kompr+' min':'');
+  uzaverText+=', hemostáza dosiahnutá '+g('hemostaza_text');
+  if(document.getElementById('femostop')?.checked)uzaverText+=', nasadený Femostop';
   uzaverText+='.';
+  const techUspech=document.querySelector('input[name="tech_uspech"]:checked')?.value||'';
   parts.push(uzaverText);
+  if(g('vysledok'))parts.push('Výsledný obraz: '+g('vysledok')+'.');
+  if(techUspech)parts.push(techUspech+'.');
   parts.push(`Z: ${g('zaver_vykonu')}`);
   document.getElementById('out').value=parts.join('\n\n');
 }
