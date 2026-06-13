@@ -173,8 +173,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <div class="kom-item">
       <label class="ck"><input type="checkbox" id="k_chri" onchange="kSub('chri');gen()"><span>Chronická renálna insuficiencia (CKD)</span></label>
       <div class="kom-sub" id="ksub_chri">
-        <div class="sub-lbl">Sérový kreatinín (mg/dL)</div>
-        <input type="number" id="chri_krea" min="0.1" max="20" step="0.01" placeholder="napr. 1.2"
+        <div class="sub-lbl">Sérový kreatinín (µmol/L)</div>
+        <input type="number" id="chri_krea" min="10" max="2000" step="1" placeholder="napr. 90"
                style="width:120px;padding:4px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;outline:none"
                oninput="calcEGFR();gen()">
         <div id="chri_egfr_result" style="margin-top:6px;font-size:12px;color:#1e40af;font-weight:600"></div>
@@ -550,12 +550,13 @@ function getKomor(){
   return list;
 }
 function calcEGFR(){
-  const krea=parseFloat(document.getElementById('chri_krea')?.value);
+  const kreaRaw=parseFloat(document.getElementById('chri_krea')?.value);
+  const krea=kreaRaw/88.42; // µmol/L → mg/dL
   const vek=parseInt(g('vek'));
   const pohlavie=g('pohl');
   const el=document.getElementById('chri_egfr_result');
   if(!el)return;
-  if(!krea||!vek||!pohlavie){el.textContent='';el.dataset.stage='';return;}
+  if(!kreaRaw||!vek||!pohlavie){el.textContent='';el.dataset.stage='';return;}
   const female=pohlavie==='Z';
   const A=female?0.7:0.9;
   const S=female?1.012:1.0;
