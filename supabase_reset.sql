@@ -207,6 +207,10 @@ ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS konverzia          BOOLEAN;
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS clavien_dindo      TEXT;
 ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS antitrombotika     TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS popis_stenozy      TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS percento_stenozy   TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS zavaznost_stenozy  TEXT;
+ALTER TABLE cas_vykony ADD COLUMN IF NOT EXISTS hemostaza_poznamka TEXT;
 
 -- --- PEVAR: identifikácia, prístup, materiály ---
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS char_krehky               BOOLEAN;
