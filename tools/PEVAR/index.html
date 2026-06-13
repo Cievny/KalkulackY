@@ -356,22 +356,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <option>Berenstein</option><option>C1</option><option>SIM</option><option>Vertebrálnym</option><option>Shepherd Hook</option>
   </select>
 </div>
-<div class="row r2">
-  <div class="f"><label>Komponent DX – názov</label>
-    <select id="komponent_dx_nazov" onchange="gen()">
-      <option>Ovation</option><option>Endurant</option><option>Cook</option><option>MINOS</option><option>Incraft</option>
-    </select>
-  </div>
-  <div class="f"><label>Komponent DX – rozmery</label><input type="text" id="komponent_dx_rozmery" value="12x120mm" oninput="gen()"></div>
-</div>
-<div class="row r2">
-  <div class="f"><label>Komponent SIN – názov</label>
-    <select id="komponent_sin_nazov" onchange="gen()">
-      <option>Ovation</option><option>Endurant</option><option>Cook</option><option>MINOS</option><option>Incraft</option>
-    </select>
-  </div>
-  <div class="f"><label>Komponent SIN – rozmery</label><input type="text" id="komponent_sin_rozmery" value="12x140mm" oninput="gen()"></div>
-</div>
 </div>
 
 <!-- Extenzie -->
@@ -669,11 +653,7 @@ function gen(){
   ];
   if(isBifurk){
     const contraKat=g('contra_kateter_typ');
-    const kDx=g('komponent_dx_nazov');const kDxR=g('komponent_dx_rozmery');
-    const kSin=g('komponent_sin_nazov');const kSinR=g('komponent_sin_rozmery');
     katLines.push(contraKat+' katétrom a viacerými vodičmi katetrizujeme kontralaterálnu nožičku.');
-    katLines.push('Sprava implantujeme distálnu komponentu '+kDx+' ('+kDxR+').');
-    katLines.push('Zľava implantujeme distálnu komponentu '+kSin+' ('+kSinR+').');
   }
   // Extenzie
   if(chk('c_extenzie')){
@@ -784,10 +764,6 @@ async function saveToSupabase(){
     sg_rozmery:g('sg_rozmery'),
     sg_konfiguracia:document.querySelector('input[name="sg_typ"]:checked')?.value||'',
     contra_kateter_typ:g('contra_kateter_typ'),
-    komponent_dx_nazov:g('komponent_dx_nazov'),
-    komponent_dx_rozmery:g('komponent_dx_rozmery'),
-    komponent_sin_nazov:g('komponent_sin_nazov'),
-    komponent_sin_rozmery:g('komponent_sin_rozmery'),
     implantacia_komentar:g('implantacia_komentar'),
     modelovanie_telo:chk('modelovanie_telo'),
     modelovanie_telo_balon:chk('modelovanie_telo')?g('modelovanie_telo_balon'):'',
