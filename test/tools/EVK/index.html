@@ -966,6 +966,9 @@ function collectStatsRow(){
 const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 async function saveToSupabase(table,data){
+  if(table==='evk_vykony'&&window._editRecordId){
+    return fetch(`${SB_URL}/rest/v1/${table}?id=eq.${window._editRecordId}`,{method:'PATCH',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},body:JSON.stringify(data)});
+  }
   return fetch(`${SB_URL}/rest/v1/${table}`,{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},body:JSON.stringify(data)});
 }
 function collectFullData(){
@@ -1545,6 +1548,56 @@ function copyDRG(){
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+function loadEditRecord(){
+  try{
+    const raw=sessionStorage.getItem('cievny_test_edit');
+    if(!raw)return;
+    const {tool,record}=JSON.parse(raw);
+    if(tool!=='EVK')return;
+    sessionStorage.removeItem('cievny_test_edit');
+    window._editRecordId=record.id;
+    window._editRecordTable='evk_vykony';
+    // show banner
+    const banner=document.createElement('div');
+    banner.style.cssText='background:#fef9c3;color:#713f12;border-bottom:3px solid #ca8a04;padding:8px 16px;font-size:13px;font-weight:700;text-align:center;letter-spacing:.3px;position:sticky;top:38px;z-index:200';
+    banner.textContent='✏️ Upravujete záznam '+(record.vykon_id||record.id)+' — po úprave kliknite Uložiť (aktualizuje existujúci záznam)';
+    const testBanner=document.querySelector('div[style*="TESTOVACIA"]')||document.body.firstChild;
+    if(testBanner&&testBanner.parentNode)testBanner.parentNode.insertBefore(banner,testBanner.nextSibling);
+    else document.body.insertBefore(banner,document.body.firstChild);
+    // populate fields
+    const sv=(id,val)=>{if(val==null)return;const el=document.getElementById(id);if(el)el.value=val;};
+    sv('datum',record.datum);
+    sv('operator',record.operator);
+    sv('vek',record.vek);
+    if(record.pohlavie){const el=document.getElementById('pohl');if(el)el.value=record.pohlavie==='Muž'?'M':'Z';}
+    sv('ruth',record.rutherford);
+    sv('diag',record.diagnoza||record.diagnoza_indikacia);
+    sv('st_konv',record.konverzia?(record.konverzia===true||record.konverzia==='true'||record.konverzia==='áno'?'áno':'nie'):'nie');
+    sv('st_clavien',record.clavien_dindo);
+    sv('zaver',record.zaver);
+    // stats fields
+    const el_dur=document.getElementById('st_dur');if(el_dur&&record.proc_duration_min!=null)el_dur.value=record.proc_duration_min;
+    const el_flu=document.getElementById('st_fluoro');if(el_flu&&record.fluoro_time_min!=null)el_flu.value=record.fluoro_time_min;
+    const el_con=document.getElementById('st_contrast');if(el_con&&record.contrast_ml!=null)el_con.value=record.contrast_ml;
+    const el_dap=document.getElementById('st_dap');if(el_dap&&record.dap!=null)el_dap.value=record.dap;
+    // komorbidity
+    try{
+      const k=typeof record.komorbidity==='string'&&record.komorbidity.startsWith('{')?JSON.parse(record.komorbidity):{};
+      if(k.DM){const cb=document.getElementById('k_dm');if(cb){cb.checked=true;kSub('dm');}}
+      if(k.AH){const cb=document.getElementById('k_ah');if(cb){cb.checked=true;kSub('ah');}}
+      if(k.CKD){const cb=document.getElementById('k_chri');if(cb){cb.checked=true;kSub('chri');}}
+      if(k.ICHS){const cb=document.getElementById('k_ichs');if(cb){cb.checked=true;kSub('ichs');}}
+      if(k['St.p.IM']){const cb=document.getElementById('k_im');if(cb)cb.checked=true;}
+      if(k['St.p.CMP']){const cb=document.getElementById('k_cmp');if(cb){cb.checked=true;kSub('cmp');}}
+      if(k.Fajčiar){const cb=document.getElementById('k_faj');if(cb){cb.checked=true;kSub('faj');}}
+      if(k.Obezita){const cb=document.getElementById('k_obez');if(cb){cb.checked=true;kSub('obez');}}
+      if(k.Dyslipidémia){const cb=document.getElementById('k_dysl');if(cb){cb.checked=true;kSub('dysl');}}
+      document.querySelector('.komor-details')?.setAttribute('open','');
+    }catch(e){}
+    gen();
+  }catch(e){console.error('loadEditRecord EVK:',e);}
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('datum').value=new Date().toISOString().slice(0,10);
   document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
@@ -1558,6 +1611,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   addItem('stent','stent',true);
   addItem('post','balon',true);
   updateTerritory();gen();
+  loadEditRecord();
 });
 
 // Reset komorbidity - pageshow pokryva aj back-navigation, kde load nestaci

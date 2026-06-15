@@ -47,6 +47,7 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
 .btn-cancel{background:#f0f2f7;color:#374151;}
 .btn-del{background:#fff;color:#dc2626;border:1.5px solid #fca5a5;margin-right:auto;}
 .msg{font-size:13px;font-weight:600;align-self:center;margin-right:auto;}
+.edit-form-btn{background:#d97706;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-weight:600;margin-right:4px}
 .sec-hdr{grid-column:1/-1;font-size:11px;font-weight:800;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;border-top:1px solid #eef1f6;padding-top:10px;}
 </style>
 </head>
@@ -72,7 +73,7 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
   </div>
 
   <table>
-    <thead><tr><th>Nástroj</th><th>ID výkonu</th><th>Dátum</th><th>Operatér</th><th>Komplikácie</th></tr></thead>
+    <thead><tr><th>Nástroj</th><th>ID výkonu</th><th>Dátum</th><th>Operatér</th><th>Komplikácie</th><th></th></tr></thead>
     <tbody id="tbody"><tr><td colspan="5" class="empty">Načítavam…</td></tr></tbody>
   </table>
 </div>
@@ -110,7 +111,7 @@ let CURRENT=null; // {tool, table, data}
 function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 async function loadAll(){
-  document.getElementById('tbody').innerHTML='<tr><td colspan="5" class="empty">Načítavam…</td></tr>';
+  document.getElementById('tbody').innerHTML='<tr><td colspan="6" class="empty">Načítavam…</td></tr>';
   ROWS=[];
   for(const [tool,table] of Object.entries(TABLES)){
     try{
@@ -141,12 +142,14 @@ function render(){
     return true;
   });
   const tb=document.getElementById('tbody');
-  if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">Žiadne záznamy.</td></tr>';return;}
+  if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="empty">Žiadne záznamy.</td></tr>';return;}
   tb.innerHTML='';
   rows.forEach((r,i)=>{
     const d=r.data;
     const datum=d.datum||d.datum_zaznamu||(d.created_at?d.created_at.slice(0,10):'');
     const ok=hasCompl(d);
+    const toolKey=r.tool.toUpperCase();
+    const rowJson=JSON.stringify(d).replace(/'/g,"\\'");
     const tr=document.createElement('tr');
     tr.className='row';
     tr.onclick=()=>openModal(r);
@@ -154,7 +157,8 @@ function render(){
       <td>${escHtml(d.vykon_id||'—')}</td>
       <td>${escHtml(datum)}</td>
       <td>${escHtml(d.operator||'—')}</td>
-      <td>${ok?'<span class="st-ok">✅ doplnené</span>':'<span class="st-miss">⚠️ chýba</span>'}</td>`;
+      <td>${ok?'<span class="st-ok">✅ doplnené</span>':'<span class="st-miss">⚠️ chýba</span>'}</td>
+      <td><button class="edit-form-btn" onclick="event.stopPropagation();openInForm('${toolKey}',${rowJson})">📝 Formulár</button></td>`;
     tb.appendChild(tr);
   });
 }
@@ -235,6 +239,11 @@ async function delRecord(){
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
 }
 
+function openInForm(tool,record){
+  sessionStorage.setItem('cievny_test_edit',JSON.stringify({tool,record}));
+  const urls={EVK:'/test/tools/EVK/',CAS:'/test/tools/CAS-generator/',PEVAR:'/test/tools/PEVAR/'};
+  window.location.href=urls[tool]||'/test/tools/EVK/';
+}
 function msg(t,c){const el=document.getElementById('m_msg');el.style.color=c;el.textContent=t;}
 function closeModal(){document.getElementById('overlay').classList.remove('show');CURRENT=null;}
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
