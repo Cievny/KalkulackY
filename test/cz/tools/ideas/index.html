@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Nápady & Návrhy – cievny.sk</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f7;min-height:100vh;}
+.board{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:20px;max-width:1200px;margin:0 auto;}
+.col{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:10px;}
+.col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.col-title{font-size:14px;font-weight:700;letter-spacing:.3px;}
+.col-count{font-size:11px;font-weight:600;background:#f0f2f7;color:#6b7280;border-radius:10px;padding:2px 8px;}
+.col-napady .col-title{color:#1e40af;}
+.col-riesenie .col-title{color:#b45309;}
+.col-hotovo .col-title{color:#166534;}
+.col-napady{border-top:3px solid #3b82f6;}
+.col-riesenie{border-top:3px solid #f59e0b;}
+.col-hotovo{border-top:3px solid #22c55e;}
+.card{background:#f8faff;border:1.5px solid #e5e9f5;border-radius:8px;padding:10px 12px;position:relative;cursor:default;}
+.card-text{font-size:13px;color:#1a2745;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+.card-meta{font-size:10px;color:#9ca3af;margin-top:6px;}
+.card-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.btn-move{font-size:11px;font-weight:600;padding:3px 8px;border:1.5px solid #dde1ea;border-radius:5px;background:#fff;cursor:pointer;color:#374151;}
+.btn-move:hover{background:#f0f2f7;}
+.btn-del{font-size:11px;font-weight:600;padding:3px 8px;border:1.5px solid #fca5a5;border-radius:5px;background:#fff;cursor:pointer;color:#dc2626;}
+.btn-del:hover{background:#fef2f2;}
+.btn-note{font-size:11px;font-weight:600;padding:3px 8px;border:1.5px solid #fcd34d;border-radius:5px;background:#fff;cursor:pointer;color:#b45309;}
+.btn-note:hover{background:#fffbeb;}
+.card-note{font-size:12px;color:#78350f;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 6px 6px 0;padding:6px 9px;margin-top:6px;white-space:pre-wrap;word-break:break-word;line-height:1.45;}
+.add-area{margin-top:4px;}
+.add-area textarea{width:100%;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;outline:none;color:#1a2745;}
+.add-area textarea:focus{border-color:#3b82f6;}
+.btn-add{margin-top:6px;width:100%;padding:7px;background:#1e40af;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-add:hover{background:#1737a0;}
+h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
+.page-sub{font-size:13px;color:#6b7280;padding:4px 20px 0;}
+@media(max-width:700px){.board{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<script src="/test/cz/tools/auth.js"></script>
+<script>checkAuth();</script>
+<div style="background:#ffedd5;color:#7c2d12;border-bottom:3px solid #f97316;padding:6px 16px;font-size:12px;font-weight:700;text-align:center;letter-spacing:.5px">⚠️ TESTOVACÍ PROVOZ – data se neukládají do produkce</div>
+
+<h1>💡 Nápady & Návrhy na úpravy</h1>
+<p class="page-sub">Zápisník pro nápady, návrhy a plánované změny systému.</p>
+
+<div class="board">
+  <div class="col col-napady" id="col-napady">
+    <div class="col-header">
+      <span class="col-title">💡 Nápady</span>
+      <span class="col-count" id="cnt-napady">0</span>
+    </div>
+    <div id="cards-napady"></div>
+    <div class="add-area">
+      <textarea id="inp-napady" placeholder="Napiš nápad nebo návrh..."></textarea>
+      <button class="btn-add" onclick="addCard('napady')">+ Přidat</button>
+    </div>
+  </div>
+
+  <div class="col col-riesenie" id="col-riesenie">
+    <div class="col-header">
+      <span class="col-title">🔧 V řešení</span>
+      <span class="col-count" id="cnt-riesenie">0</span>
+    </div>
+    <div id="cards-riesenie"></div>
+    <div class="add-area">
+      <textarea id="inp-riesenie" placeholder="Co se právě řeší..."></textarea>
+      <button class="btn-add" onclick="addCard('riesenie')">+ Přidat</button>
+    </div>
+  </div>
+
+  <div class="col col-hotovo" id="col-hotovo">
+    <div class="col-header">
+      <span class="col-title">✅ Hotovo</span>
+      <span class="col-count" id="cnt-hotovo">0</span>
+    </div>
+    <div id="cards-hotovo"></div>
+    <div class="add-area">
+      <textarea id="inp-hotovo" placeholder="Dokončená úprava..."></textarea>
+      <button class="btn-add" onclick="addCard('hotovo')">+ Přidat</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
+const SB_HEAD={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+
+const COLS=['napady','riesenie','hotovo'];
+const COL_LABELS={napady:'💡 Nápady',riesenie:'🔧 V řešení',hotovo:'✅ Hotovo'};
+let ITEMS=[];
+
+function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function loadItems(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/test_cz_ideas?order=created_at.desc&limit=500`,{headers:SB_HEAD});
+    ITEMS=r.ok?await r.json():[];
+  }catch{ITEMS=[];}
+  render();
+}
+
+function render(){
+  COLS.forEach(col=>{
+    const container=document.getElementById('cards-'+col);
+    const colItems=ITEMS.filter(i=>i.col===col);
+    document.getElementById('cnt-'+col).textContent=colItems.length;
+    container.innerHTML='';
+    colItems.forEach(item=>{
+      const div=document.createElement('div');
+      div.className='card';
+      const date=new Date(item.created_at).toLocaleDateString('sk-SK',{day:'numeric',month:'short',year:'numeric'});
+      const moveButtons=COLS.filter(c=>c!==col).map(c=>`<button class="btn-move" onclick="moveCard('${item.id}','${c}')">${COL_LABELS[c]}</button>`).join('');
+      const noteHtml=item.note?`<div class="card-note">📝 ${escHtml(item.note)}</div>`:'';
+      div.innerHTML=`<div class="card-text">${escHtml(item.text)}</div>
+        ${noteHtml}
+        <div class="card-meta">${date}</div>
+        <div class="card-actions">${moveButtons}<button class="btn-note" onclick="saveNote('${item.id}')">📝 ${item.note?'Upravit':'Přidat'} poznámku</button><button class="btn-del" onclick="delCard('${item.id}')">🗑 Smazat</button></div>`;
+      container.appendChild(div);
+    });
+  });
+}
+
+async function addCard(col){
+  const inp=document.getElementById('inp-'+col);
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.disabled=true;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/test_cz_ideas`,{method:'POST',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify({col,text})});
+    if(r.ok){inp.value='';await loadItems();}
+    else alert('Chyba při ukládání: '+r.status);
+  }catch(e){alert('Chyba sítě: '+e.message);}
+  inp.disabled=false;inp.focus();
+}
+
+async function moveCard(id,newCol){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/test_cz_ideas?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify({col:newCol})});
+    if(r.ok)await loadItems();
+  }catch(e){alert('Chyba sítě: '+e.message);}
+}
+
+async function saveNote(id){
+  const item=ITEMS.find(i=>i.id===id);
+  const note=prompt('Poznámka k nápadu:',item&&item.note?item.note:'');
+  if(note===null)return; // zrušeno
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/test_cz_ideas?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify({note:note.trim()||null})});
+    if(r.ok)await loadItems();
+    else alert('Chyba při ukládání: '+r.status);
+  }catch(e){alert('Chyba sítě: '+e.message);}
+}
+
+async function delCard(id){
+  if(!confirm('Smazat tento zápisek?'))return;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/test_cz_ideas?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD});
+    if(r.ok)await loadItems();
+  }catch(e){alert('Chyba sítě: '+e.message);}
+}
+
+document.querySelectorAll('textarea').forEach(ta=>{
+  ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey){const col=ta.id.replace('inp-','');addCard(col);}});
+});
+
+loadItems();
+</script>
+</body>
+</html>

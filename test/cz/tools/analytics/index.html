@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Statistiky výkonů</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;padding:24px}
+h1{font-size:22px;font-weight:700;color:#1a2745;margin-bottom:4px}
+.subtitle{font-size:13px;color:#6b7280;margin-bottom:24px}
+.tabs{display:flex;gap:4px;margin-bottom:20px}
+.tab{padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#e5e7eb;color:#374151;transition:.15s}
+.tab.active{background:#1e40af;color:#fff}
+.section{display:none}.section.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-val{font-size:32px;font-weight:700;color:#1e40af}
+.stat-lbl{font-size:12px;color:#6b7280;margin-top:4px}
+.chart-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:16px}
+.chart-card h3{font-size:13px;font-weight:700;color:#374151;margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.chart-wrap{position:relative;height:260px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.row2{grid-template-columns:1fr}}
+.loading{text-align:center;padding:40px;color:#6b7280;font-size:14px}
+.err{background:#fee2e2;color:#991b1b;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px}
+.refresh-btn{padding:7px 16px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px}
+.refresh-btn:hover{background:#1737a0}
+.records-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.records-table th{background:#1a2745;color:#fff;padding:7px 10px;text-align:left;font-size:11px;white-space:nowrap}
+.records-table td{padding:6px 10px;border-bottom:1px solid #eef0f5;vertical-align:top;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.records-table tr:hover td{background:#f0f7ff}
+.del-btn{background:#fee2e2;color:#991b1b;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-weight:600}
+.del-btn:hover{background:#fca5a5}
+.tbl-wrap{overflow-x:auto;margin-top:8px}
+details summary{cursor:pointer;font-size:13px;font-weight:600;color:#1e40af;padding:8px 0;user-select:none}
+details summary:hover{color:#1737a0}
+</style>
+</head>
+<body>
+<script src="/test/cz/tools/auth.js"></script>
+<script>checkAuth();</script>
+<div style="background:#ffedd5;color:#7c2d12;border-bottom:3px solid #f97316;padding:6px 16px;font-size:12px;font-weight:700;text-align:center;letter-spacing:.5px">⚠️ TESTOVACÍ PROVOZ – data se neukládají do produkce</div>
+<h1>📊 Statistiky výkonů – cievny.sk</h1>
+<p class="subtitle">EVK (endovaskulární výkony) + CAS (karotická angioplastika) + PEVAR (aortální stentgrafty)</p>
+<button class="refresh-btn" onclick="loadAll()">🔄 Obnovit</button>
+<div id="err-box" class="err" style="display:none"></div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('evk',this)">EVK – Endovaskulární</button>
+  <button class="tab" onclick="showTab('cas',this)">CAS – Karotidy</button>
+  <button class="tab" onclick="showTab('pevar',this)">PEVAR – Aorta</button>
+</div>
+
+<div id="sec-evk" class="section active">
+  <div id="evk-loading" class="loading">Načítám...</div>
+  <div id="evk-content" style="display:none">
+    <div class="grid" id="evk-stats"></div>
+    <div class="row2">
+      <div class="chart-card"><h3>Výkony podle měsíce</h3><div class="chart-wrap"><canvas id="ch-evk-month"></canvas></div></div>
+      <div class="chart-card"><h3>Operatéři</h3><div class="chart-wrap"><canvas id="ch-evk-op"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Řečiště výkonu</h3><div class="chart-wrap"><canvas id="ch-evk-terr"></canvas></div></div>
+      <div class="chart-card"><h3>Typy intervencí</h3><div class="chart-wrap"><canvas id="ch-evk-interv"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Technický úspěch</h3><div class="chart-wrap"><canvas id="ch-evk-tu"></canvas></div></div>
+      <div class="chart-card"><h3>Pohlaví</h3><div class="chart-wrap"><canvas id="ch-evk-sex"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Věk – rozložení</h3><div class="chart-wrap"><canvas id="ch-evk-vek"></canvas></div></div>
+      <div class="chart-card"><h3>Komorbidity</h3><div class="chart-wrap"><canvas id="ch-evk-komor"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Antitrombotika</h3><div class="chart-wrap"><canvas id="ch-evk-antitrombo"></canvas></div></div>
+      <div class="chart-card"><h3>Přístup – tepna</h3><div class="chart-wrap"><canvas id="ch-evk-arteria"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Hemostáza – technika</h3><div class="chart-wrap"><canvas id="ch-evk-hemostaza"></canvas></div></div>
+      <div class="chart-card"><h3>Stenty – značka</h3><div class="chart-wrap"><canvas id="ch-evk-stentbrand"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Speciální techniky</h3><div class="chart-wrap"><canvas id="ch-evk-spec"></canvas></div></div>
+      <div class="chart-card"><h3>Délka výkonu (min)</h3><div class="chart-wrap"><canvas id="ch-evk-duration"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Komplikace (SVS)</h3><div class="chart-wrap"><canvas id="ch-evk-compl"></canvas></div></div>
+      <div class="chart-card"><h3>Clavien-Dindo</h3><div class="chart-wrap"><canvas id="ch-evk-clavien"></canvas></div></div>
+    </div>
+    <div class="chart-card">
+      <details><summary>🗑️ Správa záznamů (mazání)</summary>
+      <div class="tbl-wrap"><table class="records-table"><thead id="evk-tbl-head"></thead><tbody id="evk-tbl-body"></tbody></table></div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<div id="sec-cas" class="section">
+  <div id="cas-loading" class="loading">Načítám...</div>
+  <div id="cas-content" style="display:none">
+    <div class="grid" id="cas-stats"></div>
+    <div class="row2">
+      <div class="chart-card"><h3>Výkony podle měsíce</h3><div class="chart-wrap"><canvas id="ch-cas-month"></canvas></div></div>
+      <div class="chart-card"><h3>Klinický stav</h3><div class="chart-wrap"><canvas id="ch-cas-klin"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Stenóza NASCET</h3><div class="chart-wrap"><canvas id="ch-cas-nascet"></canvas></div></div>
+      <div class="chart-card"><h3>Lokalizace</h3><div class="chart-wrap"><canvas id="ch-cas-lok"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Typ plátu</h3><div class="chart-wrap"><canvas id="ch-cas-plat"></canvas></div></div>
+      <div class="chart-card"><h3>Anestezie</h3><div class="chart-wrap"><canvas id="ch-cas-anes"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Stent (značka)</h3><div class="chart-wrap"><canvas id="ch-cas-stent"></canvas></div></div>
+      <div class="chart-card"><h3>Emboloprotekcia</h3><div class="chart-wrap"><canvas id="ch-cas-embolo"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Pohlaví</h3><div class="chart-wrap"><canvas id="ch-cas-sex"></canvas></div></div>
+      <div class="chart-card"><h3>Výsledek</h3><div class="chart-wrap"><canvas id="ch-cas-vysl"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Operatér</h3><div class="chart-wrap"><canvas id="ch-cas-op"></canvas></div></div>
+      <div class="chart-card"><h3>Věk – rozložení</h3><div class="chart-wrap"><canvas id="ch-cas-vek"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Komorbidity</h3><div class="chart-wrap"><canvas id="ch-cas-komor"></canvas></div></div>
+      <div class="chart-card"><h3>Přístup – tepna</h3><div class="chart-wrap"><canvas id="ch-cas-arteria"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Hemostáza – technika</h3><div class="chart-wrap"><canvas id="ch-cas-hemostaza"></canvas></div></div>
+      <div class="chart-card"><h3>Čas od příznaků</h3><div class="chart-wrap"><canvas id="ch-cas-symptom"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Délka výkonu (min)</h3><div class="chart-wrap"><canvas id="ch-cas-duration"></canvas></div></div>
+      <div class="chart-card" style="visibility:hidden"></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Komplikace (SVS)</h3><div class="chart-wrap"><canvas id="ch-cas-compl"></canvas></div></div>
+      <div class="chart-card"><h3>Clavien-Dindo</h3><div class="chart-wrap"><canvas id="ch-cas-clavien"></canvas></div></div>
+    </div>
+    <div class="chart-card">
+      <details><summary>🗑️ Správa záznamů (mazání)</summary>
+      <div class="tbl-wrap"><table class="records-table"><thead id="cas-tbl-head"></thead><tbody id="cas-tbl-body"></tbody></table></div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<div id="sec-pevar" class="section">
+  <div id="pevar-loading" class="loading">Načítám...</div>
+  <div id="pevar-content" style="display:none">
+    <div class="grid" id="pevar-stats"></div>
+    <div class="row2">
+      <div class="chart-card"><h3>Výkony podle měsíce</h3><div class="chart-wrap"><canvas id="ch-pevar-month"></canvas></div></div>
+      <div class="chart-card"><h3>Pohlaví</h3><div class="chart-wrap"><canvas id="ch-pevar-sex"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Stentgraft (tělo)</h3><div class="chart-wrap"><canvas id="ch-pevar-sg"></canvas></div></div>
+      <div class="chart-card"><h3>Anestezie</h3><div class="chart-wrap"><canvas id="ch-pevar-anes"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Zabezpečení vpichu</h3><div class="chart-wrap"><canvas id="ch-pevar-zabezp"></canvas></div></div>
+      <div class="chart-card"><h3>Endoleak</h3><div class="chart-wrap"><canvas id="ch-pevar-endoleak"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Lékaři</h3><div class="chart-wrap"><canvas id="ch-pevar-lekari"></canvas></div></div>
+      <div class="chart-card"><h3>Indikace</h3><div class="chart-wrap"><canvas id="ch-pevar-indik"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Věk – rozložení</h3><div class="chart-wrap"><canvas id="ch-pevar-vek"></canvas></div></div>
+      <div class="chart-card"><h3>Komorbidity</h3><div class="chart-wrap"><canvas id="ch-pevar-komor"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Typ krčku</h3><div class="chart-wrap"><canvas id="ch-pevar-neck-shape"></canvas></div></div>
+      <div class="chart-card"><h3>Kalcifikace krčku</h3><div class="chart-wrap"><canvas id="ch-pevar-neck-calc"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>IFU shoda</h3><div class="chart-wrap"><canvas id="ch-pevar-neck-ifu"></canvas></div></div>
+      <div class="chart-card"><h3>Extenze – značka</h3><div class="chart-wrap"><canvas id="ch-pevar-ext"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Kontrolní CTA</h3><div class="chart-wrap"><canvas id="ch-pevar-cta"></canvas></div></div>
+      <div class="chart-card"><h3>Délka výkonu (min)</h3><div class="chart-wrap"><canvas id="ch-pevar-duration"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Komplikace (SVS)</h3><div class="chart-wrap"><canvas id="ch-pevar-compl"></canvas></div></div>
+      <div class="chart-card"><h3>Clavien-Dindo</h3><div class="chart-wrap"><canvas id="ch-pevar-clavien"></canvas></div></div>
+    </div>
+    <div class="chart-card">
+      <details><summary>🗑️ Správa záznamů (mazání)</summary>
+      <div class="tbl-wrap"><table class="records-table"><thead id="pevar-tbl-head"></thead><tbody id="pevar-tbl-body"></tbody></table></div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
+const COLORS=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#14b8a6'];
+
+const charts={};
+function mkChart(id,type,labels,data,legend){
+  if(charts[id])charts[id].destroy();
+  const ctx=document.getElementById(id).getContext('2d');
+  charts[id]=new Chart(ctx,{
+    type,
+    data:{labels,datasets:[{data,backgroundColor:COLORS,borderColor:type==='bar'?COLORS[0]:COLORS,borderWidth:type==='bar'?0:2,fill:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:legend!==false,position:'bottom',labels:{font:{size:11},boxWidth:14}}},scales:type==='bar'?{y:{beginAtZero:true,ticks:{stepSize:1}}}:{}}
+  });
+}
+
+function freq(arr,key){
+  const m={};arr.forEach(r=>{const v=(r[key]||'N/A').toString().trim();m[v]=(m[v]||0)+1;});return m;
+}
+function sortedFreq(arr,key,top=10){
+  const m=freq(arr,key);return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,top);
+}
+function statCard(label,value){
+  return `<div class="stat-card"><div class="stat-val">${value}</div><div class="stat-lbl">${label}</div></div>`;
+}
+function monthKey(d){if(!d)return null;const p=d.split(/[-T ]/);return p[0]+'-'+p[1];}
+
+// --- Helpery ---
+const RAW={evk:[],cas:[],pevar:[]};
+function avgNum(rows,key,dec=1){
+  const v=rows.map(r=>r[key]).filter(x=>x!=null&&x!==''&&!isNaN(x)).map(Number);
+  if(!v.length)return null;
+  return (v.reduce((a,b)=>a+b,0)/v.length).toFixed(dec);
+}
+function complRows(rows){return rows.filter(r=>(r.komplikacie_struct||'').trim());}
+function complFreq(rows){
+  const m={};rows.forEach(r=>(r.komplikacie_struct||'').split(',').forEach(c=>{const v=c.trim();if(v)m[v]=(m[v]||0)+1;}));
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,12);
+}
+function exportCSV(rows,filename){
+  if(!rows||!rows.length){alert('Žádná data k exportu.');return;}
+  const keys=[...new Set(rows.flatMap(r=>Object.keys(r)))];
+  const esc=v=>{if(v==null)return'';v=(''+v).replace(/"/g,'""');return /[";\n]/.test(v)?`"${v}"`:v;};
+  const csv=[keys.join(';'),...rows.map(r=>keys.map(k=>esc(r[k])).join(';'))].join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+}
+function ensureExportBtn(tool){
+  if(document.getElementById(tool+'-export'))return;
+  const stats=document.getElementById(tool+'-stats');
+  const b=document.createElement('button');
+  b.id=tool+'-export';b.className='refresh-btn';b.textContent='⬇️ Export CSV (SPSS/R)';
+  b.style.cssText='margin-bottom:12px';
+  b.onclick=()=>exportCSV(RAW[tool],tool+'_export_'+new Date().toISOString().slice(0,10)+'.csv');
+  stats.parentNode.insertBefore(b,stats);
+}
+
+// --- New helper functions ---
+function ageBins(rows){
+  const bins={'<50':0,'50–59':0,'60–69':0,'70–79':0,'≥80':0};
+  rows.filter(r=>r.vek).forEach(r=>{
+    const a=+r.vek;
+    if(a<50)bins['<50']++;else if(a<60)bins['50–59']++;else if(a<70)bins['60–69']++;else if(a<80)bins['70–79']++;else bins['≥80']++;
+  });
+  return Object.entries(bins).filter(e=>e[1]>0);
+}
+function numBins(rows,key,edges,labels){
+  const counts=new Array(labels.length).fill(0);
+  rows.filter(r=>r[key]!=null&&r[key]!=='').forEach(r=>{
+    const v=+r[key];
+    for(let i=0;i<edges.length-1;i++){if(v>=edges[i]&&v<edges[i+1]){counts[i]++;return;}}
+    counts[counts.length-1]++;
+  });
+  return [labels,counts];
+}
+function parseKomor(rows){
+  const m={};
+  rows.forEach(r=>{try{const o=JSON.parse(r.komorbidity||'{}');Object.keys(o).forEach(k=>{if(o[k])m[k]=(m[k]||0)+1;});}catch(e){}});
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,12);
+}
+function parseMultiField(rows,key){
+  const m={};
+  rows.forEach(r=>(r[key]||'').split(',').forEach(v=>{v=v.trim();if(v&&v!=='N/A'&&v!=='-')m[v]=(m[v]||0)+1;}));
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,10);
+}
+
+async function fetchAll(table){
+  let all=[],offset=0;
+  while(true){
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.asc&limit=1000&offset=${offset}`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+    if(!r.ok)throw new Error(await r.text());
+    const chunk=await r.json();
+    all=all.concat(chunk);
+    if(chunk.length<1000)break;
+    offset+=1000;
+  }
+  return all;
+}
+
+async function deleteRecord(table,id,reloadFn){
+  if(!confirm('Opravdu smazat tento záznam?'))return;
+  const r=await fetch(`${SB_URL}/rest/v1/${table}?id=eq.${id}`,{
+    method:'DELETE',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  });
+  if(r.ok)reloadFn();
+  else alert('Chyba při mazání: '+r.status);
+}
+
+function renderRecordTable(rows,headEl,bodyEl,cols,table,reloadFn){
+  headEl.innerHTML='<tr>'+cols.map(c=>`<th>${c}</th>`).join('')+'<th></th></tr>';
+  bodyEl.innerHTML=rows.map(row=>
+    '<tr>'+cols.map(c=>`<td title="${row[c]??''}">${row[c]??''}</td>`).join('')+
+    `<td><button class="del-btn" onclick="deleteRecord('${table}','${row.id}',${reloadFn})">✕ Vymazat</button></td></tr>`
+  ).join('');
+}
+
+async function loadEVK(){
+  document.getElementById('evk-loading').style.display='block';
+  document.getElementById('evk-content').style.display='none';
+  const rows=await fetchAll('cz_evk_vykony');
+  RAW.evk=rows;ensureExportBtn('evk');
+  document.getElementById('evk-loading').style.display='none';
+  document.getElementById('evk-content').style.display='block';
+
+  const avgAge=rows.filter(r=>r.vek).reduce((s,r)=>s+r.vek,0)/(rows.filter(r=>r.vek).length||1);
+  document.getElementById('evk-stats').innerHTML=
+    statCard('Celkový počet výkonů',rows.length)+
+    statCard('Průměrný věk',Math.round(avgAge)||'–')+
+    statCard('Unikátních operatérů',[...new Set(rows.map(r=>r.operator).filter(Boolean))].length)+
+    statCard('Tech. úspěch (úplný)',rows.filter(r=>(r.tech_uspech||'').includes('Technický úspěch')).length)+
+    statCard('Ø délka výkonu (min)',avgNum(rows,'proc_duration_min')||'–')+
+    statCard('Ø skiaskopie (min)',avgNum(rows,'fluoro_time_min')||'–')+
+    statCard('Ø kontrast (ml)',avgNum(rows,'contrast_ml',0)||'–')+
+    statCard('Ø DAP (Gy·cm²)',avgNum(rows,'dap',0)||'–')+
+    statCard('Komplikace (n výkonů)',complRows(rows).length)+
+    statCard('Konverze',rows.filter(r=>r.konverzia===true).length);
+
+  // month chart
+  const months={};rows.forEach(r=>{const m=monthKey(r.datum||r.created_at);if(m)months[m]=(months[m]||0)+1;});
+  const mk=Object.keys(months).sort();mkChart('ch-evk-month','bar',mk,mk.map(m=>months[m]),false);
+
+  const ops=sortedFreq(rows,'operator');mkChart('ch-evk-op','doughnut',ops.map(x=>x[0]),ops.map(x=>x[1]));
+  const terr=sortedFreq(rows,'riecisko');mkChart('ch-evk-terr','doughnut',terr.map(x=>x[0]),terr.map(x=>x[1]));
+
+  // interventions - split by comma
+  const im={};rows.forEach(r=>(r.intervencie||'').split(',').forEach(i=>{const v=i.trim();if(v)im[v]=(im[v]||0)+1;}));
+  const ie=Object.entries(im).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  mkChart('ch-evk-interv','bar',ie.map(x=>x[0]),ie.map(x=>x[1]),false);
+
+  const tu=sortedFreq(rows,'tech_uspech');mkChart('ch-evk-tu','doughnut',tu.map(x=>x[0]),tu.map(x=>x[1]));
+  const sx=sortedFreq(rows,'pohlavie');mkChart('ch-evk-sex','doughnut',sx.map(x=>x[0]),sx.map(x=>x[1]));
+
+  // Věk – rozložení
+  const vb=ageBins(rows);if(vb.length)mkChart('ch-evk-vek','bar',vb.map(x=>x[0]),vb.map(x=>x[1]),false);
+
+  // Komorbidity
+  const km=parseKomor(rows);if(km.length)mkChart('ch-evk-komor','bar',km.map(x=>x[0]),km.map(x=>x[1]),false);
+
+  // Antitrombotika
+  const at=parseMultiField(rows,'antitrombotika');if(at.length)mkChart('ch-evk-antitrombo','bar',at.map(x=>x[0]),at.map(x=>x[1]),false);
+
+  // Přístup – tepna
+  const ar=sortedFreq(rows,'punkcia_arteria');mkChart('ch-evk-arteria','doughnut',ar.map(x=>x[0]),ar.map(x=>x[1]));
+
+  // Hemostáza – technika
+  const ht=sortedFreq(rows,'punkcia_technika');mkChart('ch-evk-hemostaza','doughnut',ht.map(x=>x[0]),ht.map(x=>x[1]));
+
+  // Stenty – značka
+  const sb=parseMultiField(rows,'stent_brands');if(sb.length)mkChart('ch-evk-stentbrand','bar',sb.map(x=>x[0]),sb.map(x=>x[1]),false);
+
+  // Speciální techniky
+  const specLabels=['Kissing stent','CERAB','Aterektomie','Trombektomie'];
+  const specCounts=[
+    rows.filter(r=>r.kissing&&+r.kissing>0).length,
+    rows.filter(r=>r.cerab&&+r.cerab>0).length,
+    rows.filter(r=>r.aterektomia_count&&+r.aterektomia_count>0).length,
+    rows.filter(r=>r.trombektomia_count&&+r.trombektomia_count>0).length
+  ];
+  mkChart('ch-evk-spec','bar',specLabels,specCounts,false);
+
+  // Délka výkonu (min)
+  const [dl,dc]=numBins(rows,'proc_duration_min',[0,30,60,90,120,999],['0–30','30–60','60–90','90–120','120+']);
+  mkChart('ch-evk-duration','bar',dl,dc,false);
+
+  // Komplikace + Clavien
+  const cf=complFreq(rows);if(cf.length)mkChart('ch-evk-compl','bar',cf.map(x=>x[0]),cf.map(x=>x[1]),false);
+  const cd=sortedFreq(rows.filter(r=>r.clavien_dindo),'clavien_dindo');if(cd.length)mkChart('ch-evk-clavien','doughnut',cd.map(x=>x[0]),cd.map(x=>x[1]));
+
+  renderRecordTable(rows,
+    document.getElementById('evk-tbl-head'),
+    document.getElementById('evk-tbl-body'),
+    ['vykon_id','datum','operator','pohlavie','vek','riecisko','intervencie'],
+    'cz_evk_vykony','loadEVK');
+}
+
+async function loadCAS(){
+  document.getElementById('cas-loading').style.display='block';
+  document.getElementById('cas-content').style.display='none';
+  const rows=await fetchAll('cz_cas_vykony');
+  RAW.cas=rows;ensureExportBtn('cas');
+  document.getElementById('cas-loading').style.display='none';
+  document.getElementById('cas-content').style.display='block';
+
+  const avgAge=rows.filter(r=>r.vek).reduce((s,r)=>s+r.vek,0)/(rows.filter(r=>r.vek).length||1);
+  const intervRows=rows.filter(r=>r.postup==='intervencia');
+  const sympRows=rows.filter(r=>r.klinicky_stav&&r.klinicky_stav!=='asymptomatický');
+  document.getElementById('cas-stats').innerHTML=
+    statCard('Celkový počet výkonů',rows.length)+
+    statCard('Průměrný věk',Math.round(avgAge)||'–')+
+    statCard('Počet intervencí (CAS)',intervRows.length)+
+    statCard('Symptomatičtí pacienti',sympRows.length)+
+    statCard('Asymptomatičtí',rows.filter(r=>r.klinicky_stav==='asymptomatický').length)+
+    statCard('DSA (bez intervence)',rows.filter(r=>r.postup==='dsa'||r.postup==='konzervativny').length)+
+    statCard('Ø délka výkonu (min)',avgNum(rows,'proc_duration_min')||'–')+
+    statCard('Ø skiaskopie (min)',avgNum(rows,'fluoro_time_min')||'–')+
+    statCard('Ø kontrast (ml)',avgNum(rows,'contrast_ml',0)||'–')+
+    statCard('Komplikace (n výkonů)',complRows(rows).length)+
+    statCard('Konverze na CEA',rows.filter(r=>r.konverzia===true).length);
+
+  const months={};rows.forEach(r=>{const m=monthKey(r.datum_zaznamu||r.created_at);if(m)months[m]=(months[m]||0)+1;});
+  const mk=Object.keys(months).sort();mkChart('ch-cas-month','bar',mk,mk.map(m=>months[m]),false);
+
+  // Klinický stav
+  const klin=sortedFreq(rows,'klinicky_stav');mkChart('ch-cas-klin','doughnut',klin.map(x=>x[0]),klin.map(x=>x[1]));
+
+  // NASCET – zoradíme logicky
+  const nascetOrder=['50-59%','60-69%','70-79%','80-89%','90-99%','subokluzia','oklúzia'];
+  const nascetFreq=freq(rows,'nascet_stenoza');
+  const nascetLabels=nascetOrder.filter(k=>nascetFreq[k]);
+  const nascetOther=Object.keys(nascetFreq).filter(k=>k&&k!=='N/A'&&!nascetOrder.includes(k));
+  const allNascet=[...nascetLabels,...nascetOther];
+  if(allNascet.length)mkChart('ch-cas-nascet','bar',allNascet,allNascet.map(k=>nascetFreq[k]),false);
+
+  const lok=sortedFreq(rows,'lokalizacia');mkChart('ch-cas-lok','doughnut',lok.map(x=>x[0]),lok.map(x=>x[1]));
+  const plat=sortedFreq(rows,'typ_platu');mkChart('ch-cas-plat','doughnut',plat.map(x=>x[0]),plat.map(x=>x[1]));
+  const anes=sortedFreq(rows,'anestazia');mkChart('ch-cas-anes','doughnut',anes.map(x=>x[0]),anes.map(x=>x[1]));
+
+  // Stenty – zo stent_znacka
+  const stentF=sortedFreq(intervRows,'stent_znacka');
+  if(stentF.length)mkChart('ch-cas-stent','doughnut',stentF.map(x=>x[0]),stentF.map(x=>x[1]));
+
+  // Emboloprotekcia
+  const embolo=sortedFreq(intervRows,'emboloprotekcia');mkChart('ch-cas-embolo','doughnut',embolo.map(x=>x[0]),embolo.map(x=>x[1]));
+
+  const sx=sortedFreq(rows,'pohlavie');mkChart('ch-cas-sex','doughnut',sx.map(x=>x[0]),sx.map(x=>x[1]));
+  const vy=sortedFreq(rows,'vysledok');mkChart('ch-cas-vysl','doughnut',vy.map(x=>x[0]),vy.map(x=>x[1]));
+
+  // Operatér
+  const cop=sortedFreq(rows,'operator');mkChart('ch-cas-op','doughnut',cop.map(x=>x[0]),cop.map(x=>x[1]));
+
+  // Věk – rozložení
+  const vb=ageBins(rows);if(vb.length)mkChart('ch-cas-vek','bar',vb.map(x=>x[0]),vb.map(x=>x[1]),false);
+
+  // Komorbidity
+  const km=parseKomor(rows);if(km.length)mkChart('ch-cas-komor','bar',km.map(x=>x[0]),km.map(x=>x[1]),false);
+
+  // Přístup – tepna
+  const ar=sortedFreq(rows,'punkcia_arteria');mkChart('ch-cas-arteria','doughnut',ar.map(x=>x[0]),ar.map(x=>x[1]));
+
+  // Hemostáza – technika
+  const ht=sortedFreq(rows,'punkcia_technika');mkChart('ch-cas-hemostaza','doughnut',ht.map(x=>x[0]),ht.map(x=>x[1]));
+
+  // Čas od příznaků – jen symptomatičtí
+  const [sl,sc]=numBins(sympRows,'cas_symptom_days',[0,7,30,90,99999],['0–7 dní','7–30 dní','30–90 dní','90+ dní']);
+  mkChart('ch-cas-symptom','bar',sl,sc,false);
+
+  // Délka výkonu (min)
+  const [dl,dc]=numBins(rows,'proc_duration_min',[0,30,60,90,120,999],['0–30','30–60','60–90','90–120','120+']);
+  mkChart('ch-cas-duration','bar',dl,dc,false);
+
+  // Komplikace + Clavien
+  const cf=complFreq(rows);if(cf.length)mkChart('ch-cas-compl','bar',cf.map(x=>x[0]),cf.map(x=>x[1]),false);
+  const cd=sortedFreq(rows.filter(r=>r.clavien_dindo),'clavien_dindo');if(cd.length)mkChart('ch-cas-clavien','doughnut',cd.map(x=>x[0]),cd.map(x=>x[1]));
+
+  renderRecordTable(rows,
+    document.getElementById('cas-tbl-head'),
+    document.getElementById('cas-tbl-body'),
+    ['datum_zaznamu','pohlavie','vek','klinicky_stav','nascet_stenoza','lokalizacia','stent_znacka','stent_velkost','emboloprotekcia','vysledok'],
+    'cz_cas_vykony','loadCAS');
+}
+
+async function loadPEVAR(){
+  document.getElementById('pevar-loading').style.display='block';
+  document.getElementById('pevar-content').style.display='none';
+  const rows=await fetchAll('cz_pevar_vykony');
+  RAW.pevar=rows;ensureExportBtn('pevar');
+  document.getElementById('pevar-loading').style.display='none';
+  document.getElementById('pevar-content').style.display='block';
+
+  const avgAge=rows.filter(r=>r.vek).reduce((s,r)=>s+r.vek,0)/(rows.filter(r=>r.vek).length||1);
+  const endoleakRows=rows.filter(r=>r.endoleak);
+  document.getElementById('pevar-stats').innerHTML=
+    statCard('Celkový počet výkonů',rows.length)+
+    statCard('Průměrný věk',Math.round(avgAge)||'–')+
+    statCard('Endoleak',endoleakRows.length)+
+    statCard('Symptomatičtí',rows.filter(r=>r.symptomaticky).length)+
+    statCard('Ø délka výkonu (min)',avgNum(rows,'proc_duration_min')||'–')+
+    statCard('Ø skiaskopie (min)',avgNum(rows,'fluoro_time_min')||'–')+
+    statCard('Ø kontrast (ml)',avgNum(rows,'contrast_ml',0)||'–')+
+    statCard('Komplikace (n výkonů)',complRows(rows).length)+
+    statCard('Konverze',rows.filter(r=>r.konverzia===true).length);
+
+  const months={};rows.forEach(r=>{const m=monthKey(r.datum_zaznamu||r.created_at);if(m)months[m]=(months[m]||0)+1;});
+  const mk=Object.keys(months).sort();mkChart('ch-pevar-month','bar',mk,mk.map(m=>months[m]),false);
+
+  const sx=sortedFreq(rows,'pohlavie');mkChart('ch-pevar-sex','doughnut',sx.map(x=>x[0]),sx.map(x=>x[1]));
+  const sg=sortedFreq(rows,'sg_nazov');mkChart('ch-pevar-sg','doughnut',sg.map(x=>x[0]),sg.map(x=>x[1]));
+  const an=sortedFreq(rows,'anestezia_typ');mkChart('ch-pevar-anes','doughnut',an.map(x=>x[0]),an.map(x=>x[1]));
+  const zb=sortedFreq(rows,'zabezpecenie_technika');mkChart('ch-pevar-zabezp','doughnut',zb.map(x=>x[0]),zb.map(x=>x[1]));
+
+  // Endoleak breakdown
+  const elRows=rows.map(r=>({...r,el_label:r.endoleak?(r.endoleak_typ?'Typ '+r.endoleak_typ:'áno'):'bez endoleaku'}));
+  const el=sortedFreq(elRows,'el_label');mkChart('ch-pevar-endoleak','doughnut',el.map(x=>x[0]),el.map(x=>x[1]));
+
+  const lk=sortedFreq(rows,'lekari');mkChart('ch-pevar-lekari','doughnut',lk.map(x=>x[0]),lk.map(x=>x[1]));
+  const ind=sortedFreq(rows,'indikacia_typ');mkChart('ch-pevar-indik','doughnut',ind.map(x=>x[0]),ind.map(x=>x[1]));
+
+  // Věk – rozložení
+  const vb=ageBins(rows);if(vb.length)mkChart('ch-pevar-vek','bar',vb.map(x=>x[0]),vb.map(x=>x[1]),false);
+
+  // Komorbidity
+  const km=parseKomor(rows);if(km.length)mkChart('ch-pevar-komor','bar',km.map(x=>x[0]),km.map(x=>x[1]),false);
+
+  // Typ krčku
+  const ns=sortedFreq(rows,'neck_shape');mkChart('ch-pevar-neck-shape','doughnut',ns.map(x=>x[0]),ns.map(x=>x[1]));
+
+  // Kalcifikace krčku
+  const nc=sortedFreq(rows,'neck_calcification');mkChart('ch-pevar-neck-calc','doughnut',nc.map(x=>x[0]),nc.map(x=>x[1]));
+
+  // IFU shoda
+  const ni=sortedFreq(rows,'neck_ifu');mkChart('ch-pevar-neck-ifu','doughnut',ni.map(x=>x[0]),ni.map(x=>x[1]));
+
+  // Extenze – značka
+  const eb=parseMultiField(rows,'ext_brands');if(eb.length)mkChart('ch-pevar-ext','bar',eb.map(x=>x[0]),eb.map(x=>x[1]),false);
+
+  // Kontrolní CTA
+  const cta=sortedFreq(rows,'kontrolna_cta');mkChart('ch-pevar-cta','bar',cta.map(x=>x[0]),cta.map(x=>x[1]),false);
+
+  // Délka výkonu (min)
+  const [dl,dc]=numBins(rows,'proc_duration_min',[0,30,60,90,120,999],['0–30','30–60','60–90','90–120','120+']);
+  mkChart('ch-pevar-duration','bar',dl,dc,false);
+
+  // Komplikace + Clavien
+  const cf=complFreq(rows);if(cf.length)mkChart('ch-pevar-compl','bar',cf.map(x=>x[0]),cf.map(x=>x[1]),false);
+  const cd=sortedFreq(rows.filter(r=>r.clavien_dindo),'clavien_dindo');if(cd.length)mkChart('ch-pevar-clavien','doughnut',cd.map(x=>x[0]),cd.map(x=>x[1]));
+
+  renderRecordTable(rows,
+    document.getElementById('pevar-tbl-head'),
+    document.getElementById('pevar-tbl-body'),
+    ['datum_zaznamu','pohlavie','vek','diagnoza','sg_nazov','sg_rozmery','endoleak','endoleak_typ','lekari'],
+    'cz_pevar_vykony','loadPEVAR');
+}
+
+async function loadAll(){
+  document.getElementById('err-box').style.display='none';
+  try{await Promise.all([loadEVK(),loadCAS(),loadPEVAR()]);}
+  catch(e){
+    const eb=document.getElementById('err-box');
+    eb.textContent='❌ Chyba načítání dat: '+e.message+'. Zkontrolujte RLS politiky v Supabase.';
+    eb.style.display='block';
+    ['evk-loading','cas-loading','pevar-loading'].forEach(id=>document.getElementById(id).style.display='none');
+  }
+}
+
+function showTab(name,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+loadAll();
+</script>
+</body>
+</html>
