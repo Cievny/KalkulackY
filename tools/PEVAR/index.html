@@ -885,17 +885,65 @@ async function saveToSupabase(){
   };
   msg('Ukladám...','#5a6a8a');
   try{
-    const r=await fetch(SB_URL+'/rest/v1/pevar_vykony',{
-      method:'POST',
+    const _isEdit=!!window._editRecordId;
+    const _url=SB_URL+'/rest/v1/pevar_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
+    const r=await fetch(_url,{
+      method:_isEdit?'PATCH':'POST',
       headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},
       body:JSON.stringify(payload)
     });
-    if(r.ok)msg('Uložené ✓','#1d6f42');
+    if(r.ok)msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
 }
 
+function loadEditRecord(){
+  try{
+    const raw=sessionStorage.getItem('cievny_edit');
+    if(!raw)return;
+    const {tool,record}=JSON.parse(raw);
+    if(tool!=='PEVAR')return;
+    sessionStorage.removeItem('cievny_edit');
+    window._editRecordId=record.id;
+    const sv=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null)el.value=v;};
+    sv('datum_zaznamu',record.datum_zaznamu);
+    sv('lekari',record.lekari);
+    sv('vek',record.vek);
+    sv('pohlavie',record.pohlavie);
+    sv('diagnoza',record.diagnoza);
+    sv('sg_nazov',record.sg_nazov);
+    sv('sg_rozmery',record.sg_rozmery);
+    sv('anestezia_typ',record.anestezia_typ);
+    sv('st_fluoro',record.fluoro_time_min);
+    sv('st_dap',record.dap);
+    sv('st_contrast',record.contrast_ml);
+    sv('st_konv',record.konverzia?'áno':'nie');
+    sv('st_clavien',record.clavien_dindo);
+    if(record.endoleak){
+      const cb=document.getElementById('endoleak_check');
+      if(cb){cb.checked=true;const b=document.getElementById('b_endoleak');if(b)b.classList.add('on');}
+      sv('endoleak_typ',record.endoleak_typ);
+    }
+    try{
+      const k=JSON.parse(record.komorbidity||'{}');
+      if(k.DM){const el=document.getElementById('k_dm');if(el){el.checked=true;kSub('dm');}}
+      if(k.AH){const el=document.getElementById('k_ah');if(el){el.checked=true;kSub('ah');}}
+      if(k.CKD){const el=document.getElementById('k_ckd');if(el){el.checked=true;kSub('ckd');}}
+      if(k.ICHS){const el=document.getElementById('k_ichs');if(el){el.checked=true;kSub('ichs');}}
+      if(k['St.p.IM']){const el=document.getElementById('k_im');if(el){el.checked=true;kSub('im');}}
+      if(k['St.p.CMP']){const el=document.getElementById('k_cmp');if(el){el.checked=true;kSub('cmp');}}
+      document.querySelector('.komor-details')?.setAttribute('open','');
+    }catch(e){}
+    const banner=document.createElement('div');
+    banner.style.cssText='background:#fef9c3;color:#854d0e;border-bottom:3px solid #eab308;padding:7px 16px;font-size:12px;font-weight:700;text-align:center;position:sticky;top:38px;z-index:200';
+    banner.textContent='✏️ Upravujete záznam '+(record.vykon_id||record.id)+' — po úprave kliknite Uložiť';
+    document.body.insertBefore(banner,document.body.children[2]);
+    gen();
+  }catch(e){console.error('loadEditRecord PEVAR:',e);}
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
+  loadEditRecord();
   document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
   updatePevarIdPrefix();
   gen();
