@@ -1238,13 +1238,13 @@ function gen(){
     if(document.getElementById('c_kiss').checked){
       const ts=g('kiss_ts'),ns=vN('kiss_ns'),ps=g('kiss_ps'),ds=g('kiss_ds');
       const td=g('kiss_td'),nd=vN('kiss_nd'),pd=g('kiss_pd'),dd=g('kiss_dd');
-      L.push('Kissing stent technika: simultánní implantace stentu '+(ts?ts+'ho ':'')+(ns||'–')+(ps&&ds?' '+ps+'×'+ds+' mm':'')+' l.sin. a stentu '+(td?td+'ho ':'')+(nd||'–')+(pd&&dd?' '+pd+'×'+dd+' mm':'')+' l.dx..');
+      L.push('Kissing stent technika: simultánní implantace stentu '+(td?td+'ho ':'')+(nd||'–')+(pd&&dd?' '+pd+'×'+dd+' mm':'')+' l.dx. a stentu '+(ts?ts+'ho ':'')+(ns||'–')+(ps&&ds?' '+ps+'×'+ds+' mm':'')+' l.sin..');
     }
     if(document.getElementById('c_cerab').checked){
       const aon=vN('cerab_ao_n'),aop=g('cerab_ao_p'),aod=g('cerab_ao_d');
       const sinn=vN('cerab_sin_n'),sinp=g('cerab_sin_p'),sind=g('cerab_sin_d');
       const dxn=vN('cerab_dx_n'),dxp=g('cerab_dx_p'),dxd=g('cerab_dx_d');
-      L.push('CERAB technika: implantace aortálního cuffu '+aon+(aop&&aod?' '+aop+'×'+aod+' mm':'')+', kissing stenty AIC: l.sin. '+sinn+(sinp&&sind?' '+sinp+'×'+sind+' mm':'')+' a l.dx. '+dxn+(dxp&&dxd?' '+dxp+'×'+dxd+' mm':'')+'.');
+      L.push('CERAB technika: implantace aortálního cuffu '+aon+(aop&&aod?' '+aop+'×'+aod+' mm':'')+', kissing stenty AIC: l.dx. '+dxn+(dxp&&dxd?' '+dxp+'×'+dxd+' mm':'')+' a l.sin. '+sinn+(sinp&&sind?' '+sinp+'×'+sind+' mm':'')+'.');
     }
   }
 
