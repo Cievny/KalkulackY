@@ -46,6 +46,8 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
 .btn-save{background:#16a34a;color:#fff;}
 .btn-cancel{background:#f0f2f7;color:#374151;}
 .btn-del{background:#fff;color:#dc2626;border:1.5px solid #fca5a5;margin-right:auto;}
+.edit-form-btn{background:#d97706;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-weight:600;margin-right:4px}
+
 .msg{font-size:13px;font-weight:600;align-self:center;margin-right:auto;}
 .sec-hdr{grid-column:1/-1;font-size:11px;font-weight:800;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;border-top:1px solid #eef1f6;padding-top:10px;}
 </style>
@@ -149,11 +151,14 @@ function render(){
     const tr=document.createElement('tr');
     tr.className='row';
     tr.onclick=()=>openModal(r);
+    const toolKey=r.tool.toUpperCase();
+    const rowJson=JSON.stringify(d).replace(/'/g,"\\'");
     tr.innerHTML=`<td><span class="tag tag-${r.tool}">${TOOL_LABEL[r.tool]}</span></td>
       <td>${escHtml(d.vykon_id||'—')}</td>
       <td>${escHtml(datum)}</td>
       <td>${escHtml(d.operator||'—')}</td>
-      <td>${ok?'<span class="st-ok">✅ doplnené</span>':'<span class="st-miss">⚠️ chýba</span>'}</td>`;
+      <td>${ok?'<span class="st-ok">✅ doplnené</span>':'<span class="st-miss">⚠️ chýba</span>'}</td>
+      <td><button class="edit-form-btn" onclick="event.stopPropagation();openInForm('${toolKey}',${rowJson})">📝 Formulár</button></td>`;
     tb.appendChild(tr);
   });
 }
@@ -237,6 +242,12 @@ async function delRecord(){
 function msg(t,c){const el=document.getElementById('m_msg');el.style.color=c;el.textContent=t;}
 function closeModal(){document.getElementById('overlay').classList.remove('show');CURRENT=null;}
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
+
+function openInForm(tool,record){
+  sessionStorage.setItem('cievny_edit',JSON.stringify({tool,record}));
+  const urls={EVK:'/tools/EVK/',CAS:'/tools/CAS-generator/',PEVAR:'/tools/PEVAR/'};
+  window.location.href=urls[tool]||'/tools/EVK/';
+}
 
 loadAll();
 </script>
