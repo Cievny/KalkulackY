@@ -48,6 +48,10 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
 .btn-del{background:#fff;color:#dc2626;border:1.5px solid #fca5a5;margin-right:auto;}
 .msg{font-size:13px;font-weight:600;align-self:center;margin-right:auto;}
 .sec-hdr{grid-column:1/-1;font-size:11px;font-weight:800;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;border-top:1px solid #eef1f6;padding-top:10px;}
+.edit-form-btn{padding:4px 10px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;margin-right:4px;}
+.edit-form-btn:hover{background:#1737a0;}
+.raw-btn{padding:4px 8px;background:#f0f2f7;color:#374151;border:1px solid #dde1ea;border-radius:6px;font-size:12px;cursor:pointer;}
+.raw-btn:hover{background:#e5e7eb;}
 </style>
 </head>
 <body>
@@ -71,8 +75,8 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
   </div>
 
   <table>
-    <thead><tr><th>Nástroj</th><th>ID výkonu</th><th>Datum</th><th>Operatér</th><th>Komplikace</th></tr></thead>
-    <tbody id="tbody"><tr><td colspan="5" class="empty">Načítám…</td></tr></tbody>
+    <thead><tr><th>Nástroj</th><th>ID výkonu</th><th>Datum</th><th>Operatér</th><th>Komplikace</th><th>Akce</th></tr></thead>
+    <tbody id="tbody"><tr><td colspan="6" class="empty">Načítám…</td></tr></tbody>
   </table>
 </div>
 
@@ -140,7 +144,7 @@ function render(){
     return true;
   });
   const tb=document.getElementById('tbody');
-  if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">Žádné záznamy.</td></tr>';return;}
+  if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="empty">Žádné záznamy.</td></tr>';return;}
   tb.innerHTML='';
   rows.forEach((r,i)=>{
     const d=r.data;
@@ -148,12 +152,15 @@ function render(){
     const ok=hasCompl(d);
     const tr=document.createElement('tr');
     tr.className='row';
-    tr.onclick=()=>openModal(r);
+    const toolKey=r.tool.toUpperCase();
+    const rowJson=JSON.stringify(d).replace(/'/g,"\\'");
+    tr.onclick=()=>openInForm(toolKey,d);
     tr.innerHTML=`<td><span class="tag tag-${r.tool}">${TOOL_LABEL[r.tool]}</span></td>
       <td>${escHtml(d.vykon_id||'—')}</td>
       <td>${escHtml(datum)}</td>
       <td>${escHtml(d.operator||'—')}</td>
-      <td>${ok?'<span class="st-ok">✅ doplněno</span>':'<span class="st-miss">⚠️ chybí</span>'}</td>`;
+      <td>${ok?'<span class="st-ok">✅ doplněno</span>':'<span class="st-miss">⚠️ chybí</span>'}</td>
+      <td><button class="edit-form-btn" onclick="event.stopPropagation();openInForm('${toolKey}',${rowJson})">📝 Otevřít formulář</button><button class="raw-btn" onclick="event.stopPropagation();openModal(r)" title="Surová pole DB">⚙️</button></td>`;
     tb.appendChild(tr);
   });
 }
@@ -237,6 +244,12 @@ async function delRecord(){
 function msg(t,c){const el=document.getElementById('m_msg');el.style.color=c;el.textContent=t;}
 function closeModal(){document.getElementById('overlay').classList.remove('show');CURRENT=null;}
 document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal();});
+
+function openInForm(tool,record){
+  sessionStorage.setItem('cievny_edit',JSON.stringify({tool,record}));
+  const urls={EVK:'/cz/tools/EVK/',CAS:'/cz/tools/CAS-generator/',PEVAR:'/cz/tools/PEVAR/'};
+  window.location.href=urls[tool]||'/cz/tools/EVK/';
+}
 
 loadAll();
 </script>

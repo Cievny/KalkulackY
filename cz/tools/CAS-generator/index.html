@@ -903,20 +903,93 @@ async function saveData(){
   };
   msg('Ukládám...','#5a6a8a');
   try{
-    const r=await fetch(SB_URL+'/rest/v1/cz_cas_vykony',{
-      method:'POST',
+    const _isEdit=!!window._editRecordId;
+    const _url=SB_URL+'/rest/v1/cz_cas_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
+    const r=await fetch(_url,{
+      method:_isEdit?'PATCH':'POST',
       headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},
       body:JSON.stringify(payload)
     });
-    if(r.ok)msg('Uloženo ✓','#1d6f42');
+    if(r.ok)msg(_isEdit?'Záznam aktualizován ✓':'Uloženo ✓','#1d6f42');
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
+}
+
+function loadEditRecord(){
+  try{
+    const raw=sessionStorage.getItem('cievny_edit');
+    if(!raw)return;
+    const {tool,record}=JSON.parse(raw);
+    if(tool!=='CAS')return;
+    sessionStorage.removeItem('cievny_edit');
+    window._editRecordId=record.id;
+    const sv=(id,v)=>{if(v==null||v==='')return;const el=document.getElementById(id);if(el)el.value=v;};
+    // Pacient + indikácia
+    if(record.vykon_id){const parts=record.vykon_id.split('-');sv('id_suffix',parts[parts.length-1]);}
+    sv('datum_zaznamu',record.datum_zaznamu);
+    sv('operator',record.operator);
+    sv('vek',record.vek);
+    sv('pohlavie',record.pohlavie);
+    sv('lokalizacia',record.lokalizacia);
+    sv('klinicky_stav',record.klinicky_stav);
+    sv('cas_symptom_days',record.cas_symptom_days);
+    sv('plat',record.typ_platu);
+    // DSA nález
+    sv('dsa_acc_sin',record.dsa_acc_sin);
+    sv('dsa_aci_sin_typ',record.dsa_aci_sin);
+    sv('dsa_ace_sin',record.dsa_ace_sin);
+    sv('dsa_av_sin',record.dsa_av_sin);
+    sv('dsa_acc_dx',record.dsa_acc_dx);
+    sv('dsa_aci_dx_typ',record.dsa_aci_dx);
+    sv('dsa_ace_dx',record.dsa_ace_dx);
+    sv('dsa_av_dx',record.dsa_av_dx);
+    sv('nascet_stenoza_sin',record.nascet_stenoza_sin||record.nascet_stenoza);
+    sv('nascet_stenoza_dx',record.nascet_stenoza_dx);
+    sv('popis_stenozy',record.popis_stenozy);
+    // Materiály
+    sv('stent_znacka',record.stent_znacka);
+    sv('stent_velkost',record.stent_velkost);
+    sv('emboloprotekcia',record.emboloprotekcia);
+    // Procedúra
+    sv('anes',record.anestazia);
+    sv('punkcia_arteria',record.punkcia_arteria);
+    sv('punkcia_technika',record.punkcia_technika);
+    sv('kompresia_min',record.kompresia_min);
+    sv('st_fluoro',record.fluoro_time_min);
+    sv('st_dap',record.dap);
+    sv('st_contrast',record.contrast_ml);
+    sv('st_konv',record.konverzia===true||record.konverzia==='true'||record.konverzia==='áno'?'áno':'nie');
+    sv('st_clavien',record.clavien_dindo);
+    sv('vysledok',record.vysledok);
+    // Komorbidity
+    try{
+      const k=typeof record.komorbidity==='string'?JSON.parse(record.komorbidity||'{}'):(record.komorbidity||{});
+      const ck=(id,sub)=>{const el=document.getElementById(id);if(el){el.checked=true;if(sub)kSub(sub);}};
+      if(k.DM)ck('k_dm','dm');
+      if(k.AH)ck('k_ah','ah');
+      if(k.CKD||k.CHRI)ck('k_ckd','ckd');
+      if(k.ICHS)ck('k_ichs','ichs');
+      if(k['St.p.IM'])ck('k_im','im');
+      if(k['St.p.CMP'])ck('k_cmp','cmp');
+      if(k.Fajčiar)ck('k_fajc','fajc');
+      if(k.Obezita)ck('k_obez','obez');
+      if(k.Dyslipidémia)ck('k_dysl','dysl');
+      document.querySelector('.komor-details')?.setAttribute('open','');
+    }catch(e){}
+    // Banner
+    const banner=document.createElement('div');
+    banner.style.cssText='background:#fef9c3;color:#713f12;border-bottom:3px solid #ca8a04;padding:8px 16px;font-size:13px;font-weight:700;text-align:center;position:sticky;top:38px;z-index:200';
+    banner.textContent='✏️ Upravujete záznam '+(record.vykon_id||record.id)+' — po úpravě klikněte Uložit';
+    document.body.insertBefore(banner,document.body.children[2]||document.body.lastChild);
+    gen();
+  }catch(e){console.error('loadEditRecord CAS:',e);}
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
   updateIdPrefix();
   casDsaLat();
+  loadEditRecord();
   gen();
 });
 
