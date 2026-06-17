@@ -153,14 +153,16 @@ function render(){
     const tr=document.createElement('tr');
     tr.className='row';
     const toolKey=r.tool.toUpperCase();
-    const rowJson=JSON.stringify(d).replace(/'/g,"\\'");
     tr.onclick=()=>openInForm(toolKey,d);
     tr.innerHTML=`<td><span class="tag tag-${r.tool}">${TOOL_LABEL[r.tool]}</span></td>
       <td>${escHtml(d.vykon_id||'—')}</td>
       <td>${escHtml(datum)}</td>
       <td>${escHtml(d.operator||'—')}</td>
       <td>${ok?'<span class="st-ok">✅ doplněno</span>':'<span class="st-miss">⚠️ chybí</span>'}</td>
-      <td><button class="edit-form-btn" onclick="event.stopPropagation();openInForm('${toolKey}',${rowJson})">📝 Otevřít formulář</button><button class="raw-btn" onclick="event.stopPropagation();openModal(r)" title="Surová pole DB">⚙️</button></td>`;
+      <td><button class="edit-form-btn" data-idx="${i}">📝 Otevřít formulář</button><button class="raw-btn" data-idx="${i}" data-raw="1" title="Surová pole DB">⚙️</button></td>`;
+    tb.appendChild(tr);
+    tr.querySelector('.edit-form-btn').addEventListener('click',e=>{e.stopPropagation();openInForm(toolKey,d);});
+    tr.querySelector('.raw-btn').addEventListener('click',e=>{e.stopPropagation();openModal(r);});
     tb.appendChild(tr);
   });
 }
