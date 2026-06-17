@@ -919,6 +919,19 @@ function loadEditRecord(){
     sv('st_contrast',record.contrast_ml);
     sv('st_konv',record.konverzia?'áno':'nie');
     sv('st_clavien',record.clavien_dindo);
+    sv('punkcia_arteria',record.punkcia_arteria);
+    sv('punkcia_technika',record.punkcia_technika);
+    sv('kompresia_dx_min',record.kompresia_dx_min);
+    sv('kompresia_sin_min',record.kompresia_sin_min);
+    sv('indikacia_typ',record.indikacia_typ);
+    sv('zabezpecenie_technika',record.zabezpecenie_technika);
+    sv('kontrolna_cta',record.kontrolna_cta);
+    sv('neck_diameter_mm',record.neck_diameter_mm);
+    sv('neck_angle_alpha',record.neck_angle_alpha);
+    sv('neck_angle_beta',record.neck_angle_beta);
+    sv('neck_shape',record.neck_shape);
+    sv('neck_calcification',record.neck_calcification);
+    sv('neck_ifu',record.neck_ifu);
     if(record.endoleak){
       const cb=document.getElementById('endoleak_check');
       if(cb){cb.checked=true;const b=document.getElementById('b_endoleak');if(b)b.classList.add('on');}
@@ -942,14 +955,6 @@ function loadEditRecord(){
   }catch(e){console.error('loadEditRecord PEVAR:',e);}
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  loadEditRecord();
-  document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
-  updatePevarIdPrefix();
-  gen();
-});
-
-// Reset komorbidity - pageshow pokryva aj back-navigation, kde load nestaci
 function resetKomor(){
   const det = document.querySelector('.komor-details');
   if(det) det.removeAttribute('open');
@@ -957,7 +962,14 @@ function resetKomor(){
   document.querySelectorAll('.kom-sub').forEach(s=>s.classList.remove('on'));
 }
 window.addEventListener('pageshow', resetKomor);
-document.addEventListener('DOMContentLoaded', resetKomor);
+
+document.addEventListener('DOMContentLoaded',()=>{
+  resetKomor();
+  document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
+  updatePevarIdPrefix();
+  loadEditRecord();
+  gen();
+});
 </script>
 </body>
 </html>
