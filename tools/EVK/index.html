@@ -1564,6 +1564,7 @@ function loadEditRecord(){
     document.body.insertBefore(banner,document.body.children[2]||document.body.lastChild);
 
     // Pacient
+    if(record.vykon_id){const parts=record.vykon_id.split('-');sv('id_suffix',parts[parts.length-1]);}
     sv('datum',record.datum);
     sv('operator',record.operator);
     sv('vek',record.vek);
