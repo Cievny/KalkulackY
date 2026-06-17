@@ -957,13 +957,6 @@ function loadEditRecord(){
   }catch(e){console.error('loadEditRecord PEVAR:',e);}
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
-  updatePevarIdPrefix();
-  loadEditRecord();
-  gen();
-});
-
 // Reset komorbidity - pageshow pokryva aj back-navigation, kde load nestaci
 function resetKomor(){
   const det = document.querySelector('.komor-details');
@@ -972,7 +965,14 @@ function resetKomor(){
   document.querySelectorAll('.kom-sub').forEach(s=>s.classList.remove('on'));
 }
 window.addEventListener('pageshow', resetKomor);
-document.addEventListener('DOMContentLoaded', resetKomor);
+
+document.addEventListener('DOMContentLoaded',()=>{
+  resetKomor();
+  document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
+  updatePevarIdPrefix();
+  loadEditRecord();
+  gen();
+});
 </script>
 </body>
 </html>
