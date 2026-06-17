@@ -924,6 +924,7 @@ function loadEditRecord(){
     window._editRecordId=record.id;
     const sv=(id,v)=>{if(v==null||v==='')return;const el=document.getElementById(id);if(el)el.value=v;};
     // Pacient + indikácia
+    if(record.vykon_id){const parts=record.vykon_id.split('-');sv('id_suffix',parts[parts.length-1]);}
     sv('datum_zaznamu',record.datum_zaznamu);
     sv('operator',record.operator);
     sv('vek',record.vek);
