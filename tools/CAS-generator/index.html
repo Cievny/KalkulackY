@@ -571,7 +571,14 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     <label class="ck"><input type="checkbox" id="femostop" onchange="gen()"> Nasadený Femostop</label>
   </div>
 </div>
-<div class="f"><label>Výsledný obraz</label><input type="text" id="vysledok" value="pekný, bez perifernej embolizácie" oninput="gen()"></div>
+<div class="f"><label>Výsledný obraz</label>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px">
+    <button type="button" onclick="document.getElementById('vysledok').value='pekný, bez perifernej embolizácie';gen()" style="font-size:11px;padding:3px 8px;border:1px solid #cbd5e1;border-radius:4px;background:#f1f5f9;cursor:pointer">pekný, bez embolizácie</button>
+    <button type="button" onclick="document.getElementById('vysledok').value='bez závažnej stenózy, bez perifernej embolizácie';gen()" style="font-size:11px;padding:3px 8px;border:1px solid #cbd5e1;border-radius:4px;background:#f1f5f9;cursor:pointer">bez závažnej stenózy</button>
+    <button type="button" onclick="document.getElementById('vysledok').value='reziduálna stenóza &lt;30%, bez perifernej embolizácie';gen()" style="font-size:11px;padding:3px 8px;border:1px solid #cbd5e1;border-radius:4px;background:#f1f5f9;cursor:pointer">reziduálna stenóza &lt;30%</button>
+  </div>
+  <input type="text" id="vysledok" value="pekný, bez perifernej embolizácie" oninput="gen()">
+</div>
 <div class="f"><div class="lbl">Technický úspech</div>
   <div class="checks">
     <label class="ck"><input type="radio" name="tech_uspech" value="Technický úspech" checked onchange="gen()"> ✅ Technický úspech</label>
