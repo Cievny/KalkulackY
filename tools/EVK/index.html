@@ -1554,53 +1554,84 @@ function loadEditRecord(){
     if(tool!=='EVK')return;
     sessionStorage.removeItem('cievny_edit');
     window._editRecordId=record.id;
-    window._editRecordTable='evk_vykony';
-    // show banner
+    const sv=(id,val)=>{if(val==null||val==='')return;const el=document.getElementById(id);if(el)el.value=val;};
+    const scb=(id,val)=>{const el=document.getElementById(id);if(el)el.checked=!!val;};
+
+    // Banner
     const banner=document.createElement('div');
-    banner.style.cssText='background:#fef9c3;color:#713f12;border-bottom:3px solid #ca8a04;padding:8px 16px;font-size:13px;font-weight:700;text-align:center;letter-spacing:.3px;position:sticky;top:38px;z-index:200';
-    banner.textContent='✏️ Upravujete záznam '+(record.vykon_id||record.id)+' — po úprave kliknite Uložiť (aktualizuje existujúci záznam)';
-    const testBanner=document.querySelector('div[style*="TESTOVACIA"]')||document.body.firstChild;
-    if(testBanner&&testBanner.parentNode)testBanner.parentNode.insertBefore(banner,testBanner.nextSibling);
-    else document.body.insertBefore(banner,document.body.firstChild);
-    // populate fields
-    const sv=(id,val)=>{if(val==null)return;const el=document.getElementById(id);if(el)el.value=val;};
+    banner.style.cssText='background:#fef9c3;color:#713f12;border-bottom:3px solid #ca8a04;padding:8px 16px;font-size:13px;font-weight:700;text-align:center;position:sticky;top:38px;z-index:200';
+    banner.textContent='✏️ Upravujete záznam '+(record.vykon_id||record.id)+' — po úprave kliknite Uložiť';
+    document.body.insertBefore(banner,document.body.children[2]||document.body.lastChild);
+
+    // Pacient
     sv('datum',record.datum);
     sv('operator',record.operator);
     sv('vek',record.vek);
     if(record.pohlavie){const el=document.getElementById('pohl');if(el)el.value=record.pohlavie==='Muž'?'M':'Z';}
     sv('ruth',record.rutherford);
     sv('diag',record.diagnoza||record.diagnoza_indikacia);
-    sv('st_konv',record.konverzia?(record.konverzia===true||record.konverzia==='true'||record.konverzia==='áno'?'áno':'nie'):'nie');
+
+    // Riečisko + DSA — musí byť po buildPelvDSA/buildFemDSA
+    window._pendingEditRecord=record;
+
+    // Štatistiky
+    sv('st_dur',record.proc_duration_min);
+    sv('st_fluoro',record.fluoro_time_min);
+    sv('st_contrast',record.contrast_ml);
+    sv('st_dap',record.dap);
+    sv('st_konv',record.konverzia===true||record.konverzia==='true'||record.konverzia==='áno'?'áno':'nie');
     sv('st_clavien',record.clavien_dindo);
     sv('zaver',record.zaver);
-    // stats fields
-    const el_dur=document.getElementById('st_dur');if(el_dur&&record.proc_duration_min!=null)el_dur.value=record.proc_duration_min;
-    const el_flu=document.getElementById('st_fluoro');if(el_flu&&record.fluoro_time_min!=null)el_flu.value=record.fluoro_time_min;
-    const el_con=document.getElementById('st_contrast');if(el_con&&record.contrast_ml!=null)el_con.value=record.contrast_ml;
-    const el_dap=document.getElementById('st_dap');if(el_dap&&record.dap!=null)el_dap.value=record.dap;
-    // komorbidity
+
+    // Komorbidity
     try{
-      const k=typeof record.komorbidity==='string'&&record.komorbidity.startsWith('{')?JSON.parse(record.komorbidity):{};
-      if(k.DM){const cb=document.getElementById('k_dm');if(cb){cb.checked=true;kSub('dm');}}
-      if(k.AH){const cb=document.getElementById('k_ah');if(cb){cb.checked=true;kSub('ah');}}
-      if(k.CKD){const cb=document.getElementById('k_chri');if(cb){cb.checked=true;kSub('chri');}}
-      if(k.ICHS){const cb=document.getElementById('k_ichs');if(cb){cb.checked=true;kSub('ichs');}}
-      if(k['St.p.IM']){const cb=document.getElementById('k_im');if(cb)cb.checked=true;}
-      if(k['St.p.CMP']){const cb=document.getElementById('k_cmp');if(cb){cb.checked=true;kSub('cmp');}}
-      if(k.Fajčiar){const cb=document.getElementById('k_faj');if(cb){cb.checked=true;kSub('faj');}}
-      if(k.Obezita){const cb=document.getElementById('k_obez');if(cb){cb.checked=true;kSub('obez');}}
-      if(k.Dyslipidémia){const cb=document.getElementById('k_dysl');if(cb){cb.checked=true;kSub('dysl');}}
+      const k=typeof record.komorbidity==='string'?JSON.parse(record.komorbidity||'{}'):(record.komorbidity||{});
+      const ck=(id,sub)=>{const el=document.getElementById(id);if(el){el.checked=true;if(sub)kSub(sub);}};
+      if(k.DM)ck('k_dm','dm');
+      if(k.AH)ck('k_ah','ah');
+      if(k.CKD||k.CHRI)ck('k_ckd','ckd');
+      if(k.ICHS)ck('k_ichs','ichs');
+      if(k['St.p.IM'])ck('k_im','im');
+      if(k['St.p.CMP'])ck('k_cmp','cmp');
+      if(k.Fajčiar)ck('k_fajc','fajc');
+      if(k.Obezita)ck('k_obez','obez');
+      if(k.Dyslipidémia)ck('k_dysl','dysl');
+      if(k.CHOCHP)ck('k_chochp','chochp');
       document.querySelector('.komor-details')?.setAttribute('open','');
     }catch(e){}
     gen();
   }catch(e){console.error('loadEditRecord EVK:',e);}
 }
 
+function applyDSAfromRecord(record){
+  if(!record)return;
+  const sv=(id,val)=>{if(val==null)return;const el=document.getElementById(id);if(el)el.value=val;};
+  // Riečisko
+  const terr=record.riecisko==='Panvové'?'pelv':record.riecisko==='Panvové+FP'?'both':'fem';
+  const tel=document.getElementById('territory');if(tel){tel.value=terr;updateTerritory();}
+  // Fem lateralita
+  if(record.fem_lat)sv('fem_lat',record.fem_lat);
+  // DSA hodnoty zo JSON
+  try{
+    const dsa=typeof record.dsa_nalez==='string'?JSON.parse(record.dsa_nalez):(record.dsa_nalez||{});
+    Object.keys(dsa).forEach(k=>{sv(k,dsa[k]);});
+    // custom text fields
+    Object.keys(dsa).forEach(k=>{
+      if(dsa[k]==='vlastný popis'||dsa[k]==='iné'){
+        const cinp=document.getElementById(k+'_c');
+        if(cinp){cinp.style.display='block';cinp.value=dsa[k+'_text']||'';}
+      }
+    });
+  }catch(e){}
+  gen();
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
-  loadEditRecord();
   document.getElementById('datum').value=new Date().toISOString().slice(0,10);
   document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
   updateIdPrefix();buildPelvDSA();buildFemDSA();
+  loadEditRecord();
+  if(window._pendingEditRecord){applyDSAfromRecord(window._pendingEditRecord);window._pendingEditRecord=null;}
   addItem('reentry','reentry',true);
   addItem('vprep','balon_vprep',true);
   addItem('pred','balon',true);
