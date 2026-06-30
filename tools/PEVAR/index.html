@@ -366,9 +366,10 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 </div>
 <div class="row r2">
   <div class="f"><label>Stentgraft – názov</label>
-    <select id="sg_nazov" onchange="gen()">
-      <option>Endurant</option><option>Cook Alpha</option><option>ALTO</option><option>MINOS</option><option>Incraft</option>
+    <select id="sg_nazov" onchange="toggleCustom('sg_nazov');gen()">
+      <option>Endurant</option><option>Cook Alpha</option><option>ALTO</option><option>MINOS</option><option>Incraft</option><option value="__custom__">+ vlastný…</option>
     </select>
+    <input type="text" id="sg_nazov_custom" placeholder="vlastný stentgraft" style="display:none;margin-top:4px" oninput="gen()">
   </div>
   <div class="f"><label>Rozmery SG tela (mm)</label><input type="text" id="sg_rozmery" value="18-166-16" oninput="gen()"></div>
 </div>
@@ -693,7 +694,7 @@ function gen(){
 
   const katAorty=g('katetrizacia_aorty');
   const vodic=g('vodic_typ');
-  const sgNazov=g('sg_nazov');
+  const sgNazov=gSel('sg_nazov');
   const sgRozmery=g('sg_rozmery');
   const komentar=g('implantacia_komentar');
 
@@ -709,7 +710,7 @@ function gen(){
   if(chk('c_extenzie')){
     document.querySelectorAll('#extenzie_list .ext-row').forEach(row=>{
       const idx=row.dataset.idx;
-      const naz=g('ext_'+idx+'_nazov');const roz=g('ext_'+idx+'_rozmery');const str=g('ext_'+idx+'_strana');
+      const naz=gSel('ext_'+idx+'_nazov');const roz=g('ext_'+idx+'_rozmery');const str=g('ext_'+idx+'_strana');
       if(naz||roz)katLines.push((str?str+': ':'')+'Implantujeme extenziu '+naz+(roz?' ('+roz+')':'')+'.');
     });
   }
@@ -791,7 +792,10 @@ function gen(){
 }
 
 let extCnt=0;
-const SG_OPTS='<option>Ovation</option><option>Endurant</option><option>Cook</option><option>MINOS</option><option>Incraft</option>';
+const SG_OPTS='<option>Ovation</option><option>Endurant</option><option>Cook</option><option>MINOS</option><option>Incraft</option><option value="__custom__">+ vlastný…</option>';
+// Custom dropdown helpers: po výbere "+ vlastný…" sa zobrazí textové pole
+function toggleCustom(id){const s=document.getElementById(id),c=document.getElementById(id+'_custom');if(s&&c)c.style.display=s.value==='__custom__'?'':'none';}
+function gSel(id){const s=document.getElementById(id);if(!s)return'';return s.value==='__custom__'?g(id+'_custom'):s.value;}
 function addExtenzia(){
   const idx=extCnt++;
   const id='ext_'+idx;
@@ -804,7 +808,7 @@ function addExtenzia(){
           <option value="">–</option><option value="Sprava">Sprava</option><option value="Zľava">Zľava</option><option value="Obojstranne">Obojstranne</option>
         </select>
       </div>
-      <div class="f"><label>Názov</label><select id="${id}_nazov" onchange="gen()">${SG_OPTS}</select></div>
+      <div class="f"><label>Názov</label><select id="${id}_nazov" onchange="toggleCustom('${id}_nazov');gen()">${SG_OPTS}</select><input type="text" id="${id}_nazov_custom" placeholder="vlastný stentgraft" style="display:none;margin-top:4px" oninput="gen()"></div>
     </div>
     <div class="f" style="margin-top:6px"><label>Rozmery (mm)</label><input type="text" id="${id}_rozmery" placeholder="napr. 16x80mm" oninput="gen()"></div>`;
   cont.appendChild(div);gen();
@@ -827,7 +831,7 @@ async function saveToSupabase(){
   if(chk('c_extenzie')){
     document.querySelectorAll('#extenzie_list .ext-row').forEach(row=>{
       const idx=row.dataset.idx;
-      const naz=g('ext_'+idx+'_nazov'),roz=g('ext_'+idx+'_rozmery'),str=g('ext_'+idx+'_strana');
+      const naz=gSel('ext_'+idx+'_nazov'),roz=g('ext_'+idx+'_rozmery'),str=g('ext_'+idx+'_strana');
       if(naz||roz)extRows.push({strana:str,nazov:naz,rozmery:roz});
     });
   }
@@ -855,7 +859,7 @@ async function saveToSupabase(){
     zabezpecenie_technika:g('zabezpecenie_technika'),
     sheath_velkost:g('sheath_velkost'),
     vodic_typ:g('vodic_typ'),
-    sg_nazov:g('sg_nazov'),
+    sg_nazov:gSel('sg_nazov'),
     sg_rozmery:g('sg_rozmery'),
     sg_konfiguracia:document.querySelector('input[name="sg_typ"]:checked')?.value||'',
     contra_kateter_typ:g('contra_kateter_typ'),
@@ -938,7 +942,7 @@ function loadEditRecord(){
     sv('vek',record.vek);
     sv('pohlavie',record.pohlavie);
     sv('diagnoza',record.diagnoza);
-    sv('sg_nazov',record.sg_nazov);
+    if(record.sg_nazov){const sel=document.getElementById('sg_nazov');const known=[...sel.options].some(o=>o.value===record.sg_nazov);if(known)sel.value=record.sg_nazov;else{sel.value='__custom__';const c=document.getElementById('sg_nazov_custom');if(c)c.value=record.sg_nazov;}toggleCustom('sg_nazov');}
     sv('sg_rozmery',record.sg_rozmery);
     sv('anestezia_typ',record.anestezia_typ);
     sv('st_fluoro',record.fluoro_time_min);
