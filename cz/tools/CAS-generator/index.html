@@ -63,12 +63,12 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     <div class="id-row"><span class="id-prefix" id="id-prefix">CAS-2026-</span><input type="text" id="id_suffix" placeholder="001" oninput="updateIdPrefix()"></div>
   </div>
   <div class="f"><label>Operatér</label>
-    <select id="operator">
+    <select id="operator" onchange="gen()">
       <option value="">– vybrat –</option>
       <option>Vařejka</option><option>Horáková</option><option>Ručka</option><option>Heller</option>
     </select>
   </div>
-  <div class="f"><label>Datum</label><input type="date" id="datum_zaznamu"></div>
+  <div class="f"><label>Datum</label><input type="date" id="datum_zaznamu" onchange="gen()"></div>
 </div>
 </div>
 
@@ -767,31 +767,48 @@ function gen(){
   const pohlavie=g('pohlavie');
   const jeZena=pohlavie==='Žena';
   const vekText=vek?(vek+(jeZena?'letá':'letý')):'';
-  const pacientText=jeZena?'pacientka':'pacient';
+  const noun=jeZena?'pacientka':'pacient';
   const indText=jeZena?'indikovaná':'indikovaný';
   const lok=g('lokalizacia');
   const strana=lok.includes('dx.')?'l.dx.':'l.sin.';
-  const aci='ACI '+strana,acc='ACC '+strana,ace='ACE '+strana;
-  const plat=document.getElementById('plat').options[document.getElementById('plat').selectedIndex].text;
+  const aci='ACI '+strana,ace='ACE '+strana;
+  const platEl=document.getElementById('plat');
+  const plat=platEl?platEl.options[platEl.selectedIndex].text:'';
   const artVal=g('access_art'),art=artVal==='vlastny'?(g('access_art_c')||'vlastní tepna'):artVal;
   const katDiag=g('kateter_diag');
   const sh=g('sheath'),shd=g('sheathdlz');
   const shText=sh?(sh+(shd?' '+shd:'')):'';
-  const pristupParts=[art+' '+g('strana'),g('smer'),g('tech'),g('spos'),'v '+g('anes'),'pod '+g('nav')+' navigací'].filter(Boolean);
-  const pristupLine='PŘÍSTUP: '+pristupParts.join(', ')+', zavádíme katétr '+katDiag+''+(shText?', sheath '+shText:'')+'.';
-  const anestezia=g('anes');
-
   const komor=getKomor();
-  const uvod=`${vekText} ${pacientText}${komor.length?' ('+komor.join(', ')+')':''} se symptomatickou kritickou stenózou ${aci} s ${plat} ${indText} k EVL:`.replace(/\s+/g,' ').trim();
+  const L=[];
 
-  const dsaNalez=getCasDsa();
-  const kontr=[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join(', ');
+  // ── HLAVIČKA ──
+  L.push('ZPRÁVA Z KAROTICKÉ INTERVENCE (CAS)');
+  const datum=g('datum_zaznamu');if(datum){const d=new Date(datum);L.push('Datum: '+d.toLocaleDateString('cs-CZ'));}
+  const suf=g('id_suffix');if(suf)L.push('ID: CAS-'+new Date().getFullYear()+'-'+suf);
+  if(g('operator'))L.push('Operatér: '+g('operator'));
+  L.push('Lokalizace: '+(lok||strana));
+  L.push('─'.repeat(46));
+
+  // ── PACIENT ──
+  L.push('PACIENT: '+[vekText,noun].filter(Boolean).join(' '));
+  if(komor.length)L.push('Komorbidity: '+komor.join(', '));
+  L.push('INDIKACE: se symptomatickou kritickou stenózou '+aci+(plat?' s '+plat:'')+', '+indText+' k endovaskulární léčbě (EVL).');
+
+  // ── PŘÍSTUP ──
+  const pristupParts=[art+' '+g('strana'),g('smer'),g('tech'),g('spos'),'v '+g('anes'),'pod '+g('nav')+' navigací'].filter(Boolean);
+  L.push('PŘÍSTUP: '+pristupParts.join(', ')+', zavádíme katétr '+katDiag+(shText?', sheath '+shText:'')+'.');
+
+  const kontr=[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join(' + kombin. s ');
+  if(kontr)L.push('KONTRASTNÍ LÁTKA: '+kontr);
+
+  // ── DSA NÁLEZ ──
+  L.push('DSA NÁLEZ:');
+  L.push(getCasDsa());
+
+  // ── INTERVENCE ──
   const postup=g('postup_vykonu');
-  let priebeh=`${pristupLine}${kontr?'\nKontrastní látka: '+kontr:''}\n\nDSA NÁLEZ:\n${dsaNalez}`;
-
-  const parts=[uvod,priebeh];
   if(postup==='intervencia'){
-    parts[parts.length-1]+=` a přistupujeme k intervenci:`;
+    L.push('INTERVENCE:');
     const shInterv=`${g('sheath_intervencny_fr')} ${g('sheath_intervencny_dlzka')} (${g('sheath_intervencny_znacka')})`;
     const vodic=`${g('vodic_intervencny_spec')} (${g('vodic_intervencny_brand')})`;
     const embolo=g('emboloprotekcia');
@@ -806,22 +823,28 @@ function gen(){
       impl+=` a k domodelování pomocí PTA balónu ${g('balon_domodelování_velkost')} (${g('balon_domodelování_znacka')})`;
     }
     intervParts.push(impl);
-    parts.push(`Zavádíme Storq vodič do ${ace}, vyměňujeme sheath za ${shInterv}, pomocí ${vodic} vodiče katetrizujeme ${aci} a zavádíme distální emboloprotekciu ${embolo}.\n${intervParts.join(', ')}.\nVýsledný angiografický obraz ${g('vysledok')}.`);
+    L.push(`Zavádíme Storq vodič do ${ace}, vyměňujeme sheath za ${shInterv}, pomocí ${vodic} vodiče katetrizujeme ${aci} a zavádíme distální emboloprotekci ${embolo}.`);
+    L.push(intervParts.join(', ')+'.');
+    if(g('vysledok'))L.push('Výsledný angiografický obraz '+g('vysledok')+'.');
   } else {
-    parts[parts.length-1]+=`. Vzhledem k nálezu volíme konzervativní postup.`;
+    L.push('INTERVENCE: Vzhledem k nálezu volíme konzervativní postup.');
   }
 
+  // ── UZÁVĚR ──
+  L.push('UZÁVĚR:');
   const uzatv=g('uzatvaraci_system');
   const kompr=g('kompr');
   let uzaverText=uzatv?`Místo vpichu uzavíráme pomocí ${uzatv}`:'Manuální komprese'+(kompr?' '+kompr+' min':'');
   uzaverText+=', hemostáza dosažena '+g('hemostaza_text');
   if(document.getElementById('femostop')?.checked)uzaverText+=', nasazen Femostop';
   uzaverText+='.';
-  const techUspech=document.querySelector('input[name="tech_uspech"]:checked')?.value||'';
-  parts.push(uzaverText);
-  if(g('vysledok'))parts.push('Výsledný obraz: '+g('vysledok')+'.');
-  parts.push(`Z: ${g('zaver_vykonu')}`);
-  document.getElementById('out').value=parts.join('\n\n');
+  L.push(uzaverText);
+
+  // ── ZÁVĚR ──
+  L.push('ZÁVĚR:');
+  const zav=g('zaver_vykonu');if(zav)L.push(zav);
+
+  document.getElementById('out').value=L.filter(x=>x!=='').join('\n');
 }
 
 function copyOut(){

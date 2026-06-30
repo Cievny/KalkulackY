@@ -668,7 +668,8 @@ function gen(){
 
   const komor=getKomor();
   const indTyp=document.querySelector('input[name="ind_typ"]:checked')?.value||'elektivnímu';
-  const uvod=[vekText,char,pacientText,komor.length?'('+komor.join(', ')+')':'',diagnoza?'s '+diagnoza+',':'',indikaciaText+' k '+indTyp+' PEVAR:'].filter(Boolean).join(' ');
+  const pacientLine=[vekText,char,pacientText].filter(Boolean).join(' ');
+  const indikaciaLine=(diagnoza?'s '+diagnoza+', ':'')+indikaciaText+' k '+indTyp+' PEVAR.';
 
   const anestezia=g('anestezia_typ');
   const pristupVal=g('pristup_strana').split('|');
@@ -752,17 +753,41 @@ function gen(){
   const zaver=g('zaver_vykonu');
   const lekari=g('lekari');
 
-  const parts=[
-    uvod,
-    pristupText,
-    katLines.join('\n'),
-    [modText,...agParts].filter(Boolean).join(' '),
-    uzaverLines.join('\n'),
-    'Doporučujeme první kontrolní CTA vyšetření '+odp+'.',
-    'Z: '+zaver,
-    '\n'+lekari
-  ];
-  document.getElementById('out').value=parts.filter(Boolean).join('\n\n');
+  const L=[];
+  // ── HLAVIČKA ──
+  L.push('ZPRÁVA Z ENDOVASKULÁRNÍHO VÝKONU (PEVAR)');
+  const datum=g('datum_zaznamu');if(datum){const d=new Date(datum);L.push('Datum: '+d.toLocaleDateString('cs-CZ'));}
+  const suf=g('id_suffix');if(suf)L.push('ID: PEVAR-'+new Date().getFullYear()+'-'+suf);
+  if(g('operator'))L.push('Operatér: '+g('operator'));
+  L.push('─'.repeat(46));
+
+  // ── PACIENT ──
+  L.push('PACIENT: '+pacientLine);
+  if(komor.length)L.push('Komorbidity: '+komor.join(', '));
+  L.push('INDIKACE: '+indikaciaLine);
+
+  // ── PŘÍSTUP ──
+  L.push('PŘÍSTUP: '+pristupText);
+
+  // ── VÝKON ──
+  L.push('VÝKON:');
+  katLines.forEach(l=>L.push(l));
+  const dsaLine=[modText,...agParts].filter(Boolean).join(' ');
+  if(dsaLine)L.push(dsaLine);
+
+  // ── UZÁVĚR ──
+  L.push('UZÁVĚR:');
+  uzaverLines.forEach(l=>L.push(l));
+
+  // ── DOPORUČENÍ ──
+  L.push('DOPORUČENÍ: Doporučujeme první kontrolní CTA vyšetření '+odp+'.');
+
+  // ── ZÁVĚR ──
+  L.push('ZÁVĚR:');
+  if(zaver)L.push(zaver);
+  if(lekari)L.push('\n'+lekari);
+
+  document.getElementById('out').value=L.filter(x=>x!=='').join('\n');
 }
 
 let extCnt=0;
