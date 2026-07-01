@@ -762,6 +762,12 @@ function calcBMI(){
 
 function updateIdPrefix(){document.getElementById('id-prefix').textContent='CAS-'+new Date().getFullYear()+'-';}
 
+// Doplní jednotku "mm" k rozmerom, ak tam ešte nie je (napr. "8x20" -> "8x20 mm")
+function withMM(str){
+  if(!str)return str;
+  return /mm\b/i.test(str)?str:str+' mm';
+}
+
 function gen(){
   const vek=g('vek');
   const pohlavie=g('pohlavie');
@@ -812,15 +818,15 @@ function gen(){
     const shInterv=`${g('sheath_intervencny_fr')} ${g('sheath_intervencny_dlzka')} (${g('sheath_intervencny_znacka')})`;
     const vodic=`${g('vodic_intervencny_spec')} (${g('vodic_intervencny_brand')})`;
     const embolo=g('emboloprotekcia');
-    const stent=g('stent_velkost')?`${g('stent_velkost')} (${g('stent_znacka')})`:g('stent_znacka');
+    const stent=g('stent_velkost')?`${withMM(g('stent_velkost'))} (${g('stent_znacka')})`:g('stent_znacka');
     let intervParts=[];
     if(chk('vykonat_predilataciu')){
-      intervParts.push(`Léziu predilatujeme pomocou PTA balónového katétra ${g('balon_predilatacia_velkost')} (${g('balon_predilatacia_znacka')})`);
+      intervParts.push(`Léziu predilatujeme pomocou PTA balónového katétra ${withMM(g('balon_predilatacia_velkost'))} (${g('balon_predilatacia_znacka')})`);
     }
     let impl=intervParts.length?'v ďalšom kroku pristupujeme':'V ďalšom kroku pristupujeme';
     impl+=` k implantácii stentu ${stent}`;
     if(chk('vykonat_domodelovanie')){
-      impl+=` a k domodelovaniu pomocou PTA balóna ${g('balon_domodelovanie_velkost')} (${g('balon_domodelovanie_znacka')})`;
+      impl+=` a k domodelovaniu pomocou PTA balóna ${withMM(g('balon_domodelovanie_velkost'))} (${g('balon_domodelovanie_znacka')})`;
     }
     intervParts.push(impl);
     L.push(`Zavádzame Storq vodič do ${ace}, vymieňame sheath za ${shInterv}, pomocou ${vodic} vodiča katetrizujeme ${aci} a zavádzame distálnu emboloprotekciu ${embolo}.`);

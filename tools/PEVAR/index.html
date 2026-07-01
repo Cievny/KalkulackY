@@ -652,6 +652,12 @@ function calcBMI(){
   const txt='BMI '+bmi+' → '+stupen;if(el)el.textContent=txt;return txt;
 }
 
+// Doplní jednotku "mm" k rozmerom, ak tam ešte nie je (napr. "18-166-16" -> "18-166-16 mm")
+function withMM(str){
+  if(!str)return str;
+  return /mm\b/i.test(str)?str:str+' mm';
+}
+
 function gen(){
   const vek=g('vek');
   const pohlavie=g('pohlavie');
@@ -700,7 +706,7 @@ function gen(){
 
   const katLines=[
     katAorty?(katAorty+', po ktorom zavádzame '+vodic+'.'):('Zavádzame '+vodic+'.'),
-    'Sprava zavádzame hlavné telo '+sgTyp+' stentgraftu '+sgNazov+' ('+sgRozmery+'), pomocou DSA verifikujeme odstup renálnych tepien a implantujeme telo SG.'
+    'Sprava zavádzame hlavné telo '+sgTyp+' stentgraftu '+sgNazov+' ('+withMM(sgRozmery)+'), pomocou DSA verifikujeme odstup renálnych tepien a implantujeme telo SG.'
   ];
   if(isBifurk){
     const contraKat=g('contra_kateter_typ');
@@ -711,7 +717,7 @@ function gen(){
     document.querySelectorAll('#extenzie_list .ext-row').forEach(row=>{
       const idx=row.dataset.idx;
       const naz=gSel('ext_'+idx+'_nazov');const roz=g('ext_'+idx+'_rozmery');const str=g('ext_'+idx+'_strana');
-      if(naz||roz)katLines.push((str?str+': ':'')+'Implantujeme extenziu '+naz+(roz?' ('+roz+')':'')+'.');
+      if(naz||roz)katLines.push((str?str+': ':'')+'Implantujeme extenziu '+naz+(roz?' ('+withMM(roz)+')':'')+'.');
     });
   }
   if(komentar)katLines.push(komentar);
