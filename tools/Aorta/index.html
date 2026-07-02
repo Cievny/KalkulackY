@@ -89,7 +89,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
   <details>
     <summary>🗄 Archív (vybavené požiadavky) – <span id="arch_cnt">0</span></summary>
     <table class="arch-table">
-      <thead><tr><th>Pacient</th><th>Diagnóza</th><th>Priemer</th><th>Výsledok</th><th>Požiadavka</th><th>Uzavreté</th><th>Dní celkom</th><th></th></tr></thead>
+      <thead><tr><th>Pacient</th><th>Diagnóza</th><th>Priemer</th><th>Výsledok</th><th>Požiadavka</th><th>Uzavreté</th><th>Dní celkom</th><th>Pridal</th><th></th></tr></thead>
       <tbody id="arch_body"></tbody>
     </table>
   </details>
@@ -238,6 +238,8 @@ function fmtD(d){if(!d)return'–';const x=new Date(d);return isNaN(x)?'–':x.t
 function daysBetween(a,b){const A=new Date(a),B=new Date(b);if(isNaN(A)||isNaN(B))return null;return Math.max(0,Math.round((B-A)/86400000));}
 function parseHist(item){try{const h=JSON.parse(item.historia||'[]');return Array.isArray(h)?h:[];}catch{return[];}}
 function msg(id,t,c){const el=document.getElementById(id);el.textContent=t;el.style.color=c;setTimeout(()=>{if(el.textContent===t)el.textContent='';},4000);}
+function shortMail(e){return (e||'').split('@')[0];}
+function me(){return (typeof sbUserEmail==='function'?sbUserEmail():'')||null;}
 
 // ── ESVS 2024 upozornenia ────────────────────────────────────
 function esvsAlerts(it){
@@ -332,7 +334,7 @@ function cardEl(it){
     ${it.ziadatel?'<div class="card-line">👤 '+escHtml(it.ziadatel)+'</div>':''}
     ${(it.indikoval1||it.indikoval2)?'<div class="card-line">⚕️ indikoval: '+escHtml([it.indikoval1,it.indikoval2].filter(Boolean).join(' + '))+'</div>':''}
     ${matHtml}
-    <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stave':''}${dTotal!==null?' • od požiadavky <b>'+dTotal+' d</b>':''}</div>
+    <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stave':''}${dTotal!==null?' • od požiadavky <b>'+dTotal+' d</b>':''}${it.created_by?' • pridal <b>'+escHtml(shortMail(it.created_by))+'</b>':''}</div>
     <div class="card-actions">
       <button class="btn-edit" onclick="openModal('${it.id}')">✏️ Detail</button>
       <select class="sel-move" onchange="if(this.value){moveCard('${it.id}',this.value)}"><option value="">Presunúť…</option>${moveOpts}</select>
@@ -355,6 +357,7 @@ function renderArchive(q){
       <td>${escHtml(it.diagnoza||'–')}</td><td>${it.priemer_mm?it.priemer_mm+' mm':'–'}</td>
       <td>${escHtml(it.vysledok||'–')}</td><td>${fmtD(it.datum_poziadavky)}</td><td>${fmtD(closed)}</td>
       <td>${dTotal!==null?dTotal+' d':'–'}</td>
+      <td>${it.created_by?escHtml(shortMail(it.created_by)):'–'}</td>
       <td style="white-space:nowrap"><button class="btn-mini" onclick="restoreCard('${it.id}')">↩ Obnoviť</button>
       <button class="btn-mini btn-mini-del" onclick="delCard('${it.id}')">🗑</button></td>`;
     tb.appendChild(tr);
@@ -430,7 +433,7 @@ async function saveCard(){
       else msg('m_msg','❌ Chyba pri ukladaní: '+r.status,'#dc2626');
     }else{
       o.status='poziadavka';
-      o.historia=JSON.stringify([{s:'poziadavka',d:today()}]);
+      o.historia=JSON.stringify([{s:'poziadavka',d:today(),by:shortMail(me())||undefined}]);
       r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify(o)});
       if(r.ok){
         const rows=await r.json();
@@ -459,7 +462,7 @@ function renderPrilohy(){
     const div=document.createElement('div');
     div.style.cssText='background:#f8faff;border:1.5px solid #e5e9f5;border-radius:7px;padding:7px 10px;font-size:12.5px;';
     div.innerHTML=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <span style="flex:1;min-width:120px">${ico} <b>${escHtml(p.nazov||'príloha')}</b> <span style="color:#9ca3af">(${d})</span></span>
+      <span style="flex:1;min-width:120px">${ico} <b>${escHtml(p.nazov||'príloha')}</b> <span style="color:#9ca3af">(${d}${p.created_by?', '+escHtml(shortMail(p.created_by)):''})</span></span>
       <button class="btn-mini" onclick="openPriloha('${p.id}')">${p.typ==='text'?'Zobraziť':'Otvoriť'}</button>
       <button class="btn-mini btn-mini-del" onclick="delPriloha('${p.id}')">🗑</button></div>
       <div id="pril_obsah_${p.id}" style="display:none;white-space:pre-wrap;word-break:break-word;color:#374151;margin-top:6px;border-top:1px solid #e5e9f5;padding-top:6px"></div>`;
@@ -529,7 +532,7 @@ async function delPriloha(id){
 // ── Presun medzi stavmi ──────────────────────────────────────
 async function moveCard(id,newStatus,vysledok){
   const it=ITEMS.find(i=>i.id===id);if(!it)return;
-  const hist=parseHist(it);hist.push({s:newStatus,d:today()});
+  const hist=parseHist(it);hist.push({s:newStatus,d:today(),by:shortMail(me())||undefined});
   const body={status:newStatus,historia:JSON.stringify(hist),updated_at:new Date().toISOString()};
   if(vysledok!==undefined)body.vysledok=vysledok;
   try{

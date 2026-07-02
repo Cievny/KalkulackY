@@ -138,6 +138,20 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit)
 VALUES ('aorta-prilohy','aorta-prilohy', false, 20971520)
 ON CONFLICT (id) DO NOTHING;
 
+-- created_by: email prihláseného používateľa (vyplní databáza automaticky z JWT pri INSERTe)
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE aorta_prilohy   ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE evk_vykony      ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE cas_vykony      ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE pevar_vykony    ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE evk_followup    ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE ideas           ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE IF EXISTS cz_evk_vykony   ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE IF EXISTS cz_cas_vykony   ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE IF EXISTS cz_pevar_vykony ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE IF EXISTS cz_evk_followup ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE IF EXISTS cz_ideas        ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
