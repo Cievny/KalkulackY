@@ -1232,11 +1232,11 @@ function gen(){
     const pdx=[],psin=[];let pnorm=(ao===NORM)?1:0;
     PELV_VESSELS.forEach(([lbl,base])=>{
       const vd=gV(base+'_d'),vs=gV(base+'_s');
-      if(vd!==NORM)pdx.push(lbl+' – '+vd);else pnorm++;
-      if(vs!==NORM)psin.push(lbl+' – '+vs);else pnorm++;
+      if(vd!==NORM)pdx.push(lbl+' l.dx. – '+vd);else pnorm++;
+      if(vs!==NORM)psin.push(lbl+' l.sin. – '+vs);else pnorm++;
     });
-    if(pdx.length)L.push('l.dx.: '+pdx.join('; ')+'.');
-    if(psin.length)L.push('l.sin.: '+psin.join('; ')+'.');
+    if(pdx.length)L.push(pdx.join(', ')+'.');
+    if(psin.length)L.push(psin.join(', ')+'.');
     if(!pdx.length&&!psin.length&&ao===NORM)L.push('Tepny pánevního řečiště bilat. bez závažné stenózy.');
     else if(pnorm>0)L.push('Ostatní tepny pánevního řečiště bez závažné stenózy.');
   }
@@ -1246,19 +1246,19 @@ function gen(){
     const fdx=[],fsin=[];let fnorm=0;
     FEM_GROUPS.forEach(group=>{
       group.vs.forEach(([lbl,base])=>{
-        if(lat!=='sin'){const vd=gV(base+'_d');if(vd!==NORM)fdx.push(lbl+' – '+vd);else fnorm++;}
-        if(lat!=='dx'){const vs=gV(base+'_s');if(vs!==NORM)fsin.push(lbl+' – '+vs);else fnorm++;}
+        if(lat!=='sin'){const vd=gV(base+'_d');if(vd!==NORM)fdx.push(lbl+' l.dx. – '+vd);else fnorm++;}
+        if(lat!=='dx'){const vs=gV(base+'_s');if(vs!==NORM)fsin.push(lbl+' l.sin. – '+vs);else fnorm++;}
       });
     });
     if(lat==='bilat'){
-      if(fdx.length)L.push('l.dx.: '+fdx.join('; ')+'.');
-      if(fsin.length)L.push('l.sin.: '+fsin.join('; ')+'.');
+      if(fdx.length)L.push(fdx.join(', ')+'.');
+      if(fsin.length)L.push(fsin.join(', ')+'.');
     } else {
       const one=lat==='sin'?fsin:fdx;
-      if(one.length)L.push(one.join('; ')+'.');
+      if(one.length)L.push(one.join(', ')+'.');
     }
     if(!fdx.length&&!fsin.length)L.push('Tepny femoropopliteálního řečiště a bérce '+latL+' bez závažné stenózy.');
-    else if(fnorm>0)L.push('Ostatní tepny bez závažné stenózy.');
+    else if(fnorm>0)L.push('Ostatní tepny femoropopliteálního řečiště bez závažné stenózy.');
   }
 
   L.push('INTERVENCE:');
