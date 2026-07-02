@@ -106,7 +106,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
   <div class="modal">
     <h2 id="m_title">Nová požiadavka</h2>
 
-    <div class="m-sec">1. Pacient a žiadanka</div>
+    <div class="m-sec" data-t="Pacient a žiadanka">1. Pacient a žiadanka</div>
     <div class="m-grid">
       <div class="fld"><label>Kategória</label><select id="af_kategoria" onchange="toggleKategoria()"><option value="aorta">🫀 Aorta</option><option value="ine">📋 Iné</option></select></div>
       <div class="fld"><label>Rodné číslo * <span style="font-weight:400;color:#9ca3af">(povinné)</span></label><input id="af_rodne_cislo" maxlength="11" placeholder="511224/1234" autocomplete="off"></div>
@@ -118,7 +118,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       <div class="fld"><label>Urgencia</label><select id="af_urgencia"><option>elektívne</option><option>urgentné</option><option>emergentné</option></select></div>
     </div>
 
-    <div class="m-sec">2. Prílohy (prepis mailu, dokument, fotka)</div>
+    <div class="m-sec" data-t="Prílohy (prepis mailu, dokument, fotka)">2. Prílohy (prepis mailu, dokument, fotka)</div>
     <p class="page-sub" id="pril_hint" style="padding:0 0 6px">Prílohy môžete pridávať po uložení požiadavky.</p>
     <div id="pril_box" style="display:none">
       <div id="pril_list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
@@ -134,7 +134,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       </div>
     </div>
 
-    <div class="m-sec">3. Indikácia a morfológia</div>
+    <div class="m-sec" data-t="Indikácia a morfológia">3. Indikácia a morfológia</div>
     <div class="m-grid">
       <div class="fld"><label>Diagnóza</label><select id="af_diagnoza">
         <option>AAA infrarenálna</option><option>AAA juxtarenálna</option><option>AAA suprarenálna</option>
@@ -142,12 +142,13 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
         <option>PAU</option><option>IMH</option><option>Aneuryzma iliaky</option><option>Iné</option>
       </select><input id="af_diagnoza_ine" placeholder="voľný text – napr. stenóza AFS l.dx." style="display:none"></div>
       <div class="fld"><label>Klinický stav</label><select id="af_symptomy"><option>asymptomatický</option><option>symptomatický</option><option>ruptúra</option></select></div>
-      <div class="fld"><label>Max. priemer (mm)</label><input id="af_priemer" type="number" step="0.1" placeholder="55"></div>
-      <div class="fld"><label>Rast (mm/rok)</label><input id="af_rast" type="number" step="0.1" placeholder="5"></div>
-      <div class="fld"><label>Dátum CT angio</label><input id="af_datum_ct" type="date"></div>
+      <div class="fld" id="fld_priemer"><label>Max. priemer (mm)</label><input id="af_priemer" type="number" step="0.1" placeholder="55"></div>
+      <div class="fld" id="fld_rast"><label>Rast (mm/rok)</label><input id="af_rast" type="number" step="0.1" placeholder="5"></div>
+      <div class="fld"><label id="lbl_ct">Dátum CT angio</label><input id="af_datum_ct" type="date"></div>
     </div>
 
-    <div class="m-sec">4. Anatómia (CT angio)</div>
+    <div id="sec_anat">
+    <div class="m-sec" data-t="Anatómia (CT angio)">4. Anatómia (CT angio)</div>
     <div class="m-grid">
       <div class="fld"><label>Krčok – dĺžka (mm)</label><input id="af_krcok_dlzka" type="number" step="0.1" placeholder="ideál ≥15"></div>
       <div class="fld"><label>Krčok – priemer (mm)</label><input id="af_krcok_priemer" type="number" step="0.1" placeholder="ideál <30"></div>
@@ -156,8 +157,10 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
         <option value="">–</option><option>priechodné</option><option>stenotické / kalcifikované</option><option>výrazná tortuozita (kinking)</option><option>aneuryzma iliaky</option>
       </select></div>
     </div>
+    </div>
 
-    <div class="m-sec">5. Fitness &amp; riziko</div>
+    <div id="sec_fit">
+    <div class="m-sec" data-t="Fitness &amp; riziko">5. Fitness &amp; riziko</div>
     <div class="m-grid">
       <div class="fld"><label>Kardiálne riziko</label><select id="af_kardio"><option value="">–</option><option>stabilné / nízke riziko</option><option>stredné riziko</option><option>vysoké riziko (NYHA III–IV)</option></select></div>
       <div class="fld"><label>Renálne funkcie (eGFR)</label><input id="af_renalne" placeholder="napr. 52"></div>
@@ -166,18 +169,24 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       <div class="fld"><label>Očakávané dožitie</label><select id="af_dozitie"><option value="&gt;2">&gt; 2 roky</option><option value="&lt;2">&lt; 2 roky</option></select></div>
       <div class="fld"><label>Antitrombotická liečba</label><input id="af_medikacia" placeholder="ASA, NOAK…"></div>
     </div>
+    </div>
 
-    <div class="m-sec">6. Endovaskulárny plán (indikácia, materiál a termín)</div>
+    <div class="m-sec" data-t="Plán (indikácia, postup a termín)">6. Plán (indikácia, postup a termín)</div>
     <div class="m-grid">
       <div class="fld"><label>Indikoval (1)</label><select id="af_indikoval1"><option value="">–</option><option>Vařejka</option><option>Vincze</option><option>Širila</option></select></div>
       <div class="fld"><label>Indikoval (2)</label><select id="af_indikoval2"><option value="">–</option><option>Vařejka</option><option>Vincze</option><option>Širila</option></select></div>
       <div class="fld"><label>Plánovaný termín výkonu</label><input id="af_termin" type="date"></div>
-      <div class="fld" style="grid-column:span 3"><label>Materiál na objednanie (stentgraft, rozmery…)</label><input id="af_material" placeholder="napr. Endurant II 28×16×145 + extenzie"></div>
+      <div class="fld" style="grid-column:span 3"><label id="lbl_material">Materiál na objednanie (stentgraft, rozmery…)</label><input id="af_material" placeholder="napr. Endurant II 28×16×145 + extenzie"></div>
       <div class="fld"><label>Materiál objednaný dňa</label><input id="af_material_objednany" type="date"></div>
       <div class="fld"><label>Materiál dodaný</label><select id="af_material_dodany"><option value="nie">Nie</option><option value="ano">Áno</option></select></div>
     </div>
 
-    <div class="m-sec">7. Poznámka</div>
+    <div id="sec_zaver_sem" style="display:none">
+    <div class="m-sec" data-t="Záver indikačného seminára">7. Záver indikačného seminára</div>
+    <div class="fld"><textarea id="af_zaver_seminara" placeholder="Záver indikačného seminára…"></textarea></div>
+    </div>
+
+    <div class="m-sec" data-t="Poznámka">7. Poznámka</div>
     <div class="fld"><textarea id="af_poznamka" placeholder="Ďalšie informácie…"></textarea></div>
 
     <div class="alerts" id="m_alerts"></div>
@@ -323,6 +332,21 @@ function toggleKategoria(){
   const ine=document.getElementById('af_kategoria').value==='ine';
   document.getElementById('af_diagnoza').style.display=ine?'none':'';
   document.getElementById('af_diagnoza_ine').style.display=ine?'':'none';
+  document.getElementById('fld_priemer').style.display=ine?'none':'';
+  document.getElementById('fld_rast').style.display=ine?'none':'';
+  document.getElementById('sec_anat').style.display=ine?'none':'';
+  document.getElementById('sec_fit').style.display=ine?'none':'';
+  document.getElementById('sec_zaver_sem').style.display=ine?'':'none';
+  document.getElementById('lbl_ct').textContent=ine?'Dátum CT / MR vyšetrenia':'Dátum CT angio';
+  document.getElementById('lbl_material').textContent=ine?'Navrhovaný postup':'Materiál na objednanie (stentgraft, rozmery…)';
+  document.getElementById('af_material').placeholder=ine?'napr. PTA + DEB AFS l.dx.':'napr. Endurant II 28×16×145 + extenzie';
+  // prečíslovanie viditeľných sekcií
+  let n=0;
+  document.querySelectorAll('.modal .m-sec').forEach(el=>{
+    const wrap=el.closest('#sec_anat,#sec_fit,#sec_zaver_sem');
+    if(wrap&&wrap.style.display==='none')return;
+    n++;el.innerHTML=n+'. '+el.dataset.t;
+  });
 }
 
 function cardEl(it){
@@ -389,7 +413,7 @@ function renderArchive(q){
 // ── Modal detail ─────────────────────────────────────────────
 const FIELDS=['kategoria','rodne_cislo','inicialy','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','diagnoza','symptomy',
   'priemer','rast','datum_ct','krcok_dlzka','krcok_priemer','krcok_angulacia','iliaky',
-  'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','material','material_objednany','material_dodany','termin','poznamka'];
+  'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','material','material_objednany','material_dodany','termin','zaver_seminara','poznamka'];
 // mapovanie form id -> DB stĺpec
 const DBMAP={priemer:'priemer_mm',rast:'rast_mm_rok',krcok_dlzka:'krcok_dlzka_mm',krcok_priemer:'krcok_priemer_mm'};
 
@@ -402,7 +426,14 @@ function formToObj(){
     else if(['rocnik','priemer','rast','krcok_dlzka','krcok_priemer'].includes(f))o[col]=v===''?null:parseFloat(v);
     else o[col]=v||null;
   });
-  if(o.kategoria==='ine')o.diagnoza=document.getElementById('af_diagnoza_ine').value.trim()||null;
+  if(o.kategoria==='ine'){
+    o.diagnoza=document.getElementById('af_diagnoza_ine').value.trim()||null;
+    // skryté sekcie (morfológia, anatómia, fitness) sa pri INÉ neukladajú
+    ['priemer_mm','rast_mm_rok','krcok_dlzka_mm','krcok_priemer_mm','krcok_angulacia','iliaky',
+     'kardio','renalne','pulmo','frailty','dozitie','medikacia'].forEach(k=>o[k]=null);
+  }else{
+    o.zaver_seminara=null; // záver seminára je len pre INÉ
+  }
   return o;
 }
 function objToForm(it){
@@ -602,22 +633,43 @@ function buildZapis(){
   const A=esvsAlerts(o);
   const L=[];
   const isAorta=o.kategoria!=='ine';
-  L.push(isAorta?'ZÁPIS Z AORTÁLNEHO TÍMU / INDIKÁCIA NA TERAPIU AORTY':'ZÁPIS Z INDIKAČNÉHO SEMINÁRA / POŽIADAVKA NA TERAPIU – INÉ');
+  const pacient='Pacient: '+(o.inicialy||'?')+(o.rocnik?' ('+o.rocnik+')':'')+(o.rodne_cislo?' | r.č. '+o.rodne_cislo:'')+(o.pohlavie?' | '+(o.pohlavie==='M'?'MUŽ':'ŽENA'):'');
+  if(!isAorta){
+    // ── INÉ: jednoduchší zápis ──
+    L.push('ZÁPIS Z INDIKAČNÉHO SEMINÁRA / POŽIADAVKA NA TERAPIU');
+    L.push('Dátum: '+new Date().toLocaleDateString('sk-SK'));
+    L.push(pacient);
+    if(it)L.push('Stav v pipeline: '+(STATUS_LABEL[it.status]||it.status).replace(/^[^\w]+\s*/,''));
+    L.push('-'.repeat(46));
+    L.push('1. INDIKÁCIA');
+    L.push('- Klinický stav: '+(o.symptomy||'?').toUpperCase()+(o.urgencia?' ('+o.urgencia+')':''));
+    L.push('- Diagnóza: '+(o.diagnoza||'?'));
+    if(o.datum_ct)L.push('- Zobrazenie (CT / MR): '+fmtD(o.datum_ct));
+    if(o.indikoval1||o.indikoval2||o.material||o.termin){
+      L.push('2. PLÁN');
+      if(o.indikoval1||o.indikoval2)L.push('- Indikoval: '+[o.indikoval1,o.indikoval2].filter(Boolean).join(' + '));
+      if(o.material)L.push('- Navrhovaný postup: '+o.material+(o.material_objednany?' (materiál objednaný '+fmtD(o.material_objednany)+(o.material_dodany?', dodaný':', čaká sa na dodanie')+')':''));
+      if(o.termin)L.push('- Plánovaný termín výkonu: '+fmtD(o.termin));
+    }
+    if(o.zaver_seminara)L.push('ZÁVER INDIKAČNÉHO SEMINÁRA: '+o.zaver_seminara);
+    if(A.length){L.push('UPOZORNENIA:');A.forEach(a=>L.push('- '+(a.t==='red'?'[!] ':'')+a.x));}
+    if(o.poznamka)L.push('POZNÁMKA: '+o.poznamka);
+    if(!o.zaver_seminara)L.push('OTÁZKA NA KONZÍLIUM: prosím o posúdenie vhodnosti endovaskulárnej vs. chirurgickej vs. konzervatívnej liečby.');
+    return L.join('\n');
+  }
+  // ── AORTA: plný zápis ──
+  L.push('ZÁPIS Z AORTÁLNEHO TÍMU / INDIKÁCIA NA TERAPIU AORTY');
   L.push('Dátum: '+new Date().toLocaleDateString('sk-SK'));
-  L.push('Pacient: '+(o.inicialy||'?')+(o.rocnik?' ('+o.rocnik+')':'')+(o.rodne_cislo?' | r.č. '+o.rodne_cislo:'')+(o.pohlavie?' | '+(o.pohlavie==='M'?'MUŽ':'ŽENA'):''));
+  L.push(pacient);
   if(it)L.push('Stav v pipeline: '+(STATUS_LABEL[it.status]||it.status).replace(/^[^\w]+\s*/,''));
   L.push('-'.repeat(46));
   L.push('1. INDIKÁCIA A MORFOLÓGIA');
   L.push('- Klinický stav: '+(o.symptomy||'?').toUpperCase()+(o.urgencia?' ('+o.urgencia+')':''));
   L.push('- Diagnóza: '+(o.diagnoza||'?'));
   L.push('- Max. priemer: '+(o.priemer_mm??'?')+' mm'+(o.rast_mm_rok?' (rast: '+o.rast_mm_rok+' mm/rok)':''));
-  if(isAorta){
-    L.push('2. ANATOMICKÉ PARAMETRE (CT angio: '+(o.datum_ct?fmtD(o.datum_ct):'doplniť')+')');
-    L.push('- Proximálny krčok: dĺžka '+(o.krcok_dlzka_mm??'?')+' mm | priemer '+(o.krcok_priemer_mm??'?')+' mm | angulácia '+(o.krcok_angulacia==='<60'?'< 60° (priaznivá)':o.krcok_angulacia==='>60'?'> 60° (nepriaznivá)':'?'));
-    L.push('- Iliacký prístup: '+(o.iliaky||'?'));
-  }else if(o.datum_ct){
-    L.push('2. ZOBRAZENIE (CT angio: '+fmtD(o.datum_ct)+')');
-  }
+  L.push('2. ANATOMICKÉ PARAMETRE (CT angio: '+(o.datum_ct?fmtD(o.datum_ct):'doplniť')+')');
+  L.push('- Proximálny krčok: dĺžka '+(o.krcok_dlzka_mm??'?')+' mm | priemer '+(o.krcok_priemer_mm??'?')+' mm | angulácia '+(o.krcok_angulacia==='<60'?'< 60° (priaznivá)':o.krcok_angulacia==='>60'?'> 60° (nepriaznivá)':'?'));
+  L.push('- Iliacký prístup: '+(o.iliaky||'?'));
   L.push('3. RIZIKOVÝ PROFIL (FITNESS FOR SURGERY)');
   L.push('- Kardiálne riziko: '+(o.kardio||'nezadané'));
   L.push('- Renálne funkcie (eGFR): '+(o.renalne||'nezadané'));
@@ -636,8 +688,7 @@ function buildZapis(){
     A.forEach(a=>L.push('- '+(a.t==='red'?'[!] ':'')+a.x));
   }
   if(o.poznamka)L.push('POZNÁMKA: '+o.poznamka);
-  if(isAorta)L.push('OTÁZKA NA KONZÍLIUM: prosím o posúdenie vhodnosti EVAR vs. OSR vs. dispenzarizácia.');
-  else L.push('OTÁZKA NA KONZÍLIUM: prosím o posúdenie vhodnosti endovaskulárnej vs. chirurgickej vs. konzervatívnej liečby.');
+  L.push('OTÁZKA NA KONZÍLIUM: prosím o posúdenie vhodnosti EVAR vs. OSR vs. dispenzarizácia.');
   return L.join('\n');
 }
 function copyZapis(){

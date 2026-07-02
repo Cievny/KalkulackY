@@ -121,6 +121,7 @@ ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS rodne_cislo TEXT;
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS indikoval1 TEXT;
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS indikoval2 TEXT;
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS kategoria TEXT DEFAULT 'aorta'; -- aorta | ine
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS zaver_seminara TEXT; -- záver indikačného seminára (kategória INÉ)
 
 -- aorta_prilohy – prílohy k požiadavke (prepis mailu, dokument, fotka)
 CREATE TABLE IF NOT EXISTS aorta_prilohy (
