@@ -126,6 +126,7 @@ ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS vykon_typ TEXT;          --
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS vykon_cieva TEXT;        -- pri embolizácii: ktorá cieva
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS indikacia_poznamka TEXT; -- poznámka k indikácii (aorta)
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS endoleak_typ TEXT;       -- typ endoleaku (Ia/Ib/II/III/IV/V) pri dg. Endoleak
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS dalsia_kontrola TEXT;    -- dispenzarizácia: dátum ďalšej CT/USG kontroly
 
 -- aorta_prilohy – prílohy k požiadavke (prepis mailu, dokument, fotka)
 CREATE TABLE IF NOT EXISTS aorta_prilohy (

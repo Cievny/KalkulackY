@@ -155,6 +155,15 @@
     document.body.insertBefore(nav,document.body.firstChild);
   }
 
+  // PWA: manifest + ikona pre "Pridať na plochu" (mobil)
+  function injectPWA(){
+    if(document.querySelector('link[rel="manifest"]'))return;
+    const l=document.createElement('link');l.rel='manifest';l.href='/manifest.webmanifest';document.head.appendChild(l);
+    const a=document.createElement('link');a.rel='apple-touch-icon';a.href='/icons/icon-192.png';document.head.appendChild(a);
+    const m=document.createElement('meta');m.name='theme-color';m.content='#0f1e3d';document.head.appendChild(m);
+  }
+  injectPWA();
+
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',injectNav);
   } else {

@@ -599,6 +599,7 @@ async function loadPOZ(){
   catch(e){document.getElementById('poz-loading').textContent='Tabuľka aorta_indikacie nie je dostupná (spustite setup SQL).';return;}
   document.getElementById('poz-loading').style.display='none';
   document.getElementById('poz-content').style.display='block';
+  RAW.poz=rows;ensureExportBtn('poz');
   const active=rows.filter(r=>r.status!=='archiv');
   const arch=rows.filter(r=>r.status==='archiv');
   const dnes=new Date();

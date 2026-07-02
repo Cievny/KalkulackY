@@ -87,6 +87,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 
 <div class="toolbar">
   <button class="btn-new" onclick="openModal(null)">+ Nová požiadavka</button>
+  <button class="btn-new" style="background:#0e7490" onclick="openSeminar()">📋 Seminár</button>
   <input class="search" id="search" placeholder="🔍 Hľadať (iniciály, diagnóza, žiadateľ…)" oninput="render()">
   <span class="m-msg" id="top_msg"></span>
 </div>
@@ -197,6 +198,11 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       <div class="fld" style="grid-column:span 3"><label id="lbl_material">Materiál na objednanie (stentgraft, rozmery…)</label><input id="af_material" placeholder="napr. Endurant II 28×16×145 + extenzie"></div>
       <div class="fld"><label>Materiál objednaný dňa</label><input id="af_material_objednany" type="date"></div>
       <div class="fld"><label>Materiál dodaný</label><select id="af_material_dodany"><option value="nie">Nie</option><option value="ano">Áno</option></select></div>
+      <div class="fld"><label>Ďalšia kontrola zobrazenia (CT/USG)</label><input id="af_dalsia_kontrola" type="date"></div>
+      <div class="fld" id="fld_esvs_navrh" style="align-self:end;grid-column:span 2">
+        <button type="button" class="btn-edit" onclick="navrhKontrolu()">📅 Návrh intervalu podľa ESVS (z priemeru)</button>
+        <span id="esvs_navrh_info" style="font-size:11px;color:#6b7280;display:block;margin-top:3px"></span>
+      </div>
     </div>
 
     <div id="sec_zaver_sem" style="display:none">
@@ -207,6 +213,11 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
     <div class="m-sec" data-t="Poznámka">7. Poznámka</div>
     <div class="fld"><textarea id="af_poznamka" placeholder="Ďalšie informácie…"></textarea></div>
 
+    <div id="sec_hist" style="display:none">
+    <div class="m-sec" data-t="História">8. História</div>
+    <div id="hist_list" style="font-size:12.5px;color:#374151;display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+
     <div class="alerts" id="m_alerts"></div>
 
     <div class="m-btns">
@@ -214,6 +225,21 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       <button class="btn-copy" onclick="copyZapis()">📋 Kopírovať zápis do NIS</button>
       <button class="btn-close" onclick="closeModal()">Zavrieť</button>
       <span class="m-msg" id="m_msg"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: program seminára -->
+<div class="overlay" id="sem_overlay" onclick="if(event.target===this)closeSeminar()">
+  <div class="modal" style="max-width:640px">
+    <h2>📋 Program indikačného seminára</h2>
+    <p class="page-sub" style="padding:4px 0 10px">Pacienti v stavoch Prezerané a Indikované na výkon.</p>
+    <div class="fld"><textarea id="sem_text" style="min-height:340px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px"></textarea></div>
+    <div class="m-btns">
+      <button class="btn-copy" onclick="copySeminar()">📋 Kopírovať (NIS-safe)</button>
+      <button class="btn-close" onclick="window.print()">🖨️ Tlač</button>
+      <button class="btn-close" onclick="closeSeminar()">Zavrieť</button>
+      <span class="m-msg" id="sem_msg"></span>
     </div>
   </div>
 </div>
@@ -388,7 +414,7 @@ function toggleKategoria(){
   // prečíslovanie viditeľných sekcií
   let n=0;
   document.querySelectorAll('.modal .m-sec').forEach(el=>{
-    const wrap=el.closest('#sec_anat,#sec_fit,#sec_zaver_sem');
+    const wrap=el.closest('#sec_anat,#sec_fit,#sec_zaver_sem,#sec_hist');
     if(wrap&&wrap.style.display==='none')return;
     n++;el.innerHTML=n+'. '+el.dataset.t;
   });
@@ -398,6 +424,23 @@ function toggleVykon(){
   const ine=document.getElementById('af_kategoria').value==='ine';
   const emb=document.getElementById('af_vykon_typ').value==='Embolizácia';
   document.getElementById('fld_vykon_cieva').style.display=(!ine&&emb)?'':'none';
+}
+
+// Návrh ďalšej kontroly podľa ESVS 2024 (surveillance AAA podľa max. priemeru)
+function navrhKontrolu(){
+  const info=document.getElementById('esvs_navrh_info');
+  const d=parseFloat(document.getElementById('af_priemer').value);
+  if(document.getElementById('af_kategoria').value==='ine'){info.textContent='Návrh podľa ESVS platí pre aortu – pri INÉ zadajte dátum ručne.';return;}
+  if(isNaN(d)){info.textContent='Najprv vyplňte max. priemer (mm) v sekcii Indikácia.';return;}
+  let mes,txt;
+  if(d<30){mes=48;txt='< 30 mm → kontrola o 4 roky';}
+  else if(d<40){mes=36;txt='30–39 mm → kontrola o 3 roky';}
+  else if(d<45){mes=12;txt='40–44 mm → kontrola o 1 rok';}
+  else if(d<50){mes=6;txt='45–49 mm → kontrola o 6 mesiacov';}
+  else{mes=3;txt='≥ 50 mm → kontrola o 3 mesiace (zvážiť indikáciu na výkon!)';}
+  const t=new Date();t.setMonth(t.getMonth()+mes);
+  document.getElementById('af_dalsia_kontrola').value=t.toISOString().slice(0,10);
+  info.textContent='ESVS: '+txt;
 }
 
 function toggleEndoleak(){
@@ -433,6 +476,12 @@ function cardEl(it){
   if(it.material_objednany&&!it.material_dodany){
     const dM=daysBetween(it.material_objednany,today());
     if(dM!==null&&dM>14)watchBadge+='<span class="badge badge-soon" title="materiál objednaný '+fmtD(it.material_objednany)+', stále nedodaný">📦 '+dM+' d bez dodania</span>';
+  }
+  if(it.dalsia_kontrola){
+    const past=new Date(it.dalsia_kontrola)<new Date(today());
+    const dK=daysBetween(today(),it.dalsia_kontrola);
+    if(past)watchBadge+='<span class="badge badge-late" title="kontrola zobrazenia mala byť '+fmtD(it.dalsia_kontrola)+'">🩻 KONTROLA PREŠLA</span>';
+    else if(dK!==null&&dK<=30)watchBadge+='<span class="badge badge-soon" title="kontrola zobrazenia '+fmtD(it.dalsia_kontrola)+'">🩻 kontrola o '+dK+' d</span>';
   }
   const esvsBadge=hasRed?'<span class="badge badge-esvs" title="'+escHtml(alerts.filter(a=>a.t==='red').map(a=>a.x).join(' | '))+'">'+(kat(it)==='aorta'?'⚠ ESVS':'⚠')+'</span>':'';
   const dg=[it.diagnoza?it.diagnoza+(it.endoleak_typ?' ('+it.endoleak_typ+')':''):'',it.priemer_mm?it.priemer_mm+' mm':'',it.rast_mm_rok?'rast '+it.rast_mm_rok+' mm/r':''].filter(Boolean).join(' • ');
@@ -490,7 +539,7 @@ function renderArchive(q){
 // ── Modal detail ─────────────────────────────────────────────
 const FIELDS=['kategoria','rodne_cislo','inicialy','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','diagnoza','symptomy',
   'priemer','rast','datum_ct','krcok_dlzka','krcok_priemer','krcok_angulacia','iliaky',
-  'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','vykon_typ','vykon_cieva','indikacia_poznamka','material','material_objednany','material_dodany','termin','zaver_seminara','poznamka','endoleak_typ'];
+  'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','vykon_typ','vykon_cieva','indikacia_poznamka','material','material_objednany','material_dodany','termin','zaver_seminara','poznamka','endoleak_typ','dalsia_kontrola'];
 // mapovanie form id -> DB stĺpec
 const DBMAP={priemer:'priemer_mm',rast:'rast_mm_rok',krcok_dlzka:'krcok_dlzka_mm',krcok_priemer:'krcok_priemer_mm'};
 
@@ -541,7 +590,59 @@ function openModal(id){
   document.getElementById('pril_text').value='';
   const pf=document.getElementById('pril_file');if(pf)pf.value='';
   if(editId)renderPrilohy();
+  document.getElementById('sec_hist').style.display=editId?'':'none';
+  if(it)renderHistoria(it);
+  toggleKategoria(); // prečísluje sekcie aj s Históriou
   document.getElementById('overlay').classList.add('open');
+}
+
+function renderHistoria(it){
+  const box=document.getElementById('hist_list');
+  const rows=[];
+  parseHist(it).forEach(h=>rows.push({d:h.d,txt:(STATUS_LABEL[h.s]||h.s)+(h.by?' – '+h.by:'')}));
+  if(it.material_objednany)rows.push({d:it.material_objednany,txt:'🧾 Materiál objednaný'+(it.material_dodany?' (dodaný)':'')});
+  if(it.termin)rows.push({d:it.termin,txt:'📅 Plánovaný termín výkonu'});
+  if(it.dalsia_kontrola)rows.push({d:it.dalsia_kontrola,txt:'🩻 Ďalšia kontrola zobrazenia'});
+  rows.sort((a,b)=>(a.d||'').localeCompare(b.d||''));
+  box.innerHTML=rows.length?rows.map(r=>'<div><b style="color:#6b7280">'+fmtD(r.d)+'</b> — '+escHtml(r.txt)+'</div>').join(''):'<span style="color:#9ca3af">Bez záznamov.</span>';
+}
+
+// ── Program indikačného seminára ─────────────────────────────
+function buildSeminar(){
+  const rows=ITEMS.filter(i=>['prezerane','indikovane'].includes(i.status))
+    .sort((a,b)=>(kat(a)+(a.datum_poziadavky||'')).localeCompare(kat(b)+(b.datum_poziadavky||'')));
+  const L=[];
+  L.push('INDIKAČNÝ SEMINÁR – POŽIADAVKY NA TERAPIU');
+  L.push('Dátum: '+new Date().toLocaleDateString('sk-SK')+' | Pacientov: '+rows.length);
+  L.push('-'.repeat(46));
+  ['aorta','ine'].forEach(lane=>{
+    const laneRows=rows.filter(r=>kat(r)===lane);
+    if(!laneRows.length)return;
+    L.push(lane==='aorta'?'AORTA:':'INÉ:');
+    laneRows.forEach((r,i)=>{
+      const dg=(r.diagnoza||'?')+(r.endoleak_typ?' – '+r.endoleak_typ:'')+(r.priemer_mm?', '+r.priemer_mm+' mm':'')+(r.rast_mm_rok?' (rast '+r.rast_mm_rok+' mm/r)':'');
+      L.push((i+1)+') '+(r.inicialy||'?')+(r.rocnik?' ('+r.rocnik+')':'')+(r.rodne_cislo?', r.č. '+r.rodne_cislo:'')+' – '+dg+(r.symptomy?', '+r.symptomy:'')+(r.urgencia&&r.urgencia!=='elektívne'?', '+r.urgencia.toUpperCase():''));
+      const det=[];
+      if(r.ziadatel)det.push('žiadateľ: '+r.ziadatel);
+      det.push('stav: '+(STATUS_LABEL[r.status]||r.status).replace(/^[^\w]+\s*/,''));
+      if(r.datum_poziadavky){const d=daysBetween(r.datum_poziadavky,today());if(d!==null)det.push('čaká '+d+' d');}
+      L.push('   '+det.join(' | '));
+      if(r.vykon_typ||r.material||r.indikacia_poznamka)L.push('   plán: '+[r.vykon_typ?r.vykon_typ+(r.vykon_cieva?' – '+r.vykon_cieva:''):'',r.material,r.indikacia_poznamka].filter(Boolean).join(' | '));
+    });
+  });
+  if(!rows.length)L.push('Žiadni pacienti v stavoch Prezerané / Indikované.');
+  return L.join('\n');
+}
+function openSeminar(){
+  document.getElementById('sem_text').value=buildSeminar();
+  document.getElementById('sem_overlay').classList.add('open');
+}
+function closeSeminar(){document.getElementById('sem_overlay').classList.remove('open');}
+function copySeminar(){
+  const txt=nisSafeTxt(document.getElementById('sem_text').value);
+  const ok=()=>msg('sem_msg','✓ Skopírované','#1d6f42');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok).catch(()=>msg('sem_msg','⚠️ Označte text ručne','#b45309'));
+  else msg('sem_msg','⚠️ Označte text ručne','#b45309');
 }
 function closeModal(){document.getElementById('overlay').classList.remove('open');editId=null;}
 
@@ -832,6 +933,7 @@ setInterval(()=>{
   if(document.visibilityState!=='visible')return;
   if(document.getElementById('overlay').classList.contains('open'))return;
   if(document.getElementById('arch_overlay').classList.contains('open'))return;
+  if(document.getElementById('sem_overlay').classList.contains('open'))return;
   loadItems();
 },60000);
 </script>
