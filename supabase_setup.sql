@@ -389,9 +389,13 @@ CREATE POLICY "anon all ideas" ON ideas FOR ALL TO anon USING (true) WITH CHECK 
 
 DROP POLICY IF EXISTS "anon all aorta" ON aorta_indikacie;
 CREATE POLICY "anon all aorta" ON aorta_indikacie FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all aorta" ON aorta_indikacie;
+CREATE POLICY "auth all aorta" ON aorta_indikacie FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 DROP POLICY IF EXISTS "anon all aorta prilohy" ON aorta_prilohy;
 CREATE POLICY "anon all aorta prilohy" ON aorta_prilohy FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all aorta prilohy" ON aorta_prilohy;
+CREATE POLICY "auth all aorta prilohy" ON aorta_prilohy FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Storage politiky pre bucket aorta-prilohy (anon aj authenticated)
 DROP POLICY IF EXISTS "aorta prilohy storage select" ON storage.objects;
