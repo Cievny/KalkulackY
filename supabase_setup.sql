@@ -216,6 +216,9 @@ CREATE TABLE IF NOT EXISTS denny_program (
   vyradeny_dovod  TEXT,
   created_by      TEXT DEFAULT (auth.jwt()->>'email')
 );
+ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS stav_vykonu TEXT DEFAULT 'caka'; -- caka | na_sale | hotovy
+ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS operator TEXT;
+ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS poziadavka_id UUID; -- prepojenie na aorta_indikacie
 
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (
@@ -228,6 +231,10 @@ CREATE TABLE IF NOT EXISTS ideas (
 ALTER TABLE ideas ADD COLUMN IF NOT EXISTS note TEXT;
 ALTER TABLE ideas ADD COLUMN IF NOT EXISTS kategoria TEXT DEFAULT 'apka'; -- apka | oddelenie
 ALTER TABLE IF EXISTS cz_ideas ADD COLUMN IF NOT EXISTS kategoria TEXT DEFAULT 'apka';
+ALTER TABLE ideas ADD COLUMN IF NOT EXISTS hlasy INT DEFAULT 0;
+ALTER TABLE ideas ADD COLUMN IF NOT EXISTS komentare TEXT; -- JSON [{t,a,d}]
+ALTER TABLE IF EXISTS cz_ideas ADD COLUMN IF NOT EXISTS hlasy INT DEFAULT 0;
+ALTER TABLE IF EXISTS cz_ideas ADD COLUMN IF NOT EXISTS komentare TEXT;
 
 -- ============================================================
 -- 2. STĹPCE (ADD COLUMN IF NOT EXISTS – bezpečné opakovane)

@@ -184,6 +184,9 @@ CREATE POLICY "auth all cz_cas"      ON cz_cas_vykony   FOR ALL TO authenticated
 CREATE POLICY "auth all cz_pevar"    ON cz_pevar_vykony FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "auth all cz_followup" ON cz_evk_followup FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "auth all cz_ideas"    ON cz_ideas        FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+-- Verejná schránka podnetov (/schranka/) potrebuje anon INSERT do ideas — PONECHAŤ aj po sprísnení:
+CREATE POLICY "anon insert ideas schranka" ON ideas FOR INSERT TO anon WITH CHECK (true);
 */
 
 

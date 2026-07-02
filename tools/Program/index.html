@@ -21,7 +21,36 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .msg{font-size:12.5px;font-weight:600;}
 .list{padding:16px 20px 8px;max-width:1200px;}
 .prow{display:grid;grid-template-columns:44px 1.4fr .5fr 1.5fr 1.1fr auto;gap:8px;align-items:center;background:#fff;border:1.5px solid #e5e9f5;border-radius:10px;padding:8px 12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
-.psub{grid-column:2/-1;display:grid;grid-template-columns:.55fr .85fr 1fr 1.6fr;gap:8px;}
+.psub{grid-column:2/-1;display:grid;grid-template-columns:.5fr .8fr .95fr .8fr 1.35fr;gap:8px;}
+.stav-chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:10px;cursor:pointer;border:none;white-space:nowrap;line-height:1;}
+.stav-caka{background:#f0f2f7;color:#6b7280;}
+.stav-na_sale{background:#dbeafe;color:#1e40af;}
+.stav-hotovy{background:#dcfce7;color:#166534;}
+.prow.st-na_sale{border-left:4px solid #3b82f6;}
+.prow.st-hotovy{border-left:4px solid #22c55e;}
+/* zásobník */
+.zas-wrap{padding:0 20px 16px;max-width:1200px;}
+.zas-wrap details{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding:12px 14px;}
+.zas-wrap summary{font-size:13.5px;font-weight:700;color:#1a2745;cursor:pointer;user-select:none;}
+.zrow{display:flex;gap:8px;align-items:center;background:#f8faff;border:1.5px solid #e5e9f5;border-radius:8px;padding:7px 10px;margin-top:6px;font-size:13px;flex-wrap:wrap;}
+.zrow b{color:#1a2745;}
+/* týždenný pohľad */
+.week{display:none;grid-template-columns:repeat(6,1fr);gap:10px;padding:16px 20px;align-items:flex-start;}
+.wday{background:#fff;border-radius:10px;padding:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);min-height:140px;}
+.wday h3{font-size:12px;font-weight:700;color:#1a2745;margin-bottom:8px;display:flex;justify-content:space-between;gap:4px;cursor:pointer;}
+.wday.today-col{outline:2px solid #3b82f6;}
+.wday.drop-ok{outline:2px dashed #3b82f6;background:#eff6ff;}
+.wcard{background:#f8faff;border:1.5px solid #e5e9f5;border-radius:7px;padding:6px 8px;margin-bottom:6px;font-size:11.5px;cursor:grab;line-height:1.35;}
+.wcard b{display:block;font-size:12px;}
+.wcard.vyr{opacity:.5;text-decoration:line-through;}
+@media(max-width:900px){.week{grid-template-columns:1fr 1fr;}}
+/* TV / kiosk režim */
+body.tv .shared-nav,body.tv .toolbar,body.tv .addrow,body.tv .navrhy,body.tv .hdr,body.tv .zas-wrap,body.tv .page-sub,body.tv .pacts .bmini{display:none!important;}
+body.tv h1{font-size:32px;padding:24px 24px 4px;}
+body.tv .prow{font-size:18px;padding:12px 16px;}
+body.tv .prow input{font-size:17px;pointer-events:none;border:none;background:none;}
+body.tv .pnum{font-size:26px;cursor:default;}
+body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
 .prow.vyradeny{opacity:.6;background:#fef2f2;border-color:#fecaca;}
 .prow.vyradeny input{text-decoration:line-through;color:#991b1b;}
 .pnum{font-size:17px;font-weight:800;color:#1e40af;text-align:center;cursor:grab;user-select:none;}
@@ -75,8 +104,10 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
   <button class="btn-day" id="btn_dnes" onclick="setDay(0)">Dnes</button>
   <button class="btn-day" id="btn_zajtra" onclick="setDay(1)">Zajtra</button>
   <input type="date" id="datum" onchange="loadRows()">
+  <button class="btn-day" id="btn_week" onclick="toggleWeek()">🗓 Týždeň</button>
   <button class="btn-act" onclick="copyProgram()">📋 Kopírovať</button>
   <button class="btn-print" onclick="window.print()">🖨️ Tlač</button>
+  <a class="btn-day" href="?tv=1" target="_blank" title="režim na monitor oddelenia – len na čítanie, veľké písmo">📺 TV</a>
   <span class="live" id="live_info">⟳ obnovuje sa automaticky</span>
   <span class="msg" id="p_msg"></span>
 </div>
@@ -95,9 +126,20 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       <input id="n_cas" placeholder="čas. okno (8:00–9:30)" list="dl_cas" onkeydown="if(event.key==='Enter')addRow()">
       <input id="n_poloha" placeholder="poloha" list="dl_poloha" onkeydown="if(event.key==='Enter')addRow()">
       <input id="n_punkcia" placeholder="miesto punkcie" list="dl_punkcia" onkeydown="if(event.key==='Enter')addRow()">
+      <input id="n_operator" placeholder="operatér" list="dl_operator" onkeydown="if(event.key==='Enter')addRow()">
       <input id="n_poznamka" placeholder="Poznámka" onkeydown="if(event.key==='Enter')addRow()">
     </div>
+    <button class="bmini" style="grid-column:-2/-1;justify-self:end" title="uložiť pacienta bez dátumu do zásobníka" onclick="addRow(null,true)">📦 Do zásobníka</button>
   </div>
+</div>
+
+<div class="week" id="week"></div>
+
+<div class="zas-wrap" id="zas_wrap">
+  <details>
+    <summary>📦 Zásobník – nezaradení pacienti (<span id="zas_cnt">0</span>)</summary>
+    <div id="zas_rows"></div>
+  </details>
 </div>
 
 <datalist id="dl_poloha">
@@ -114,6 +156,9 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
   <option value="8:00"></option><option value="9:00"></option><option value="10:00"></option>
   <option value="11:00"></option><option value="13:00"></option><option value="14:00"></option>
 </datalist>
+<datalist id="dl_operator">
+  <option value="Vařejka"></option><option value="Vincze"></option><option value="Širila"></option>
+</datalist>
 
 <div class="navrhy" id="navrhy" style="display:none">
   <div class="nbox"><b>💡 Pacienti s termínom v tento deň (z Požiadaviek):</b><div id="navrhy_chips"></div></div>
@@ -126,6 +171,11 @@ const H=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type'
 const TBL='denny_program';
 
 let ROWS=[];
+let ZAS=[];          // zásobník (datum='zasobnik')
+let MODE='day';      // day | week
+let NEW_POZID=null;  // prepojenie novej položky na kartu v Požiadavkách
+const TV=new URLSearchParams(location.search).get('tv')==='1';
+const STAVY={caka:'⏳ čaká',na_sale:'🔵 na sále',hotovy:'✅ hotový'};
 function g(id){return (document.getElementById(id)||{}).value||'';}
 function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function todayISO(off){const d=new Date();d.setDate(d.getDate()+(off||0));return d.toISOString().slice(0,10);}
@@ -141,15 +191,65 @@ function markDayButtons(){
 }
 
 async function loadRows(){
+  if(MODE==='week'){renderWeek();return;}
   markDayButtons();
   const d=g('datum');if(!d)return;
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}?datum=eq.${d}&order=poradie.asc&limit=200`,{headers:H()});
     if(!r.ok){msg('⚠️ Tabuľka denny_program nie je v Supabase (spustite setup SQL)','#b45309');ROWS=[];render();return;}
     ROWS=await r.json();
+    const rz=await fetch(`${SB_URL}/rest/v1/${TBL}?datum=eq.zasobnik&order=created_at.asc&limit=100`,{headers:H()});
+    ZAS=rz.ok?await rz.json():[];
   }catch(e){msg('⚠️ Chyba spojenia','#dc2626');}
   render();
+  renderZasobnik();
   loadNavrhy(d);
+}
+
+function renderZasobnik(){
+  document.getElementById('zas_cnt').textContent=ZAS.length;
+  const box=document.getElementById('zas_rows');box.innerHTML='';
+  if(!ZAS.length){box.innerHTML='<div style="font-size:12px;color:#9ca3af;margin-top:6px">Prázdny – pacienta sem uložíte tlačidlom „📦 Do zásobníka" pri pridávaní.</div>';return;}
+  ZAS.forEach(r=>{
+    const div=document.createElement('div');div.className='zrow';
+    div.innerHTML=`<b>${escHtml(r.meno||'?')}${r.rocnik?' ('+r.rocnik+')':''}</b>
+      <span style="flex:1">${escHtml(r.diagnoza||'')}${r.poznamka?' • '+escHtml(r.poznamka):''}</span>
+      <button class="bmini" onclick="zaradZoZasobnika('${r.id}')">→ na ${fmtD(g('datum'))}</button>
+      <button class="bmini bmini-del" onclick="delRow('${r.id}')">🗑</button>`;
+    box.appendChild(div);
+  });
+}
+
+async function zaradZoZasobnika(id){
+  const maxP=ROWS.length?Math.max(...ROWS.map(r=>r.poradie||0)):0;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+      body:JSON.stringify({datum:g('datum'),poradie:maxP+1,updated_at:new Date().toISOString()})});
+    if(r.ok){msg('✓ Zaradený do programu','#1d6f42');await loadRows();}
+  }catch(e){msg('❌ Chyba siete','#dc2626');}
+}
+
+// ── Stav výkonu počas dňa (čaká → na sále → hotový) ─────────
+async function cycleStav(id){
+  const row=ROWS.find(r=>r.id===id);if(!row)return;
+  const ord=['caka','na_sale','hotovy'];
+  const next=ord[(ord.indexOf(row.stav_vykonu||'caka')+1)%3];
+  await patchRow(id,'stav_vykonu',next);
+  if(next==='hotovy'&&row.poziadavka_id){
+    if(confirm('Výkon hotový – uzavrieť aj kartu v Požiadavkách (výkon vykonaný → archív)?'))await uzavriPoziadavku(row.poziadavka_id);
+  }
+}
+async function uzavriPoziadavku(pid){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/aorta_indikacie?id=eq.${pid}&select=historia`,{headers:H()});
+    if(!r.ok)return;
+    const rows=await r.json();if(!rows.length)return;
+    let hist=[];try{hist=JSON.parse(rows[0].historia||'[]');if(!Array.isArray(hist))hist=[];}catch(e){}
+    hist.push({s:'archiv',d:new Date().toISOString().slice(0,10)});
+    await fetch(`${SB_URL}/rest/v1/aorta_indikacie?id=eq.${pid}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+      body:JSON.stringify({status:'archiv',vysledok:'výkon vykonaný – endovaskulárne',historia:JSON.stringify(hist),updated_at:new Date().toISOString()})});
+    msg('✓ Požiadavka uzavretá do archívu','#1d6f42');
+  }catch(e){}
 }
 
 function render(){
@@ -159,8 +259,9 @@ function render(){
   ROWS.forEach((row,idx)=>{
     const vyr=row.stav==='vyradeny';
     if(!vyr)cislo++;
+    const sv=row.stav_vykonu||'caka';
     const div=document.createElement('div');
-    div.className='prow'+(vyr?' vyradeny':'');
+    div.className='prow'+(vyr?' vyradeny':(sv!=='caka'?' st-'+sv:''));
     // drag & drop za číslo poradia
     div.addEventListener('dragover',e=>{if(DRAGP!==null&&DRAGP!==idx){e.preventDefault();div.classList.add('drag-over');}});
     div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
@@ -172,6 +273,7 @@ function render(){
       <input value="${escHtml(row.diagnoza||'')}" onchange="patchRow('${row.id}','diagnoza',this.value)" placeholder="diagnóza">
       <input value="${escHtml(row.lozko||'')}" onchange="patchRow('${row.id}','lozko',this.value)" placeholder="odd./izba">
       <div class="pacts">
+        ${vyr?'':`<button class="stav-chip stav-${sv}" onclick="cycleStav('${row.id}')" title="klik prepína: čaká → na sále → hotový">${STAVY[sv]}</button>`}
         <button class="bmini" title="posunúť vyššie" onclick="moveRow(${idx},-1)">▲</button>
         <button class="bmini" title="posunúť nižšie" onclick="moveRow(${idx},1)">▼</button>
         ${vyr?`<button class="bmini" onclick="patchRow('${row.id}','stav','planovany');patchRow('${row.id}','vyradeny_dovod',null)">↩ Vrátiť</button>`
@@ -183,6 +285,7 @@ function render(){
         <input value="${escHtml(row.cas_okno||'')}" list="dl_cas" onchange="patchRow('${row.id}','cas_okno',this.value)" placeholder="čas. okno">
         <input value="${escHtml(row.poloha||'')}" list="dl_poloha" onchange="patchRow('${row.id}','poloha',this.value)" placeholder="poloha">
         <input value="${escHtml(row.miesto_punkcie||'')}" list="dl_punkcia" onchange="patchRow('${row.id}','miesto_punkcie',this.value)" placeholder="miesto punkcie">
+        <input value="${escHtml(row.operator||'')}" list="dl_operator" onchange="patchRow('${row.id}','operator',this.value)" placeholder="operatér">
         <input value="${escHtml(row.poznamka||'')}" onchange="patchRow('${row.id}','poznamka',this.value)" placeholder="poznámka">
       </div>
       ${vyr&&row.vyradeny_dovod?'<div class="vyr-dovod">dôvod vyradenia: '+escHtml(row.vyradeny_dovod)+'</div>':''}`;
@@ -208,7 +311,7 @@ async function reorderTo(from,to){
   }catch(e){msg('❌ Chyba siete pri preusporiadaní','#dc2626');loadRows();}
 }
 
-async function addRow(pre){
+async function addRow(pre,doZasobnika){
   const data=pre||{
     meno:g('n_meno').trim(),
     rocnik:g('n_rocnik')?parseInt(g('n_rocnik')):null,
@@ -217,16 +320,19 @@ async function addRow(pre){
     cas_okno:g('n_cas').trim()||null,
     poloha:g('n_poloha').trim()||null,
     miesto_punkcie:g('n_punkcia').trim()||null,
-    poznamka:g('n_poznamka').trim()||null
+    operator:g('n_operator').trim()||null,
+    poznamka:g('n_poznamka').trim()||null,
+    poziadavka_id:NEW_POZID||null
   };
   if(!data.meno){msg('⚠️ Vyplňte meno pacienta','#b45309');return;}
-  data.datum=g('datum');
-  data.poradie=ROWS.length?Math.max(...ROWS.map(r=>r.poradie||0))+1:1;
+  data.datum=doZasobnika?'zasobnik':g('datum');
+  data.poradie=doZasobnika?0:(ROWS.length?Math.max(...ROWS.map(r=>r.poradie||0))+1:1);
   data.stav='planovany';
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
     if(r.ok){
-      if(!pre)['n_meno','n_rocnik','n_diagnoza','n_lozko','n_cas','n_poloha','n_punkcia','n_poznamka'].forEach(i=>document.getElementById(i).value='');
+      NEW_POZID=null;
+      if(!pre)['n_meno','n_rocnik','n_diagnoza','n_lozko','n_cas','n_poloha','n_punkcia','n_operator','n_poznamka'].forEach(i=>document.getElementById(i).value='');
       await loadRows();
       if(!pre)document.getElementById('n_meno').focus();
     }else msg('❌ Chyba: '+r.status,'#dc2626');
@@ -275,7 +381,8 @@ async function presunDen(id){
     if(r0.ok){const ex=await r0.json();maxP=ex.length?Math.max(...ex.map(x=>x.poradie||0)):0;}
     const kopia={datum:ciel,poradie:maxP+1,stav:'planovany',
       meno:row.meno,rocnik:row.rocnik,diagnoza:row.diagnoza,lozko:row.lozko,
-      cas_okno:row.cas_okno,poloha:row.poloha,miesto_punkcie:row.miesto_punkcie,poznamka:row.poznamka};
+      cas_okno:row.cas_okno,poloha:row.poloha,miesto_punkcie:row.miesto_punkcie,
+      operator:row.operator,poziadavka_id:row.poziadavka_id,poznamka:row.poznamka};
     const r1=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(kopia)});
     if(!r1.ok){msg('❌ Chyba pri presune: '+r1.status,'#dc2626');return;}
     await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
@@ -314,8 +421,74 @@ function pridajZPoziadavky(i){
   document.getElementById('n_rocnik').value=p.rocnik||'';
   document.getElementById('n_diagnoza').value=(p.diagnoza||'')+(p.vykon_typ?' – '+p.vykon_typ:'');
   document.getElementById('n_poznamka').value=p.rodne_cislo?('r.č. '+p.rodne_cislo):'';
+  document.getElementById('n_operator').value=p.indikoval1||'';
+  NEW_POZID=p.id; // prepojenie: pri „hotový" sa ponúkne uzavretie požiadavky
   document.getElementById('n_meno').focus();
-  msg('Doplňte celé meno pacienta a pridajte','#3b82f6');
+  msg('Doplňte celé meno pacienta a pridajte (karta bude prepojená s Požiadavkami)','#3b82f6');
+}
+
+// ── Týždenný pohľad ──────────────────────────────────────────
+function toggleWeek(){
+  MODE=MODE==='week'?'day':'week';
+  document.getElementById('btn_week').classList.toggle('active',MODE==='week');
+  document.querySelector('.list').style.display=MODE==='week'?'none':'';
+  document.getElementById('zas_wrap').style.display=MODE==='week'?'none':'';
+  document.getElementById('navrhy').style.display='none';
+  document.getElementById('week').style.display=MODE==='week'?'grid':'none';
+  loadRows();
+}
+function mondayOf(dstr){
+  const d=new Date(dstr);
+  const day=(d.getDay()+6)%7; // 0=pondelok
+  d.setDate(d.getDate()-day);
+  return d;
+}
+let WDRAG=null;
+async function renderWeek(){
+  const box=document.getElementById('week');box.innerHTML='';
+  const mon=mondayOf(g('datum'));
+  const days=[];
+  for(let i=0;i<5;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);days.push(d.toISOString().slice(0,10));}
+  document.getElementById('h_datum').textContent=fmtD(days[0])+' – '+fmtD(days[4]);
+  let all=[];
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?datum=in.(${days.join(',')},zasobnik)&order=poradie.asc&limit=500`,{headers:H()});
+    if(r.ok)all=await r.json();
+  }catch(e){}
+  const dni=['Pondelok','Utorok','Streda','Štvrtok','Piatok'];
+  days.concat(['zasobnik']).forEach((dk,di)=>{
+    const rows=all.filter(x=>x.datum===dk);
+    const col=document.createElement('div');
+    col.className='wday'+(dk===todayISO(0)?' today-col':'');
+    const title=dk==='zasobnik'?'📦 Zásobník':dni[di]+' '+fmtD(dk);
+    col.innerHTML=`<h3 ${dk!=='zasobnik'?`onclick="MODE='day';toggleWeekOff();document.getElementById('datum').value='${dk}';loadRows()" title="otvoriť deň"`:''}><span>${title}</span><span style="color:#6b7280">${rows.filter(x=>x.stav!=='vyradeny').length}</span></h3>`;
+    rows.forEach(x=>{
+      const c=document.createElement('div');
+      c.className='wcard'+(x.stav==='vyradeny'?' vyr':'');
+      c.draggable=true;
+      c.innerHTML=`<b>${escHtml(x.meno||'?')}${x.rocnik?' ('+x.rocnik+')':''}</b>${escHtml(x.diagnoza||'')}${x.cas_okno?' • '+escHtml(x.cas_okno):''}`;
+      c.addEventListener('dragstart',e=>{WDRAG={id:x.id};e.dataTransfer.effectAllowed='move';});
+      c.addEventListener('dragend',()=>{WDRAG=null;});
+      col.appendChild(c);
+    });
+    col.addEventListener('dragover',e=>{if(WDRAG){e.preventDefault();col.classList.add('drop-ok');}});
+    col.addEventListener('dragleave',()=>col.classList.remove('drop-ok'));
+    col.addEventListener('drop',async e=>{
+      e.preventDefault();col.classList.remove('drop-ok');
+      if(!WDRAG)return;
+      const maxP=rows.length?Math.max(...rows.map(x=>x.poradie||0)):0;
+      await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${WDRAG.id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+        body:JSON.stringify({datum:dk,poradie:maxP+1,updated_at:new Date().toISOString()})});
+      WDRAG=null;renderWeek();
+    });
+    box.appendChild(col);
+  });
+}
+function toggleWeekOff(){
+  document.getElementById('btn_week').classList.remove('active');
+  document.querySelector('.list').style.display='';
+  document.getElementById('zas_wrap').style.display='';
+  document.getElementById('week').style.display='none';
 }
 
 // ── Kopírovanie (NIS-safe) ───────────────────────────────────
@@ -329,7 +502,7 @@ function buildProgram(){
   ROWS.filter(r=>r.stav!=='vyradeny').forEach(r=>{
     c++;
     L.push(c+'. '+(r.cas_okno?r.cas_okno+' | ':'')+(r.meno||'?')+(r.rocnik?' ('+r.rocnik+')':'')+(r.diagnoza?' – '+r.diagnoza:'')+(r.lozko?' – '+r.lozko:'')
-      +(r.poloha?' – poloha: '+r.poloha:'')+(r.miesto_punkcie?' – punkcia: '+r.miesto_punkcie:'')+(r.poznamka?' – pozn.: '+r.poznamka:''));
+      +(r.poloha?' – poloha: '+r.poloha:'')+(r.miesto_punkcie?' – punkcia: '+r.miesto_punkcie:'')+(r.operator?' – operatér: '+r.operator:'')+(r.poznamka?' – pozn.: '+r.poznamka:''));
   });
   if(!c)L.push('(program je prázdny)');
   const vyr=ROWS.filter(r=>r.stav==='vyradeny');
@@ -347,15 +520,21 @@ function copyProgram(){
 }
 
 // ── Štart + živé obnovovanie ─────────────────────────────────
-// default: doobeda dnešný program (sedenie), poobede zajtrajší (príprava)
-document.getElementById('datum').value=todayISO(new Date().getHours()<12?0:1);
+if(TV){
+  document.body.classList.add('tv');
+  document.getElementById('datum').value=todayISO(0); // TV vždy dnešok
+}else{
+  // default: doobeda dnešný program (sedenie), poobede zajtrajší (príprava)
+  document.getElementById('datum').value=todayISO(new Date().getHours()<12?0:1);
+}
 loadRows();
 setInterval(()=>{
   if(document.visibilityState!=='visible')return;
+  if(TV){document.getElementById('datum').value=todayISO(0);loadRows();return;}
   const ae=document.activeElement;
   if(ae&&ae.tagName==='INPUT'&&ae.closest('.list'))return; // needituj pod rukami
   loadRows();
-},20000);
+},TV?15000:20000);
 </script>
 </body>
 </html>

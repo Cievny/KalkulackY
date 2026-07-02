@@ -41,6 +41,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .kat-apka{background:#dbeafe;color:#1e40af;}
 .kat-oddelenie{background:#dcfce7;color:#166534;}
 .author{font-weight:600;color:#6b7280;}
+.btn-vote{font-size:11px;font-weight:700;padding:3px 9px;border:1.5px solid #bfdbfe;border-radius:12px;background:#fff;cursor:pointer;color:#1e40af;}
+.btn-vote:hover{background:#eff6ff;}
+.btn-vote.voted{background:#dbeafe;cursor:default;}
+.btn-kom{font-size:11px;font-weight:600;padding:3px 8px;border:1.5px solid #dde1ea;border-radius:5px;background:#fff;cursor:pointer;color:#374151;}
+.kom-box{margin-top:8px;border-top:1.5px solid #e5e9f5;padding-top:7px;}
+.kom{font-size:12px;color:#374151;background:#fff;border:1px solid #eef0f5;border-radius:6px;padding:5px 8px;margin-bottom:5px;line-height:1.4;white-space:pre-wrap;word-break:break-word;}
+.kom .kwho{font-size:10px;color:#9ca3af;font-weight:600;}
+.kom-add{display:flex;gap:5px;align-items:center;}
+.kom-add input[type=text]{flex:1;padding:6px 8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:12px;font-family:inherit;outline:none;min-width:0;}
+.kom-add label{font-size:11px;color:#6b7280;display:flex;align-items:center;gap:3px;white-space:nowrap;cursor:pointer;}
+.kom-add button{padding:6px 10px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;}
 .filters{display:flex;gap:8px;padding:12px 20px 0;flex-wrap:wrap;max-width:1200px;margin:0 auto;}
 .fbtn{padding:7px 14px;border:1.5px solid #dde1ea;border-radius:8px;background:#fff;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer;}
 .fbtn.active{background:#1e40af;color:#fff;border-color:#1e40af;}
@@ -122,6 +133,7 @@ const COLS=['napady','riesenie','hotovo'];
 const COL_LABELS={napady:'💡 Nápady',riesenie:'🔧 V řešení',hotovo:'✅ Hotovo'};
 let ITEMS=[];
 let FILTER='';
+const KOMOPEN=new Set(); // rozbalené komentáře přežijí prerender
 
 function escHtml(t){return (t==null?'':''+t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function myName(){const e=(typeof sbUserEmail==='function'?sbUserEmail():'')||'';return e.split('@')[0];}
@@ -141,10 +153,13 @@ async function loadItems(){
   render();
 }
 
+function parseKom(item){try{const k=JSON.parse(item.komentare||'[]');return Array.isArray(k)?k:[];}catch(e){return[];}}
+
 function render(){
   COLS.forEach(col=>{
     const container=document.getElementById('cards-'+col);
-    const colItems=ITEMS.filter(i=>i.col===col&&(!FILTER||(i.kategoria||'apka')===FILTER));
+    const colItems=ITEMS.filter(i=>i.col===col&&(!FILTER||(i.kategoria||'apka')===FILTER))
+      .sort((a,b)=>(b.hlasy||0)-(a.hlasy||0)||(b.created_at||'').localeCompare(a.created_at||''));
     document.getElementById('cnt-'+col).textContent=colItems.length;
     container.innerHTML='';
     colItems.forEach(item=>{
@@ -156,13 +171,57 @@ function render(){
       const kat=(item.kategoria||'apka');
       const katBadge=`<span class="kat-badge kat-${kat}">${kat==='oddelenie'?'🏥 oddělení':'💻 apka'}</span>`;
       const who=item.author?`<span class="author">👤 ${escHtml(item.author)}</span>`:`<span class="author">🕶 anonym</span>`;
+      const voted=!!localStorage.getItem('idea_v_'+item.id);
+      const kom=parseKom(item);
+      const komOpen=KOMOPEN.has(item.id);
+      const komHtml=`<div class="kom-box" id="kom_${item.id}" style="display:${komOpen?'block':'none'}">
+        ${kom.map(k=>`<div class="kom">${escHtml(k.t)}<div class="kwho">${k.a?'👤 '+escHtml(k.a):'🕶 anonym'} · ${escHtml(k.d||'')}</div></div>`).join('')}
+        <div class="kom-add">
+          <input type="text" id="kin_${item.id}" placeholder="Napiš komentář…" onkeydown="if(event.key==='Enter')addKoment('${item.id}')">
+          <label title="poslat anonymně"><input type="checkbox" id="kan_${item.id}">🕶</label>
+          <button onclick="addKoment('${item.id}')">➤</button>
+        </div>
+      </div>`;
       div.innerHTML=`<div class="card-text">${escHtml(item.text)}</div>
         ${noteHtml}
         <div class="card-meta">${katBadge}${who}<span>${date}</span></div>
-        <div class="card-actions">${moveButtons}<button class="btn-note" onclick="saveNote('${item.id}')">📝 ${item.note?'Upravit':'Přidat'} poznámku</button><button class="btn-del" onclick="delCard('${item.id}')">🗑 Smazat</button></div>`;
+        <div class="card-actions">
+          <button class="btn-vote${voted?' voted':''}" onclick="vote('${item.id}')" title="${voted?'už jste hlasovali':'podpořit návrh'}">👍 ${item.hlasy||0}</button>
+          <button class="btn-kom" onclick="toggleKom('${item.id}')">💬 ${kom.length}</button>
+          ${moveButtons}<button class="btn-note" onclick="saveNote('${item.id}')">📝 ${item.note?'Upravit':'Přidat'} poznámku</button><button class="btn-del" onclick="delCard('${item.id}')">🗑 Smazat</button></div>
+        ${komHtml}`;
       container.appendChild(div);
     });
   });
+}
+
+async function vote(id){
+  if(localStorage.getItem('idea_v_'+id))return;
+  const item=ITEMS.find(i=>i.id===id);if(!item)return;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({hlasy:(item.hlasy||0)+1})});
+    if(r.ok){localStorage.setItem('idea_v_'+id,'1');await loadItems();}
+  }catch(e){}
+}
+
+function toggleKom(id){
+  if(KOMOPEN.has(id))KOMOPEN.delete(id);else KOMOPEN.add(id);
+  const el=document.getElementById('kom_'+id);
+  if(el)el.style.display=KOMOPEN.has(id)?'block':'none';
+}
+
+async function addKoment(id){
+  const inp=document.getElementById('kin_'+id);
+  const t=(inp.value||'').trim();if(!t)return;
+  const anon=document.getElementById('kan_'+id).checked;
+  const item=ITEMS.find(i=>i.id===id);if(!item)return;
+  const kom=parseKom(item);
+  kom.push({t,a:anon?null:(myName()||null),d:new Date().toLocaleDateString('cs-CZ')});
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({komentare:JSON.stringify(kom)})});
+    if(r.ok){KOMOPEN.add(id);await loadItems();}
+    else alert('Chyba při ukládání: '+r.status);
+  }catch(e){alert('Chyba sítě: '+e.message);}
 }
 
 async function addCard(col){
