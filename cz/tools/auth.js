@@ -6,7 +6,7 @@
   const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
   const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
   const AUTH_EMAIL='vfn@cievny.sk'; // účet vytvořený v Supabase → Authentication → Users
-  const TK=KEY+'_at', RK=KEY+'_rt', XK=KEY+'_exp';
+  const TK=KEY+'_at', RK=KEY+'_rt', XK=KEY+'_exp', EK=KEY+'_email';
 
   async function sha256(str){
     const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
@@ -19,8 +19,14 @@
       sessionStorage.setItem(TK,d.access_token);
       sessionStorage.setItem(RK,d.refresh_token||'');
       sessionStorage.setItem(XK,String(Date.now()+(d.expires_in?d.expires_in*1000:3600000)));
+      if(d.user&&d.user.email)sessionStorage.setItem(EK,d.user.email);
     }
   }
+
+  // Email přihlášeného uživatele ('' při legacy/společném přihlášení bez emailu)
+  window.sbUserEmail=function(){
+    return sessionStorage.getItem(EK)||'';
+  };
 
   // Token pro REST volání: JWT přihlášeného usera, fallback na anon klíč (dokud není RLS zpřísněné)
   window.sbToken=function(){
@@ -64,35 +70,32 @@
 
   window.doLogin=async function(){
     const pw=document.getElementById('pw').value;
+    const emailEl=document.getElementById('email');
+    const email=emailEl?emailEl.value.trim():'';
     const msg=document.getElementById('login-msg');
     msg.textContent='Přihlašuji…';msg.style.color='#6b7280';
-    // 1) Supabase Auth
-    try{
-      const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
-        method:'POST',headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
-        body:JSON.stringify({email:AUTH_EMAIL,password:pw})
-      });
-      if(r.ok){
-        storeSession(await r.json());
-        const ret=sessionStorage.getItem('cievny_return')||'/cz/tools/EVK/';
-        sessionStorage.removeItem('cievny_return');
-        location.replace(ret);
-        return;
-      }
-    }catch(e){/* síť — zkus legacy */}
-    // 2) Legacy fallback (funguje jen dokud RLS povoluje anon zápis)
-    const h=await sha256(pw);
-    if(h===HASH){
-      storeSession(null);
+    function go(){
       const ret=sessionStorage.getItem('cievny_return')||'/cz/tools/EVK/';
       sessionStorage.removeItem('cievny_return');
       location.replace(ret);
-    } else {
-      msg.textContent='Nesprávné heslo.';
-      msg.style.color='#dc2626';
-      document.getElementById('pw').value='';
-      document.getElementById('pw').focus();
     }
+    // 1) Supabase Auth – vlastní email; bez emailu společný účet
+    try{
+      const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
+        method:'POST',headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({email:email||AUTH_EMAIL,password:pw})
+      });
+      if(r.ok){storeSession(await r.json());go();return;}
+    }catch(e){/* síť — zkus legacy */}
+    // 2) Legacy fallback jen bez zadaného emailu (dokud RLS povoluje anon zápis)
+    if(!email){
+      const h=await sha256(pw);
+      if(h===HASH){storeSession(null);go();return;}
+    }
+    msg.textContent=email?'Nesprávný email nebo heslo.':'Nesprávné heslo.';
+    msg.style.color='#dc2626';
+    document.getElementById('pw').value='';
+    document.getElementById('pw').focus();
   };
 
   window.doLogout=function(){
@@ -100,6 +103,7 @@
     sessionStorage.removeItem(TK);
     sessionStorage.removeItem(RK);
     sessionStorage.removeItem(XK);
+    sessionStorage.removeItem(EK);
     location.replace('/cz/tools/login/');
   };
 
@@ -136,6 +140,13 @@
       nav.appendChild(a);
     });
     const spacer=document.createElement('div');spacer.style.flex='1';nav.appendChild(spacer);
+    const ue=window.sbUserEmail?window.sbUserEmail():'';
+    if(ue){
+      const who=document.createElement('span');
+      who.textContent='👤 '+ue;
+      who.style.cssText='font-size:12px;color:#8fa3c8;margin-right:10px;white-space:nowrap;';
+      nav.appendChild(who);
+    }
     const out=document.createElement('button');
     out.textContent='Odhlásit';
     out.style.cssText='padding:6px 12px;font-size:12px;font-weight:600;background:none;border:1.5px solid #a14a55;color:#e3a8ae;border-radius:6px;cursor:pointer;';

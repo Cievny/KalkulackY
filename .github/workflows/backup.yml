@@ -33,6 +33,38 @@ jobs:
             python3 -c "import json;d=json.load(open('backup/${T}_${STAMP}.json'));print(f'   {len(d)} záznamov')"
           done
 
+          # Súborové prílohy zo Storage bucketu aorta-prilohy (fotky, dokumenty)
+          echo "→ Storage: aorta-prilohy"
+          mkdir -p backup/aorta-prilohy-subory
+          python3 - <<PYEOF
+          import json,os,urllib.request,urllib.parse
+
+          SB_URL=os.environ['SB_URL'];SB_ANON=os.environ['SB_ANON'];TOKEN="""$TOKEN"""
+          def api(path,data=None,raw=False):
+              req=urllib.request.Request(SB_URL+path,
+                  data=json.dumps(data).encode() if data is not None else None,
+                  headers={'apikey':SB_ANON,'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'})
+              with urllib.request.urlopen(req) as r:
+                  return r.read() if raw else json.loads(r.read())
+
+          # cesty súborov vezmeme z tabuľky príloh (obsahuje storage_path)
+          try:
+              rows=api('/rest/v1/aorta_prilohy?select=storage_path&typ=eq.subor&limit=10000')
+          except Exception as e:
+              print('   tabuľka aorta_prilohy nedostupná:',e);rows=[]
+          n=0
+          for row in rows:
+              p=row.get('storage_path')
+              if not p:continue
+              try:
+                  data=api('/storage/v1/object/aorta-prilohy/'+urllib.parse.quote(p),raw=True)
+                  dest='backup/aorta-prilohy-subory/'+p.replace('/','__')
+                  open(dest,'wb').write(data);n+=1
+              except Exception as e:
+                  print('   CHYBA pri',p,':',e)
+          print(f'   {n} súborov stiahnutých')
+          PYEOF
+
       - name: Ulož zálohu ako artefakt (90 dní)
         uses: actions/upload-artifact@v4
         with:

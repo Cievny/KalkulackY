@@ -51,6 +51,7 @@ details summary:hover{color:#1737a0}
   <button class="tab active" onclick="showTab('evk',this)">EVK – Endovaskulárne</button>
   <button class="tab" onclick="showTab('cas',this)">CAS – Karotídy</button>
   <button class="tab" onclick="showTab('pevar',this)">PEVAR – Aorta</button>
+  <button class="tab" onclick="showTab('poz',this)">📥 Požiadavky</button>
 </div>
 
 <div id="sec-evk" class="section active">
@@ -194,6 +195,26 @@ details summary:hover{color:#1737a0}
       <div class="tbl-wrap"><table class="records-table"><thead id="pevar-tbl-head"></thead><tbody id="pevar-tbl-body"></tbody></table></div>
       </details>
     </div>
+  </div>
+</div>
+
+<div id="sec-poz" class="section">
+  <div id="poz-loading" class="loading">Načítavam...</div>
+  <div id="poz-content" style="display:none">
+    <div class="grid" id="poz-stats"></div>
+    <div class="row2">
+      <div class="chart-card"><h3>Aktívne podľa stavu</h3><div class="chart-wrap"><canvas id="ch-poz-status"></canvas></div></div>
+      <div class="chart-card"><h3>Požiadavky podľa mesiaca</h3><div class="chart-wrap"><canvas id="ch-poz-month"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Plánované výkony (aorta)</h3><div class="chart-wrap"><canvas id="ch-poz-vykon"></canvas></div></div>
+      <div class="chart-card"><h3>Indikujúci</h3><div class="chart-wrap"><canvas id="ch-poz-indik"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Diagnózy (top 10)</h3><div class="chart-wrap"><canvas id="ch-poz-dg"></canvas></div></div>
+      <div class="chart-card"><h3>Výsledky uzavretých</h3><div class="chart-wrap"><canvas id="ch-poz-vysledok"></canvas></div></div>
+    </div>
+    <div class="chart-card"><h3>Dní od požiadavky po uzavretie (archív)</h3><div class="chart-wrap"><canvas id="ch-poz-days"></canvas></div></div>
   </div>
 </div>
 
@@ -572,8 +593,54 @@ async function loadPEVAR(){
     'pevar_vykony','loadPEVAR');
 }
 
+async function loadPOZ(){
+  let rows;
+  try{rows=await fetchAll('aorta_indikacie');}
+  catch(e){document.getElementById('poz-loading').textContent='Tabuľka aorta_indikacie nie je dostupná (spustite setup SQL).';return;}
+  document.getElementById('poz-loading').style.display='none';
+  document.getElementById('poz-content').style.display='block';
+  const active=rows.filter(r=>r.status!=='archiv');
+  const arch=rows.filter(r=>r.status==='archiv');
+  const dnes=new Date();
+  const days=(a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
+  const closedDays=arch.map(r=>{
+    try{const h=JSON.parse(r.historia||'[]');const c=h.length?h[h.length-1].d:null;
+      const d=(r.datum_poziadavky&&c)?days(r.datum_poziadavky,c):null;
+      return (d!=null&&d>=0&&d<1000)?d:null;}catch(e){return null;}
+  }).filter(x=>x!=null).sort((a,b)=>a-b);
+  const median=closedDays.length?closedDays[Math.floor(closedDays.length/2)]:null;
+  const poTermine=active.filter(r=>r.termin&&new Date(r.termin)<dnes).length;
+  document.getElementById('poz-stats').innerHTML=[
+    statCard('Aktívne požiadavky',active.length),
+    statCard('AORTA / INÉ',active.filter(r=>r.kategoria!=='ine').length+' / '+active.filter(r=>r.kategoria==='ine').length),
+    statCard('Po termíne',poTermine),
+    statCard('Čaká na materiál',active.filter(r=>r.status==='endo_material').length),
+    statCard('Uzavreté (archív)',arch.length),
+    statCard('Medián dní do uzavretia',median??'–'),
+  ].join('');
+  const STATUS_LBL={poziadavka:'Požiadavka',prezerane:'Prezerané',indikovane:'Indikované',chirurgia:'Chirurgia',konzervativa:'Konzervatíva',endo_material:'Endo–materiál',endo_termin:'Endo–termín'};
+  const stF={};active.forEach(r=>{const k=STATUS_LBL[r.status]||r.status;stF[k]=(stF[k]||0)+1;});
+  mkChart('ch-poz-status','bar',Object.keys(stF),Object.values(stF),false);
+  const mF={};rows.forEach(r=>{const k=monthKey(r.datum_poziadavky||r.created_at);if(k)mF[k]=(mF[k]||0)+1;});
+  const mK=Object.keys(mF).sort();
+  mkChart('ch-poz-month','bar',mK,mK.map(k=>mF[k]),false);
+  const vF={};rows.forEach(r=>{if(r.vykon_typ)vF[r.vykon_typ]=(vF[r.vykon_typ]||0)+1;});
+  mkChart('ch-poz-vykon','pie',Object.keys(vF),Object.values(vF));
+  const iF={};rows.forEach(r=>{[r.indikoval1,r.indikoval2].forEach(x=>{if(x)iF[x]=(iF[x]||0)+1;});});
+  mkChart('ch-poz-indik','bar',Object.keys(iF),Object.values(iF),false);
+  const dg=sortedFreq(rows.filter(r=>r.diagnoza),'diagnoza',10);
+  mkChart('ch-poz-dg','bar',dg.map(e=>e[0]),dg.map(e=>e[1]),false);
+  const vys=sortedFreq(arch.filter(r=>r.vysledok),'vysledok',10);
+  mkChart('ch-poz-vysledok','pie',vys.map(e=>e[0]),vys.map(e=>e[1]));
+  const edges=[0,8,15,31,61,91,10000],labels=['0–7','8–14','15–30','31–60','61–90','>90'];
+  const binC=new Array(labels.length).fill(0);
+  closedDays.forEach(d=>{for(let i=0;i<edges.length-1;i++){if(d>=edges[i]&&d<edges[i+1]){binC[i]++;return;}}});
+  mkChart('ch-poz-days','bar',labels,binC,false);
+}
+
 async function loadAll(){
   document.getElementById('err-box').style.display='none';
+  loadPOZ(); // nezávisle – nesmie zhodiť ostatné sekcie
   try{await Promise.all([loadEVK(),loadCAS(),loadPEVAR()]);}
   catch(e){
     const eb=document.getElementById('err-box');

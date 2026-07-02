@@ -767,7 +767,7 @@ function gen(){
   const datum=g('datum_zaznamu');if(datum){L.push('Datum: '+datum.split('-').reverse().join('.'));}
   const suf=g('id_suffix');if(suf)L.push('ID: PEVAR-'+new Date().getFullYear()+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
-  L.push('─'.repeat(46));
+  L.push('-'.repeat(46));
 
   // ── PACIENT ──
   L.push('PACIENT: '+pacientLine);
@@ -822,11 +822,21 @@ function addExtenzia(){
 }
 function delExtenzia(idx){const r=document.querySelector('#extenzie_list [data-idx="'+idx+'"]');if(r)r.remove();gen();}
 
+// NIS-safe text: prazdne riadky dostanu medzeru (NIS ich inak zlepi) a konce riadkov su CRLF pre stare Windows editory
+function nisSafeTxt(t){
+  return t.replace(/─/g,'-').replace(/\n\n/g,'\n \n').replace(/\r?\n/g,'\r\n');
+}
 function copyOut(){
-  const out=document.getElementById('out');
-  out.select();
-  try{document.execCommand('copy');msg('Zkopírováno!','#1d6f42');}
-  catch{navigator.clipboard.writeText(out.value).then(()=>msg('Zkopírováno!','#1d6f42'));}
+  const txt=nisSafeTxt(document.getElementById('out').value);
+  const ok=()=>msg('Zkopírováno!','#1d6f42');
+  const fallback=()=>{
+    const out=document.getElementById('out');out.select();
+    try{document.execCommand('copy');ok();}
+    catch(e){msg('⚠️ Označte text ručne (Ctrl+C)','#b45309');}
+    window.getSelection()&&window.getSelection().removeAllRanges();
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok).catch(fallback);
+  else fallback();
 }
 
 function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',3000);}

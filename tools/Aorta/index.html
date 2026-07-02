@@ -29,6 +29,8 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .badge-urg{background:#fef3c7;color:#b45309;}
 .badge-emerg{background:#fee2e2;color:#dc2626;}
 .badge-esvs{background:#dc2626;color:#fff;}
+.badge-late{background:#7f1d1d;color:#fff;}
+.badge-soon{background:#ffedd5;color:#c2410c;}
 .card-line{font-size:12px;color:#374151;margin-top:3px;line-height:1.4;}
 .card-mat{font-size:11.5px;color:#0e7490;background:#ecfeff;border-left:3px solid #06b6d4;border-radius:0 5px 5px 0;padding:4px 7px;margin-top:5px;line-height:1.4;}
 .card-meta{font-size:10px;color:#9ca3af;margin-top:5px;}
@@ -112,7 +114,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
     <div class="m-sec" data-t="Pacient a žiadanka">1. Pacient a žiadanka</div>
     <div class="m-grid">
       <div class="fld"><label>Kategória</label><select id="af_kategoria" onchange="toggleKategoria()"><option value="aorta">🫀 Aorta</option><option value="ine">📋 Iné</option></select></div>
-      <div class="fld"><label>Rodné číslo * <span style="font-weight:400;color:#9ca3af">(povinné)</span></label><input id="af_rodne_cislo" maxlength="11" placeholder="511224/1234" autocomplete="off"></div>
+      <div class="fld"><label>Rodné číslo * <span style="font-weight:400;color:#9ca3af">(povinné)</span></label><input id="af_rodne_cislo" maxlength="11" placeholder="511224/1234" autocomplete="off"><div id="rc_warn" style="font-size:11.5px;color:#b45309;margin-top:3px"></div></div>
       <div class="fld"><label>Iniciály (napr. J.K.)</label><input id="af_inicialy" maxlength="10" autocomplete="off"></div>
       <div class="fld"><label>Ročník narodenia</label><input id="af_rocnik" type="number" min="1900" max="2030" placeholder="doplní sa z r.č."></div>
       <div class="fld"><label>Pohlavie</label><select id="af_pohlavie"><option value="M">Muž</option><option value="Ž">Žena</option></select></div>
@@ -387,6 +389,18 @@ function cardEl(it){
   const dIn=enteredCur?daysBetween(enteredCur,today()):null;
   const dTotal=it.datum_poziadavky?daysBetween(it.datum_poziadavky,today()):null;
   const urgBadge=it.urgencia==='urgentné'?'<span class="badge badge-urg">URG</span>':it.urgencia==='emergentné'?'<span class="badge badge-emerg">EMERG</span>':'';
+  // stráženie termínu a materiálu
+  let watchBadge='';
+  if(it.termin){
+    const dT=daysBetween(today(),it.termin); // záporné = po termíne
+    const past=new Date(it.termin)<new Date(today());
+    if(past)watchBadge+='<span class="badge badge-late" title="plánovaný termín '+fmtD(it.termin)+' už prešiel">⏰ PO TERMÍNE</span>';
+    else if(dT!==null&&dT<=7)watchBadge+='<span class="badge badge-soon" title="plánovaný termín '+fmtD(it.termin)+'">⏰ o '+dT+' d</span>';
+  }
+  if(it.material_objednany&&!it.material_dodany){
+    const dM=daysBetween(it.material_objednany,today());
+    if(dM!==null&&dM>14)watchBadge+='<span class="badge badge-soon" title="materiál objednaný '+fmtD(it.material_objednany)+', stále nedodaný">📦 '+dM+' d bez dodania</span>';
+  }
   const esvsBadge=hasRed?'<span class="badge badge-esvs" title="'+escHtml(alerts.filter(a=>a.t==='red').map(a=>a.x).join(' | '))+'">'+(kat(it)==='aorta'?'⚠ ESVS':'⚠')+'</span>':'';
   const dg=[it.diagnoza?it.diagnoza+(it.endoleak_typ?' ('+it.endoleak_typ+')':''):'',it.priemer_mm?it.priemer_mm+' mm':'',it.rast_mm_rok?'rast '+it.rast_mm_rok+' mm/r':''].filter(Boolean).join(' • ');
   let matHtml='';
@@ -402,7 +416,7 @@ function cardEl(it){
   const prilBadge=nPril?'<span class="badge" style="background:#e0e7ff;color:#3730a3">📎 '+nPril+'</span>':'';
   const title=it.inicialy?escHtml(it.inicialy)+(it.rocnik?' '+it.rocnik:''):escHtml(it.rodne_cislo||'?');
   div.innerHTML=`
-    <div class="card-id">${title}${it.pohlavie?' ('+it.pohlavie+')':''} ${urgBadge}${esvsBadge}${prilBadge}</div>
+    <div class="card-id">${title}${it.pohlavie?' ('+it.pohlavie+')':''} ${urgBadge}${esvsBadge}${prilBadge}${watchBadge}</div>
     ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}
     ${dg?'<div class="card-line">'+escHtml(dg)+'</div>':''}
     ${it.ziadatel?'<div class="card-line">👤 '+escHtml(it.ziadatel)+'</div>':''}
@@ -488,6 +502,7 @@ function openModal(id){
   document.getElementById('m_title').textContent=it?('Detail: '+(it.inicialy||it.rodne_cislo||'?')+(it.rocnik?' '+it.rocnik:'')+' – '+(STATUS_LABEL[it.status]||'')):'Nová požiadavka';
   objToForm(it);
   updateAlerts();
+  rcCheck();
   document.getElementById('pril_hint').style.display=editId?'none':'';
   document.getElementById('pril_box').style.display=editId?'':'none';
   document.getElementById('pril_text').value='';
@@ -504,10 +519,27 @@ function updateAlerts(){
 }
 FIELDS.forEach(f=>{const el=document.getElementById('af_'+f);el.addEventListener('input',updateAlerts);el.addEventListener('change',updateAlerts);});
 
-// r.č. -> automaticky odvodíme ročník a pohlavie
+// r.č. -> automaticky odvodíme ročník a pohlavie + kontrola duplicity a kontrolnej číslice
+function rcNorm(rc){return (rc||'').replace(/\D/g,'');}
+function rcCheck(){
+  const raw=document.getElementById('af_rodne_cislo').value.trim();
+  const warn=document.getElementById('rc_warn');
+  const W=[];
+  const digits=rcNorm(raw);
+  if(digits.length>=9){
+    // duplicita na boarde / v archíve
+    const dup=ITEMS.find(i=>i.id!==editId&&rcNorm(i.rodne_cislo)===digits);
+    if(dup)W.push('⚠️ Pacient s týmto r.č. už existuje – '+(dup.status==='archiv'?'v archíve ('+(dup.vysledok||'uzavreté')+')':(STATUS_LABEL[dup.status]||dup.status)));
+    // kontrolná číslica (len 10-miestne r.č.)
+    if(digits.length===10&&Number(digits)%11!==0)W.push('⚠️ R.č. nesedí na kontrolu deliteľnosti 11 – skontrolujte preklep');
+    else if(digits.length===10&&!parseRC(raw))W.push('⚠️ Neplatný mesiac v r.č.');
+  }
+  warn.textContent=W.join(' · ');
+}
 document.getElementById('af_rodne_cislo').addEventListener('input',()=>{
   const p=parseRC(document.getElementById('af_rodne_cislo').value);
   if(p){document.getElementById('af_rocnik').value=p.rok;document.getElementById('af_pohlavie').value=p.pohl;updateAlerts();}
+  rcCheck();
 });
 
 async function saveCard(){
@@ -517,8 +549,21 @@ async function saveCard(){
     let r;
     if(editId){
       o.updated_at=new Date().toISOString();
-      r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${editId}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify(o)});
-      if(r.ok){msg('m_msg','✓ Uložené','#1d6f42');await loadItems();}
+      // ochrana pred prepísaním: PATCH prejde len ak sa záznam medzitým nezmenil
+      const cur=ITEMS.find(i=>i.id===editId);
+      const guard=cur&&cur.updated_at?'&updated_at=eq.'+encodeURIComponent(cur.updated_at):'';
+      r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${editId}${guard}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify(o)});
+      if(r.ok){
+        const rows=await r.json();
+        if(!rows.length&&guard){
+          msg('m_msg','⚠️ Záznam medzitým zmenil niekto iný – načítal som jeho verziu, upravte a uložte znova','#b45309');
+          await loadItems();
+          const fresh=ITEMS.find(i=>i.id===editId);
+          if(fresh)objToForm(fresh);
+          return;
+        }
+        msg('m_msg','✓ Uložené','#1d6f42');await loadItems();
+      }
       else msg('m_msg','❌ Chyba pri ukladaní: '+r.status,'#dc2626');
     }else{
       o.status='poziadavka';
@@ -619,14 +664,23 @@ async function delPriloha(id){
 }
 
 // ── Presun medzi stavmi ──────────────────────────────────────
-async function moveCard(id,newStatus,vysledok){
+async function moveCard(id,newStatus,vysledok,retried){
   const it=ITEMS.find(i=>i.id===id);if(!it)return;
   const hist=parseHist(it);hist.push({s:newStatus,d:today(),by:shortMail(me())||undefined});
   const body={status:newStatus,historia:JSON.stringify(hist),updated_at:new Date().toISOString()};
   if(vysledok!==undefined)body.vysledok=vysledok;
+  const guard=it.updated_at?'&updated_at=eq.'+encodeURIComponent(it.updated_at):'';
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
-    if(r.ok)await loadItems();else msg('top_msg','❌ Chyba: '+r.status,'#dc2626');
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}${guard}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify(body)});
+    if(r.ok){
+      const rows=await r.json();
+      if(!rows.length&&guard&&!retried){
+        // záznam sa medzitým zmenil – načítame čerstvý stav a presun zopakujeme raz
+        await loadItems();
+        return moveCard(id,newStatus,vysledok,true);
+      }
+      await loadItems();
+    }else msg('top_msg','❌ Chyba: '+r.status,'#dc2626');
   }catch{msg('top_msg','❌ Chyba siete','#dc2626');}
 }
 
@@ -738,6 +792,14 @@ function copyZapis(){
 }
 
 loadItems();
+
+// auto-refresh boardu každých 60 s (keď nie je otvorený modál a stránka je viditeľná)
+setInterval(()=>{
+  if(document.visibilityState!=='visible')return;
+  if(document.getElementById('overlay').classList.contains('open'))return;
+  if(document.getElementById('arch_overlay').classList.contains('open'))return;
+  loadItems();
+},60000);
 </script>
 </body>
 </html>

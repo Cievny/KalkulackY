@@ -23,8 +23,12 @@ button:hover{background:#991b1b;}
 <div class="box">
   <div class="logo">🫀 cievny.sk</div>
   <div class="sub">Klinické nástroje – přihlášení (VFN)</div>
+  <div class="fld">
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="jmeno@nemocnice.cz" autofocus autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('pw').focus()">
+  </div>
   <label for="pw">Heslo</label>
-  <input type="password" id="pw" placeholder="••••••••" autofocus onkeydown="if(event.key==='Enter')doLogin()">
+  <input type="password" id="pw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
   <button onclick="doLogin()">Přihlásit se</button>
   <div id="login-msg"></div>
 </div>
