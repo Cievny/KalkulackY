@@ -60,7 +60,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <div class="st">Identifikace výkonu</div>
 <div class="row r3">
   <div class="f"><label>ID výkonu</label>
-    <div class="id-row"><span class="id-prefix" id="id-prefix">CAS-2026-</span><input type="text" id="id_suffix" placeholder="001" oninput="updateIdPrefix()"></div>
+    <div class="id-row"><span class="id-prefix" id="id-prefix">CAS-2026-</span><input type="text" id="id_suffix" placeholder="001" oninput="updateIdPrefix();gen()"></div>
   </div>
   <div class="f"><label>Operatér</label>
     <select id="operator" onchange="gen()">
@@ -170,7 +170,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
         </div>
         <div class="sub-lbl" style="margin-top:6px">St.p. revaskularizácii</div>
         <div class="checks">
-          <label class="ck"><input type="radio" name="ichs_revasc" value="bez revaskularizace" checked onchange="gen()"><span>Nie</span></label>
+          <label class="ck"><input type="radio" name="ichs_revasc" value="bez revaskularizace" checked onchange="gen()"><span>Ne</span></label>
           <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. PCI" onchange="gen()"><span>PCI</span></label>
           <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. CABG" onchange="gen()"><span>CABG</span></label>
           <label class="ck"><input type="radio" name="ichs_revasc" value="st.p. PCI+CABG" onchange="gen()"><span>PCI+CABG</span></label>
@@ -372,7 +372,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
         <option value="90-99%">90–99 %</option><option value="subokluze">Subokluze</option><option value="okluze">Okluze</option>
       </select>
     </div>
-    <div class="f"><label>Metóda</label>
+    <div class="f"><label>Metoda</label>
       <select id="nascet_metoda_dx" onchange="gen()">
         <option>DSA</option><option>CTA</option><option>MRA</option><option>USG</option>
       </select>
@@ -437,7 +437,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
         <option value="90-99%">90–99 %</option><option value="subokluze">Subokluze</option><option value="okluze">Okluze</option>
       </select>
     </div>
-    <div class="f"><label>Metóda</label>
+    <div class="f"><label>Metoda</label>
       <select id="nascet_metoda_sin" onchange="gen()">
         <option>DSA</option><option>CTA</option><option>MRA</option><option>USG</option>
       </select>
@@ -789,7 +789,7 @@ function gen(){
 
   // ── HLAVIČKA ──
   L.push('ZPRÁVA Z KAROTICKÉ INTERVENCE (CAS)');
-  const datum=g('datum_zaznamu');if(datum){const d=new Date(datum);L.push('Datum: '+d.toLocaleDateString('cs-CZ'));}
+  const datum=g('datum_zaznamu');if(datum){L.push('Datum: '+datum.split('-').reverse().join('.'));}
   const suf=g('id_suffix');if(suf)L.push('ID: CAS-'+new Date().getFullYear()+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
   L.push('Lokalizace: '+(lok||strana));
@@ -851,6 +851,7 @@ function gen(){
   const zav=g('zaver_vykonu');if(zav)L.push(zav);
 
   document.getElementById('out').value=L.filter(x=>x!=='').join('\n');
+  window._dirty=true;
 }
 
 function copyOut(){
@@ -861,11 +862,14 @@ function copyOut(){
 }
 
 async function saveData(){
+  const artVal=g('access_art');
+  const _saveBtn=document.querySelector('button[onclick="saveData()"]');
+  if(_saveBtn)_saveBtn.disabled=true;
   const isInterv=g('postup_vykonu')==='intervencia';
   // Rozdelenie veľkosti materiálu "8x20mm" → priemer / dĺžka (pre štatistiku)
   const dimMM=(id,i)=>{const n=(g(id)||'').split(/[^0-9.]+/).filter(Boolean).map(Number);return n[i]!=null?n[i]:null;};
   const payload={
-    vykon_id:'CAS-'+new Date().getFullYear()+'-'+(g('id_suffix')||'???'),
+    vykon_id:window._editRecordId&&window._editVykonId?window._editVykonId:'CAS-'+new Date().getFullYear()+'-'+(g('id_suffix')||'???'),
     operator:g('operator'),
     komorbidity:getKomor().join(', '),
     dsa_nalez:getCasDsa(),
@@ -890,9 +894,6 @@ async function saveData(){
     navadzanie:g('nav'),
     uvodny_sheath:g('sheath')+(g('sheathdlz')?' '+g('sheathdlz'):''),
     diag_kateter:g('kateter_diag'),
-    popis_stenozy:g('stenoza_typ_popisu'),
-    percento_stenozy:g('stenoza_typ_popisu')==='percentualna'?g('stenoza_percenta'):'',
-    zavaznost_stenozy:g('stenoza_typ_popisu')==='percentualna'?g('stenoza_zavaznost'):'',
     postup:g('postup_vykonu'),
     interv_sheath:isInterv?`${g('sheath_intervencny_fr')} ${g('sheath_intervencny_dlzka')} (${g('sheath_intervencny_znacka')})`:'',
     interv_sheath_fr:isInterv?g('sheath_intervencny_fr'):'',
@@ -902,7 +903,7 @@ async function saveData(){
     interv_vodic_spec:isInterv?g('vodic_intervencny_spec'):'',
     interv_vodic_znacka:isInterv?g('vodic_intervencny_brand'):'',
     emboloprotekcia:isInterv?g('emboloprotekcia'):'',
-    predilatacia_vykonana:isInterv&&chk('vykonat_predilataciu')?'Ano':'Nie',
+    predilatacia_vykonana:isInterv&&chk('vykonat_predilataciu')?'Ano':'Ne',
     predilatacny_balon:isInterv&&chk('vykonat_predilataciu')?`${g('balon_predilatacia_velkost')} (${g('balon_predilatacia_znacka')})`:'',
     predilatacny_balon_velkost:isInterv&&chk('vykonat_predilataciu')?g('balon_predilatacia_velkost'):'',
     predilatacny_balon_diameter_mm:isInterv&&chk('vykonat_predilataciu')?dimMM('balon_predilatacia_velkost',0):null,
@@ -913,15 +914,15 @@ async function saveData(){
     stent_diameter_mm:isInterv?dimMM('stent_velkost',0):null,
     stent_length_mm:isInterv?dimMM('stent_velkost',1):null,
     stent_znacka:isInterv?g('stent_znacka'):'',
-    domodelování_vykonane:isInterv&&chk('vykonat_domodelování')?'Ano':'Nie',
+    domodelovanie_vykonane:isInterv&&chk('vykonat_domodelování')?'Ano':'Ne',
     domodelovaci_balon:isInterv&&chk('vykonat_domodelování')?`${g('balon_domodelování_velkost')} (${g('balon_domodelování_znacka')})`:'',
     domodelovaci_balon_velkost:isInterv&&chk('vykonat_domodelování')?g('balon_domodelování_velkost'):'',
     domodelovaci_balon_diameter_mm:isInterv&&chk('vykonat_domodelování')?dimMM('balon_domodelování_velkost',0):null,
     domodelovaci_balon_length_mm:isInterv&&chk('vykonat_domodelování')?dimMM('balon_domodelování_velkost',1):null,
     domodelovaci_balon_znacka:isInterv&&chk('vykonat_domodelování')?g('balon_domodelování_znacka'):'',
     uzatvaraci_system:g('uzatvaraci_system'),
-    hemostaza_poznamka:chk('vykonat_hemostazu')?'Ano':'Nie',
-    hemostaza_text:chk('vykonat_hemostazu')?g('hemostaza_text'):'',
+    hemostaza_poznamka:g('hemostaza_text')?'Ano':'Ne',
+    hemostaza_text:g('hemostaza_text'),
     vysledok:isInterv?g('vysledok'):'',
     zaver:g('zaver_vykonu'),
     femostop:chk('femostop'),
@@ -941,15 +942,17 @@ async function saveData(){
   msg('Ukládám...','#5a6a8a');
   try{
     const _isEdit=!!window._editRecordId;
+    if(_isEdit){Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]==null)delete payload[k];});delete payload.vykon_id;}
     const _url=SB_URL+'/rest/v1/cz_cas_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
     const r=await fetch(_url,{
       method:_isEdit?'PATCH':'POST',
       headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},
       body:JSON.stringify(payload)
     });
-    if(r.ok)msg(_isEdit?'Záznam aktualizován ✓':'Uloženo ✓','#1d6f42');
+    if(r.ok){msg(_isEdit?'Záznam aktualizován ✓':'Uloženo ✓','#1d6f42');window._dirty=false;}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
-  }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
+  }catch(e){msg('Chyba sítě: '+e.message,'#dc2626');}
+  finally{if(_saveBtn)_saveBtn.disabled=false;}
 }
 
 function loadEditRecord(){
@@ -960,6 +963,7 @@ function loadEditRecord(){
     if(tool!=='CAS')return;
     sessionStorage.removeItem('cievny_edit');
     window._editRecordId=record.id;
+    window._editVykonId=record.vykon_id;
     const sv=(id,v)=>{if(v==null||v==='')return;const el=document.getElementById(id);if(el)el.value=v;};
     // Pacient + indikácia
     if(record.vykon_id){const parts=record.vykon_id.split('-');sv('id_suffix',parts[parts.length-1]);}
@@ -982,36 +986,77 @@ function loadEditRecord(){
     sv('dsa_av_dx',record.dsa_av_dx);
     sv('nascet_stenoza_sin',record.nascet_stenoza_sin||record.nascet_stenoza);
     sv('nascet_stenoza_dx',record.nascet_stenoza_dx);
-    sv('popis_stenozy',record.popis_stenozy);
+    sv('nascet_metoda_sin',record.nascet_metoda_sin);
+    sv('nascet_metoda_dx',record.nascet_metoda_dx);
+    // DSA lateralita – odvozena z lokalizace (samostatně se neukládá)
+    const _lat=(record.lokalizacia||'').includes('dx')?'dx':'sin';
+    const _latR=document.querySelector('input[name="dsa_lat"][value="'+_lat+'"]');
+    if(_latR){_latR.checked=true;casDsaLat();}
+    // Přístup
+    if(record.pristupova_arteria){
+      const aSel=document.getElementById('access_art');
+      const aOpts=[...aSel.options].map(o=>o.value);
+      if(aOpts.includes(record.pristupova_arteria)){aSel.value=record.pristupova_arteria;}
+      else{aSel.value='vlastny';const ac=document.getElementById('access_art_c');if(ac){ac.value=record.pristupova_arteria;ac.style.display='';}}
+    }
+    sv('strana',record.strana_pristupu);
+    sv('smer',record.pristup_smer);
+    sv('tech',record.pristup_technika);
+    sv('spos',record.pristup_sposob);
+    sv('nav',record.navadzanie);
+    sv('kateter_diag',record.diag_kateter);
+    if(record.uvodny_sheath){const um=record.uvodny_sheath.match(/^(\d+ Fr)(?:\s+(.+))?$/);if(um){sv('sheath',um[1]);if(um[2])sv('sheathdlz',um[2]);}}
+    // Postup + intervence
+    if(record.postup){sv('postup_vykonu',record.postup);tShow('intervencia_container',record.postup==='intervencia');}
+    sv('sheath_intervencny_fr',record.interv_sheath_fr);
+    sv('sheath_intervencny_dlzka',record.interv_sheath_dlzka);
+    sv('sheath_intervencny_znacka',record.interv_sheath_znacka);
+    sv('vodic_intervencny_spec',record.interv_vodic_spec);
+    sv('vodic_intervencny_brand',record.interv_vodic_znacka);
+    const setTog=(cbId,bodyId,on)=>{const cb=document.getElementById(cbId);if(cb)cb.checked=on;const b=document.getElementById('b_'+bodyId);if(b)b.classList.toggle('on',on);};
+    if(record.predilatacia_vykonana)setTog('vykonat_predilataciu','pred_opt',record.predilatacia_vykonana==='Ano');
+    sv('balon_predilatacia_velkost',record.predilatacny_balon_velkost);
+    sv('balon_predilatacia_znacka',record.predilatacny_balon_znacka);
+    if(record.domodelovanie_vykonane)setTog('vykonat_domodelování','dom_opt',record.domodelovanie_vykonane==='Ano');
+    sv('balon_domodelování_velkost',record.domodelovaci_balon_velkost);
+    sv('balon_domodelování_znacka',record.domodelovaci_balon_znacka);
     // Materiály
     sv('stent_znacka',record.stent_znacka);
     sv('stent_velkost',record.stent_velkost);
     sv('emboloprotekcia',record.emboloprotekcia);
-    // Procedúra
+    // Procedura + uzávěr
     sv('anes',record.anestazia);
-    sv('punkcia_arteria',record.punkcia_arteria);
-    sv('punkcia_technika',record.punkcia_technika);
-    sv('kompresia_min',record.kompresia_min);
+    sv('uzatvaraci_system',record.uzatvaraci_system);
+    sv('kompr',record.kompresia_min);
+    sv('hemostaza_text',record.hemostaza_text);
+    if(record.femostop===true||record.femostop==='true'){const f=document.getElementById('femostop');if(f)f.checked=true;}
+    if(record.tech_uspech){const tr=document.querySelector('input[name="tech_uspech"][value="'+record.tech_uspech+'"]');if(tr)tr.checked=true;}
+    sv('zaver_vykonu',record.zaver);
+    sv('st_dur',record.proc_duration_min);
     sv('st_fluoro',record.fluoro_time_min);
     sv('st_dap',record.dap);
     sv('st_contrast',record.contrast_ml);
-    sv('st_konv',record.konverzia===true||record.konverzia==='true'||record.konverzia==='áno'?'áno':'nie');
+    sv('st_konv',record.konverzia===true||record.konverzia==='true'||record.konverzia==='ano'?'ano':'ne');
     sv('st_clavien',record.clavien_dindo);
     sv('vysledok',record.vysledok);
-    // Komorbidity
+    // Kontrastní látky + antitrombotika
+    (record.kontrast||'').split('+').map(s=>s.trim()).filter(Boolean).forEach(v=>{const cb=[...document.querySelectorAll('.kontr')].find(c=>c.value===v);if(cb)cb.checked=true;});
+    (record.antitrombotika||'').split(', ').filter(Boolean).forEach(v=>{const cb=[...document.querySelectorAll('.atb')].find(c=>c.value===v);if(cb)cb.checked=true;});
+    // Komorbidity – uloženy jako čitelný text, obnovujeme substring matchingem
     try{
-      const k=typeof record.komorbidity==='string'?JSON.parse(record.komorbidity||'{}'):(record.komorbidity||{});
+      const ks=record.komorbidity||'';
       const ck=(id,sub)=>{const el=document.getElementById(id);if(el){el.checked=true;if(sub)kSub(sub);}};
-      if(k.DM)ck('k_dm','dm');
-      if(k.AH)ck('k_ah','ah');
-      if(k.CKD||k.CHRI)ck('k_ckd','ckd');
-      if(k.ICHS)ck('k_ichs','ichs');
-      if(k['St.p.IM'])ck('k_im','im');
-      if(k['St.p.CMP'])ck('k_cmp','cmp');
-      if(k.Fajčiar)ck('k_fajc','fajc');
-      if(k.Obezita)ck('k_obez','obez');
-      if(k.Dyslipidémia)ck('k_dysl','dysl');
-      document.querySelector('.komor-details')?.setAttribute('open','');
+      if(/DM[12]/.test(ks))ck('k_dm','dm');
+      if(/AH – /.test(ks))ck('k_ah','ah');
+      if(/CKD/.test(ks))ck('k_chri','chri');
+      if(/ICHS/.test(ks))ck('k_ichs','ichs');
+      if(/St\.p\. ?IM/.test(ks))ck('k_im','im');
+      if(/St\.p\. ?CMP/.test(ks))ck('k_cmp','cmp');
+      if(/fajčiar|kuřák/i.test(ks))ck('k_faj','faj');
+      if(/Obezita/.test(ks))ck('k_obez','obez');
+      if(/Dyslipid/.test(ks))ck('k_dysl','dysl');
+      if(/CHOCHP/.test(ks))ck('k_chochp','chochp');
+      if(ks)document.querySelector('.komor-details')?.setAttribute('open','');
     }catch(e){}
     // Banner
     const banner=document.createElement('div');
@@ -1028,10 +1073,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   casDsaLat();
   loadEditRecord();
   gen();
+  window._dirty=false;
 });
 
 // Reset komorbidity - pageshow pokryva aj back-navigation, kde load nestaci
 function resetKomor(){
+  if(window._editRecordId)return;
   const det = document.querySelector('.komor-details');
   if(det) det.removeAttribute('open');
   document.querySelectorAll('#komordiv input[type=checkbox]').forEach(cb=>{ cb.checked=false; });
@@ -1039,6 +1086,7 @@ function resetKomor(){
 }
 window.addEventListener('pageshow', resetKomor);
 document.addEventListener('DOMContentLoaded', resetKomor);
+window.addEventListener('beforeunload',e=>{if(window._dirty){e.preventDefault();e.returnValue='';}});
 </script>
 </body>
 </html>
