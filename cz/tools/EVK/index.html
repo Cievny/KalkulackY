@@ -627,7 +627,8 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 </div>
 
 <script>
-const SO='<option>bez závažné stenózy</option><option>stenóza do 50%</option><option>stenóza 50–70%</option><option>stenóza 70–90%</option><option>kritická stenóza >90%</option><option>okluze</option><option>vlastní popis</option>';
+const SO='<option>bez závažné stenózy</option><option>stenóza do 50%</option><option>stenóza 50–70%</option><option>stenóza 70–90%</option><option>kritická stenóza >90%</option><option>okluze</option><option>stav po PVI</option><option>stav po stentingu</option><option>in-stent restenóza</option><option>okluze stentu</option><option>stav po bypassu</option><option>vlastní popis</option>';
+const SO_AFC=SO.replace('<option>vlastní popis</option>','<option>stav po profundoplastice</option><option>stav po TEA</option><option>vlastní popis</option>');
 const OPTS={balon:['Jade','Armada','Passeo','CrossTella','vlastní'],balon_deb:['MagicTouch','Elutax','Selution SLR','IN.PACT','vlastní'],balon_vprep:['Chocolate','Cutting balloon','AngioSculpt','Spur','Wolverine','vlastní'],stent:['AbsolutePro','Pulsar','Astron','BioMimics','Supera','Eluvia','Nitides','Dynetic','Isthmus','vlastní']};
 const STENT_TYP=['balónexpandibilní','samoexpandibilní','lékový (DES)'];
 const VESSEL_OPTS=['– tepna –','AIC l.sin.','AIC l.dx.','AIE l.sin.','AIE l.dx.','AII l.sin.','AII l.dx.','AFC l.sin.','AFC l.dx.','APF l.sin.','APF l.dx.','AFS l.sin.','AFS l.dx.','P1 l.sin.','P1 l.dx.','P2 l.sin.','P2 l.dx.','P3 l.sin.','P3 l.dx.','ATA l.sin.','ATA l.dx.','ATP l.sin.','ATP l.dx.','AFib l.sin.','AFib l.dx.','TTF l.sin.','TTF l.dx.'];
@@ -772,17 +773,18 @@ function buildFemDSA(){
   FEM_GROUPS.forEach(group=>{
     const h=document.createElement('div');h.className='st';h.style.marginTop='12px';h.textContent=group.st;c.appendChild(h);
     group.vs.forEach(([lbl,base])=>{
+      const so=(lbl==='AFC'||lbl==='APF')?SO_AFC:SO;
       if(lat==='bilat'){
         const row=document.createElement('div');row.className='bilat-row';
         row.innerHTML=`<div class="bilat-lbl">${lbl}</div>
-          <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${SO}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>
-          <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${SO}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
+          <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${so}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>
+          <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${so}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
         c.appendChild(row);
       } else {
         const sid=lat==='sin'?base+'_s':base+'_d';
         const row=document.createElement('div');
         row.style.cssText='display:grid;grid-template-columns:58px 1fr;gap:6px;margin-bottom:8px;align-items:center';
-        row.innerHTML=`<div class="bilat-lbl">${lbl}</div><div><select id="${sid}" onchange="cC('${sid}');gen()">${SO}</select><input type="text" id="${sid}_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
+        row.innerHTML=`<div class="bilat-lbl">${lbl}</div><div><select id="${sid}" onchange="cC('${sid}');gen()">${so}</select><input type="text" id="${sid}_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
         c.appendChild(row);
       }
     });
