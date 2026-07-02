@@ -118,6 +118,8 @@ CREATE TABLE IF NOT EXISTS aorta_indikacie (
   historia           TEXT   -- JSON log zmien statusu [{s,d}]
 );
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS rodne_cislo TEXT;
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS indikoval1 TEXT;
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS indikoval2 TEXT;
 
 -- aorta_prilohy – prílohy k požiadavke (prepis mailu, dokument, fotka)
 CREATE TABLE IF NOT EXISTS aorta_prilohy (

@@ -160,12 +160,14 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       <div class="fld"><label>Antitrombotická liečba</label><input id="af_medikacia" placeholder="ASA, NOAK…"></div>
     </div>
 
-    <div class="m-sec">6. Endovaskulárny plán (materiál a termín)</div>
+    <div class="m-sec">6. Endovaskulárny plán (indikácia, materiál a termín)</div>
     <div class="m-grid">
+      <div class="fld"><label>Indikoval (1)</label><select id="af_indikoval1"><option value="">–</option><option>Vařejka</option><option>Vincze</option><option>Širila</option></select></div>
+      <div class="fld"><label>Indikoval (2)</label><select id="af_indikoval2"><option value="">–</option><option>Vařejka</option><option>Vincze</option><option>Širila</option></select></div>
+      <div class="fld"><label>Plánovaný termín výkonu</label><input id="af_termin" type="date"></div>
       <div class="fld" style="grid-column:span 3"><label>Materiál na objednanie (stentgraft, rozmery…)</label><input id="af_material" placeholder="napr. Endurant II 28×16×145 + extenzie"></div>
       <div class="fld"><label>Materiál objednaný dňa</label><input id="af_material_objednany" type="date"></div>
       <div class="fld"><label>Materiál dodaný</label><select id="af_material_dodany"><option value="nie">Nie</option><option value="ano">Áno</option></select></div>
-      <div class="fld"><label>Termín výkonu</label><input id="af_termin" type="date"></div>
     </div>
 
     <div class="m-sec">7. Poznámka</div>
@@ -328,6 +330,7 @@ function cardEl(it){
     ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}
     ${dg?'<div class="card-line">'+escHtml(dg)+'</div>':''}
     ${it.ziadatel?'<div class="card-line">👤 '+escHtml(it.ziadatel)+'</div>':''}
+    ${(it.indikoval1||it.indikoval2)?'<div class="card-line">⚕️ indikoval: '+escHtml([it.indikoval1,it.indikoval2].filter(Boolean).join(' + '))+'</div>':''}
     ${matHtml}
     <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stave':''}${dTotal!==null?' • od požiadavky <b>'+dTotal+' d</b>':''}</div>
     <div class="card-actions">
@@ -361,7 +364,7 @@ function renderArchive(q){
 // ── Modal detail ─────────────────────────────────────────────
 const FIELDS=['rodne_cislo','inicialy','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','diagnoza','symptomy',
   'priemer','rast','datum_ct','krcok_dlzka','krcok_priemer','krcok_angulacia','iliaky',
-  'kardio','renalne','pulmo','frailty','dozitie','medikacia','material','material_objednany','material_dodany','termin','poznamka'];
+  'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','material','material_objednany','material_dodany','termin','poznamka'];
 // mapovanie form id -> DB stĺpec
 const DBMAP={priemer:'priemer_mm',rast:'rast_mm_rok',krcok_dlzka:'krcok_dlzka_mm',krcok_priemer:'krcok_priemer_mm'};
 
@@ -588,10 +591,11 @@ function buildZapis(){
   L.push('- Frailty: '+(o.frailty?'ÁNO (krehký pacient)':'nie (fit)'));
   L.push('- Očakávané dožitie: '+(o.dozitie==='<2'?'< 2 roky':'> 2 roky'));
   L.push('- Antitrombotická liečba: '+(o.medikacia||'bez špecifikácie'));
-  if(o.material||o.termin){
+  if(o.material||o.termin||o.indikoval1||o.indikoval2){
     L.push('4. ENDOVASKULÁRNY PLÁN');
+    if(o.indikoval1||o.indikoval2)L.push('- Indikoval: '+[o.indikoval1,o.indikoval2].filter(Boolean).join(' + '));
     if(o.material)L.push('- Materiál: '+o.material+(o.material_objednany?' (objednaný '+fmtD(o.material_objednany)+(o.material_dodany?', dodaný':', čaká sa na dodanie')+')':''));
-    if(o.termin)L.push('- Termín výkonu: '+fmtD(o.termin));
+    if(o.termin)L.push('- Plánovaný termín výkonu: '+fmtD(o.termin));
   }
   if(A.length){
     L.push('UPOZORNENIA (ESVS 2024):');
