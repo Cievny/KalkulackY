@@ -168,7 +168,8 @@ function render(){
         <button class="bmini" title="posunúť vyššie" onclick="moveRow(${idx},-1)">▲</button>
         <button class="bmini" title="posunúť nižšie" onclick="moveRow(${idx},1)">▼</button>
         ${vyr?`<button class="bmini" onclick="patchRow('${row.id}','stav','planovany');patchRow('${row.id}','vyradeny_dovod',null)">↩ Vrátiť</button>`
-             :`<button class="bmini bmini-out" onclick="vyradit('${row.id}')">⛔ Vyradiť</button>`}
+             :`<button class="bmini bmini-out" onclick="vyradit('${row.id}')">⛔ Vyradiť</button>
+        <button class="bmini" title="presunúť na iný deň" onclick="presunDen('${row.id}')">📆 Iný deň</button>`}
         <button class="bmini bmini-del" title="zmazať úplne" onclick="delRow('${row.id}')">🗑</button>
       </div>
       <div class="psub">
@@ -231,6 +232,32 @@ function vyradit(id){
   if(dovod===null)return;
   patchRow(id,'stav','vyradeny');
   if(dovod.trim())patchRow(id,'vyradeny_dovod',dovod.trim());
+}
+
+// presun pacienta na iný deň: kópia na cieľový deň + v pôvodnom dni ostane prečiarknutý so stopou
+async function presunDen(id){
+  const row=ROWS.find(r=>r.id===id);if(!row)return;
+  const d=new Date(g('datum'));d.setDate(d.getDate()+1);
+  const novy=prompt('Presunúť pacienta na deň (RRRR-MM-DD):',d.toISOString().slice(0,10));
+  if(novy===null)return;
+  const ciel=novy.trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(ciel)){msg('⚠️ Dátum zadajte v tvare RRRR-MM-DD','#b45309');return;}
+  if(ciel===g('datum')){msg('⚠️ To je ten istý deň','#b45309');return;}
+  try{
+    // poradie na konci cieľového dňa
+    let maxP=0;
+    const r0=await fetch(`${SB_URL}/rest/v1/${TBL}?datum=eq.${ciel}&select=poradie`,{headers:H()});
+    if(r0.ok){const ex=await r0.json();maxP=ex.length?Math.max(...ex.map(x=>x.poradie||0)):0;}
+    const kopia={datum:ciel,poradie:maxP+1,stav:'planovany',
+      meno:row.meno,rocnik:row.rocnik,diagnoza:row.diagnoza,lozko:row.lozko,
+      cas_okno:row.cas_okno,poloha:row.poloha,miesto_punkcie:row.miesto_punkcie,poznamka:row.poznamka};
+    const r1=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(kopia)});
+    if(!r1.ok){msg('❌ Chyba pri presune: '+r1.status,'#dc2626');return;}
+    await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+      body:JSON.stringify({stav:'vyradeny',vyradeny_dovod:'presunutý na '+fmtD(ciel),updated_at:new Date().toISOString()})});
+    msg('✓ Presunuté na '+fmtD(ciel),'#1d6f42');
+    await loadRows();
+  }catch(e){msg('❌ Chyba siete','#dc2626');}
 }
 
 async function delRow(id){
