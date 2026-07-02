@@ -941,11 +941,21 @@ function buildAutoZaver(){
   return z.trim();
 }
 
+// NIS-safe text: prázdné řádky dostanou mezeru (NIS je jinak slepí) a konce řádků jsou CRLF pro staré Windows editory
+function nisSafeTxt(t){
+  return t.replace(/─/g,'-').replace(/\n\n/g,'\n \n').replace(/\r?\n/g,'\r\n');
+}
 function copyTxt(){
-  const el=document.getElementById('out');el.select();el.setSelectionRange(0,99999);
-  try{document.execCommand('copy');msg('cmsg','✓ Zkopírováno','#1d6f42');}
-  catch(e){navigator.clipboard.writeText(el.value).then(()=>msg('cmsg','✓ Zkopírováno','#1d6f42')).catch(()=>msg('cmsg','⚠️ Označte text ručně (Ctrl+C)','#b45309'));}
-  window.getSelection()&&window.getSelection().removeAllRanges();
+  const txt=nisSafeTxt(document.getElementById('out').value);
+  const ok=()=>msg('cmsg','✓ Zkopírováno','#1d6f42');
+  const fallback=()=>{
+    const el=document.getElementById('out');el.select();el.setSelectionRange(0,99999);
+    try{document.execCommand('copy');ok();}
+    catch(e){msg('cmsg','⚠️ Označte text ručně (Ctrl+C)','#b45309');}
+    window.getSelection()&&window.getSelection().removeAllRanges();
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok).catch(fallback);
+  else fallback();
 }
 
 function collectStatsRow(){
@@ -1217,7 +1227,7 @@ function gen(){
   const y=new Date().getFullYear(),suf=g('id_suffix');if(suf)L.push('ID: EVK-'+y+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
   const tl=terr==='fem'?'Femoropopliteální + bérec':terr==='pelv'?'Pánevní (aortoiliakální)':'Pánevní + Femoropopliteální';
-  L.push('Řečiště: '+tl);L.push('─'.repeat(46));
+  L.push('Řečiště: '+tl);L.push('-'.repeat(46));
 
   const pi=[vek?vek+''+adj+' '+noun:noun,g('ruth')?'Rutherford '+g('ruth'):'',g('diag')].filter(Boolean);
   L.push('PACIENT: '+pi.join(', '));
