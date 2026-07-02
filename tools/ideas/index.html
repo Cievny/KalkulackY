@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>Nápady & Návrhy – cievny.sk</title>
+<title>Nápady & Požiadavky – cievny.sk</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f7;min-height:100vh;}
-.board{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:20px;max-width:1200px;margin:0 auto;}
+.board{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:16px 20px 20px;max-width:1200px;margin:0 auto;}
 .col{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:10px;}
 .col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
 .col-title{font-size:14px;font-weight:700;letter-spacing:.3px;}
@@ -21,7 +21,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .col-hotovo{border-top:3px solid #22c55e;}
 .card{background:#f8faff;border:1.5px solid #e5e9f5;border-radius:8px;padding:10px 12px;position:relative;cursor:default;}
 .card-text{font-size:13px;color:#1a2745;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
-.card-meta{font-size:10px;color:#9ca3af;margin-top:6px;}
+.card-meta{font-size:10px;color:#9ca3af;margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .card-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
 .btn-move{font-size:11px;font-weight:600;padding:3px 8px;border:1.5px solid #dde1ea;border-radius:5px;background:#fff;cursor:pointer;color:#374151;}
 .btn-move:hover{background:#f0f2f7;}
@@ -33,10 +33,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .add-area{margin-top:4px;}
 .add-area textarea{width:100%;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:60px;outline:none;color:#1a2745;}
 .add-area textarea:focus{border-color:#3b82f6;}
+.add-opts{display:flex;gap:6px;margin-top:6px;}
+.add-opts select{flex:1;padding:6px 8px;border:1.5px solid #dde1ea;border-radius:7px;font-size:12px;font-family:inherit;color:#374151;outline:none;background:#fff;min-width:0;}
 .btn-add{margin-top:6px;width:100%;padding:7px;background:#1e40af;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;}
 .btn-add:hover{background:#1737a0;}
-h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
-.page-sub{font-size:13px;color:#6b7280;padding:4px 20px 0;}
+.kat-badge{font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:8px;letter-spacing:.3px;}
+.kat-apka{background:#dbeafe;color:#1e40af;}
+.kat-oddelenie{background:#dcfce7;color:#166534;}
+.author{font-weight:600;color:#6b7280;}
+.filters{display:flex;gap:8px;padding:12px 20px 0;flex-wrap:wrap;max-width:1200px;margin:0 auto;}
+.fbtn{padding:7px 14px;border:1.5px solid #dde1ea;border-radius:8px;background:#fff;font-size:12.5px;font-weight:600;color:#374151;cursor:pointer;}
+.fbtn.active{background:#1e40af;color:#fff;border-color:#1e40af;}
+h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;max-width:1200px;margin:0 auto;}
+.page-sub{font-size:13px;color:#6b7280;padding:4px 20px 0;max-width:1200px;margin:0 auto;}
 @media(max-width:700px){.board{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -44,18 +53,28 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 <script src="/tools/auth.js"></script>
 <script>checkAuth();</script>
 
-<h1>💡 Nápady & Návrhy na úpravy</h1>
-<p class="page-sub">Zápisník pre nápady, návrhy a plánované zmeny systému.</p>
+<h1>💡 Nápady, návrhy & požiadavky</h1>
+<p class="page-sub">Návrhy na apku aj na fungovanie oddelenia. Príspevok môžete podpísať, alebo poslať anonymne.</p>
+
+<div class="filters">
+  <button class="fbtn active" onclick="setFilter('',this)">Všetko</button>
+  <button class="fbtn" onclick="setFilter('apka',this)">💻 Apka / systém</button>
+  <button class="fbtn" onclick="setFilter('oddelenie',this)">🏥 Oddelenie / prevádzka</button>
+</div>
 
 <div class="board">
   <div class="col col-napady" id="col-napady">
     <div class="col-header">
-      <span class="col-title">💡 Nápady</span>
+      <span class="col-title">💡 Nápady & požiadavky</span>
       <span class="col-count" id="cnt-napady">0</span>
     </div>
     <div id="cards-napady"></div>
     <div class="add-area">
-      <textarea id="inp-napady" placeholder="Napíš nápad alebo návrh..."></textarea>
+      <textarea id="inp-napady" placeholder="Napíš nápad, návrh alebo požiadavku..."></textarea>
+      <div class="add-opts">
+        <select id="kat-napady"><option value="apka">💻 Apka / systém</option><option value="oddelenie">🏥 Oddelenie</option></select>
+        <select id="pod-napady"><option value="meno">👤 S podpisom</option><option value="anonym">🕶 Anonymne</option></select>
+      </div>
       <button class="btn-add" onclick="addCard('napady')">+ Pridať</button>
     </div>
   </div>
@@ -68,6 +87,10 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
     <div id="cards-riesenie"></div>
     <div class="add-area">
       <textarea id="inp-riesenie" placeholder="Čo sa práve rieši..."></textarea>
+      <div class="add-opts">
+        <select id="kat-riesenie"><option value="apka">💻 Apka / systém</option><option value="oddelenie">🏥 Oddelenie</option></select>
+        <select id="pod-riesenie"><option value="meno">👤 S podpisom</option><option value="anonym">🕶 Anonymne</option></select>
+      </div>
       <button class="btn-add" onclick="addCard('riesenie')">+ Pridať</button>
     </div>
   </div>
@@ -80,6 +103,10 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
     <div id="cards-hotovo"></div>
     <div class="add-area">
       <textarea id="inp-hotovo" placeholder="Dokončená úprava..."></textarea>
+      <div class="add-opts">
+        <select id="kat-hotovo"><option value="apka">💻 Apka / systém</option><option value="oddelenie">🏥 Oddelenie</option></select>
+        <select id="pod-hotovo"><option value="meno">👤 S podpisom</option><option value="anonym">🕶 Anonymne</option></select>
+      </div>
       <button class="btn-add" onclick="addCard('hotovo')">+ Pridať</button>
     </div>
   </div>
@@ -89,16 +116,26 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 const SB_HEAD=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
+const TBL='ideas';
 
 const COLS=['napady','riesenie','hotovo'];
 const COL_LABELS={napady:'💡 Nápady',riesenie:'🔧 V riešení',hotovo:'✅ Hotovo'};
 let ITEMS=[];
+let FILTER='';
 
-function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escHtml(t){return (t==null?'':''+t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function myName(){const e=(typeof sbUserEmail==='function'?sbUserEmail():'')||'';return e.split('@')[0];}
+
+function setFilter(f,btn){
+  FILTER=f;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
 
 async function loadItems(){
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/ideas?order=created_at.desc&limit=500`,{headers:SB_HEAD()});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?order=created_at.desc&limit=500`,{headers:SB_HEAD()});
     ITEMS=r.ok?await r.json():[];
   }catch{ITEMS=[];}
   render();
@@ -107,7 +144,7 @@ async function loadItems(){
 function render(){
   COLS.forEach(col=>{
     const container=document.getElementById('cards-'+col);
-    const colItems=ITEMS.filter(i=>i.col===col);
+    const colItems=ITEMS.filter(i=>i.col===col&&(!FILTER||(i.kategoria||'apka')===FILTER));
     document.getElementById('cnt-'+col).textContent=colItems.length;
     container.innerHTML='';
     colItems.forEach(item=>{
@@ -116,9 +153,12 @@ function render(){
       const date=new Date(item.created_at).toLocaleDateString('sk-SK',{day:'numeric',month:'short',year:'numeric'});
       const moveButtons=COLS.filter(c=>c!==col).map(c=>`<button class="btn-move" onclick="moveCard('${item.id}','${c}')">${COL_LABELS[c]}</button>`).join('');
       const noteHtml=item.note?`<div class="card-note">📝 ${escHtml(item.note)}</div>`:'';
+      const kat=(item.kategoria||'apka');
+      const katBadge=`<span class="kat-badge kat-${kat}">${kat==='oddelenie'?'🏥 oddelenie':'💻 apka'}</span>`;
+      const who=item.author?`<span class="author">👤 ${escHtml(item.author)}</span>`:`<span class="author">🕶 anonym</span>`;
       div.innerHTML=`<div class="card-text">${escHtml(item.text)}</div>
         ${noteHtml}
-        <div class="card-meta">${date}</div>
+        <div class="card-meta">${katBadge}${who}<span>${date}</span></div>
         <div class="card-actions">${moveButtons}<button class="btn-note" onclick="saveNote('${item.id}')">📝 ${item.note?'Upraviť':'Pridať'} poznámku</button><button class="btn-del" onclick="delCard('${item.id}')">🗑 Zmazať</button></div>`;
       container.appendChild(div);
     });
@@ -129,9 +169,18 @@ async function addCard(col){
   const inp=document.getElementById('inp-'+col);
   const text=inp.value.trim();
   if(!text)return;
+  const kategoria=document.getElementById('kat-'+col).value;
+  const anonym=document.getElementById('pod-'+col).value==='anonym';
+  let author=null;
+  if(!anonym){
+    author=myName();
+    if(!author){author=(prompt('Vaše meno (podpis):','')||'').trim()||null;}
+  }
+  const body={col,text,kategoria,author};
+  if(anonym)body.created_by=null; // prepíše automatický email z databázy – anonymita platí naozaj
   inp.disabled=true;
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/ideas`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({col,text})});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
     if(r.ok){inp.value='';await loadItems();}
     else alert('Chyba pri ukladaní: '+r.status);
   }catch(e){alert('Chyba siete: '+e.message);}
@@ -140,7 +189,7 @@ async function addCard(col){
 
 async function moveCard(id,newCol){
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({col:newCol})});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({col:newCol})});
     if(r.ok)await loadItems();
   }catch(e){alert('Chyba siete: '+e.message);}
 }
@@ -150,7 +199,7 @@ async function saveNote(id){
   const note=prompt('Poznámka k nápadu:',item&&item.note?item.note:'');
   if(note===null)return; // zrušené
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({note:note.trim()||null})});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({note:note.trim()||null})});
     if(r.ok)await loadItems();
     else alert('Chyba pri ukladaní: '+r.status);
   }catch(e){alert('Chyba siete: '+e.message);}
@@ -159,7 +208,7 @@ async function saveNote(id){
 async function delCard(id){
   if(!confirm('Zmazať tento zápisok?'))return;
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD()});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD()});
     if(r.ok)await loadItems();
   }catch(e){alert('Chyba siete: '+e.message);}
 }

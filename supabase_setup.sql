@@ -226,6 +226,8 @@ CREATE TABLE IF NOT EXISTS ideas (
   author      TEXT
 );
 ALTER TABLE ideas ADD COLUMN IF NOT EXISTS note TEXT;
+ALTER TABLE ideas ADD COLUMN IF NOT EXISTS kategoria TEXT DEFAULT 'apka'; -- apka | oddelenie
+ALTER TABLE IF EXISTS cz_ideas ADD COLUMN IF NOT EXISTS kategoria TEXT DEFAULT 'apka';
 
 -- ============================================================
 -- 2. STĹPCE (ADD COLUMN IF NOT EXISTS – bezpečné opakovane)
