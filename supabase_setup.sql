@@ -75,6 +75,49 @@ CREATE TABLE IF NOT EXISTS evk_followup (
   poznamka TEXT
 );
 
+-- aorta_indikacie – pipeline pacientov na terapiu aorty
+CREATE TABLE IF NOT EXISTS aorta_indikacie (
+  id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at         TIMESTAMPTZ DEFAULT NOW(),
+  updated_at         TIMESTAMPTZ DEFAULT NOW(),
+  status             TEXT NOT NULL DEFAULT 'poziadavka', -- poziadavka | prezerane | indikovane | chirurgia | konzervativa | endo_material | endo_termin | archiv
+  -- pacient (GDPR: len iniciály + ročník, bez mena a RČ)
+  inicialy           TEXT,
+  rocnik             INT,
+  pohlavie           TEXT,
+  -- žiadanka
+  ziadatel           TEXT,
+  datum_poziadavky   TEXT,
+  urgencia           TEXT,
+  -- indikácia a morfológia
+  diagnoza           TEXT,
+  symptomy           TEXT,
+  priemer_mm         NUMERIC,
+  rast_mm_rok        NUMERIC,
+  datum_ct           TEXT,
+  -- anatómia
+  krcok_dlzka_mm     NUMERIC,
+  krcok_priemer_mm   NUMERIC,
+  krcok_angulacia    TEXT,
+  iliaky             TEXT,
+  -- fitness & riziko
+  kardio             TEXT,
+  renalne            TEXT,
+  pulmo              TEXT,
+  frailty            BOOLEAN,
+  dozitie            TEXT,
+  medikacia          TEXT,
+  -- endovaskulárny plán
+  material           TEXT,
+  material_objednany TEXT,
+  material_dodany    BOOLEAN,
+  termin             TEXT,
+  -- ostatné
+  poznamka           TEXT,
+  vysledok           TEXT,  -- dôvod uzavretia (archív)
+  historia           TEXT   -- JSON log zmien statusu [{s,d}]
+);
+
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -298,6 +341,7 @@ ALTER TABLE cas_vykony   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pevar_vykony ENABLE ROW LEVEL SECURITY;
 ALTER TABLE evk_followup ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ideas        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE aorta_indikacie ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "anon all evk"      ON evk_vykony;
 DROP POLICY IF EXISTS "anon insert evk"   ON evk_vykony;
@@ -323,3 +367,6 @@ CREATE POLICY "anon all followup" ON evk_followup FOR ALL TO anon USING (true) W
 
 DROP POLICY IF EXISTS "anon all ideas" ON ideas;
 CREATE POLICY "anon all ideas" ON ideas FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "anon all aorta" ON aorta_indikacie;
+CREATE POLICY "anon all aorta" ON aorta_indikacie FOR ALL TO anon USING (true) WITH CHECK (true);
