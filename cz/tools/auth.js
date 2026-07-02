@@ -114,6 +114,7 @@
   ];
 
   function injectNav(){
+    if(location.pathname.includes('/login'))return; // na login stránke nav nezobrazuj
     const existing=document.querySelector('.shared-nav');
     if(existing)return;
     const nav=document.createElement('div');
