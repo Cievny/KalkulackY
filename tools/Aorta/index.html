@@ -23,7 +23,10 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
 .col-title{font-size:12.5px;font-weight:700;letter-spacing:.2px;}
 .col-count{font-size:11px;font-weight:600;background:#f0f2f7;color:#6b7280;border-radius:10px;padding:2px 8px;}
-.card{background:#f8faff;border:1.5px solid #e5e9f5;border-radius:8px;padding:9px 10px;}
+.card{background:#f8faff;border:1.5px solid #e5e9f5;border-radius:8px;padding:9px 10px;cursor:grab;}
+.card.dragging{opacity:.45;}
+.col.drop-ok{outline:2px dashed #3b82f6;outline-offset:-2px;background:#eff6ff;}
+.arch-wrap details.drop-ok{outline:2px dashed #6b7280;outline-offset:-2px;background:#f3f4f6;}
 .card-id{font-size:13.5px;font-weight:700;color:#1a2745;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .badge{font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:8px;letter-spacing:.3px;}
 .badge-urg{background:#fef3c7;color:#b45309;}
@@ -337,10 +340,33 @@ function render(){
       const col=document.createElement('div');col.className='col';col.style.borderTop='3px solid '+st.color;
       col.innerHTML=`<div class="col-header"><span class="col-title" style="color:${st.color}">${st.label}</span><span class="col-count">${colItems.length}</span></div>`;
       colItems.forEach(it=>col.appendChild(cardEl(it)));
+      // drag & drop cieľ – len v rámci vlastného radu (AORTA/INÉ)
+      col.addEventListener('dragover',e=>{
+        if(DRAG.id&&DRAG.lane===lane&&DRAG.status!==st.key){e.preventDefault();col.classList.add('drop-ok');}
+      });
+      col.addEventListener('dragleave',()=>col.classList.remove('drop-ok'));
+      col.addEventListener('drop',e=>{
+        e.preventDefault();col.classList.remove('drop-ok');
+        if(DRAG.id&&DRAG.lane===lane&&DRAG.status!==st.key)moveCard(DRAG.id,st.key);
+        DRAG={};
+      });
       board.appendChild(col);
     });
   });
   renderArchive(q);
+}
+
+// drag & drop stav + archív ako cieľ
+let DRAG={};
+function initArchDrop(){
+  const det=document.querySelector('.arch-wrap details');
+  det.addEventListener('dragover',e=>{if(DRAG.id){e.preventDefault();det.classList.add('drop-ok');}});
+  det.addEventListener('dragleave',()=>det.classList.remove('drop-ok'));
+  det.addEventListener('drop',e=>{
+    e.preventDefault();det.classList.remove('drop-ok');
+    if(DRAG.id)openArch(DRAG.id);
+    DRAG={};
+  });
 }
 
 function toggleKategoria(){
@@ -382,6 +408,13 @@ function toggleEndoleak(){
 
 function cardEl(it){
   const div=document.createElement('div');div.className='card';
+  div.draggable=true;
+  div.addEventListener('dragstart',e=>{
+    DRAG={id:it.id,lane:kat(it),status:it.status};
+    e.dataTransfer.effectAllowed='move';
+    div.classList.add('dragging');
+  });
+  div.addEventListener('dragend',()=>{div.classList.remove('dragging');DRAG={};});
   const alerts=esvsAlerts(it);
   const hasRed=alerts.some(a=>a.t==='red');
   const hist=parseHist(it);
@@ -792,6 +825,7 @@ function copyZapis(){
 }
 
 loadItems();
+initArchDrop();
 
 // auto-refresh boardu každých 60 s (keď nie je otvorený modál a stránka je viditeľná)
 setInterval(()=>{
