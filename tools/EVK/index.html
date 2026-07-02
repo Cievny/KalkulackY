@@ -968,7 +968,7 @@ async function saveToSupabase(table,data){
   const isEdit=table==='evk_vykony'&&!!window._editRecordId;
   if(isEdit){data={...data};Object.keys(data).forEach(k=>{if(data[k]===''||data[k]==null)delete data[k];});delete data.vykon_id;}
   const url=`${SB_URL}/rest/v1/${table}`+(isEdit?`?id=eq.${window._editRecordId}`:'');
-  return fetch(url,{method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},body:JSON.stringify(data)});
+  return fetch(url,{method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
 }
 function collectFullData(){
   const dsaFields=['v_Ao','v_AIC_s','v_AIC_d','v_AIE_s','v_AIE_d','v_AII_s','v_AII_d',

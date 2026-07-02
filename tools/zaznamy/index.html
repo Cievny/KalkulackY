@@ -100,7 +100,7 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
 <script>
 const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
-const SB_HEAD={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+const SB_HEAD=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
 const TABLES={evk:'evk_vykony',cas:'cas_vykony',pevar:'pevar_vykony'};
 const TOOL_LABEL={evk:'EVK',cas:'CAS',pevar:'PEVAR'};
 // stĺpce, ktoré sa needitujú
@@ -118,7 +118,7 @@ async function loadAll(){
   ROWS=[];
   for(const [tool,table] of Object.entries(TABLES)){
     try{
-      const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.desc&limit=1000`,{headers:SB_HEAD});
+      const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.desc&limit=1000`,{headers:SB_HEAD()});
       if(r.ok){const arr=await r.json();arr.forEach(d=>ROWS.push({tool,table,data:d}));}
     }catch(e){/* ignore */}
   }
@@ -228,7 +228,7 @@ async function saveRecord(){
   msg('Ukladám…','#3b82f6');
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${CURRENT.table}?id=eq.${CURRENT.data.id}`,
-      {method:'PATCH',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify(changes)});
+      {method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify(changes)});
     if(r.ok){
       Object.assign(CURRENT.data,changes);
       msg('✅ Uložené ('+keys.length+' polí)','#16a34a');
@@ -243,7 +243,7 @@ async function delRecord(){
   if(!confirm('Naozaj zmazať tento záznam? Túto akciu nie je možné vrátiť.'))return;
   msg('Mažem…','#dc2626');
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/${CURRENT.table}?id=eq.${CURRENT.data.id}`,{method:'DELETE',headers:SB_HEAD});
+    const r=await fetch(`${SB_URL}/rest/v1/${CURRENT.table}?id=eq.${CURRENT.data.id}`,{method:'DELETE',headers:SB_HEAD()});
     if(r.ok){ROWS=ROWS.filter(x=>x.data.id!==CURRENT.data.id);render();closeModal();}
     else msg('Chyba '+r.status,'#dc2626');
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}

@@ -931,7 +931,7 @@ async function saveToSupabase(){
     const _url=SB_URL+'/rest/v1/pevar_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
     const r=await fetch(_url,{
       method:_isEdit?'PATCH':'POST',
-      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},
+      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},
       body:JSON.stringify(payload)
     });
     if(r.ok){window._dirty=false;msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');}

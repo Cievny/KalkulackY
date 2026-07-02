@@ -1,26 +1,89 @@
 // Shared auth + navigation for cievny.sk tools
+// Supabase Auth (JWT) s fallbackom na legacy heslo počas migrácie.
 (function(){
-  const HASH='1361e98fcf8c152a1f48690a2ec88c9fafb11c5a1355c3a2aa000154092065fc';
+  const HASH='1361e98fcf8c152a1f48690a2ec88c9fafb11c5a1355c3a2aa000154092065fc'; // legacy fallback
   const KEY='cievny_auth';
+  const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+  const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
+  const AUTH_EMAIL='oira@cievny.sk'; // účet vytvorený v Supabase → Authentication → Users
+  const TK=KEY+'_at', RK=KEY+'_rt', XK=KEY+'_exp';
 
   async function sha256(str){
     const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
     return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
   }
 
+  function storeSession(d){
+    sessionStorage.setItem(KEY,'1');
+    if(d&&d.access_token){
+      sessionStorage.setItem(TK,d.access_token);
+      sessionStorage.setItem(RK,d.refresh_token||'');
+      sessionStorage.setItem(XK,String(Date.now()+(d.expires_in?d.expires_in*1000:3600000)));
+    }
+  }
+
+  // Token pre REST volania: JWT prihláseného usera, fallback na anon kľúč (kým nie je RLS sprísnené)
+  window.sbToken=function(){
+    return sessionStorage.getItem(TK)||SB_ANON;
+  };
+  window.sbHeaders=function(){
+    return {'apikey':SB_ANON,'Authorization':'Bearer '+window.sbToken(),'Content-Type':'application/json'};
+  };
+
+  async function refreshToken(){
+    const rt=sessionStorage.getItem(RK);
+    if(!rt)return false;
+    try{
+      const r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{
+        method:'POST',headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({refresh_token:rt})
+      });
+      if(!r.ok)return false;
+      storeSession(await r.json());
+      return true;
+    }catch(e){return false;}
+  }
+
+  function scheduleRefresh(){
+    setInterval(()=>{
+      const exp=parseInt(sessionStorage.getItem(XK)||'0');
+      if(exp&&Date.now()>exp-10*60000)refreshToken();
+    },5*60000);
+  }
+
   window.checkAuth=function(){
     if(sessionStorage.getItem(KEY)!=='1'){
       sessionStorage.setItem('cievny_return',location.pathname);
       location.replace('/tools/login/');
+      return;
     }
+    const exp=parseInt(sessionStorage.getItem(XK)||'0');
+    if(exp&&Date.now()>exp-10*60000)refreshToken();
+    scheduleRefresh();
   };
 
   window.doLogin=async function(){
     const pw=document.getElementById('pw').value;
     const msg=document.getElementById('login-msg');
+    msg.textContent='Prihlasujem…';msg.style.color='#6b7280';
+    // 1) Supabase Auth
+    try{
+      const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
+        method:'POST',headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({email:AUTH_EMAIL,password:pw})
+      });
+      if(r.ok){
+        storeSession(await r.json());
+        const ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
+        sessionStorage.removeItem('cievny_return');
+        location.replace(ret);
+        return;
+      }
+    }catch(e){/* sieť — skús legacy */}
+    // 2) Legacy fallback (funguje len kým RLS povoľuje anon zápis)
     const h=await sha256(pw);
     if(h===HASH){
-      sessionStorage.setItem(KEY,'1');
+      storeSession(null);
       const ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
       sessionStorage.removeItem('cievny_return');
       location.replace(ret);
@@ -34,6 +97,9 @@
 
   window.doLogout=function(){
     sessionStorage.removeItem(KEY);
+    sessionStorage.removeItem(TK);
+    sessionStorage.removeItem(RK);
+    sessionStorage.removeItem(XK);
     location.replace('/tools/login/');
   };
 

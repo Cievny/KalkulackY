@@ -88,7 +88,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 <script>
 const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
-const SB_HEAD={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+const SB_HEAD=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
 
 const COLS=['napady','riesenie','hotovo'];
 const COL_LABELS={napady:'💡 Nápady',riesenie:'🔧 V riešení',hotovo:'✅ Hotovo'};
@@ -98,7 +98,7 @@ function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(
 
 async function loadItems(){
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/ideas?order=created_at.desc&limit=500`,{headers:SB_HEAD});
+    const r=await fetch(`${SB_URL}/rest/v1/ideas?order=created_at.desc&limit=500`,{headers:SB_HEAD()});
     ITEMS=r.ok?await r.json():[];
   }catch{ITEMS=[];}
   render();
@@ -131,7 +131,7 @@ async function addCard(col){
   if(!text)return;
   inp.disabled=true;
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/ideas`,{method:'POST',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify({col,text})});
+    const r=await fetch(`${SB_URL}/rest/v1/ideas`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({col,text})});
     if(r.ok){inp.value='';await loadItems();}
     else alert('Chyba pri ukladaní: '+r.status);
   }catch(e){alert('Chyba siete: '+e.message);}
@@ -140,7 +140,7 @@ async function addCard(col){
 
 async function moveCard(id,newCol){
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify({col:newCol})});
+    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({col:newCol})});
     if(r.ok)await loadItems();
   }catch(e){alert('Chyba siete: '+e.message);}
 }
@@ -150,7 +150,7 @@ async function saveNote(id){
   const note=prompt('Poznámka k nápadu:',item&&item.note?item.note:'');
   if(note===null)return; // zrušené
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify({note:note.trim()||null})});
+    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({note:note.trim()||null})});
     if(r.ok)await loadItems();
     else alert('Chyba pri ukladaní: '+r.status);
   }catch(e){alert('Chyba siete: '+e.message);}
@@ -159,7 +159,7 @@ async function saveNote(id){
 async function delCard(id){
   if(!confirm('Zmazať tento zápisok?'))return;
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD});
+    const r=await fetch(`${SB_URL}/rest/v1/ideas?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD()});
     if(r.ok)await loadItems();
   }catch(e){alert('Chyba siete: '+e.message);}
 }
