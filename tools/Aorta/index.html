@@ -111,51 +111,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       <div class="fld"><label>Urgencia</label><select id="af_urgencia"><option>elektívne</option><option>urgentné</option><option>emergentné</option></select></div>
     </div>
 
-    <div class="m-sec">2. Indikácia a morfológia</div>
-    <div class="m-grid">
-      <div class="fld"><label>Diagnóza</label><select id="af_diagnoza">
-        <option>AAA infrarenálna</option><option>AAA juxtarenálna</option><option>AAA suprarenálna</option>
-        <option>TAAA</option><option>Aneuryzma hrudnej aorty</option><option>Disekcia typ B</option>
-        <option>PAU</option><option>IMH</option><option>Aneuryzma iliaky</option><option>Iné</option>
-      </select></div>
-      <div class="fld"><label>Klinický stav</label><select id="af_symptomy"><option>asymptomatický</option><option>symptomatický</option><option>ruptúra</option></select></div>
-      <div class="fld"><label>Max. priemer (mm)</label><input id="af_priemer" type="number" step="0.1" placeholder="55"></div>
-      <div class="fld"><label>Rast (mm/rok)</label><input id="af_rast" type="number" step="0.1" placeholder="5"></div>
-      <div class="fld"><label>Dátum CT angio</label><input id="af_datum_ct" type="date"></div>
-    </div>
-
-    <div class="m-sec">3. Anatómia (CT angio)</div>
-    <div class="m-grid">
-      <div class="fld"><label>Krčok – dĺžka (mm)</label><input id="af_krcok_dlzka" type="number" step="0.1" placeholder="ideál ≥15"></div>
-      <div class="fld"><label>Krčok – priemer (mm)</label><input id="af_krcok_priemer" type="number" step="0.1" placeholder="ideál <30"></div>
-      <div class="fld"><label>Krčok – angulácia</label><select id="af_krcok_angulacia"><option value="">–</option><option value="&lt;60">&lt; 60°</option><option value="&gt;60">&gt; 60° (hostile)</option></select></div>
-      <div class="fld" style="grid-column:span 3"><label>Iliacký prístup</label><select id="af_iliaky">
-        <option value="">–</option><option>priechodné</option><option>stenotické / kalcifikované</option><option>výrazná tortuozita (kinking)</option><option>aneuryzma iliaky</option>
-      </select></div>
-    </div>
-
-    <div class="m-sec">4. Fitness &amp; riziko</div>
-    <div class="m-grid">
-      <div class="fld"><label>Kardiálne riziko</label><select id="af_kardio"><option value="">–</option><option>stabilné / nízke riziko</option><option>stredné riziko</option><option>vysoké riziko (NYHA III–IV)</option></select></div>
-      <div class="fld"><label>Renálne funkcie (eGFR)</label><input id="af_renalne" placeholder="napr. 52"></div>
-      <div class="fld"><label>Pľúcny status</label><select id="af_pulmo"><option value="">–</option><option>bez ťažkostí</option><option>CHOCHP / obmedzenie</option><option>ťažké obmedzenie</option></select></div>
-      <div class="fld"><label>Frailty (krehkosť)</label><select id="af_frailty"><option value="nie">Nie (fit)</option><option value="ano">Áno (krehký)</option></select></div>
-      <div class="fld"><label>Očakávané dožitie</label><select id="af_dozitie"><option value="&gt;2">&gt; 2 roky</option><option value="&lt;2">&lt; 2 roky</option></select></div>
-      <div class="fld"><label>Antitrombotická liečba</label><input id="af_medikacia" placeholder="ASA, NOAK…"></div>
-    </div>
-
-    <div class="m-sec">5. Endovaskulárny plán (materiál a termín)</div>
-    <div class="m-grid">
-      <div class="fld" style="grid-column:span 3"><label>Materiál na objednanie (stentgraft, rozmery…)</label><input id="af_material" placeholder="napr. Endurant II 28×16×145 + extenzie"></div>
-      <div class="fld"><label>Materiál objednaný dňa</label><input id="af_material_objednany" type="date"></div>
-      <div class="fld"><label>Materiál dodaný</label><select id="af_material_dodany"><option value="nie">Nie</option><option value="ano">Áno</option></select></div>
-      <div class="fld"><label>Termín výkonu</label><input id="af_termin" type="date"></div>
-    </div>
-
-    <div class="m-sec">6. Poznámka</div>
-    <div class="fld"><textarea id="af_poznamka" placeholder="Ďalšie informácie…"></textarea></div>
-
-    <div class="m-sec">7. Prílohy (prepis mailu, dokument, fotka)</div>
+    <div class="m-sec">2. Prílohy (prepis mailu, dokument, fotka)</div>
     <p class="page-sub" id="pril_hint" style="padding:0 0 6px">Prílohy môžete pridávať po uložení požiadavky.</p>
     <div id="pril_box" style="display:none">
       <div id="pril_list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
@@ -170,6 +126,50 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
         </div>
       </div>
     </div>
+
+    <div class="m-sec">3. Indikácia a morfológia</div>
+    <div class="m-grid">
+      <div class="fld"><label>Diagnóza</label><select id="af_diagnoza">
+        <option>AAA infrarenálna</option><option>AAA juxtarenálna</option><option>AAA suprarenálna</option>
+        <option>TAAA</option><option>Aneuryzma hrudnej aorty</option><option>Disekcia typ B</option>
+        <option>PAU</option><option>IMH</option><option>Aneuryzma iliaky</option><option>Iné</option>
+      </select></div>
+      <div class="fld"><label>Klinický stav</label><select id="af_symptomy"><option>asymptomatický</option><option>symptomatický</option><option>ruptúra</option></select></div>
+      <div class="fld"><label>Max. priemer (mm)</label><input id="af_priemer" type="number" step="0.1" placeholder="55"></div>
+      <div class="fld"><label>Rast (mm/rok)</label><input id="af_rast" type="number" step="0.1" placeholder="5"></div>
+      <div class="fld"><label>Dátum CT angio</label><input id="af_datum_ct" type="date"></div>
+    </div>
+
+    <div class="m-sec">4. Anatómia (CT angio)</div>
+    <div class="m-grid">
+      <div class="fld"><label>Krčok – dĺžka (mm)</label><input id="af_krcok_dlzka" type="number" step="0.1" placeholder="ideál ≥15"></div>
+      <div class="fld"><label>Krčok – priemer (mm)</label><input id="af_krcok_priemer" type="number" step="0.1" placeholder="ideál <30"></div>
+      <div class="fld"><label>Krčok – angulácia</label><select id="af_krcok_angulacia"><option value="">–</option><option value="&lt;60">&lt; 60°</option><option value="&gt;60">&gt; 60° (hostile)</option></select></div>
+      <div class="fld" style="grid-column:span 3"><label>Iliacký prístup</label><select id="af_iliaky">
+        <option value="">–</option><option>priechodné</option><option>stenotické / kalcifikované</option><option>výrazná tortuozita (kinking)</option><option>aneuryzma iliaky</option>
+      </select></div>
+    </div>
+
+    <div class="m-sec">5. Fitness &amp; riziko</div>
+    <div class="m-grid">
+      <div class="fld"><label>Kardiálne riziko</label><select id="af_kardio"><option value="">–</option><option>stabilné / nízke riziko</option><option>stredné riziko</option><option>vysoké riziko (NYHA III–IV)</option></select></div>
+      <div class="fld"><label>Renálne funkcie (eGFR)</label><input id="af_renalne" placeholder="napr. 52"></div>
+      <div class="fld"><label>Pľúcny status</label><select id="af_pulmo"><option value="">–</option><option>bez ťažkostí</option><option>CHOCHP / obmedzenie</option><option>ťažké obmedzenie</option></select></div>
+      <div class="fld"><label>Frailty (krehkosť)</label><select id="af_frailty"><option value="nie">Nie (fit)</option><option value="ano">Áno (krehký)</option></select></div>
+      <div class="fld"><label>Očakávané dožitie</label><select id="af_dozitie"><option value="&gt;2">&gt; 2 roky</option><option value="&lt;2">&lt; 2 roky</option></select></div>
+      <div class="fld"><label>Antitrombotická liečba</label><input id="af_medikacia" placeholder="ASA, NOAK…"></div>
+    </div>
+
+    <div class="m-sec">6. Endovaskulárny plán (materiál a termín)</div>
+    <div class="m-grid">
+      <div class="fld" style="grid-column:span 3"><label>Materiál na objednanie (stentgraft, rozmery…)</label><input id="af_material" placeholder="napr. Endurant II 28×16×145 + extenzie"></div>
+      <div class="fld"><label>Materiál objednaný dňa</label><input id="af_material_objednany" type="date"></div>
+      <div class="fld"><label>Materiál dodaný</label><select id="af_material_dodany"><option value="nie">Nie</option><option value="ano">Áno</option></select></div>
+      <div class="fld"><label>Termín výkonu</label><input id="af_termin" type="date"></div>
+    </div>
+
+    <div class="m-sec">7. Poznámka</div>
+    <div class="fld"><textarea id="af_poznamka" placeholder="Ďalšie informácie…"></textarea></div>
 
     <div class="alerts" id="m_alerts"></div>
 
