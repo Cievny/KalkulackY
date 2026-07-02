@@ -136,11 +136,15 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 
     <div class="m-sec" data-t="Indikácia a morfológia">3. Indikácia a morfológia</div>
     <div class="m-grid">
-      <div class="fld"><label>Diagnóza</label><select id="af_diagnoza">
+      <div class="fld"><label>Diagnóza</label><select id="af_diagnoza" onchange="toggleEndoleak()">
         <option>AAA infrarenálna</option><option>AAA juxtarenálna</option><option>AAA suprarenálna</option>
         <option>TAAA</option><option>Aneuryzma hrudnej aorty</option><option>Disekcia typ B</option>
-        <option>PAU</option><option>IMH</option><option>Aneuryzma iliaky</option><option>Iné</option>
+        <option>PAU</option><option>IMH</option><option>Aneuryzma iliaky</option>
+        <option>Endoleak po EVAR/TEVAR</option><option>Reintervencia po EVAR/TEVAR</option><option>Iné</option>
       </select><input id="af_diagnoza_ine" placeholder="voľný text – napr. stenóza AFS l.dx." style="display:none"></div>
+      <div class="fld" id="fld_endoleak" style="display:none"><label>Typ endoleaku</label><select id="af_endoleak_typ">
+        <option value="">neurčený</option><option>typ Ia</option><option>typ Ib</option><option>typ II</option><option>typ III</option><option>typ IV</option><option>typ V (endotenzia)</option>
+      </select></div>
       <div class="fld"><label>Klinický stav</label><select id="af_symptomy"><option>asymptomatický</option><option>symptomatický</option><option>ruptúra</option></select></div>
       <div class="fld" id="fld_priemer"><label>Max. priemer (mm)</label><input id="af_priemer" type="number" step="0.1" placeholder="55"></div>
       <div class="fld" id="fld_rast"><label>Rast (mm/rok)</label><input id="af_rast" type="number" step="0.1" placeholder="5"></div>
@@ -349,6 +353,7 @@ function toggleKategoria(){
   document.getElementById('fld_vykon').style.display=ine?'none':'';
   document.getElementById('fld_indik_pozn').style.display=ine?'none':'';
   toggleVykon();
+  toggleEndoleak();
   // prečíslovanie viditeľných sekcií
   let n=0;
   document.querySelectorAll('.modal .m-sec').forEach(el=>{
@@ -364,6 +369,12 @@ function toggleVykon(){
   document.getElementById('fld_vykon_cieva').style.display=(!ine&&emb)?'':'none';
 }
 
+function toggleEndoleak(){
+  const ine=document.getElementById('af_kategoria').value==='ine';
+  const el=document.getElementById('af_diagnoza').value.startsWith('Endoleak');
+  document.getElementById('fld_endoleak').style.display=(!ine&&el)?'':'none';
+}
+
 function cardEl(it){
   const div=document.createElement('div');div.className='card';
   const alerts=esvsAlerts(it);
@@ -374,7 +385,7 @@ function cardEl(it){
   const dTotal=it.datum_poziadavky?daysBetween(it.datum_poziadavky,today()):null;
   const urgBadge=it.urgencia==='urgentné'?'<span class="badge badge-urg">URG</span>':it.urgencia==='emergentné'?'<span class="badge badge-emerg">EMERG</span>':'';
   const esvsBadge=hasRed?'<span class="badge badge-esvs" title="'+escHtml(alerts.filter(a=>a.t==='red').map(a=>a.x).join(' | '))+'">'+(kat(it)==='aorta'?'⚠ ESVS':'⚠')+'</span>':'';
-  const dg=[it.diagnoza,it.priemer_mm?it.priemer_mm+' mm':'',it.rast_mm_rok?'rast '+it.rast_mm_rok+' mm/r':''].filter(Boolean).join(' • ');
+  const dg=[it.diagnoza?it.diagnoza+(it.endoleak_typ?' ('+it.endoleak_typ+')':''):'',it.priemer_mm?it.priemer_mm+' mm':'',it.rast_mm_rok?'rast '+it.rast_mm_rok+' mm/r':''].filter(Boolean).join(' • ');
   let matHtml='';
   if(it.status==='endo_material'||it.status==='endo_termin'){
     const m=[];
@@ -429,7 +440,7 @@ function renderArchive(q){
 // ── Modal detail ─────────────────────────────────────────────
 const FIELDS=['kategoria','rodne_cislo','inicialy','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','diagnoza','symptomy',
   'priemer','rast','datum_ct','krcok_dlzka','krcok_priemer','krcok_angulacia','iliaky',
-  'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','vykon_typ','vykon_cieva','indikacia_poznamka','material','material_objednany','material_dodany','termin','zaver_seminara','poznamka'];
+  'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','vykon_typ','vykon_cieva','indikacia_poznamka','material','material_objednany','material_dodany','termin','zaver_seminara','poznamka','endoleak_typ'];
 // mapovanie form id -> DB stĺpec
 const DBMAP={priemer:'priemer_mm',rast:'rast_mm_rok',krcok_dlzka:'krcok_dlzka_mm',krcok_priemer:'krcok_priemer_mm'};
 
@@ -446,11 +457,12 @@ function formToObj(){
     o.diagnoza=document.getElementById('af_diagnoza_ine').value.trim()||null;
     // skryté sekcie (morfológia, anatómia, fitness, aortálny výkon) sa pri INÉ neukladajú
     ['priemer_mm','rast_mm_rok','krcok_dlzka_mm','krcok_priemer_mm','krcok_angulacia','iliaky',
-     'kardio','renalne','pulmo','frailty','dozitie','medikacia','vykon_typ','vykon_cieva','indikacia_poznamka'].forEach(k=>o[k]=null);
+     'kardio','renalne','pulmo','frailty','dozitie','medikacia','vykon_typ','vykon_cieva','indikacia_poznamka','endoleak_typ'].forEach(k=>o[k]=null);
   }else{
     o.zaver_seminara=null; // záver seminára je len pre INÉ
   }
   if(o.vykon_typ!=='Embolizácia')o.vykon_cieva=null; // cieva len pri embolizácii
+  if(!(o.diagnoza||'').startsWith('Endoleak'))o.endoleak_typ=null; // typ len pri endoleaku
   return o;
 }
 function objToForm(it){
@@ -682,7 +694,7 @@ function buildZapis(){
   L.push('-'.repeat(46));
   L.push('1. INDIKÁCIA A MORFOLÓGIA');
   L.push('- Klinický stav: '+(o.symptomy||'?').toUpperCase()+(o.urgencia?' ('+o.urgencia+')':''));
-  L.push('- Diagnóza: '+(o.diagnoza||'?'));
+  L.push('- Diagnóza: '+(o.diagnoza||'?')+(o.endoleak_typ?' – '+o.endoleak_typ:''));
   L.push('- Max. priemer: '+(o.priemer_mm??'?')+' mm'+(o.rast_mm_rok?' (rast: '+o.rast_mm_rok+' mm/rok)':''));
   L.push('2. ANATOMICKÉ PARAMETRE (CT angio: '+(o.datum_ct?fmtD(o.datum_ct):'doplniť')+')');
   L.push('- Proximálny krčok: dĺžka '+(o.krcok_dlzka_mm??'?')+' mm | priemer '+(o.krcok_priemer_mm??'?')+' mm | angulácia '+(o.krcok_angulacia==='<60'?'< 60° (priaznivá)':o.krcok_angulacia==='>60'?'> 60° (nepriaznivá)':'?'));

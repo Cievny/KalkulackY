@@ -125,6 +125,7 @@ ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS zaver_seminara TEXT; -- zá
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS vykon_typ TEXT;          -- PEVAR | TEVAR | FEVAR | BEVAR | ISLF+ThEVAR | ISL+EVAR | Embolizácia
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS vykon_cieva TEXT;        -- pri embolizácii: ktorá cieva
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS indikacia_poznamka TEXT; -- poznámka k indikácii (aorta)
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS endoleak_typ TEXT;       -- typ endoleaku (Ia/Ib/II/III/IV/V) pri dg. Endoleak
 
 -- aorta_prilohy – prílohy k požiadavke (prepis mailu, dokument, fotka)
 CREATE TABLE IF NOT EXISTS aorta_prilohy (
