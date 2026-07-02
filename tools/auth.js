@@ -111,6 +111,7 @@
     {href:'/tools/analytics/',label:'📊 Štatistiky'},
     {href:'/tools/zaznamy/',label:'📁 Záznamy'},
     {href:'/tools/ideas/',label:'💡 Nápady'},
+    {href:'/tools/zaloha/',label:'💾 Záloha'},
   ];
 
   function injectNav(){

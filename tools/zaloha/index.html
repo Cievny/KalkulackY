@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Záloha dát – cievny.sk</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f7;min-height:100vh;color:#1a2745;}
+.wrap{max-width:760px;margin:0 auto;padding:24px 20px;}
+h1{font-size:18px;font-weight:700;margin-bottom:4px;}
+.page-sub{font-size:13px;color:#6b7280;margin-bottom:20px;}
+.card{background:#fff;border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px;}
+.card h2{font-size:15px;font-weight:700;margin-bottom:8px;}
+.card p{font-size:13px;color:#4b5563;margin-bottom:14px;line-height:1.5;}
+.btn{padding:10px 18px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-primary{background:#1e40af;color:#fff;}
+.btn-primary:hover{background:#1737a0;}
+.btn-primary:disabled{background:#93a6d8;cursor:wait;}
+.btn-sec{background:#f0f2f7;color:#1a2745;border:1.5px solid #dde1ea;margin-left:8px;}
+#status{font-size:13px;font-weight:600;margin-top:12px;min-height:20px;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{text-align:left;padding:6px 10px;font-size:13px;border-bottom:1px solid #eef1f6;}
+th{font-size:11px;text-transform:uppercase;color:#6b7280;letter-spacing:.3px;}
+.cnt{font-weight:700;color:#1e40af;}
+.note{font-size:12px;color:#9ca3af;margin-top:10px;}
+</style>
+</head>
+<body>
+<script src="/tools/auth.js"></script>
+<script>checkAuth();</script>
+
+<div class="wrap">
+  <h1>💾 Záloha dát</h1>
+  <p class="page-sub">Stiahnutie kompletnej kópie všetkých záznamov (SK aj CZ) do súboru.</p>
+
+  <div class="card">
+    <h2>Kompletná záloha</h2>
+    <p>Stiahne všetky tabuľky (EVK, CAS, PEVAR, follow-up, nápady — slovenské aj české) do jedného JSON súboru. Súbor si ulož na bezpečné miesto (napr. nemocničný disk). Odporúčame zálohovať aspoň raz mesačne.</p>
+    <button class="btn btn-primary" id="btn_json" onclick="downloadBackup('json')">⬇️ Stiahnuť zálohu (JSON)</button>
+    <button class="btn btn-sec" id="btn_csv" onclick="downloadBackup('csv')">⬇️ CSV (každá tabuľka zvlášť)</button>
+    <div id="status"></div>
+    <table id="summary" style="display:none">
+      <thead><tr><th>Tabuľka</th><th>Počet záznamov</th></tr></thead>
+      <tbody id="sum_body"></tbody>
+    </table>
+    <p class="note">JSON obsahuje všetky polia a dá sa z neho obnoviť databáza. CSV je vhodné pre Excel/SPSS/R.</p>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+const TABLES=['evk_vykony','cas_vykony','pevar_vykony','evk_followup','ideas',
+              'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_ideas'];
+
+async function fetchAll(table){
+  const rows=[];let offset=0;
+  while(true){
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.asc&limit=1000&offset=${offset}`,{headers:sbHeaders()});
+    if(!r.ok)throw new Error(table+': HTTP '+r.status);
+    const arr=await r.json();
+    rows.push(...arr);
+    if(arr.length<1000)break;
+    offset+=1000;
+  }
+  return rows;
+}
+
+function dl(filename,content,mime){
+  const blob=new Blob([content],{type:mime});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function toCSV(rows){
+  if(!rows.length)return'';
+  const cols=[...new Set(rows.flatMap(r=>Object.keys(r)))];
+  const esc=v=>{if(v==null)return'';const s=typeof v==='object'?JSON.stringify(v):String(v);return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
+  return cols.join(';')+'\n'+rows.map(r=>cols.map(c=>esc(r[c])).join(';')).join('\n');
+}
+
+async function downloadBackup(fmt){
+  const st=document.getElementById('status');
+  const b1=document.getElementById('btn_json'),b2=document.getElementById('btn_csv');
+  b1.disabled=true;b2.disabled=true;
+  st.textContent='Sťahujem dáta…';st.style.color='#6b7280';
+  const stamp=new Date().toISOString().slice(0,10);
+  try{
+    const data={};
+    const tb=document.getElementById('sum_body');tb.innerHTML='';
+    for(const t of TABLES){
+      st.textContent='Sťahujem '+t+'…';
+      try{data[t]=await fetchAll(t);}
+      catch(e){data[t]=[];console.warn(e);}
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${t}</td><td class="cnt">${data[t].length}</td>`;
+      tb.appendChild(tr);
+    }
+    document.getElementById('summary').style.display='';
+    const total=Object.values(data).reduce((s,a)=>s+a.length,0);
+    if(fmt==='json'){
+      dl(`cievny_zaloha_${stamp}.json`,JSON.stringify({exported_at:new Date().toISOString(),tables:data},null,1),'application/json');
+    }else{
+      for(const t of TABLES){
+        if(data[t].length)dl(`cievny_${t}_${stamp}.csv`,'﻿'+toCSV(data[t]),'text/csv;charset=utf-8');
+        await new Promise(r=>setTimeout(r,300));
+      }
+    }
+    st.textContent='✅ Záloha hotová – '+total+' záznamov.';st.style.color='#16a34a';
+  }catch(e){
+    st.textContent='❌ Chyba: '+e.message;st.style.color='#dc2626';
+  }finally{
+    b1.disabled=false;b2.disabled=false;
+  }
+}
+</script>
+</body>
+</html>
