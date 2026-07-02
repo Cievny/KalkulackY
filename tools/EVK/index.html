@@ -358,6 +358,16 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 
 <div class="card">
 <div class="st">4. Intervencia</div>
+<div class="f">
+  <label class="ck" style="font-weight:700"><input type="checkbox" id="c_ivsheath" onchange="tB('ivsheath');gen()"> Výmena sheathu pre intervenciu</label>
+  <div class="tbody" id="b_ivsheath" style="margin-top:8px;background:#f8faff;border:1px solid #dde1ea;border-radius:8px">
+    <div class="row r3" style="margin-bottom:0">
+      <div class="f"><label>Veľkosť</label><select id="iv_sheath" onchange="gen()"><option>5 Fr</option><option>6 Fr</option><option selected>7 Fr</option><option>8 Fr</option><option>9 Fr</option><option>10 Fr</option></select></div>
+      <div class="f"><label>Dĺžka</label><select id="iv_sheath_dlz" onchange="gen()"><option value="">–</option><option>10 cm</option><option>25 cm</option><option>45 cm</option><option>55 cm</option><option>90 cm</option></select></div>
+      <div class="f"><label>Značka</label><select id="iv_sheath_zn" onchange="chkVl('iv_sheath_zn');gen()"><option value="">–</option><option>DuraSheath</option><option>Fortress</option><option>Flexor</option><option value="vlastný">vlastná…</option></select><input type="text" id="iv_sheath_zn_c" placeholder="Vlastná značka..." oninput="gen()" style="display:none;margin-top:5px"></div>
+    </div>
+  </div>
+</div>
 <div class="f"><div class="lbl">Prechod cez léziu</div>
   <div class="checks"><label class="ck"><input type="checkbox" class="prec" value="intraluminálne" onchange="gen()"> Intraluminálne</label><label class="ck"><input type="checkbox" class="prec" value="subintimálne" onchange="gen()"> Subintimálne</label><label class="ck"><input type="checkbox" class="prec" value="kombinovane intra aj subintimálne" onchange="gen()"> Kombinovane</label></div>
 </div>
@@ -1103,6 +1113,7 @@ function collectFullData(){
     pristup_kat:g('kat'),
     pristup_sheath:g('sheath'),
     pristup_sheath_dlz:g('sheathdlz'),
+    ...(document.getElementById('c_ivsheath')?.checked?{interv_sheath:g('iv_sheath'),interv_sheath_dlz:g('iv_sheath_dlz'),interv_sheath_znacka:g('iv_sheath_zn')==='vlastný'?g('iv_sheath_zn_c'):g('iv_sheath_zn')}:{}),
     anestazia:g('anes'),
     kontrast:[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join('+'),
     vodic:g('vodic')==='vlastný'?(g('vodic_c')||''):g('vodic'),
@@ -1262,6 +1273,12 @@ function gen(){
   }
 
   L.push('INTERVENCIA:');
+  if(document.getElementById('c_ivsheath')?.checked){
+    const ivs=g('iv_sheath'),ivd=g('iv_sheath_dlz');
+    const ivzRaw=g('iv_sheath_zn'),ivz=ivzRaw==='vlastný'?g('iv_sheath_zn_c'):ivzRaw;
+    const hadSheath=!!g('sheath');
+    L.push((hadSheath?'Vymieňame sheath za ':'Zavádzame sheath ')+ivs+(ivz?' ('+ivz+')':'')+(ivd?' dĺžky '+ivd:'')+'.');
+  }
   const prec=chk('prec');
   const vodic=g('vodic')==='vlastný'?(g('vodic_c')||'vlastný vodič'):g('vodic');
   const suppKat=g('support_kat')==='vlastný'?(g('support_kat_c')||'podporného katétra'):g('support_kat');
@@ -1633,6 +1650,19 @@ function loadEditRecord(){
     sv('kat',record.pristup_kat);
     sv('sheath',record.pristup_sheath);
     sv('sheathdlz',record.pristup_sheath_dlz);
+    if(record.interv_sheath){
+      const cb=document.getElementById('c_ivsheath');
+      if(cb){cb.checked=true;tB('ivsheath');}
+      sv('iv_sheath',record.interv_sheath);
+      sv('iv_sheath_dlz',record.interv_sheath_dlz);
+      if(record.interv_sheath_znacka){
+        const zn=document.getElementById('iv_sheath_zn');
+        const known=[...zn.options].some(o=>o.value===record.interv_sheath_znacka);
+        if(known)zn.value=record.interv_sheath_znacka;
+        else{zn.value='vlastný';sv('iv_sheath_zn_c',record.interv_sheath_znacka);}
+        chkVl('iv_sheath_zn');
+      }
+    }
     sv('anes',record.anestazia);
     updateAccess();
     // DSA / Intervencia

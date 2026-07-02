@@ -190,3 +190,13 @@ ALTER TABLE cz_evk_vykony   ADD CONSTRAINT cz_evk_vykony_vykon_id_key   UNIQUE (
 ALTER TABLE cz_cas_vykony   ADD CONSTRAINT cz_cas_vykony_vykon_id_key   UNIQUE (vykon_id);
 ALTER TABLE cz_pevar_vykony ADD CONSTRAINT cz_pevar_vykony_vykon_id_key UNIQUE (vykon_id);
 */
+
+-- ============================================================================
+-- MIGRÁCIA 2026-07: intervenčný sheath v EVK (výmena pri intervencii)
+-- ============================================================================
+ALTER TABLE evk_vykony    ADD COLUMN IF NOT EXISTS interv_sheath text,
+                          ADD COLUMN IF NOT EXISTS interv_sheath_dlz text,
+                          ADD COLUMN IF NOT EXISTS interv_sheath_znacka text;
+ALTER TABLE cz_evk_vykony ADD COLUMN IF NOT EXISTS interv_sheath text,
+                          ADD COLUMN IF NOT EXISTS interv_sheath_dlz text,
+                          ADD COLUMN IF NOT EXISTS interv_sheath_znacka text;
