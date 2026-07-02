@@ -39,6 +39,7 @@ DROP POLICY IF EXISTS "anon all cas"      ON cas_vykony;
 DROP POLICY IF EXISTS "anon all pevar"    ON pevar_vykony;
 DROP POLICY IF EXISTS "anon all followup" ON evk_followup;
 DROP POLICY IF EXISTS "anon all ideas"    ON ideas;
+DROP POLICY IF EXISTS "anon all aorta"    ON aorta_indikacie;
 
 CREATE POLICY "anon select evk" ON evk_vykony FOR SELECT TO anon USING (true);
 CREATE POLICY "anon insert evk" ON evk_vykony FOR INSERT TO anon WITH CHECK (true);
@@ -59,6 +60,10 @@ CREATE POLICY "anon update followup" ON evk_followup FOR UPDATE TO anon USING (t
 CREATE POLICY "anon select ideas" ON ideas FOR SELECT TO anon USING (true);
 CREATE POLICY "anon insert ideas" ON ideas FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon update ideas" ON ideas FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+CREATE POLICY "anon select aorta" ON aorta_indikacie FOR SELECT TO anon USING (true);
+CREATE POLICY "anon insert aorta" ON aorta_indikacie FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "anon update aorta" ON aorta_indikacie FOR UPDATE TO anon USING (true) WITH CHECK (true);
 
 -- --- CZ tabuľky -------------------------------------------------------------
 DROP POLICY IF EXISTS "anon all evk"      ON cz_evk_vykony;
@@ -126,6 +131,10 @@ DROP POLICY IF EXISTS "anon update followup" ON evk_followup;
 DROP POLICY IF EXISTS "anon select ideas" ON ideas;
 DROP POLICY IF EXISTS "anon insert ideas" ON ideas;
 DROP POLICY IF EXISTS "anon update ideas" ON ideas;
+DROP POLICY IF EXISTS "anon all aorta"    ON aorta_indikacie;
+DROP POLICY IF EXISTS "anon select aorta" ON aorta_indikacie;
+DROP POLICY IF EXISTS "anon insert aorta" ON aorta_indikacie;
+DROP POLICY IF EXISTS "anon update aorta" ON aorta_indikacie;
 
 DROP POLICY IF EXISTS "anon all evk"      ON cz_evk_vykony;
 DROP POLICY IF EXISTS "anon all cas"      ON cz_cas_vykony;
@@ -154,6 +163,7 @@ CREATE POLICY "auth all cas"      ON cas_vykony      FOR ALL TO authenticated US
 CREATE POLICY "auth all pevar"    ON pevar_vykony    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "auth all followup" ON evk_followup    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "auth all ideas"    ON ideas           FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "auth all aorta"    ON aorta_indikacie FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 CREATE POLICY "auth all cz_evk"      ON cz_evk_vykony   FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "auth all cz_cas"      ON cz_cas_vykony   FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');

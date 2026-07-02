@@ -191,7 +191,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 <script>
 const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
-const SB_HEAD={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+const SB_HEAD=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
 const TBL='aorta_indikacie';
 
 const STATUSES=[
@@ -237,7 +237,7 @@ function esvsAlerts(it){
 // ── Načítanie a render ───────────────────────────────────────
 async function loadItems(){
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?order=created_at.asc&limit=1000`,{headers:SB_HEAD});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?order=created_at.asc&limit=1000`,{headers:SB_HEAD()});
     if(!r.ok){msg('top_msg','⚠️ Tabuľka '+TBL+' nie je v Supabase (spustite setup SQL)','#b45309');ITEMS=[];render();return;}
     ITEMS=await r.json();
   }catch{ITEMS=[];msg('top_msg','⚠️ Chyba spojenia','#dc2626');}
@@ -370,11 +370,11 @@ async function saveCard(){
     let r;
     if(editId){
       o.updated_at=new Date().toISOString();
-      r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${editId}`,{method:'PATCH',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify(o)});
+      r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${editId}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify(o)});
     }else{
       o.status='poziadavka';
       o.historia=JSON.stringify([{s:'poziadavka',d:today()}]);
-      r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify(o)});
+      r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify(o)});
     }
     if(r.ok){msg('m_msg','✓ Uložené','#1d6f42');await loadItems();if(!editId)closeModal();}
     else msg('m_msg','❌ Chyba pri ukladaní: '+r.status,'#dc2626');
@@ -388,7 +388,7 @@ async function moveCard(id,newStatus,vysledok){
   const body={status:newStatus,historia:JSON.stringify(hist),updated_at:new Date().toISOString()};
   if(vysledok!==undefined)body.vysledok=vysledok;
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD,'Prefer':'return=minimal'},body:JSON.stringify(body)});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
     if(r.ok)await loadItems();else msg('top_msg','❌ Chyba: '+r.status,'#dc2626');
   }catch{msg('top_msg','❌ Chyba siete','#dc2626');}
 }
@@ -407,7 +407,7 @@ async function restoreCard(id){await moveCard(id,'poziadavka','');}
 async function delCard(id){
   if(!confirm('Definitívne zmazať tento záznam z archívu?'))return;
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD()});
     if(r.ok)await loadItems();
   }catch{msg('top_msg','❌ Chyba siete','#dc2626');}
 }
