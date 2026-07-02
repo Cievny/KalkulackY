@@ -102,8 +102,9 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 
     <div class="m-sec">1. Pacient a žiadanka</div>
     <div class="m-grid">
+      <div class="fld"><label>Rodné číslo * <span style="font-weight:400;color:#9ca3af">(povinné)</span></label><input id="af_rodne_cislo" maxlength="11" placeholder="511224/1234" autocomplete="off"></div>
       <div class="fld"><label>Iniciály (napr. J.K.)</label><input id="af_inicialy" maxlength="10" autocomplete="off"></div>
-      <div class="fld"><label>Ročník narodenia</label><input id="af_rocnik" type="number" min="1900" max="2030" placeholder="1951"></div>
+      <div class="fld"><label>Ročník narodenia</label><input id="af_rocnik" type="number" min="1900" max="2030" placeholder="doplní sa z r.č."></div>
       <div class="fld"><label>Pohlavie</label><select id="af_pohlavie"><option value="M">Muž</option><option value="Ž">Žena</option></select></div>
       <div class="fld"><label>Žiadateľ / oddelenie</label><input id="af_ziadatel" placeholder="napr. interné odd., MUDr. …"></div>
       <div class="fld"><label>Dátum požiadavky</label><input id="af_datum_poziadavky" type="date"></div>
@@ -154,6 +155,22 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
     <div class="m-sec">6. Poznámka</div>
     <div class="fld"><textarea id="af_poznamka" placeholder="Ďalšie informácie…"></textarea></div>
 
+    <div class="m-sec">7. Prílohy (prepis mailu, dokument, fotka)</div>
+    <p class="page-sub" id="pril_hint" style="padding:0 0 6px">Prílohy môžete pridávať po uložení požiadavky.</p>
+    <div id="pril_box" style="display:none">
+      <div id="pril_list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+      <div class="m-grid2">
+        <div>
+          <div class="fld"><textarea id="pril_text" placeholder="Voľný text – napr. prepis mailu…"></textarea></div>
+          <button class="btn-edit" style="margin-top:6px" onclick="addTextPriloha()">📝 Uložiť text ako prílohu</button>
+        </div>
+        <div>
+          <div class="fld"><label>Dokument alebo fotka (max 20 MB)</label><input type="file" id="pril_file" accept="image/*,.pdf,.doc,.docx,.txt,.rtf"></div>
+          <button class="btn-edit" style="margin-top:6px" onclick="uploadPriloha()">📤 Nahrať súbor</button>
+        </div>
+      </div>
+    </div>
+
     <div class="alerts" id="m_alerts"></div>
 
     <div class="m-btns">
@@ -193,6 +210,8 @@ const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 const SB_HEAD=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
 const TBL='aorta_indikacie';
+const TBL_PRIL='aorta_prilohy';
+const BUCKET='aorta-prilohy';
 
 const STATUSES=[
   {key:'poziadavka',   label:'📥 Primárna požiadavka', color:'#3b82f6'},
@@ -207,6 +226,7 @@ const STATUS_LABEL=Object.fromEntries(STATUSES.map(s=>[s.key,s.label]));
 STATUS_LABEL['archiv']='🗄 Archív';
 
 let ITEMS=[];
+let PRILOHY=[];    // všetky prílohy (pre počty na kartách + zoznam v modáli)
 let editId=null;   // id práve otvorenej karty v modáli (null = nová)
 let archId=null;   // id karty pre archiváciu
 
@@ -234,6 +254,18 @@ function esvsAlerts(it){
   return A;
 }
 
+// ── Rodné číslo: validácia + odvodenie ročníka a pohlavia ────
+function parseRC(rc){
+  const m=(rc||'').replace(/\s/g,'').match(/^(\d{2})(\d{2})(\d{2})\/?(\d{3,4})$/);
+  if(!m)return null;
+  const yy=+m[1];let mm=+m[2];let pohl='M';
+  if(mm>50){pohl='Ž';mm-=50;}
+  if(mm<1||mm>12)return null;
+  // 3-miestna prípona = narodení pred 1954; 4-miestna: 20xx len ak nie je v budúcnosti
+  const rok=m[4].length===3?1900+yy:(2000+yy>new Date().getFullYear()?1900+yy:2000+yy);
+  return {rok,pohl};
+}
+
 // ── Načítanie a render ───────────────────────────────────────
 async function loadItems(){
   try{
@@ -241,12 +273,17 @@ async function loadItems(){
     if(!r.ok){msg('top_msg','⚠️ Tabuľka '+TBL+' nie je v Supabase (spustite setup SQL)','#b45309');ITEMS=[];render();return;}
     ITEMS=await r.json();
   }catch{ITEMS=[];msg('top_msg','⚠️ Chyba spojenia','#dc2626');}
+  try{
+    const rp=await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}?order=created_at.asc&limit=5000`,{headers:SB_HEAD()});
+    PRILOHY=rp.ok?await rp.json():[];
+  }catch{PRILOHY=[];}
   render();
+  if(editId)renderPrilohy();
 }
 
 function matchesSearch(it,q){
   if(!q)return true;
-  const hay=[it.inicialy,it.rocnik,it.diagnoza,it.ziadatel,it.material,it.poznamka].join(' ').toLowerCase();
+  const hay=[it.inicialy,it.rocnik,it.rodne_cislo,it.diagnoza,it.ziadatel,it.material,it.poznamka].join(' ').toLowerCase();
   return hay.includes(q);
 }
 
@@ -283,8 +320,12 @@ function cardEl(it){
     if(m.length)matHtml='<div class="card-mat">'+m.join('<br>')+'</div>';
   }
   const moveOpts=STATUSES.filter(s=>s.key!==it.status).map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+  const nPril=PRILOHY.filter(p=>p.indikacia_id===it.id).length;
+  const prilBadge=nPril?'<span class="badge" style="background:#e0e7ff;color:#3730a3">📎 '+nPril+'</span>':'';
+  const title=it.inicialy?escHtml(it.inicialy)+(it.rocnik?' '+it.rocnik:''):escHtml(it.rodne_cislo||'?');
   div.innerHTML=`
-    <div class="card-id">${escHtml(it.inicialy||'?')}${it.rocnik?' '+it.rocnik:''}${it.pohlavie?' ('+it.pohlavie+')':''} ${urgBadge}${esvsBadge}</div>
+    <div class="card-id">${title}${it.pohlavie?' ('+it.pohlavie+')':''} ${urgBadge}${esvsBadge}${prilBadge}</div>
+    ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}
     ${dg?'<div class="card-line">'+escHtml(dg)+'</div>':''}
     ${it.ziadatel?'<div class="card-line">👤 '+escHtml(it.ziadatel)+'</div>':''}
     ${matHtml}
@@ -318,7 +359,7 @@ function renderArchive(q){
 }
 
 // ── Modal detail ─────────────────────────────────────────────
-const FIELDS=['inicialy','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','diagnoza','symptomy',
+const FIELDS=['rodne_cislo','inicialy','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','diagnoza','symptomy',
   'priemer','rast','datum_ct','krcok_dlzka','krcok_priemer','krcok_angulacia','iliaky',
   'kardio','renalne','pulmo','frailty','dozitie','medikacia','material','material_objednany','material_dodany','termin','poznamka'];
 // mapovanie form id -> DB stĺpec
@@ -349,9 +390,14 @@ function objToForm(it){
 function openModal(id){
   editId=id;
   const it=id?ITEMS.find(i=>i.id===id):null;
-  document.getElementById('m_title').textContent=it?('Detail: '+(it.inicialy||'?')+(it.rocnik?' '+it.rocnik:'')+' – '+(STATUS_LABEL[it.status]||'')):'Nová požiadavka';
+  document.getElementById('m_title').textContent=it?('Detail: '+(it.inicialy||it.rodne_cislo||'?')+(it.rocnik?' '+it.rocnik:'')+' – '+(STATUS_LABEL[it.status]||'')):'Nová požiadavka';
   objToForm(it);
   updateAlerts();
+  document.getElementById('pril_hint').style.display=editId?'none':'';
+  document.getElementById('pril_box').style.display=editId?'':'none';
+  document.getElementById('pril_text').value='';
+  const pf=document.getElementById('pril_file');if(pf)pf.value='';
+  if(editId)renderPrilohy();
   document.getElementById('overlay').classList.add('open');
 }
 function closeModal(){document.getElementById('overlay').classList.remove('open');editId=null;}
@@ -363,22 +409,118 @@ function updateAlerts(){
 }
 FIELDS.forEach(f=>{const el=document.getElementById('af_'+f);el.addEventListener('input',updateAlerts);el.addEventListener('change',updateAlerts);});
 
+// r.č. -> automaticky odvodíme ročník a pohlavie
+document.getElementById('af_rodne_cislo').addEventListener('input',()=>{
+  const p=parseRC(document.getElementById('af_rodne_cislo').value);
+  if(p){document.getElementById('af_rocnik').value=p.rok;document.getElementById('af_pohlavie').value=p.pohl;updateAlerts();}
+});
+
 async function saveCard(){
   const o=formToObj();
-  if(!o.inicialy){msg('m_msg','⚠️ Vyplňte iniciály','#b45309');return;}
+  if(!o.rodne_cislo){msg('m_msg','⚠️ Rodné číslo je povinné','#b45309');document.getElementById('af_rodne_cislo').focus();return;}
   try{
     let r;
     if(editId){
       o.updated_at=new Date().toISOString();
       r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${editId}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify(o)});
+      if(r.ok){msg('m_msg','✓ Uložené','#1d6f42');await loadItems();}
+      else msg('m_msg','❌ Chyba pri ukladaní: '+r.status,'#dc2626');
     }else{
       o.status='poziadavka';
       o.historia=JSON.stringify([{s:'poziadavka',d:today()}]);
-      r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify(o)});
+      r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify(o)});
+      if(r.ok){
+        const rows=await r.json();
+        editId=rows[0]?rows[0].id:null;  // ostávame v modáli – dajú sa hneď pridať prílohy
+        msg('m_msg','✓ Uložené – teraz môžete pridať prílohy','#1d6f42');
+        await loadItems();
+        if(editId){
+          document.getElementById('pril_hint').style.display='none';
+          document.getElementById('pril_box').style.display='';
+          renderPrilohy();
+        }
+      }else msg('m_msg','❌ Chyba pri ukladaní: '+r.status,'#dc2626');
     }
-    if(r.ok){msg('m_msg','✓ Uložené','#1d6f42');await loadItems();if(!editId)closeModal();}
-    else msg('m_msg','❌ Chyba pri ukladaní: '+r.status,'#dc2626');
   }catch(e){msg('m_msg','❌ Chyba siete','#dc2626');}
+}
+
+// ── Prílohy (text / dokument / fotka) ────────────────────────
+function renderPrilohy(){
+  const box=document.getElementById('pril_list');
+  const rows=PRILOHY.filter(p=>p.indikacia_id===editId);
+  if(!rows.length){box.innerHTML='<span style="font-size:12px;color:#9ca3af">Zatiaľ žiadne prílohy.</span>';return;}
+  box.innerHTML='';
+  rows.forEach(p=>{
+    const d=new Date(p.created_at).toLocaleDateString('sk-SK');
+    const ico=p.typ==='text'?'📝':(p.mime||'').startsWith('image/')?'📷':'📄';
+    const div=document.createElement('div');
+    div.style.cssText='background:#f8faff;border:1.5px solid #e5e9f5;border-radius:7px;padding:7px 10px;font-size:12.5px;';
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="flex:1;min-width:120px">${ico} <b>${escHtml(p.nazov||'príloha')}</b> <span style="color:#9ca3af">(${d})</span></span>
+      <button class="btn-mini" onclick="openPriloha('${p.id}')">${p.typ==='text'?'Zobraziť':'Otvoriť'}</button>
+      <button class="btn-mini btn-mini-del" onclick="delPriloha('${p.id}')">🗑</button></div>
+      <div id="pril_obsah_${p.id}" style="display:none;white-space:pre-wrap;word-break:break-word;color:#374151;margin-top:6px;border-top:1px solid #e5e9f5;padding-top:6px"></div>`;
+    box.appendChild(div);
+  });
+}
+
+async function addTextPriloha(){
+  if(!editId)return;
+  const t=document.getElementById('pril_text').value.trim();
+  if(!t){msg('m_msg','⚠️ Napíšte text prílohy','#b45309');return;}
+  const nazov=t.split('\n')[0].slice(0,60);
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},
+      body:JSON.stringify({indikacia_id:editId,typ:'text',nazov,obsah:t})});
+    if(r.ok){document.getElementById('pril_text').value='';msg('m_msg','✓ Text uložený','#1d6f42');await loadItems();}
+    else msg('m_msg','❌ Chyba: '+r.status+(r.status===404?' (spustite setup SQL – tabuľka príloh)':''),'#dc2626');
+  }catch{msg('m_msg','❌ Chyba siete','#dc2626');}
+}
+
+async function uploadPriloha(){
+  if(!editId)return;
+  const inp=document.getElementById('pril_file');
+  const f=inp.files&&inp.files[0];
+  if(!f){msg('m_msg','⚠️ Vyberte súbor','#b45309');return;}
+  if(f.size>20*1024*1024){msg('m_msg','⚠️ Súbor je väčší ako 20 MB','#b45309');return;}
+  msg('m_msg','⏳ Nahrávam…','#3b82f6');
+  const safeName=f.name.replace(/[^\w.\-]+/g,'_');
+  const path=editId+'/'+Date.now()+'_'+safeName;
+  try{
+    const up=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${path}`,{method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':f.type||'application/octet-stream','x-upsert':'false'},body:f});
+    if(!up.ok){msg('m_msg','❌ Upload zlyhal: '+up.status+(up.status===400||up.status===404?' (vytvorte bucket – spustite setup SQL)':''),'#dc2626');return;}
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},
+      body:JSON.stringify({indikacia_id:editId,typ:'subor',nazov:f.name,storage_path:path,mime:f.type||null})});
+    if(r.ok){inp.value='';msg('m_msg','✓ Súbor nahraný','#1d6f42');await loadItems();}
+    else msg('m_msg','❌ Chyba pri zápise prílohy: '+r.status,'#dc2626');
+  }catch{msg('m_msg','❌ Chyba siete','#dc2626');}
+}
+
+async function openPriloha(id){
+  const p=PRILOHY.find(x=>x.id===id);if(!p)return;
+  if(p.typ==='text'){
+    const el=document.getElementById('pril_obsah_'+id);
+    if(el.style.display==='none'){el.textContent=p.obsah||'';el.style.display='';}
+    else el.style.display='none';
+    return;
+  }
+  try{
+    const r=await fetch(`${SB_URL}/storage/v1/object/sign/${BUCKET}/${p.storage_path}`,{method:'POST',headers:SB_HEAD(),body:JSON.stringify({expiresIn:3600})});
+    if(!r.ok){msg('m_msg','❌ Nepodarilo sa otvoriť súbor: '+r.status,'#dc2626');return;}
+    const j=await r.json();
+    window.open(SB_URL+'/storage/v1'+j.signedURL,'_blank');
+  }catch{msg('m_msg','❌ Chyba siete','#dc2626');}
+}
+
+async function delPriloha(id){
+  const p=PRILOHY.find(x=>x.id===id);if(!p)return;
+  if(!confirm('Zmazať prílohu „'+(p.nazov||'')+'"?'))return;
+  try{
+    if(p.typ==='subor'&&p.storage_path)await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${p.storage_path}`,{method:'DELETE',headers:SB_HEAD()});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD()});
+    if(r.ok){msg('m_msg','✓ Príloha zmazaná','#1d6f42');await loadItems();}
+  }catch{msg('m_msg','❌ Chyba siete','#dc2626');}
 }
 
 // ── Presun medzi stavmi ──────────────────────────────────────
@@ -405,8 +547,14 @@ async function confirmArch(){
 }
 async function restoreCard(id){await moveCard(id,'poziadavka','');}
 async function delCard(id){
-  if(!confirm('Definitívne zmazať tento záznam z archívu?'))return;
+  if(!confirm('Definitívne zmazať tento záznam z archívu (vrátane príloh)?'))return;
   try{
+    // najprv prílohy: súbory zo storage + riadky
+    const pr=PRILOHY.filter(p=>p.indikacia_id===id);
+    for(const p of pr){
+      if(p.typ==='subor'&&p.storage_path)await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${p.storage_path}`,{method:'DELETE',headers:SB_HEAD()});
+    }
+    if(pr.length)await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}?indikacia_id=eq.${id}`,{method:'DELETE',headers:SB_HEAD()});
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD()});
     if(r.ok)await loadItems();
   }catch{msg('top_msg','❌ Chyba siete','#dc2626');}
@@ -423,7 +571,7 @@ function buildZapis(){
   const L=[];
   L.push('ZÁPIS Z AORTÁLNEHO TÍMU / INDIKÁCIA NA TERAPIU AORTY');
   L.push('Dátum: '+new Date().toLocaleDateString('sk-SK'));
-  L.push('Pacient: '+(o.inicialy||'?')+(o.rocnik?' ('+o.rocnik+')':'')+(o.pohlavie?' | '+(o.pohlavie==='M'?'MUŽ':'ŽENA'):''));
+  L.push('Pacient: '+(o.inicialy||'?')+(o.rocnik?' ('+o.rocnik+')':'')+(o.rodne_cislo?' | r.č. '+o.rodne_cislo:'')+(o.pohlavie?' | '+(o.pohlavie==='M'?'MUŽ':'ŽENA'):''));
   if(it)L.push('Stav v pipeline: '+(STATUS_LABEL[it.status]||it.status).replace(/^[^\w]+\s*/,''));
   L.push('-'.repeat(46));
   L.push('1. INDIKÁCIA A MORFOLÓGIA');

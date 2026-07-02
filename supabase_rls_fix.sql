@@ -65,6 +65,10 @@ CREATE POLICY "anon select aorta" ON aorta_indikacie FOR SELECT TO anon USING (t
 CREATE POLICY "anon insert aorta" ON aorta_indikacie FOR INSERT TO anon WITH CHECK (true);
 CREATE POLICY "anon update aorta" ON aorta_indikacie FOR UPDATE TO anon USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "anon all aorta prilohy" ON aorta_prilohy;
+CREATE POLICY "anon select aorta prilohy" ON aorta_prilohy FOR SELECT TO anon USING (true);
+CREATE POLICY "anon insert aorta prilohy" ON aorta_prilohy FOR INSERT TO anon WITH CHECK (true);
+
 -- --- CZ tabuľky -------------------------------------------------------------
 DROP POLICY IF EXISTS "anon all evk"      ON cz_evk_vykony;
 DROP POLICY IF EXISTS "anon all cas"      ON cz_cas_vykony;
@@ -135,6 +139,12 @@ DROP POLICY IF EXISTS "anon all aorta"    ON aorta_indikacie;
 DROP POLICY IF EXISTS "anon select aorta" ON aorta_indikacie;
 DROP POLICY IF EXISTS "anon insert aorta" ON aorta_indikacie;
 DROP POLICY IF EXISTS "anon update aorta" ON aorta_indikacie;
+DROP POLICY IF EXISTS "anon all aorta prilohy"    ON aorta_prilohy;
+DROP POLICY IF EXISTS "anon select aorta prilohy" ON aorta_prilohy;
+DROP POLICY IF EXISTS "anon insert aorta prilohy" ON aorta_prilohy;
+DROP POLICY IF EXISTS "aorta prilohy storage select" ON storage.objects;
+DROP POLICY IF EXISTS "aorta prilohy storage insert" ON storage.objects;
+DROP POLICY IF EXISTS "aorta prilohy storage delete" ON storage.objects;
 
 DROP POLICY IF EXISTS "anon all evk"      ON cz_evk_vykony;
 DROP POLICY IF EXISTS "anon all cas"      ON cz_cas_vykony;
@@ -164,6 +174,10 @@ CREATE POLICY "auth all pevar"    ON pevar_vykony    FOR ALL TO authenticated US
 CREATE POLICY "auth all followup" ON evk_followup    FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "auth all ideas"    ON ideas           FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "auth all aorta"    ON aorta_indikacie FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "auth all aorta prilohy" ON aorta_prilohy FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "auth aorta prilohy storage select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id='aorta-prilohy');
+CREATE POLICY "auth aorta prilohy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='aorta-prilohy');
+CREATE POLICY "auth aorta prilohy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='aorta-prilohy');
 
 CREATE POLICY "auth all cz_evk"      ON cz_evk_vykony   FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "auth all cz_cas"      ON cz_cas_vykony   FOR ALL TO authenticated USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');

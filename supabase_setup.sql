@@ -117,6 +117,24 @@ CREATE TABLE IF NOT EXISTS aorta_indikacie (
   vysledok           TEXT,  -- dôvod uzavretia (archív)
   historia           TEXT   -- JSON log zmien statusu [{s,d}]
 );
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS rodne_cislo TEXT;
+
+-- aorta_prilohy – prílohy k požiadavke (prepis mailu, dokument, fotka)
+CREATE TABLE IF NOT EXISTS aorta_prilohy (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at    TIMESTAMPTZ DEFAULT NOW(),
+  indikacia_id  UUID REFERENCES aorta_indikacie(id) ON DELETE CASCADE,
+  typ           TEXT NOT NULL DEFAULT 'text', -- text | subor
+  nazov         TEXT,
+  obsah         TEXT,   -- voľný text (prepis mailu)
+  storage_path  TEXT,   -- cesta v Storage buckete aorta-prilohy
+  mime          TEXT
+);
+
+-- Storage bucket pre súborové prílohy (privátny, max 20 MB/súbor)
+INSERT INTO storage.buckets (id, name, public, file_size_limit)
+VALUES ('aorta-prilohy','aorta-prilohy', false, 20971520)
+ON CONFLICT (id) DO NOTHING;
 
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (
@@ -342,6 +360,7 @@ ALTER TABLE pevar_vykony ENABLE ROW LEVEL SECURITY;
 ALTER TABLE evk_followup ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ideas        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aorta_indikacie ENABLE ROW LEVEL SECURITY;
+ALTER TABLE aorta_prilohy   ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "anon all evk"      ON evk_vykony;
 DROP POLICY IF EXISTS "anon insert evk"   ON evk_vykony;
@@ -370,3 +389,14 @@ CREATE POLICY "anon all ideas" ON ideas FOR ALL TO anon USING (true) WITH CHECK 
 
 DROP POLICY IF EXISTS "anon all aorta" ON aorta_indikacie;
 CREATE POLICY "anon all aorta" ON aorta_indikacie FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "anon all aorta prilohy" ON aorta_prilohy;
+CREATE POLICY "anon all aorta prilohy" ON aorta_prilohy FOR ALL TO anon USING (true) WITH CHECK (true);
+
+-- Storage politiky pre bucket aorta-prilohy (anon aj authenticated)
+DROP POLICY IF EXISTS "aorta prilohy storage select" ON storage.objects;
+DROP POLICY IF EXISTS "aorta prilohy storage insert" ON storage.objects;
+DROP POLICY IF EXISTS "aorta prilohy storage delete" ON storage.objects;
+CREATE POLICY "aorta prilohy storage select" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id='aorta-prilohy');
+CREATE POLICY "aorta prilohy storage insert" ON storage.objects FOR INSERT TO anon, authenticated WITH CHECK (bucket_id='aorta-prilohy');
+CREATE POLICY "aorta prilohy storage delete" ON storage.objects FOR DELETE TO anon, authenticated USING (bucket_id='aorta-prilohy');
