@@ -24,7 +24,10 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .psub{grid-column:2/-1;display:grid;grid-template-columns:.55fr .85fr 1fr 1.6fr;gap:8px;}
 .prow.vyradeny{opacity:.6;background:#fef2f2;border-color:#fecaca;}
 .prow.vyradeny input{text-decoration:line-through;color:#991b1b;}
-.pnum{font-size:17px;font-weight:800;color:#1e40af;text-align:center;}
+.pnum{font-size:17px;font-weight:800;color:#1e40af;text-align:center;cursor:grab;user-select:none;}
+.pnum:hover{background:#eff6ff;border-radius:8px;}
+.prow.drag-over{border-top:3px solid #3b82f6;}
+.prow.dragging{opacity:.45;}
 .prow.vyradeny .pnum{color:#991b1b;}
 .prow input{width:100%;padding:7px 9px;border:1.5px solid transparent;border-radius:6px;font-size:13.5px;font-family:inherit;color:#1a2745;background:#f8faff;outline:none;}
 .prow input:hover{border-color:#dde1ea;}
@@ -158,8 +161,12 @@ function render(){
     if(!vyr)cislo++;
     const div=document.createElement('div');
     div.className='prow'+(vyr?' vyradeny':'');
+    // drag & drop za číslo poradia
+    div.addEventListener('dragover',e=>{if(DRAGP!==null&&DRAGP!==idx){e.preventDefault();div.classList.add('drag-over');}});
+    div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
+    div.addEventListener('drop',e=>{e.preventDefault();div.classList.remove('drag-over');if(DRAGP!==null&&DRAGP!==idx)reorderTo(DRAGP,idx);DRAGP=null;});
     div.innerHTML=`
-      <div class="pnum">${vyr?'⛔':cislo+'.'}</div>
+      <div class="pnum" draggable="true" title="ťahaním zmeníte poradie">${vyr?'⛔':cislo+'.'}</div>
       <input value="${escHtml(row.meno||'')}" onchange="patchRow('${row.id}','meno',this.value)" placeholder="Meno">
       <input type="number" value="${row.rocnik??''}" onchange="patchRow('${row.id}','rocnik',this.value?parseInt(this.value):null)" placeholder="ročník">
       <input value="${escHtml(row.diagnoza||'')}" onchange="patchRow('${row.id}','diagnoza',this.value)" placeholder="diagnóza">
@@ -179,8 +186,26 @@ function render(){
         <input value="${escHtml(row.poznamka||'')}" onchange="patchRow('${row.id}','poznamka',this.value)" placeholder="poznámka">
       </div>
       ${vyr&&row.vyradeny_dovod?'<div class="vyr-dovod">dôvod vyradenia: '+escHtml(row.vyradeny_dovod)+'</div>':''}`;
+    const handle=div.querySelector('.pnum');
+    handle.addEventListener('dragstart',e=>{DRAGP=idx;div.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    handle.addEventListener('dragend',()=>{div.classList.remove('dragging');DRAGP=null;});
     box.appendChild(div);
   });
+}
+
+// preusporiadanie ťahaním: presunie riadok na pozíciu cieľa a prečísluje celý deň
+let DRAGP=null;
+async function reorderTo(from,to){
+  const item=ROWS.splice(from,1)[0];
+  ROWS.splice(to,0,item);
+  const zmeny=[];
+  ROWS.forEach((r,i)=>{if(r.poradie!==i+1){r.poradie=i+1;zmeny.push(r);}});
+  render();
+  try{
+    await Promise.all(zmeny.map(r=>fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${r.id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+      body:JSON.stringify({poradie:r.poradie,updated_at:new Date().toISOString()})})));
+    await loadRows();
+  }catch(e){msg('❌ Chyba siete pri preusporiadaní','#dc2626');loadRows();}
 }
 
 async function addRow(pre){
