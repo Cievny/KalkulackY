@@ -113,7 +113,7 @@ let CURRENT=null; // {tool, table, data}
 function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 async function loadAll(){
-  document.getElementById('tbody').innerHTML='<tr><td colspan="5" class="empty">Načítám…</td></tr>';
+  document.getElementById('tbody').innerHTML='<tr><td colspan="6" class="empty">Načítám…</td></tr>';
   ROWS=[];
   for(const [tool,table] of Object.entries(TABLES)){
     try{
@@ -189,6 +189,8 @@ function openModal(r){
 function fldEl(key,val){
   const wrap=document.createElement('div');
   wrap.className='fld';wrap.dataset.key=key;
+  const isObj=val!==null&&typeof val==='object';
+  if(isObj){val=JSON.stringify(val);wrap.dataset.json='1';}
   const long=typeof val==='string'&&(val.length>60||val.includes('\n')||val.startsWith('{')||val.startsWith('['));
   const inputHtml=long
     ?`<textarea data-orig="${escHtml(val)}">${escHtml(val)}</textarea>`
@@ -206,7 +208,11 @@ function collectChanges(){
     const orig=inp.dataset.orig||'';
     if(inp.value!==orig){
       let v=inp.value;
-      if(v==='')v=null;                                   // prázdne → NULL
+      if(wrap.dataset.json){ // jsonb pole – uložit jen platný JSON
+        if(v==='')v=null;
+        else{try{v=JSON.parse(v);}catch(e){return;}}
+      }
+      else if(v==='')v=null;                                   // prázdne → NULL
       else if(v==='true')v=true; else if(v==='false')v=false; // boolean
       changes[wrap.dataset.key]=v;
     }

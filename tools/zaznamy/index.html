@@ -76,8 +76,8 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
   </div>
 
   <table>
-    <thead><tr><th>Nástroj</th><th>ID výkonu</th><th>Dátum</th><th>Operatér</th><th>Komplikácie</th></tr></thead>
-    <tbody id="tbody"><tr><td colspan="5" class="empty">Načítavam…</td></tr></tbody>
+    <thead><tr><th>Nástroj</th><th>ID výkonu</th><th>Dátum</th><th>Operatér</th><th>Komplikácie</th><th>Akcie</th></tr></thead>
+    <tbody id="tbody"><tr><td colspan="6" class="empty">Načítavam…</td></tr></tbody>
   </table>
 </div>
 
@@ -114,7 +114,7 @@ let CURRENT=null; // {tool, table, data}
 function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 async function loadAll(){
-  document.getElementById('tbody').innerHTML='<tr><td colspan="5" class="empty">Načítavam…</td></tr>';
+  document.getElementById('tbody').innerHTML='<tr><td colspan="6" class="empty">Načítavam…</td></tr>';
   ROWS=[];
   for(const [tool,table] of Object.entries(TABLES)){
     try{
@@ -145,7 +145,7 @@ function render(){
     return true;
   });
   const tb=document.getElementById('tbody');
-  if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="empty">Žiadne záznamy.</td></tr>';return;}
+  if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="empty">Žiadne záznamy.</td></tr>';return;}
   tb.innerHTML='';
   rows.forEach((r,i)=>{
     const d=r.data;
@@ -189,6 +189,8 @@ function openModal(r){
 function fldEl(key,val){
   const wrap=document.createElement('div');
   wrap.className='fld';wrap.dataset.key=key;
+  const isObj=val!==null&&typeof val==='object';
+  if(isObj){val=JSON.stringify(val);wrap.dataset.json='1';}
   const long=typeof val==='string'&&(val.length>60||val.includes('\n')||val.startsWith('{')||val.startsWith('['));
   const inputHtml=long
     ?`<textarea data-orig="${escHtml(val)}">${escHtml(val)}</textarea>`
@@ -206,7 +208,11 @@ function collectChanges(){
     const orig=inp.dataset.orig||'';
     if(inp.value!==orig){
       let v=inp.value;
-      if(v==='')v=null;                                   // prázdne → NULL
+      if(wrap.dataset.json){ // jsonb pole – uložiť len ak je platný JSON
+        if(v==='')v=null;
+        else{try{v=JSON.parse(v);}catch(e){return;}}
+      }
+      else if(v==='')v=null;                                   // prázdne → NULL
       else if(v==='true')v=true; else if(v==='false')v=false; // boolean
       changes[wrap.dataset.key]=v;
     }
