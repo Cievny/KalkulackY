@@ -13,7 +13,8 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .toolbar{display:flex;gap:10px;align-items:center;padding:14px 20px 0;flex-wrap:wrap;}
 .btn-new{padding:8px 16px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
 .btn-new:hover{background:#1737a0;}
-.search{padding:8px 12px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;outline:none;min-width:220px;}
+.search{padding:8px 12px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;outline:none;min-width:220px;flex:1;max-width:360px;}
+@media(max-width:700px){.search{min-width:0;max-width:none;width:100%;}.toolbar .btn-new{width:100%;}}
 .search:focus{border-color:#3b82f6;}
 .board{display:flex;gap:12px;padding:10px 20px 16px;overflow-x:auto;align-items:flex-start;}
 .lane-title{font-size:14px;font-weight:800;letter-spacing:.6px;color:#1a2745;padding:14px 20px 0;display:flex;align-items:center;gap:8px;}
@@ -94,10 +95,12 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 <div class="arch-wrap">
   <details>
     <summary>🗄 Archív (vybavené požiadavky) – <span id="arch_cnt">0</span></summary>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
     <table class="arch-table">
       <thead><tr><th>Pacient</th><th>Kat.</th><th>Diagnóza</th><th>Priemer</th><th>Výsledok</th><th>Požiadavka</th><th>Uzavreté</th><th>Dní celkom</th><th>Pridal</th><th></th></tr></thead>
       <tbody id="arch_body"></tbody>
     </table>
+    </div>
   </details>
 </div>
 

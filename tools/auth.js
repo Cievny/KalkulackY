@@ -125,13 +125,13 @@
     if(existing)return;
     const nav=document.createElement('div');
     nav.className='shared-nav';
-    nav.style.cssText='background:#0f1e3d;display:flex;align-items:center;padding:0 16px;gap:2px;position:sticky;top:0;z-index:200;';
+    nav.style.cssText='background:#0f1e3d;display:flex;align-items:center;padding:0 16px;gap:2px;position:sticky;top:0;z-index:200;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;';
     const cur=location.pathname.replace(/\/$/,'');
     NAV_LINKS.forEach(l=>{
       const a=document.createElement('a');
       a.href=l.href;
       const active=cur===l.href.replace(/\/$/,'');
-      a.style.cssText='padding:9px 16px;font-size:13px;font-weight:600;color:'+(active?'#fff':'#8fa3c8')+';text-decoration:none;border-bottom:3px solid '+(active?'#3b82f6':'transparent')+';transition:.15s;';
+      a.style.cssText='padding:9px 16px;font-size:13px;font-weight:600;color:'+(active?'#fff':'#8fa3c8')+';text-decoration:none;border-bottom:3px solid '+(active?'#3b82f6':'transparent')+';transition:.15s;white-space:nowrap;flex-shrink:0;';
       a.onmouseover=()=>{if(!active)a.style.color='#fff';};
       a.onmouseout=()=>{if(!active)a.style.color='#8fa3c8';};
       a.textContent=l.label;
@@ -147,7 +147,7 @@
     }
     const out=document.createElement('button');
     out.textContent='Odhlásiť';
-    out.style.cssText='padding:6px 12px;font-size:12px;font-weight:600;background:none;border:1.5px solid #4a5568;color:#8fa3c8;border-radius:6px;cursor:pointer;';
+    out.style.cssText='padding:6px 12px;font-size:12px;font-weight:600;background:none;border:1.5px solid #4a5568;color:#8fa3c8;border-radius:6px;cursor:pointer;white-space:nowrap;flex-shrink:0;';
     out.onmouseover=()=>out.style.color='#fff';
     out.onmouseout=()=>out.style.color='#8fa3c8';
     out.onclick=doLogout;
