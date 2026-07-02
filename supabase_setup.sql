@@ -159,6 +159,44 @@ ALTER TABLE IF EXISTS cz_pevar_vykony ADD COLUMN IF NOT EXISTS created_by TEXT D
 ALTER TABLE IF EXISTS cz_evk_followup ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
 ALTER TABLE IF EXISTS cz_ideas        ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
 
+-- pevar_followup – kontroly po EVAR/PEVAR (surveillance)
+CREATE TABLE IF NOT EXISTS pevar_followup (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  vykon_id TEXT,
+  datum_kontroly TEXT,
+  casovy_bod TEXT,
+  zobrazenie TEXT,
+  sac_diameter_mm NUMERIC,
+  sac_zmena TEXT,
+  endoleak BOOLEAN,
+  endoleak_typ TEXT,
+  reintervencia BOOLEAN,
+  reintervencia_detail TEXT,
+  poznamka TEXT,
+  created_by TEXT DEFAULT (auth.jwt()->>'email')
+);
+
+-- cas_followup – kontroly po CAS
+CREATE TABLE IF NOT EXISTS cas_followup (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  vykon_id TEXT,
+  datum_kontroly TEXT,
+  casovy_bod TEXT,
+  zobrazenie TEXT,
+  restenoza TEXT,
+  neuro TEXT,
+  reintervencia BOOLEAN,
+  reintervencia_detail TEXT,
+  poznamka TEXT,
+  created_by TEXT DEFAULT (auth.jwt()->>'email')
+);
+
+-- CZ zrkadlá follow-upov
+CREATE TABLE IF NOT EXISTS cz_pevar_followup (LIKE pevar_followup INCLUDING ALL);
+CREATE TABLE IF NOT EXISTS cz_cas_followup   (LIKE cas_followup INCLUDING ALL);
+
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -384,6 +422,10 @@ ALTER TABLE evk_followup ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ideas        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aorta_indikacie ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aorta_prilohy   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pevar_followup  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cas_followup    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cz_pevar_followup ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cz_cas_followup   ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "anon all evk"      ON evk_vykony;
 DROP POLICY IF EXISTS "anon insert evk"   ON evk_vykony;
@@ -419,6 +461,23 @@ DROP POLICY IF EXISTS "anon all aorta prilohy" ON aorta_prilohy;
 CREATE POLICY "anon all aorta prilohy" ON aorta_prilohy FOR ALL TO anon USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "auth all aorta prilohy" ON aorta_prilohy;
 CREATE POLICY "auth all aorta prilohy" ON aorta_prilohy FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "anon all pevar fu" ON pevar_followup;
+CREATE POLICY "anon all pevar fu" ON pevar_followup FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all pevar fu" ON pevar_followup;
+CREATE POLICY "auth all pevar fu" ON pevar_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "anon all cas fu" ON cas_followup;
+CREATE POLICY "anon all cas fu" ON cas_followup FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all cas fu" ON cas_followup;
+CREATE POLICY "auth all cas fu" ON cas_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "anon all cz pevar fu" ON cz_pevar_followup;
+CREATE POLICY "anon all cz pevar fu" ON cz_pevar_followup FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all cz pevar fu" ON cz_pevar_followup;
+CREATE POLICY "auth all cz pevar fu" ON cz_pevar_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "anon all cz cas fu" ON cz_cas_followup;
+CREATE POLICY "anon all cz cas fu" ON cz_cas_followup FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all cz cas fu" ON cz_cas_followup;
+CREATE POLICY "auth all cz cas fu" ON cz_cas_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Storage politiky pre bucket aorta-prilohy (anon aj authenticated)
 DROP POLICY IF EXISTS "aorta prilohy storage select" ON storage.objects;

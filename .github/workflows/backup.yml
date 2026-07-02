@@ -24,8 +24,8 @@ jobs:
 
           mkdir -p backup
           STAMP=$(date +%Y-%m-%d)
-          for T in evk_vykony cas_vykony pevar_vykony evk_followup ideas aorta_indikacie aorta_prilohy \
-                   cz_evk_vykony cz_cas_vykony cz_pevar_vykony cz_evk_followup cz_ideas; do
+          for T in evk_vykony cas_vykony pevar_vykony evk_followup pevar_followup cas_followup ideas aorta_indikacie aorta_prilohy \
+                   cz_evk_vykony cz_cas_vykony cz_pevar_vykony cz_evk_followup cz_pevar_followup cz_cas_followup cz_ideas; do
             echo "→ $T"
             curl -sf "$SB_URL/rest/v1/$T?order=created_at.asc&limit=10000" \
               -H "apikey: $SB_ANON" -H "Authorization: Bearer $TOKEN" \

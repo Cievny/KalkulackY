@@ -98,6 +98,18 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 <div class="lane-title">📋 INÉ <span class="lane-cnt" id="lane_cnt_ine">0</span></div>
 <div class="board" id="board_ine"></div>
 
+<div class="arch-wrap" style="padding-bottom:8px">
+  <details id="kontroly_det">
+    <summary>🩻 Blížiace sa kontroly zobrazenia (do 30 dní + po termíne) – <span id="kontroly_cnt">0</span></summary>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <table class="arch-table">
+      <thead><tr><th>Pacient</th><th>R.č.</th><th>Diagnóza</th><th>Kontrola dňa</th><th>Stav</th><th></th></tr></thead>
+      <tbody id="kontroly_body"></tbody>
+    </table>
+    </div>
+  </details>
+</div>
+
 <div class="arch-wrap">
   <details>
     <summary>🗄 Archív (vybavené požiadavky) – <span id="arch_cnt">0</span></summary>
@@ -380,6 +392,31 @@ function render(){
     });
   });
   renderArchive(q);
+  renderKontroly(q);
+}
+
+function renderKontroly(q){
+  const limit=new Date();limit.setDate(limit.getDate()+30);
+  const lim=limit.toISOString().slice(0,10);
+  const rows=ITEMS.filter(i=>i.status!=='archiv'&&i.dalsia_kontrola&&i.dalsia_kontrola<=lim&&matchesSearch(i,q||''))
+    .sort((a,b)=>(a.dalsia_kontrola||'').localeCompare(b.dalsia_kontrola||''));
+  document.getElementById('kontroly_cnt').textContent=rows.length;
+  const tb=document.getElementById('kontroly_body');tb.innerHTML='';
+  rows.forEach(it=>{
+    const past=new Date(it.dalsia_kontrola)<new Date(today());
+    const dK=past?-daysBetween(it.dalsia_kontrola,today()):daysBetween(today(),it.dalsia_kontrola);
+    const kedy=past?'<b style="color:#dc2626">'+fmtD(it.dalsia_kontrola)+' (pred '+(-dK)+' d)</b>':fmtD(it.dalsia_kontrola)+' (o '+dK+' d)';
+    const tr=document.createElement('tr');
+    tr.style.cursor='pointer';
+    tr.onclick=()=>openModal(it.id);
+    tr.innerHTML=`<td><b>${escHtml(it.inicialy||'?')}${it.rocnik?' '+it.rocnik:''}</b></td>
+      <td>${escHtml(it.rodne_cislo||'–')}</td>
+      <td>${escHtml(it.diagnoza||'–')}${it.priemer_mm?' • '+it.priemer_mm+' mm':''}</td>
+      <td>${kedy}</td>
+      <td>${STATUS_LABEL[it.status]||it.status}</td>
+      <td><button class="btn-mini" onclick="event.stopPropagation();openModal('${it.id}')">✏️ Otvoriť</button></td>`;
+    tb.appendChild(tr);
+  });
 }
 
 // drag & drop stav + archív ako cieľ

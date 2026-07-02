@@ -653,6 +653,7 @@ function sgsel(){return SEG_OPTS.map(o=>`<option>${o}</option>`).join('');}
 
 function showTab(t){['nalez','drg','fu'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';document.getElementById('tnb-'+id).classList.toggle('active',id===t);});if(t==='drg')genDRG();}
 function g(id){return(document.getElementById(id)||{}).value||'';}
+function chybaStud(){const M=[];if(!g('st_dur'))M.push('dĺžka výkonu');if(!g('st_fluoro'))M.push('skiaskopia');if(!g('st_dap'))M.push('DAP');if(!g('st_contrast'))M.push('kontrast');return M;}
 const chk=cls=>[...document.querySelectorAll('.'+cls+':checked')].map(e=>e.value);
 function tB(id){const b=document.getElementById('b_'+id),c=document.getElementById('c_'+id);if(b)b.classList.toggle('on',c.checked);}
 function kSub(id){const s=document.getElementById('ksub_'+id),c=document.getElementById('k_'+id);if(s)s.classList.toggle('on',c.checked);}
@@ -1180,7 +1181,9 @@ async function saveToSheets(){
     const sb=results[0];
     if(typeof sb==='string'&&sb.startsWith('sb_ok')){
       window._dirty=false;
-      msg('cmsg',window._editRecordId?'✅ Záznam aktualizovaný!':'✅ Uložené do štatistík!','#1d6f42');
+      {const _ch=chybaStud();
+      if(_ch.length)msg('cmsg',(window._editRecordId?'✅ Aktualizované':'✅ Uložené')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');
+      else msg('cmsg',window._editRecordId?'✅ Záznam aktualizovaný!':'✅ Uložené do štatistík!','#1d6f42');}
     }else{
       msg('cmsg','❌ Chyba uloženia ('+sb+') – skontrolujte Supabase tabuľky','#dc2626');
     }

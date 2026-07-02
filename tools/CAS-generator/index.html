@@ -48,8 +48,33 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <script src="/tools/auth.js"></script>
 <script>checkAuth();</script>
 <nav class="tabnav">
-  <button class="tnb active">🧠 CAS</button>
+  <button class="tnb active" id="tnb-nalez" onclick="showFuTab('nalez')">🧠 CAS</button>
+  <button class="tnb" id="tnb-fu" onclick="showFuTab('fu')">📅 Follow-up</button>
 </nav>
+
+<!-- FOLLOW-UP -->
+<div id="tab-fu" style="display:none;padding:24px;max-width:700px;margin:0 auto">
+  <h2 style="font-size:16px;font-weight:700;color:#1a2745;margin-bottom:16px">📅 Follow-up po CAS</h2>
+  <div class="card"><div class="st">Identifikácia</div>
+    <div class="row r3">
+      <div class="f"><label>ID výkonu</label><input type="text" id="fu_id" placeholder="CAS-2026-001"></div>
+      <div class="f"><label>Dátum kontroly</label><input type="date" id="fu_datum"></div>
+      <div class="f"><label>Časový bod</label><select id="fu_bod"><option value="1M">1 mesiac</option><option value="6M">6 mesiacov</option><option value="12M">12 mesiacov</option><option value="24M">24 mesiacov</option></select></div>
+    </div>
+    <div class="f"><label>Zobrazenie</label><select id="fu_zobr"><option>duplex USG</option><option>CTA</option><option>MRA</option></select></div>
+  </div>
+  <div class="card"><div class="st">Nález</div>
+    <div class="row r2">
+      <div class="f"><label>Restenóza (USG/CTA)</label><select id="fu_rest"><option value="">–</option><option>bez restenózy</option><option>&lt;50 %</option><option>50–70 %</option><option>&gt;70 %</option><option>oklúzia stentu</option></select></div>
+      <div class="f"><label>Neurologická príhoda</label><select id="fu_neuro"><option value="">–</option><option>bez príhody</option><option>TIA</option><option>minor CMP</option><option>major CMP</option></select></div>
+    </div>
+    <div class="f"><label class="ck"><input type="checkbox" id="fu_reint"> Reintervencia</label><input type="text" id="fu_reint_detail" placeholder="aká…"></div>
+    <div class="f"><label>Poznámka</label><textarea id="fu_pozn" rows="3"></textarea></div>
+  </div>
+  <button class="btn" style="width:100%;padding:12px;background:#1d6f42;color:#fff" onclick="saveFU()">📊 Uložiť follow-up</button>
+  <div id="fu_msg" style="font-size:12px;text-align:center;margin-top:8px;min-height:18px"></div>
+</div>
+
 
 <div class="wrap">
 <div class="left">
@@ -649,6 +674,7 @@ const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 
 function g(id){const el=document.getElementById(id);if(!el)return'';return el.value||'';}
+function chybaStud(){const M=[];if(!g('st_dur'))M.push('dĺžka výkonu');if(!g('st_fluoro'))M.push('skiaskopia');if(!g('st_dap'))M.push('DAP');if(!g('st_contrast'))M.push('kontrast');return M;}
 function chk(id){const el=document.getElementById(id);return el?el.checked:false;}
 function tB(id){const b=document.getElementById('b_'+id);if(b)b.classList.toggle('on');}
 function tShow(id,show){const el=document.getElementById(id);if(el)el.style.display=show?'':'none';}
@@ -854,6 +880,35 @@ function gen(){
   window._dirty=true;
 }
 
+
+// ── Follow-up ────────────────────────────────────────────────
+function showFuTab(t){
+  document.querySelector('.wrap').style.display=t==='fu'?'none':'grid';
+  document.getElementById('tab-fu').style.display=t==='fu'?'block':'none';
+  document.getElementById('tnb-nalez').classList.toggle('active',t!=='fu');
+  document.getElementById('tnb-fu').classList.toggle('active',t==='fu');
+  if(t==='fu'){
+    if(!g('fu_datum'))document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
+    if(!g('fu_id')&&g('id_suffix'))document.getElementById('fu_id').value='CAS-'+new Date().getFullYear()+'-'+g('id_suffix');
+  }
+}
+function msgFu(t,c){const el=document.getElementById('fu_msg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',4000);}
+async function saveFU(){
+  if(!g('fu_id')){msgFu('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  const data={
+    vykon_id:g('fu_id'),datum_kontroly:g('fu_datum'),casovy_bod:g('fu_bod'),zobrazenie:g('fu_zobr'),
+    restenoza:g('fu_rest')||null,neuro:g('fu_neuro')||null,
+    reintervencia:document.getElementById('fu_reint').checked,
+    reintervencia_detail:g('fu_reint_detail')||null,
+    poznamka:g('fu_pozn')||null
+  };
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/cas_followup',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
+    if(r.ok){msgFu('✅ Follow-up uložený!','#1d6f42');['fu_sac','fu_pozn','fu_reint_detail'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});const ch=document.getElementById('fu_reint');if(ch)ch.checked=false;const el2=document.getElementById('fu_el');if(el2)el2.checked=false;}
+    else msgFu('❌ Chyba: '+r.status+(r.status===404?' (spustite setup SQL)':''),'#dc2626');
+  }catch(e){msgFu('❌ Chyba siete','#dc2626');}
+}
+
 // NIS-safe text: prazdne riadky dostanu medzeru (NIS ich inak zlepi) a konce riadkov su CRLF pre stare Windows editory
 function nisSafeTxt(t){
   return t.replace(/─/g,'-').replace(/\n\n/g,'\n \n').replace(/\r?\n/g,'\r\n');
@@ -959,7 +1014,7 @@ async function saveData(){
       headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},
       body:JSON.stringify(payload)
     });
-    if(r.ok){msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');window._dirty=false;}
+    if(r.ok){window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
   finally{if(_saveBtn)_saveBtn.disabled=false;}
