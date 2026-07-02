@@ -197,6 +197,26 @@ CREATE TABLE IF NOT EXISTS cas_followup (
 CREATE TABLE IF NOT EXISTS cz_pevar_followup (LIKE pevar_followup INCLUDING ALL);
 CREATE TABLE IF NOT EXISTS cz_cas_followup   (LIKE cas_followup INCLUDING ALL);
 
+-- denny_program – program výkonov na deň (upravuje sa naživo na rannom sedení)
+CREATE TABLE IF NOT EXISTS denny_program (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  datum           TEXT NOT NULL,           -- deň programu (YYYY-MM-DD)
+  poradie         INT DEFAULT 0,
+  meno            TEXT,                    -- celé meno pacienta
+  rocnik          INT,
+  diagnoza        TEXT,
+  lozko           TEXT,                    -- kde leží (odd./izba)
+  cas_okno        TEXT,                    -- časové okno (napr. 8:00–9:30)
+  poloha          TEXT,                    -- poloha pacienta na sále
+  miesto_punkcie  TEXT,
+  poznamka        TEXT,
+  stav            TEXT DEFAULT 'planovany', -- planovany | vyradeny
+  vyradeny_dovod  TEXT,
+  created_by      TEXT DEFAULT (auth.jwt()->>'email')
+);
+
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -426,6 +446,7 @@ ALTER TABLE pevar_followup  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cas_followup    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cz_pevar_followup ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cz_cas_followup   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE denny_program     ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "anon all evk"      ON evk_vykony;
 DROP POLICY IF EXISTS "anon insert evk"   ON evk_vykony;
@@ -478,6 +499,11 @@ DROP POLICY IF EXISTS "anon all cz cas fu" ON cz_cas_followup;
 CREATE POLICY "anon all cz cas fu" ON cz_cas_followup FOR ALL TO anon USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "auth all cz cas fu" ON cz_cas_followup;
 CREATE POLICY "auth all cz cas fu" ON cz_cas_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "anon all program" ON denny_program;
+CREATE POLICY "anon all program" ON denny_program FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all program" ON denny_program;
+CREATE POLICY "auth all program" ON denny_program FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Storage politiky pre bucket aorta-prilohy (anon aj authenticated)
 DROP POLICY IF EXISTS "aorta prilohy storage select" ON storage.objects;

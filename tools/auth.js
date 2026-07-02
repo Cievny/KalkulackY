@@ -113,6 +113,7 @@
     {href:'/tools/CAS-generator/',label:'CAS'},
     {href:'/tools/PEVAR/',label:'PEVAR'},
     {href:'/tools/Aorta/',label:'📥 Požiadavky'},
+    {href:'/tools/Program/',label:'📅 Program'},
     {href:'/tools/analytics/',label:'📊 Štatistiky'},
     {href:'/tools/zaznamy/',label:'📁 Záznamy'},
     {href:'/tools/ideas/',label:'💡 Nápady'},
