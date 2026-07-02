@@ -566,7 +566,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <textarea id="out" readonly></textarea>
   <div class="btns">
     <button class="btn bc" onclick="copyOut()">📋 Kopírovať</button>
-    <button class="btn bp" onclick="saveToSupabase()">💾 Uložiť</button>
+    <button class="btn bp" id="save_btn" onclick="saveToSupabase()">💾 Uložiť</button>
   </div>
   <div id="cmsg"></div>
 </div>
@@ -659,6 +659,7 @@ function withMM(str){
 }
 
 function gen(){
+  window._dirty=true;
   const vek=g('vek');
   const pohlavie=g('pohlavie');
   const jeZena=pohlavie==='Žena';
@@ -763,7 +764,7 @@ function gen(){
   const L=[];
   // ── HLAVIČKA ──
   L.push('SPRÁVA Z ENDOVASKULÁRNEHO VÝKONU (PEVAR)');
-  const datum=g('datum_zaznamu');if(datum){const d=new Date(datum);L.push('Dátum: '+d.toLocaleDateString('sk-SK'));}
+  const datum=g('datum_zaznamu');if(datum){L.push('Dátum: '+datum.split('-').reverse().join('.'));}
   const suf=g('id_suffix');if(suf)L.push('ID: PEVAR-'+new Date().getFullYear()+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
   L.push('─'.repeat(46));
@@ -919,17 +920,24 @@ async function saveToSupabase(){
     extenzie_detail:JSON.stringify(extRows)
   };
   msg('Ukladám...','#5a6a8a');
+  const _btn=document.getElementById('save_btn');
+  if(_btn)_btn.disabled=true;
   try{
     const _isEdit=!!window._editRecordId;
+    if(_isEdit){
+      Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]==null)delete payload[k];});
+      delete payload.vykon_id;
+    }
     const _url=SB_URL+'/rest/v1/pevar_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
     const r=await fetch(_url,{
       method:_isEdit?'PATCH':'POST',
       headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=minimal'},
       body:JSON.stringify(payload)
     });
-    if(r.ok)msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');
+    if(r.ok){window._dirty=false;msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
+  finally{if(_btn)_btn.disabled=false;}
 }
 
 function loadEditRecord(){
@@ -958,32 +966,96 @@ function loadEditRecord(){
     sv('st_clavien',record.clavien_dindo);
     sv('punkcia_arteria',record.punkcia_arteria);
     sv('punkcia_technika',record.punkcia_technika);
-    sv('kompresia_dx_min',record.kompresia_dx_min);
-    sv('kompresia_sin_min',record.kompresia_sin_min);
-    sv('indikacia_typ',record.indikacia_typ);
+    sv('kompr_dx',record.kompresia_dx_min);
+    sv('kompr_sin',record.kompresia_sin_min);
+    if(record.indikacia_typ){const rb=document.querySelector(`input[name="ind_typ"][value="${record.indikacia_typ}"]`);if(rb)rb.checked=true;}
     sv('zabezpecenie_technika',record.zabezpecenie_technika);
-    sv('kontrolna_cta',record.kontrolna_cta);
+    if(record.pristup_strana){const sel=document.getElementById('pristup_strana');const opt=[...sel.options].find(o=>o.value.startsWith(record.pristup_strana));if(opt)sel.value=opt.value;}
+    sv('sheath_velkost',record.sheath_velkost);
+    sv('vodic_typ',record.vodic_typ);
+    if(record.sg_konfiguracia){const rb=document.querySelector(`input[name="sg_typ"][value="${record.sg_konfiguracia}"]`);if(rb)rb.checked=true;}
+    sv('katetrizacia_aorty',record.katetrizacia_aorty);
+    sv('contra_kateter_typ',record.contra_kateter_typ);
+    sv('implantacia_komentar',record.implantacia_komentar);
+    const sc=(id,v)=>{const el=document.getElementById(id);if(el)el.checked=!!v;};
+    sc('char_krehky',record.char_krehky);
+    sc('char_polymorbidny',record.char_polymorbidny);
+    sc('symptomaticky',record.symptomaticky);
+    sc('usg_nav',record.usg_nav);
+    sc('rtg_nav',record.rtg_nav);
+    sc('komponenty_ok',record.komponenty_ok);
+    if(record.modelovanie_telo){
+      sc('modelovanie_telo',true);document.getElementById('b_mod_telo')?.classList.add('on');
+      sv('modelovanie_telo_balon',record.modelovanie_telo_balon);
+    }
+    if(record.modelovanie_extenzie){
+      sc('modelovanie_extenzie',true);document.getElementById('b_mod_ext')?.classList.add('on');
+      sv('modelovanie_extenzie_balon',record.modelovanie_extenzie_balon);
+      sv('modelovanie_extenzie_rozmer',record.modelovanie_extenzie_rozmer);
+    }
+    sv('uzaver_dx_technika',record.uzaver_dx_technika);
+    sv('uzaver_sin_technika',record.uzaver_sin_technika);
+    sv('hemo_dx',record.hemostaza_dx);
+    sv('hemo_sin',record.hemostaza_sin);
+    sc('femostop_dx',record.femostop_dx);
+    sc('femostop_sin',record.femostop_sin);
+    sv('odporucanie_cas',record.odporucanie_cas);
+    sv('zaver_vykonu',record.zaver_vykonu);
+    sv('st_dur',record.proc_duration_min);
+    sv('sac_diameter_mm',record.sac_diameter_mm);
+    sv('neck_length_mm',record.neck_length_mm);
     sv('neck_diameter_mm',record.neck_diameter_mm);
     sv('neck_angle_alpha',record.neck_angle_alpha);
     sv('neck_angle_beta',record.neck_angle_beta);
     sv('neck_shape',record.neck_shape);
     sv('neck_calcification',record.neck_calcification);
+    sv('neck_thrombus',record.neck_thrombus);
+    sv('iliac_diameter_dx',record.iliac_diameter_dx);
+    sv('iliac_diameter_sin',record.iliac_diameter_sin);
     sv('neck_ifu',record.neck_ifu);
     if(record.endoleak){
       const cb=document.getElementById('endoleak_check');
       if(cb){cb.checked=true;const b=document.getElementById('b_endoleak');if(b)b.classList.add('on');}
       sv('endoleak_typ',record.endoleak_typ);
+      sv('endoleak_typ2_zdroj',record.endoleak_zdroj);
     }
-    try{
-      const k=JSON.parse(record.komorbidity||'{}');
-      if(k.DM){const el=document.getElementById('k_dm');if(el){el.checked=true;kSub('dm');}}
-      if(k.AH){const el=document.getElementById('k_ah');if(el){el.checked=true;kSub('ah');}}
-      if(k.CKD){const el=document.getElementById('k_ckd');if(el){el.checked=true;kSub('ckd');}}
-      if(k.ICHS){const el=document.getElementById('k_ichs');if(el){el.checked=true;kSub('ichs');}}
-      if(k['St.p.IM']){const el=document.getElementById('k_im');if(el){el.checked=true;kSub('im');}}
-      if(k['St.p.CMP']){const el=document.getElementById('k_cmp');if(el){el.checked=true;kSub('cmp');}}
+    if(record.extenzie_detail){
+      try{
+        const exts=typeof record.extenzie_detail==='string'?JSON.parse(record.extenzie_detail):record.extenzie_detail;
+        if(Array.isArray(exts)&&exts.length){
+          sc('c_extenzie',true);document.getElementById('b_extenzie')?.classList.add('on');
+          exts.forEach(ex=>{
+            addExtenzia();
+            const eid='ext_'+(extCnt-1);
+            sv(eid+'_strana',ex.strana);
+            sv(eid+'_rozmery',ex.rozmery);
+            if(ex.nazov){
+              const sel=document.getElementById(eid+'_nazov');
+              if(sel){
+                const known=[...sel.options].some(o=>o.value===ex.nazov);
+                if(known)sel.value=ex.nazov;else{sel.value='__custom__';sv(eid+'_nazov_custom',ex.nazov);}
+                toggleCustom(eid+'_nazov');
+              }
+            }
+          });
+        }
+      }catch(e){}
+    }
+    if(record.komorbidity){
+      const ks=String(record.komorbidity);
+      const on=id=>{const el=document.getElementById('k_'+id);if(el){el.checked=true;kSub(id);}};
+      if(/DM[12]/.test(ks))on('dm');
+      if(/\bAH\b/.test(ks))on('ah');
+      if(/CKD|CHRI/i.test(ks))on('chri');
+      if(/ICHS/.test(ks))on('ichs');
+      if(/St\.p\. ?IM/.test(ks))on('im');
+      if(/St\.p\. ?CMP/.test(ks))on('cmp');
+      if(/fajčiar/i.test(ks))on('faj');
+      if(/Obezita/i.test(ks))on('obez');
+      if(/Dyslipid/i.test(ks))on('dysl');
+      if(/CHOCHP/.test(ks))on('chochp');
       document.querySelector('.komor-details')?.setAttribute('open','');
-    }catch(e){}
+    }
     const banner=document.createElement('div');
     banner.style.cssText='background:#fef9c3;color:#854d0e;border-bottom:3px solid #eab308;padding:7px 16px;font-size:12px;font-weight:700;text-align:center;position:sticky;top:38px;z-index:200';
     banner.textContent='✏️ Upravujete záznam '+(record.vykon_id||record.id)+' — po úprave kliknite Uložiť';
@@ -993,6 +1065,7 @@ function loadEditRecord(){
 }
 
 function resetKomor(){
+  if(window._editRecordId)return;
   const det = document.querySelector('.komor-details');
   if(det) det.removeAttribute('open');
   document.querySelectorAll('#komordiv input[type=checkbox]').forEach(cb=>{ cb.checked=false; });
@@ -1006,7 +1079,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   updatePevarIdPrefix();
   loadEditRecord();
   gen();
+  window._dirty=false;
 });
+window.addEventListener('beforeunload',e=>{if(window._dirty){e.preventDefault();e.returnValue='';}});
 </script>
 </body>
 </html>
