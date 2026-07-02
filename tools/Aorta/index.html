@@ -176,6 +176,12 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       <div class="fld"><label>Indikoval (1)</label><select id="af_indikoval1"><option value="">–</option><option>Vařejka</option><option>Vincze</option><option>Širila</option></select></div>
       <div class="fld"><label>Indikoval (2)</label><select id="af_indikoval2"><option value="">–</option><option>Vařejka</option><option>Vincze</option><option>Širila</option></select></div>
       <div class="fld"><label>Plánovaný termín výkonu</label><input id="af_termin" type="date"></div>
+      <div class="fld" id="fld_vykon"><label>Plánovaný výkon</label><select id="af_vykon_typ" onchange="toggleVykon()">
+        <option value="">–</option><option>PEVAR</option><option>TEVAR</option><option>FEVAR</option><option>BEVAR</option>
+        <option>ISLF+ThEVAR</option><option>ISL+EVAR</option><option>Embolizácia</option>
+      </select></div>
+      <div class="fld" id="fld_vykon_cieva" style="grid-column:span 2;display:none"><label>Embolizácia – akej cievy</label><input id="af_vykon_cieva" placeholder="napr. a. mesenterica inferior, lumbálne artérie…"></div>
+      <div class="fld" id="fld_indik_pozn" style="grid-column:span 3"><label>Poznámka k indikácii</label><input id="af_indikacia_poznamka" placeholder="voľný text k indikácii…"></div>
       <div class="fld" style="grid-column:span 3"><label id="lbl_material">Materiál na objednanie (stentgraft, rozmery…)</label><input id="af_material" placeholder="napr. Endurant II 28×16×145 + extenzie"></div>
       <div class="fld"><label>Materiál objednaný dňa</label><input id="af_material_objednany" type="date"></div>
       <div class="fld"><label>Materiál dodaný</label><select id="af_material_dodany"><option value="nie">Nie</option><option value="ano">Áno</option></select></div>
@@ -340,6 +346,9 @@ function toggleKategoria(){
   document.getElementById('lbl_ct').textContent=ine?'Dátum CT / MR vyšetrenia':'Dátum CT angio';
   document.getElementById('lbl_material').textContent=ine?'Navrhovaný postup':'Materiál na objednanie (stentgraft, rozmery…)';
   document.getElementById('af_material').placeholder=ine?'napr. PTA + DEB AFS l.dx.':'napr. Endurant II 28×16×145 + extenzie';
+  document.getElementById('fld_vykon').style.display=ine?'none':'';
+  document.getElementById('fld_indik_pozn').style.display=ine?'none':'';
+  toggleVykon();
   // prečíslovanie viditeľných sekcií
   let n=0;
   document.querySelectorAll('.modal .m-sec').forEach(el=>{
@@ -347,6 +356,12 @@ function toggleKategoria(){
     if(wrap&&wrap.style.display==='none')return;
     n++;el.innerHTML=n+'. '+el.dataset.t;
   });
+}
+
+function toggleVykon(){
+  const ine=document.getElementById('af_kategoria').value==='ine';
+  const emb=document.getElementById('af_vykon_typ').value==='Embolizácia';
+  document.getElementById('fld_vykon_cieva').style.display=(!ine&&emb)?'':'none';
 }
 
 function cardEl(it){
@@ -378,6 +393,7 @@ function cardEl(it){
     ${dg?'<div class="card-line">'+escHtml(dg)+'</div>':''}
     ${it.ziadatel?'<div class="card-line">👤 '+escHtml(it.ziadatel)+'</div>':''}
     ${(it.indikoval1||it.indikoval2)?'<div class="card-line">⚕️ indikoval: '+escHtml([it.indikoval1,it.indikoval2].filter(Boolean).join(' + '))+'</div>':''}
+    ${it.vykon_typ?'<div class="card-line">🛠 plán: '+escHtml(it.vykon_typ+(it.vykon_cieva?' – '+it.vykon_cieva:''))+'</div>':''}
     ${matHtml}
     <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stave':''}${dTotal!==null?' • od požiadavky <b>'+dTotal+' d</b>':''}${it.created_by?' • pridal <b>'+escHtml(shortMail(it.created_by))+'</b>':''}</div>
     <div class="card-actions">
@@ -413,7 +429,7 @@ function renderArchive(q){
 // ── Modal detail ─────────────────────────────────────────────
 const FIELDS=['kategoria','rodne_cislo','inicialy','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','diagnoza','symptomy',
   'priemer','rast','datum_ct','krcok_dlzka','krcok_priemer','krcok_angulacia','iliaky',
-  'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','material','material_objednany','material_dodany','termin','zaver_seminara','poznamka'];
+  'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','vykon_typ','vykon_cieva','indikacia_poznamka','material','material_objednany','material_dodany','termin','zaver_seminara','poznamka'];
 // mapovanie form id -> DB stĺpec
 const DBMAP={priemer:'priemer_mm',rast:'rast_mm_rok',krcok_dlzka:'krcok_dlzka_mm',krcok_priemer:'krcok_priemer_mm'};
 
@@ -428,12 +444,13 @@ function formToObj(){
   });
   if(o.kategoria==='ine'){
     o.diagnoza=document.getElementById('af_diagnoza_ine').value.trim()||null;
-    // skryté sekcie (morfológia, anatómia, fitness) sa pri INÉ neukladajú
+    // skryté sekcie (morfológia, anatómia, fitness, aortálny výkon) sa pri INÉ neukladajú
     ['priemer_mm','rast_mm_rok','krcok_dlzka_mm','krcok_priemer_mm','krcok_angulacia','iliaky',
-     'kardio','renalne','pulmo','frailty','dozitie','medikacia'].forEach(k=>o[k]=null);
+     'kardio','renalne','pulmo','frailty','dozitie','medikacia','vykon_typ','vykon_cieva','indikacia_poznamka'].forEach(k=>o[k]=null);
   }else{
     o.zaver_seminara=null; // záver seminára je len pre INÉ
   }
+  if(o.vykon_typ!=='Embolizácia')o.vykon_cieva=null; // cieva len pri embolizácii
   return o;
 }
 function objToForm(it){
@@ -677,9 +694,11 @@ function buildZapis(){
   L.push('- Frailty: '+(o.frailty?'ÁNO (krehký pacient)':'nie (fit)'));
   L.push('- Očakávané dožitie: '+(o.dozitie==='<2'?'< 2 roky':'> 2 roky'));
   L.push('- Antitrombotická liečba: '+(o.medikacia||'bez špecifikácie'));
-  if(o.material||o.termin||o.indikoval1||o.indikoval2){
+  if(o.material||o.termin||o.indikoval1||o.indikoval2||o.vykon_typ||o.indikacia_poznamka){
     L.push('4. ENDOVASKULÁRNY PLÁN');
     if(o.indikoval1||o.indikoval2)L.push('- Indikoval: '+[o.indikoval1,o.indikoval2].filter(Boolean).join(' + '));
+    if(o.vykon_typ)L.push('- Plánovaný výkon: '+o.vykon_typ+(o.vykon_cieva?' – '+o.vykon_cieva:''));
+    if(o.indikacia_poznamka)L.push('- Poznámka k indikácii: '+o.indikacia_poznamka);
     if(o.material)L.push('- Materiál: '+o.material+(o.material_objednany?' (objednaný '+fmtD(o.material_objednany)+(o.material_dodany?', dodaný':', čaká sa na dodanie')+')':''));
     if(o.termin)L.push('- Plánovaný termín výkonu: '+fmtD(o.termin));
   }
