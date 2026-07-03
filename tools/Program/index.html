@@ -677,7 +677,7 @@ async function renderWeek(){
       const c=document.createElement('div');
       c.className='wcard'+(x.stav==='vyradeny'?' vyr':'');
       c.draggable=true;
-      c.innerHTML=`<b>${escHtml(x.meno||'?')}${x.rocnik?' ('+x.rocnik+')':''}</b>${escHtml(x.diagnoza||'')}${x.vykon?' – '+escHtml(x.vykon):''}`;
+      c.innerHTML=`<b>${escHtml(x.meno||'?')}${x.rocnik?' ('+x.rocnik+')':''}</b>${escHtml(x.diagnoza||'')}${x.vykon?' – '+escHtml(x.vykon):''}${x.poznamka?'<div style="color:#6b7280;font-size:10.5px;line-height:1.3">📝 '+escHtml(x.poznamka)+'</div>':''}`;
       c.addEventListener('dragstart',e=>{WDRAG={id:x.id};e.dataTransfer.effectAllowed='move';});
       c.addEventListener('dragend',()=>{WDRAG=null;});
       col.appendChild(c);
