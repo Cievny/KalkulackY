@@ -1,17 +1,11 @@
 // Shared auth + navigation for cievny.sk tools – CZ verzia (VFN)
-// Supabase Auth (JWT) s fallbackem na legacy heslo během migrace.
+// Supabase Auth (JWT) – přihlášení emailem (legacy heslo vypnuto 7/2026).
 (function(){
-  const HASH='eed80dcdb814905923770f85e576d75c7eefde07504aeb8cd45edd0a3d594276'; // legacy fallback
   const KEY='cievny_auth_cz';
   const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
   const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
   const AUTH_EMAIL='vfn@cievny.sk'; // účet vytvořený v Supabase → Authentication → Users
   const TK=KEY+'_at', RK=KEY+'_rt', XK=KEY+'_exp', EK=KEY+'_email';
-
-  async function sha256(str){
-    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
 
   function storeSession(d){
     sessionStorage.setItem(KEY,'1');
@@ -79,20 +73,17 @@
       sessionStorage.removeItem('cievny_return');
       location.replace(ret);
     }
-    // 1) Supabase Auth – vlastní email; bez emailu společný účet
+    // Supabase Auth – vlastní email; bez emailu společný účet
     try{
       const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
         method:'POST',headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
         body:JSON.stringify({email:email||AUTH_EMAIL,password:pw})
       });
       if(r.ok){storeSession(await r.json());go();return;}
-    }catch(e){/* síť — zkus legacy */}
-    // 2) Legacy fallback jen bez zadaného emailu (dokud RLS povoluje anon zápis)
-    if(!email){
-      const h=await sha256(pw);
-      if(h===HASH){storeSession(null);go();return;}
+      msg.textContent=email?'Nesprávný email nebo heslo.':'Nesprávné heslo.';
+    }catch(e){
+      msg.textContent='Chyba sítě – zkuste znovu.';
     }
-    msg.textContent=email?'Nesprávný email nebo heslo.':'Nesprávné heslo.';
     msg.style.color='#dc2626';
     document.getElementById('pw').value='';
     document.getElementById('pw').focus();

@@ -1,17 +1,11 @@
 // Shared auth + navigation for cievny.sk tools
-// Supabase Auth (JWT) s fallbackom na legacy heslo počas migrácie.
+// Supabase Auth (JWT) – prihlásenie emailom (legacy heslo vypnuté 7/2026).
 (function(){
-  const HASH='1361e98fcf8c152a1f48690a2ec88c9fafb11c5a1355c3a2aa000154092065fc'; // legacy fallback
   const KEY='cievny_auth';
   const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
   const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
   const AUTH_EMAIL='oira@cievny.sk'; // spoločný účet – fallback, keď sa nezadá email
   const TK=KEY+'_at', RK=KEY+'_rt', XK=KEY+'_exp', EK=KEY+'_email';
-
-  async function sha256(str){
-    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
 
   function storeSession(d){
     sessionStorage.setItem(KEY,'1');
@@ -79,20 +73,17 @@
       sessionStorage.removeItem('cievny_return');
       location.replace(ret);
     }
-    // 1) Supabase Auth – vlastný email; bez emailu spoločný účet
+    // Supabase Auth – vlastný email; bez emailu spoločný účet
     try{
       const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
         method:'POST',headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
         body:JSON.stringify({email:email||AUTH_EMAIL,password:pw})
       });
       if(r.ok){storeSession(await r.json());go();return;}
-    }catch(e){/* sieť — skús legacy */}
-    // 2) Legacy fallback len bez zadaného emailu (kým RLS povoľuje anon zápis)
-    if(!email){
-      const h=await sha256(pw);
-      if(h===HASH){storeSession(null);go();return;}
+      msg.textContent=email?'Nesprávny email alebo heslo.':'Nesprávne heslo.';
+    }catch(e){
+      msg.textContent='Chyba siete – skúste znova.';
     }
-    msg.textContent=email?'Nesprávny email alebo heslo.':'Nesprávne heslo.';
     msg.style.color='#dc2626';
     document.getElementById('pw').value='';
     document.getElementById('pw').focus();
