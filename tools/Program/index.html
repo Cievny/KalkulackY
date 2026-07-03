@@ -21,7 +21,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .msg{font-size:12.5px;font-weight:600;}
 .list{padding:16px 20px 8px;max-width:1200px;}
 .prow{display:grid;grid-template-columns:44px 1.25fr .45fr 1.1fr 1fr .95fr 400px;gap:8px;align-items:center;background:#fff;border:1.5px solid #e5e9f5;border-radius:10px;padding:8px 12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
-.psub{grid-column:2/-1;display:grid;grid-template-columns:.5fr .8fr .95fr .8fr 1.35fr;gap:8px;}
+.psub{grid-column:2/-1;display:grid;grid-template-columns:.8fr .95fr .8fr 1.45fr;gap:8px;}
 .stav-chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:10px;cursor:pointer;border:none;white-space:nowrap;line-height:1;}
 .stav-caka{background:#f0f2f7;color:#6b7280;}
 .stav-na_sale{background:#dbeafe;color:#1e40af;}
@@ -142,7 +142,6 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
     <input id="n_lozko" placeholder="odd. / izba" onkeydown="if(event.key==='Enter')addRow()">
     <button class="btn-add" onclick="addRow()">+ Pridať</button>
     <div class="psub">
-      <input id="n_cas" placeholder="čas. okno (8:00–9:30)" list="dl_cas" onkeydown="if(event.key==='Enter')addRow()">
       <input id="n_poloha" placeholder="poloha" list="dl_poloha" onkeydown="if(event.key==='Enter')addRow()">
       <input id="n_punkcia" placeholder="miesto punkcie" list="dl_punkcia" onkeydown="if(event.key==='Enter')addRow()">
       <input id="n_operator" placeholder="operatér" list="dl_operator" onkeydown="if(event.key==='Enter')addRow()">
@@ -210,10 +209,6 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
   <option value="a. brachialis l.sin."></option><option value="a. brachialis l.dx."></option>
   <option value="a. radialis l.dx."></option><option value="a. radialis l.sin."></option>
   <option value="v. femoralis l.dx."></option><option value="v. femoralis l.sin."></option>
-</datalist>
-<datalist id="dl_cas">
-  <option value="8:00"></option><option value="9:00"></option><option value="10:00"></option>
-  <option value="11:00"></option><option value="13:00"></option><option value="14:00"></option>
 </datalist>
 <datalist id="dl_operator">
   <option value="Dr. Vincze"></option><option value="Dr. Fľak"></option><option value="Dr. Širila"></option>
@@ -370,7 +365,6 @@ function render(){
         <button class="bmini bmini-del" title="zmazať úplne" onclick="delRow('${row.id}')">🗑</button>
       </div>
       <div class="psub">
-        <input value="${escHtml(row.cas_okno||'')}" list="dl_cas" onchange="patchRow('${row.id}','cas_okno',this.value)" placeholder="čas. okno">
         <input value="${escHtml(row.poloha||'')}" list="dl_poloha" onchange="patchRow('${row.id}','poloha',this.value)" placeholder="poloha">
         <input value="${escHtml(row.miesto_punkcie||'')}" list="dl_punkcia" onchange="patchRow('${row.id}','miesto_punkcie',this.value)" placeholder="miesto punkcie">
         <input value="${escHtml(row.operator||'')}" list="dl_operator" onchange="patchRow('${row.id}','operator',this.value)" placeholder="operatér">
@@ -406,7 +400,6 @@ async function addRow(pre,doZasobnika){
     diagnoza:g('n_diagnoza').trim()||null,
     vykon:g('n_vykon').trim()||null,
     lozko:g('n_lozko').trim()||null,
-    cas_okno:g('n_cas').trim()||null,
     poloha:g('n_poloha').trim()||null,
     miesto_punkcie:g('n_punkcia').trim()||null,
     operator:g('n_operator').trim()||null,
@@ -421,7 +414,7 @@ async function addRow(pre,doZasobnika){
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
     if(r.ok){
       NEW_POZID=null;
-      if(!pre)['n_meno','n_rocnik','n_diagnoza','n_vykon','n_lozko','n_cas','n_poloha','n_punkcia','n_operator','n_poznamka'].forEach(i=>document.getElementById(i).value='');
+      if(!pre)['n_meno','n_rocnik','n_diagnoza','n_vykon','n_lozko','n_poloha','n_punkcia','n_operator','n_poznamka'].forEach(i=>document.getElementById(i).value='');
       await loadRows();
       if(!pre)document.getElementById('n_meno').focus();
     }else msg('❌ Chyba: '+r.status,'#dc2626');
@@ -607,7 +600,7 @@ async function renderWeek(){
       const c=document.createElement('div');
       c.className='wcard'+(x.stav==='vyradeny'?' vyr':'');
       c.draggable=true;
-      c.innerHTML=`<b>${escHtml(x.meno||'?')}${x.rocnik?' ('+x.rocnik+')':''}</b>${escHtml(x.diagnoza||'')}${x.vykon?' – '+escHtml(x.vykon):''}${x.cas_okno?' • '+escHtml(x.cas_okno):''}`;
+      c.innerHTML=`<b>${escHtml(x.meno||'?')}${x.rocnik?' ('+x.rocnik+')':''}</b>${escHtml(x.diagnoza||'')}${x.vykon?' – '+escHtml(x.vykon):''}`;
       c.addEventListener('dragstart',e=>{WDRAG={id:x.id};e.dataTransfer.effectAllowed='move';});
       c.addEventListener('dragend',()=>{WDRAG=null;});
       col.appendChild(c);
@@ -644,7 +637,7 @@ function buildProgram(){
   let c=0;
   ROWS.filter(r=>r.stav!=='vyradeny').forEach(r=>{
     c++;
-    L.push(c+'. '+(r.cas_okno?r.cas_okno+' | ':'')+(r.meno||'?')+(r.rocnik?' ('+r.rocnik+')':'')+(r.diagnoza?' – '+r.diagnoza:'')+(r.vykon?' – '+r.vykon:'')+(r.lozko?' – '+r.lozko:'')
+    L.push(c+'. '+(r.meno||'?')+(r.rocnik?' ('+r.rocnik+')':'')+(r.diagnoza?' – '+r.diagnoza:'')+(r.vykon?' – '+r.vykon:'')+(r.lozko?' – '+r.lozko:'')
       +(r.poloha?' – poloha: '+r.poloha:'')+(r.miesto_punkcie?' – punkcia: '+r.miesto_punkcie:'')+(r.operator?' – operatér: '+r.operator:'')+((r.stav_vykonu==='hotovy'&&r.vykon_start&&r.vykon_koniec)?' – trvanie '+Math.max(0,Math.round((new Date(r.vykon_koniec)-new Date(r.vykon_start))/60000))+' min':'')+(r.poznamka?' – pozn.: '+r.poznamka:''));
   });
   if(!c)L.push('(program je prázdny)');
