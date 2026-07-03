@@ -52,6 +52,7 @@ details summary:hover{color:#1737a0}
   <button class="tab" onclick="showTab('cas',this)">CAS – Karotídy</button>
   <button class="tab" onclick="showTab('pevar',this)">PEVAR – Aorta</button>
   <button class="tab" onclick="showTab('poz',this)">📥 Požiadavky</button>
+  <button class="tab" onclick="showTab('prog',this)">📅 Program</button>
 </div>
 
 <div id="sec-evk" class="section active">
@@ -215,6 +216,33 @@ details summary:hover{color:#1737a0}
       <div class="chart-card"><h3>Výsledky uzavretých</h3><div class="chart-wrap"><canvas id="ch-poz-vysledok"></canvas></div></div>
     </div>
     <div class="chart-card"><h3>Dní od požiadavky po uzavretie (archív)</h3><div class="chart-wrap"><canvas id="ch-poz-days"></canvas></div></div>
+  </div>
+</div>
+
+<div id="sec-prog" class="section">
+  <div id="prog-loading" class="loading">Načítavam...</div>
+  <div id="prog-content" style="display:none">
+    <div class="grid" id="prog-stats"></div>
+    <div class="row2">
+      <div class="chart-card"><h3>Výkony podľa mesiaca</h3><div class="chart-wrap"><canvas id="ch-prog-month"></canvas></div></div>
+      <div class="chart-card"><h3>Typy výkonov (top 10)</h3><div class="chart-wrap"><canvas id="ch-prog-vykon"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Operatéri</h3><div class="chart-wrap"><canvas id="ch-prog-op"></canvas></div></div>
+      <div class="chart-card"><h3>Trvanie výkonu – stopky (min)</h3><div class="chart-wrap"><canvas id="ch-prog-duration"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Ø trvanie podľa typu výkonu (min)</h3><div class="chart-wrap"><canvas id="ch-prog-durvykon"></canvas></div></div>
+      <div class="chart-card"><h3>Výkony podľa dňa v týždni</h3><div class="chart-wrap"><canvas id="ch-prog-den"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Poloha pacienta</h3><div class="chart-wrap"><canvas id="ch-prog-poloha"></canvas></div></div>
+      <div class="chart-card"><h3>Miesto punkcie</h3><div class="chart-wrap"><canvas id="ch-prog-punkcia"></canvas></div></div>
+    </div>
+    <div class="row2">
+      <div class="chart-card"><h3>Dôvody vyradenia</h3><div class="chart-wrap"><canvas id="ch-prog-vyrad"></canvas></div></div>
+      <div class="chart-card"><h3>Vek pacientov (podľa ročníka)</h3><div class="chart-wrap"><canvas id="ch-prog-vek"></canvas></div></div>
+    </div>
   </div>
 </div>
 
@@ -639,9 +667,93 @@ async function loadPOZ(){
   mkChart('ch-poz-days','bar',labels,binC,false);
 }
 
+async function loadPROG(){
+  let rows;
+  try{rows=await fetchAll('denny_program');}
+  catch(e){document.getElementById('prog-loading').textContent='Tabuľka denny_program nie je dostupná (spustite setup SQL).';return;}
+  document.getElementById('prog-loading').style.display='none';
+  document.getElementById('prog-content').style.display='block';
+  RAW.prog=rows;ensureExportBtn('prog');
+
+  // platné = reálne naplánované (bez zásobníka a bez vyradených)
+  const valid=rows.filter(r=>r.datum&&r.datum!=='zasobnik'&&r.stav!=='vyradeny');
+  // vyradení = skutočné vyradenia (presuny na iný deň / do zásobníka nechávajú stopu s dôvodom "presunutý…" – tie nepočítame)
+  const vyradeni=rows.filter(r=>r.stav==='vyradeny'&&!/^presunut/i.test(r.vyradeny_dovod||''));
+  const zasobnik=rows.filter(r=>r.datum==='zasobnik');
+  const hotove=valid.filter(r=>r.stav_vykonu==='hotovy');
+
+  // trvania zo stopiek (len zmysluplné hodnoty 1–600 min)
+  const durOf=r=>{if(!r.vykon_start||!r.vykon_koniec)return null;
+    const m=Math.round((new Date(r.vykon_koniec)-new Date(r.vykon_start))/60000);
+    return (m>0&&m<600)?m:null;};
+  const durRows=valid.map(r=>({r,m:durOf(r)})).filter(x=>x.m!=null);
+  const durs=durRows.map(x=>x.m).sort((a,b)=>a-b);
+  const avgDur=durs.length?Math.round(durs.reduce((a,b)=>a+b,0)/durs.length):null;
+  const medDur=durs.length?durs[Math.floor(durs.length/2)]:null;
+
+  const tentoMesiac=(''+new Date().getFullYear()).padStart(4,'0')+'-'+(''+(new Date().getMonth()+1)).padStart(2,'0');
+  document.getElementById('prog-stats').innerHTML=[
+    statCard('Naplánované výkony spolu',valid.length),
+    statCard('Hotové výkony',hotove.length),
+    statCard('Tento mesiac',valid.filter(r=>monthKey(r.datum)===tentoMesiac).length),
+    statCard('Ø trvanie výkonu (min)',avgDur??'–'),
+    statCard('Medián trvania (min)',medDur??'–'),
+    statCard('Vyradení pacienti',vyradeni.length),
+    statCard('V zásobníku',zasobnik.length),
+  ].join('');
+
+  // podľa mesiaca
+  const mF={};valid.forEach(r=>{const k=monthKey(r.datum);if(k)mF[k]=(mF[k]||0)+1;});
+  const mK=Object.keys(mF).sort();
+  mkChart('ch-prog-month','bar',mK,mK.map(k=>mF[k]),false);
+
+  // typy výkonov
+  const vF=sortedFreq(valid.filter(r=>r.vykon),'vykon',10);
+  mkChart('ch-prog-vykon','bar',vF.map(x=>x[0]),vF.map(x=>x[1]),false);
+
+  // operatéri
+  const op=sortedFreq(valid.filter(r=>r.operator),'operator',10);
+  mkChart('ch-prog-op','doughnut',op.map(x=>x[0]),op.map(x=>x[1]));
+
+  // histogram trvaní (stopky)
+  const dEdges=[0,30,60,90,120,999],dLabels=['0–30','30–60','60–90','90–120','120+'];
+  const dC=new Array(dLabels.length).fill(0);
+  durs.forEach(m=>{for(let i=0;i<dEdges.length-1;i++){if(m>=dEdges[i]&&m<dEdges[i+1]){dC[i]++;return;}}});
+  mkChart('ch-prog-duration','bar',dLabels,dC,false);
+
+  // Ø trvanie podľa typu výkonu (top 8 podľa počtu meraní)
+  const byVykon={};
+  durRows.forEach(x=>{const k=(x.r.vykon||'').trim();if(!k)return;(byVykon[k]=byVykon[k]||[]).push(x.m);});
+  const dv=Object.entries(byVykon).sort((a,b)=>b[1].length-a[1].length).slice(0,8)
+    .map(([k,arr])=>[k+' (n='+arr.length+')',Math.round(arr.reduce((a,b)=>a+b,0)/arr.length)]);
+  mkChart('ch-prog-durvykon','bar',dv.map(x=>x[0]),dv.map(x=>x[1]),false);
+
+  // deň v týždni
+  const denLbl=['Po','Ut','St','Št','Pi','So','Ne'];
+  const denC=new Array(7).fill(0);
+  valid.forEach(r=>{const d=new Date(r.datum);if(!isNaN(d))denC[(d.getDay()+6)%7]++;});
+  mkChart('ch-prog-den','bar',denLbl,denC,false);
+
+  // poloha + punkcia
+  const pol=sortedFreq(valid.filter(r=>r.poloha),'poloha',8);
+  mkChart('ch-prog-poloha','doughnut',pol.map(x=>x[0]),pol.map(x=>x[1]));
+  const pun=sortedFreq(valid.filter(r=>r.miesto_punkcie),'miesto_punkcie',8);
+  mkChart('ch-prog-punkcia','doughnut',pun.map(x=>x[0]),pun.map(x=>x[1]));
+
+  // dôvody vyradenia
+  const vd=sortedFreq(vyradeni,'vyradeny_dovod',8);
+  mkChart('ch-prog-vyrad','bar',vd.map(x=>x[0]),vd.map(x=>x[1]),false);
+
+  // vek podľa ročníka
+  const rokDnes=new Date().getFullYear();
+  const vekRows=valid.filter(r=>r.rocnik&&r.rocnik>1900).map(r=>({vek:rokDnes-r.rocnik}));
+  const vb=ageBins(vekRows);if(vb.length)mkChart('ch-prog-vek','bar',vb.map(x=>x[0]),vb.map(x=>x[1]),false);
+}
+
 async function loadAll(){
   document.getElementById('err-box').style.display='none';
   loadPOZ(); // nezávisle – nesmie zhodiť ostatné sekcie
+  loadPROG(); // nezávisle – nesmie zhodiť ostatné sekcie
   try{await Promise.all([loadEVK(),loadCAS(),loadPEVAR()]);}
   catch(e){
     const eb=document.getElementById('err-box');
