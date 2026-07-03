@@ -57,6 +57,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .fbtn.active{background:#1e40af;color:#fff;border-color:#1e40af;}
 h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;max-width:1200px;margin:0 auto;}
 .page-sub{font-size:13px;color:#6b7280;padding:4px 20px 0;max-width:1200px;margin:0 auto;}
+.arch-wrap{max-width:1200px;margin:0 auto;padding:0 20px 24px;}
+.arch-wrap details{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;}
+.arch-wrap summary{font-size:13.5px;font-weight:700;color:#1a2745;cursor:pointer;user-select:none;}
+.arch-card{background:#f8faff;border:1.5px solid #e5e9f5;border-radius:8px;padding:8px 11px;margin-top:8px;font-size:12.5px;color:#4b5563;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.arch-card .atext{flex:1;min-width:180px;white-space:pre-wrap;word-break:break-word;}
 @media(max-width:700px){.board{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -121,6 +126,13 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;max-width:12
       <button class="btn-add" onclick="addCard('hotovo')">+ Přidat</button>
     </div>
   </div>
+</div>
+
+<div class="arch-wrap">
+  <details>
+    <summary>🗄 Archiv – <span id="cnt-archiv">0</span></summary>
+    <div id="cards-archiv"></div>
+  </details>
 </div>
 
 <script>
@@ -188,10 +200,30 @@ function render(){
         <div class="card-actions">
           <button class="btn-vote${voted?' voted':''}" onclick="vote('${item.id}')" title="${voted?'už jste hlasovali':'podpořit návrh'}">👍 ${item.hlasy||0}</button>
           <button class="btn-kom" onclick="toggleKom('${item.id}')">💬 ${kom.length}</button>
-          ${moveButtons}<button class="btn-note" onclick="saveNote('${item.id}')">📝 ${item.note?'Upravit':'Přidat'} poznámku</button><button class="btn-del" onclick="delCard('${item.id}')">🗑 Smazat</button></div>
+          ${moveButtons}<button class="btn-note" onclick="saveNote('${item.id}')">📝 ${item.note?'Upravit':'Přidat'} poznámku</button><button class="btn-move" onclick="moveCard('${item.id}','archiv')">🗄 Archivovat</button><button class="btn-del" onclick="delCard('${item.id}')">🗑 Smazat</button></div>
         ${komHtml}`;
       container.appendChild(div);
     });
+  });
+  renderArchiv();
+}
+
+function renderArchiv(){
+  const rows=ITEMS.filter(i=>i.col==='archiv'&&(!FILTER||(i.kategoria||'apka')===FILTER))
+    .sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
+  document.getElementById('cnt-archiv').textContent=rows.length;
+  const box=document.getElementById('cards-archiv');box.innerHTML='';
+  if(!rows.length){box.innerHTML='<div style="font-size:12px;color:#9ca3af;margin-top:8px">Archiv je prázdný.</div>';return;}
+  rows.forEach(item=>{
+    const kat=(item.kategoria||'apka');
+    const date=new Date(item.created_at).toLocaleDateString('cs-CZ');
+    const div=document.createElement('div');div.className='arch-card';
+    div.innerHTML=`<span class="kat-badge kat-${kat}">${kat==='oddelenie'?'🏥':'💻'}</span>
+      <span class="atext">${escHtml(item.text)}${item.note?' — 📝 '+escHtml(item.note):''}</span>
+      <span style="color:#9ca3af;font-size:11px">${item.author?'👤 '+escHtml(item.author):'🕶 anonym'} · ${date} · 👍 ${item.hlasy||0}</span>
+      <button class="btn-move" onclick="moveCard('${item.id}','hotovo')">↩ Obnovit</button>
+      <button class="btn-del" onclick="delCard('${item.id}')">🗑</button>`;
+    box.appendChild(div);
   });
 }
 

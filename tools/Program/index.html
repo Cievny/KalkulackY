@@ -20,7 +20,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .live{font-size:11.5px;color:#16a34a;font-weight:600;}
 .msg{font-size:12.5px;font-weight:600;}
 .list{padding:16px 20px 8px;max-width:1200px;}
-.prow{display:grid;grid-template-columns:44px 1.4fr .5fr 1.5fr 1.1fr auto;gap:8px;align-items:center;background:#fff;border:1.5px solid #e5e9f5;border-radius:10px;padding:8px 12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.prow{display:grid;grid-template-columns:44px 1.25fr .45fr 1.1fr 1fr .95fr auto;gap:8px;align-items:center;background:#fff;border:1.5px solid #e5e9f5;border-radius:10px;padding:8px 12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
 .psub{grid-column:2/-1;display:grid;grid-template-columns:.5fr .8fr .95fr .8fr 1.35fr;gap:8px;}
 .stav-chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:10px;cursor:pointer;border:none;white-space:nowrap;line-height:1;}
 .stav-caka{background:#f0f2f7;color:#6b7280;}
@@ -47,7 +47,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 /* TV / kiosk režim */
 body.tv .shared-nav,body.tv .toolbar,body.tv .addrow,body.tv .navrhy,body.tv .hdr,body.tv .zas-wrap,body.tv .page-sub,body.tv .pacts .bmini{display:none!important;}
 body.tv h1{font-size:32px;padding:24px 24px 4px;}
-body.tv .prow{font-size:18px;padding:12px 16px;}
+body.tv .prow{font-size:18px;padding:12px 16px;grid-template-columns:60px 1.25fr .45fr 1.1fr 1fr .95fr;}
 body.tv .prow input{font-size:17px;pointer-events:none;border:none;background:none;}
 body.tv .pnum{font-size:26px;cursor:default;}
 body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
@@ -67,8 +67,8 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
 .bmini-del{border-color:#fca5a5;color:#dc2626;}
 .bmini-out{border-color:#fcd34d;color:#b45309;}
 .vyr-dovod{grid-column:2/-1;font-size:12px;color:#991b1b;font-weight:600;padding-left:2px;}
-.hdr{display:grid;grid-template-columns:44px 1.4fr .5fr 1.5fr 1.1fr auto;gap:8px;padding:0 12px 4px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;}
-.addrow{display:grid;grid-template-columns:44px 1.4fr .5fr 1.5fr 1.1fr auto;gap:8px;align-items:center;background:#eff6ff;border:1.5px dashed #93c5fd;border-radius:10px;padding:8px 12px;margin-bottom:8px;}
+.hdr{display:grid;grid-template-columns:44px 1.25fr .45fr 1.1fr 1fr .95fr auto;gap:8px;padding:0 12px 4px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;}
+.addrow{display:grid;grid-template-columns:44px 1.25fr .45fr 1.1fr 1fr .95fr auto;gap:8px;align-items:center;background:#eff6ff;border:1.5px dashed #93c5fd;border-radius:10px;padding:8px 12px;margin-bottom:8px;}
 .addrow input{width:100%;padding:7px 9px;border:1.5px solid #bfdbfe;border-radius:6px;font-size:13.5px;font-family:inherit;outline:none;background:#fff;}
 .addrow input:focus{border-color:#3b82f6;}
 .btn-add{padding:7px 14px;background:#1e40af;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
@@ -113,13 +113,14 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
 </div>
 
 <div class="list">
-  <div class="hdr"><span>#</span><span>Meno pacienta</span><span>Ročník</span><span>Diagnóza</span><span>Kde leží</span><span></span></div>
+  <div class="hdr"><span>#</span><span>Meno pacienta</span><span>Ročník</span><span>Diagnóza</span><span>Výkon</span><span>Kde leží</span><span></span></div>
   <div id="rows"></div>
   <div class="addrow">
     <span style="text-align:center;font-weight:800;color:#1e40af">+</span>
     <input id="n_meno" placeholder="Meno a priezvisko" onkeydown="if(event.key==='Enter')addRow()">
     <input id="n_rocnik" type="number" placeholder="1951" min="1900" max="2030" onkeydown="if(event.key==='Enter')addRow()">
-    <input id="n_diagnoza" placeholder="Diagnóza / výkon" onkeydown="if(event.key==='Enter')addRow()">
+    <input id="n_diagnoza" placeholder="Diagnóza" onkeydown="if(event.key==='Enter')addRow()">
+    <input id="n_vykon" placeholder="Výkon" list="dl_vykon" onkeydown="if(event.key==='Enter')addRow()">
     <input id="n_lozko" placeholder="odd. / izba" onkeydown="if(event.key==='Enter')addRow()">
     <button class="btn-add" onclick="addRow()">+ Pridať</button>
     <div class="psub">
@@ -158,6 +159,11 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
 </datalist>
 <datalist id="dl_operator">
   <option value="Vařejka"></option><option value="Vincze"></option><option value="Širila"></option>
+</datalist>
+<datalist id="dl_vykon">
+  <option value="PEVAR"></option><option value="TEVAR"></option><option value="FEVAR"></option><option value="BEVAR"></option>
+  <option value="PTA + stenting"></option><option value="PTA + DEB"></option><option value="CAS"></option>
+  <option value="Embolizácia"></option><option value="Trombektómia"></option><option value="IVL"></option><option value="DSA diagnostika"></option>
 </datalist>
 
 <div class="navrhy" id="navrhy" style="display:none">
@@ -271,6 +277,7 @@ function render(){
       <input value="${escHtml(row.meno||'')}" onchange="patchRow('${row.id}','meno',this.value)" placeholder="Meno">
       <input type="number" value="${row.rocnik??''}" onchange="patchRow('${row.id}','rocnik',this.value?parseInt(this.value):null)" placeholder="ročník">
       <input value="${escHtml(row.diagnoza||'')}" onchange="patchRow('${row.id}','diagnoza',this.value)" placeholder="diagnóza">
+      <input value="${escHtml(row.vykon||'')}" list="dl_vykon" onchange="patchRow('${row.id}','vykon',this.value)" placeholder="výkon">
       <input value="${escHtml(row.lozko||'')}" onchange="patchRow('${row.id}','lozko',this.value)" placeholder="odd./izba">
       <div class="pacts">
         ${vyr?'':`<button class="stav-chip stav-${sv}" onclick="cycleStav('${row.id}')" title="klik prepína: čaká → na sále → hotový">${STAVY[sv]}</button>`}
@@ -316,6 +323,7 @@ async function addRow(pre,doZasobnika){
     meno:g('n_meno').trim(),
     rocnik:g('n_rocnik')?parseInt(g('n_rocnik')):null,
     diagnoza:g('n_diagnoza').trim()||null,
+    vykon:g('n_vykon').trim()||null,
     lozko:g('n_lozko').trim()||null,
     cas_okno:g('n_cas').trim()||null,
     poloha:g('n_poloha').trim()||null,
@@ -332,7 +340,7 @@ async function addRow(pre,doZasobnika){
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
     if(r.ok){
       NEW_POZID=null;
-      if(!pre)['n_meno','n_rocnik','n_diagnoza','n_lozko','n_cas','n_poloha','n_punkcia','n_operator','n_poznamka'].forEach(i=>document.getElementById(i).value='');
+      if(!pre)['n_meno','n_rocnik','n_diagnoza','n_vykon','n_lozko','n_cas','n_poloha','n_punkcia','n_operator','n_poznamka'].forEach(i=>document.getElementById(i).value='');
       await loadRows();
       if(!pre)document.getElementById('n_meno').focus();
     }else msg('❌ Chyba: '+r.status,'#dc2626');
@@ -380,7 +388,7 @@ async function presunDen(id){
     const r0=await fetch(`${SB_URL}/rest/v1/${TBL}?datum=eq.${ciel}&select=poradie`,{headers:H()});
     if(r0.ok){const ex=await r0.json();maxP=ex.length?Math.max(...ex.map(x=>x.poradie||0)):0;}
     const kopia={datum:ciel,poradie:maxP+1,stav:'planovany',
-      meno:row.meno,rocnik:row.rocnik,diagnoza:row.diagnoza,lozko:row.lozko,
+      meno:row.meno,rocnik:row.rocnik,diagnoza:row.diagnoza,vykon:row.vykon,lozko:row.lozko,
       cas_okno:row.cas_okno,poloha:row.poloha,miesto_punkcie:row.miesto_punkcie,
       operator:row.operator,poziadavka_id:row.poziadavka_id,poznamka:row.poznamka};
     const r1=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(kopia)});
@@ -419,7 +427,8 @@ function pridajZPoziadavky(i){
   const p=window._navrhy[i];if(!p)return;
   document.getElementById('n_meno').value=p.inicialy||'';
   document.getElementById('n_rocnik').value=p.rocnik||'';
-  document.getElementById('n_diagnoza').value=(p.diagnoza||'')+(p.vykon_typ?' – '+p.vykon_typ:'');
+  document.getElementById('n_diagnoza').value=p.diagnoza||'';
+  document.getElementById('n_vykon').value=p.vykon_typ||'';
   document.getElementById('n_poznamka').value=p.rodne_cislo?('r.č. '+p.rodne_cislo):'';
   document.getElementById('n_operator').value=p.indikoval1||'';
   NEW_POZID=p.id; // prepojenie: pri „hotový" sa ponúkne uzavretie požiadavky
@@ -466,7 +475,7 @@ async function renderWeek(){
       const c=document.createElement('div');
       c.className='wcard'+(x.stav==='vyradeny'?' vyr':'');
       c.draggable=true;
-      c.innerHTML=`<b>${escHtml(x.meno||'?')}${x.rocnik?' ('+x.rocnik+')':''}</b>${escHtml(x.diagnoza||'')}${x.cas_okno?' • '+escHtml(x.cas_okno):''}`;
+      c.innerHTML=`<b>${escHtml(x.meno||'?')}${x.rocnik?' ('+x.rocnik+')':''}</b>${escHtml(x.diagnoza||'')}${x.vykon?' – '+escHtml(x.vykon):''}${x.cas_okno?' • '+escHtml(x.cas_okno):''}`;
       c.addEventListener('dragstart',e=>{WDRAG={id:x.id};e.dataTransfer.effectAllowed='move';});
       c.addEventListener('dragend',()=>{WDRAG=null;});
       col.appendChild(c);
@@ -501,7 +510,7 @@ function buildProgram(){
   let c=0;
   ROWS.filter(r=>r.stav!=='vyradeny').forEach(r=>{
     c++;
-    L.push(c+'. '+(r.cas_okno?r.cas_okno+' | ':'')+(r.meno||'?')+(r.rocnik?' ('+r.rocnik+')':'')+(r.diagnoza?' – '+r.diagnoza:'')+(r.lozko?' – '+r.lozko:'')
+    L.push(c+'. '+(r.cas_okno?r.cas_okno+' | ':'')+(r.meno||'?')+(r.rocnik?' ('+r.rocnik+')':'')+(r.diagnoza?' – '+r.diagnoza:'')+(r.vykon?' – '+r.vykon:'')+(r.lozko?' – '+r.lozko:'')
       +(r.poloha?' – poloha: '+r.poloha:'')+(r.miesto_punkcie?' – punkcia: '+r.miesto_punkcie:'')+(r.operator?' – operatér: '+r.operator:'')+(r.poznamka?' – pozn.: '+r.poznamka:''));
   });
   if(!c)L.push('(program je prázdny)');

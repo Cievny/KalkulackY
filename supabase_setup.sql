@@ -219,6 +219,7 @@ CREATE TABLE IF NOT EXISTS denny_program (
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS stav_vykonu TEXT DEFAULT 'caka'; -- caka | na_sale | hotovy
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS operator TEXT;
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS poziadavka_id UUID; -- prepojenie na aorta_indikacie
+ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS vykon TEXT; -- planovany vykon (PEVAR/CAS/PTA...)
 
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (
