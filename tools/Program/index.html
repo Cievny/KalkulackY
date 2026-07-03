@@ -242,7 +242,7 @@ let ZAS=[];          // zásobník (datum='zasobnik')
 let MODE='day';      // day | week
 let NEW_POZID=null;  // prepojenie novej položky na kartu v Požiadavkách
 const TV=new URLSearchParams(location.search).get('tv')==='1';
-const STAVY={na_oddeleni:'🛏 na oddelení',poslat:'🚑 poslať pre pacienta',caka:'⏳ čaká',na_sale:'🔵 na sále',hotovy:'✅ hotový'};
+const STAVY={na_oddeleni:'🛏 na oddelení',poslat:'🚑 poslať pre pacienta',caka:'⏳ čaká pred sálou',na_sale:'🔵 na sále',hotovy:'✅ hotový'};
 function g(id){return (document.getElementById(id)||{}).value||'';}
 function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function todayISO(off){const d=new Date();d.setDate(d.getDate()+(off||0));return d.toISOString().slice(0,10);}
@@ -363,7 +363,7 @@ function render(){
       <input value="${escHtml(row.vykon||'')}" list="dl_vykon" onchange="patchRow('${row.id}','vykon',this.value)" placeholder="výkon">
       <input value="${escHtml(row.lozko||'')}" onchange="patchRow('${row.id}','lozko',this.value)" placeholder="odd./izba">
       <div class="pacts">
-        ${vyr?'':`<button class="stav-chip stav-${sv}" id="chip_${row.id}" onclick="cycleStav('${row.id}')" title="klik prepína: na oddelení → poslať pre pacienta → čaká → na sále → hotový">${stavLabel(row)}</button>`}
+        ${vyr?'':`<button class="stav-chip stav-${sv}" id="chip_${row.id}" onclick="cycleStav('${row.id}')" title="klik prepína: na oddelení → poslať pre pacienta → čaká pred sálou → na sále → hotový">${stavLabel(row)}</button>`}
         <button class="bmini" title="posunúť vyššie" onclick="moveRow(${idx},-1)">▲</button>
         <button class="bmini" title="posunúť nižšie" onclick="moveRow(${idx},1)">▼</button>
         ${vyr?`<button class="bmini" onclick="patchRow('${row.id}','stav','planovany');patchRow('${row.id}','vyradeny_dovod',null)">↩ Vrátiť</button>`
