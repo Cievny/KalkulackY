@@ -4,7 +4,6 @@
   const KEY='cievny_auth';
   const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
   const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
-  const AUTH_EMAIL='oira@cievny.sk'; // spoločný účet – fallback, keď sa nezadá email
   const TK=KEY+'_at', RK=KEY+'_rt', XK=KEY+'_exp', EK=KEY+'_email';
 
   function storeSession(d){
@@ -67,20 +66,21 @@
     const emailEl=document.getElementById('email');
     const email=emailEl?emailEl.value.trim():'';
     const msg=document.getElementById('login-msg');
+    if(!email){msg.textContent='Zadajte email.';msg.style.color='#dc2626';document.getElementById('email').focus();return;}
     msg.textContent='Prihlasujem…';msg.style.color='#6b7280';
     function go(){
       const ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
       sessionStorage.removeItem('cievny_return');
       location.replace(ret);
     }
-    // Supabase Auth – vlastný email; bez emailu spoločný účet
+    // Supabase Auth – email je povinný
     try{
       const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
         method:'POST',headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
-        body:JSON.stringify({email:email||AUTH_EMAIL,password:pw})
+        body:JSON.stringify({email,password:pw})
       });
       if(r.ok){storeSession(await r.json());go();return;}
-      msg.textContent=email?'Nesprávny email alebo heslo.':'Nesprávne heslo.';
+      msg.textContent='Nesprávny email alebo heslo.';
     }catch(e){
       msg.textContent='Chyba siete – skúste znova.';
     }

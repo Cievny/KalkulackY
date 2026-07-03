@@ -1,8 +1,9 @@
-name: Týždenná záloha databázy
+name: Denná záloha databázy (2x denne)
 
 on:
   schedule:
-    - cron: '0 3 * * 1'   # každý pondelok 03:00 UTC
+    - cron: '7 4 * * *'    # ~6:07 SELČ (4:07 UTC) – ráno
+    - cron: '7 14 * * *'   # ~16:07 SELČ (14:07 UTC) – poobede
   workflow_dispatch:        # + možnosť spustiť ručne v záložke Actions
 
 jobs:
@@ -65,9 +66,9 @@ jobs:
           print(f'   {n} súborov stiahnutých')
           PYEOF
 
-      - name: Ulož zálohu ako artefakt (90 dní)
+      - name: Ulož zálohu ako artefakt (30 dní)
         uses: actions/upload-artifact@v4
         with:
           name: cievny-zaloha-${{ github.run_id }}
           path: backup/
-          retention-days: 90
+          retention-days: 30
