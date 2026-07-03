@@ -234,6 +234,21 @@ CREATE TABLE IF NOT EXISTS oznamy (
   platne_do TEXT,
   created_by TEXT DEFAULT (auth.jwt()->>'email')
 );
+ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS priloha_path TEXT;
+ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS priloha_nazov TEXT;
+ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS priloha_mime TEXT;
+
+-- Storage bucket pre prílohy oznamov (rozpisy služieb a pod.)
+INSERT INTO storage.buckets (id, name, public, file_size_limit)
+VALUES ('oznamy-prilohy','oznamy-prilohy', false, 20971520)
+ON CONFLICT (id) DO NOTHING;
+DROP POLICY IF EXISTS "auth oznamy storage select" ON storage.objects;
+DROP POLICY IF EXISTS "auth oznamy storage insert" ON storage.objects;
+DROP POLICY IF EXISTS "auth oznamy storage delete" ON storage.objects;
+CREATE POLICY "auth oznamy storage select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id='oznamy-prilohy');
+CREATE POLICY "auth oznamy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='oznamy-prilohy');
+CREATE POLICY "auth oznamy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='oznamy-prilohy');
+
 ALTER TABLE oznamy ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "auth all oznamy" ON oznamy;
 CREATE POLICY "auth all oznamy" ON oznamy FOR ALL TO authenticated USING (true) WITH CHECK (true);

@@ -31,6 +31,8 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;max-width:86
 .o-meta{font-size:11px;color:#9ca3af;margin-top:9px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .o-del{margin-left:auto;font-size:11px;font-weight:600;padding:3px 9px;border:1.5px solid #fca5a5;border-radius:5px;background:#fff;cursor:pointer;color:#dc2626;}
 .o-del:hover{background:#fef2f2;}
+.bfile{font-size:12.5px;font-weight:700;padding:7px 14px;border:1.5px solid #93c5fd;border-radius:8px;background:#eff6ff;cursor:pointer;color:#1e40af;}
+.bfile:hover{background:#dbeafe;}
 .empty{padding:26px;text-align:center;color:#9ca3af;font-size:13.5px;}
 .msg{font-size:12.5px;font-weight:600;margin-left:10px;}
 details.exp-box summary{font-size:13px;font-weight:700;color:#6b7280;cursor:pointer;padding:8px 0;user-select:none;}
@@ -50,6 +52,9 @@ details.exp-box summary{font-size:13px;font-weight:700;color:#6b7280;cursor:poin
     <div class="add-opts">
       <label><input type="checkbox" id="n_dolezite"> 🔴 Dôležité (navrchu, zvýraznené)</label>
       <label>Platí do: <input type="date" id="n_platne_do" title="po tomto dátume sa oznam presunie medzi staršie"></label>
+    </div>
+    <div class="add-opts">
+      <label style="flex:1">📎 Príloha: <input type="file" id="n_file" accept=".xls,.xlsx,.csv,.pdf,.doc,.docx,image/*" style="font-size:12px"></label>
       <button class="btn-add" onclick="addOznam()">📢 Zverejniť</button>
       <span class="msg" id="o_msg"></span>
     </div>
@@ -67,6 +72,7 @@ details.exp-box summary{font-size:13px;font-weight:700;color:#6b7280;cursor:poin
 const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 const H=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
+const BUCKET='oznamy-prilohy';
 
 let OZNAMY=[];
 function g(id){return (document.getElementById(id)||{}).value||'';}
@@ -97,6 +103,7 @@ function oznamEl(o){
       <button class="o-del" onclick="delOznam('${o.id}')">🗑 Zmazať</button>
     </div>
     ${o.text?'<div class="o-text">'+escHtml(o.text)+'</div>':''}
+    ${o.priloha_path?'<div style="margin-top:8px"><button class="bfile" onclick="openPriloha(\''+o.id+'\')">📎 '+escHtml(o.priloha_nazov||'príloha')+'</button></div>':''}
     <div class="o-meta">
       <span>👤 ${o.created_by?escHtml(shortMail(o.created_by)):'–'}</span>
       <span>🗓 ${datum}</span>
@@ -122,7 +129,9 @@ function render(){
 async function addOznam(){
   const nadpis=g('n_nadpis').trim();
   const text=g('n_text').trim();
-  if(!nadpis&&!text){msg('⚠️ Napíšte nadpis alebo text','#b45309');return;}
+  const fInp=document.getElementById('n_file');
+  const f=fInp.files&&fInp.files[0];
+  if(!nadpis&&!text&&!f){msg('⚠️ Napíšte nadpis, text alebo priložte súbor','#b45309');return;}
   const body={
     nadpis:nadpis||null,
     text:text||null,
@@ -130,19 +139,44 @@ async function addOznam(){
     platne_do:g('n_platne_do')||null
   };
   try{
+    if(f){
+      if(f.size>20*1024*1024){msg('⚠️ Súbor je väčší ako 20 MB','#b45309');return;}
+      msg('⏳ Nahrávam súbor…','#3b82f6');
+      const path=Date.now()+'_'+f.name.replace(/[^\w.\-]+/g,'_');
+      const up=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${path}`,{method:'POST',
+        headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':f.type||'application/octet-stream','x-upsert':'false'},body:f});
+      if(!up.ok){msg('❌ Upload zlyhal: '+up.status+(up.status===400||up.status===404?' (spustite SQL pre bucket oznamy-prilohy)':''),'#dc2626');return;}
+      body.priloha_path=path;
+      body.priloha_nazov=f.name;
+      body.priloha_mime=f.type||null;
+    }
     const r=await fetch(`${SB_URL}/rest/v1/oznamy`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
     if(r.ok){
       ['n_nadpis','n_text','n_platne_do'].forEach(i=>document.getElementById(i).value='');
       document.getElementById('n_dolezite').checked=false;
+      fInp.value='';
       msg('✓ Zverejnené','#1d6f42');
       await load();
     }else msg('❌ Chyba: '+r.status+(r.status===404?' (spustite setup SQL)':''),'#dc2626');
   }catch(e){msg('❌ Chyba siete','#dc2626');}
 }
 
+async function openPriloha(id){
+  const o=OZNAMY.find(x=>x.id===id);
+  if(!o||!o.priloha_path)return;
+  try{
+    const r=await fetch(`${SB_URL}/storage/v1/object/sign/${BUCKET}/${o.priloha_path}`,{method:'POST',headers:H(),body:JSON.stringify({expiresIn:3600})});
+    if(!r.ok){msg('❌ Nepodarilo sa otvoriť súbor: '+r.status,'#dc2626');return;}
+    const j=await r.json();
+    window.open(SB_URL+'/storage/v1'+j.signedURL,'_blank');
+  }catch(e){msg('❌ Chyba siete','#dc2626');}
+}
+
 async function delOznam(id){
   if(!confirm('Zmazať tento oznam?'))return;
   try{
+    const o=OZNAMY.find(x=>x.id===id);
+    if(o&&o.priloha_path)await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${o.priloha_path}`,{method:'DELETE',headers:H()});
     const r=await fetch(`${SB_URL}/rest/v1/oznamy?id=eq.${id}`,{method:'DELETE',headers:H()});
     if(r.ok)await load();
   }catch(e){msg('❌ Chyba siete','#dc2626');}
