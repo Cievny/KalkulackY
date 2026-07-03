@@ -216,7 +216,8 @@ CREATE TABLE IF NOT EXISTS denny_program (
   vyradeny_dovod  TEXT,
   created_by      TEXT DEFAULT (auth.jwt()->>'email')
 );
-ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS stav_vykonu TEXT DEFAULT 'caka'; -- caka | na_sale | hotovy
+ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS stav_vykonu TEXT DEFAULT 'na_oddeleni'; -- na_oddeleni | poslat | caka | na_sale | hotovy
+ALTER TABLE denny_program ALTER COLUMN stav_vykonu SET DEFAULT 'na_oddeleni';
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS operator TEXT;
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS poziadavka_id UUID; -- prepojenie na aorta_indikacie
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS vykon TEXT; -- planovany vykon (PEVAR/CAS/PTA...)
