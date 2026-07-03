@@ -48,6 +48,18 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .wcard b{display:block;font-size:12px;}
 .wcard.vyr{opacity:.5;text-decoration:line-through;}
 @media(max-width:900px){.week{grid-template-columns:1fr 1fr;}}
+/* mesačný pohľad */
+.month{display:none;grid-template-columns:repeat(7,1fr);gap:8px;padding:16px 20px;max-width:1400px;}
+.mhead{font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;padding:0 4px;}
+.mday{background:#fff;border-radius:10px;min-height:96px;padding:7px 9px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;}
+.mday:hover{outline:2px solid #93c5fd;}
+.mday.other{opacity:.35;background:transparent;box-shadow:none;cursor:default;}
+.mday.other:hover{outline:none;}
+.mday.today-col{outline:2px solid #3b82f6;}
+.mnum{font-size:13px;font-weight:800;color:#1a2745;margin-bottom:4px;}
+.mcnt{font-size:10px;font-weight:700;background:#1e40af;color:#fff;border-radius:9px;padding:1px 7px;}
+.mpac{font-size:11px;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.45;}
+@media(max-width:900px){.month{gap:4px;padding:10px;}.mpac{display:none;}.mday{min-height:52px;}}
 /* TV / kiosk režim */
 body.tv .shared-nav,body.tv .toolbar,body.tv .addrow,body.tv .navrhy,body.tv .hdr,body.tv .zas-wrap,body.tv .page-sub,body.tv .pacts .bmini{display:none!important;}
 body.tv h1{font-size:32px;padding:24px 24px 4px;}
@@ -128,7 +140,8 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
   <button class="btn-day" id="btn_zajtra" onclick="setDay(1)">Zajtra</button>
   <input type="date" id="datum" onchange="loadRows()">
   <button class="btn-day" id="btn_week" onclick="toggleWeek()">🗓 Týždeň</button>
-  <button class="btn-day" id="btn_wprev" style="display:none" onclick="shiftWeek(-1)" title="predchádzajúci týždeň">◀ týždeň</button>
+  <button class="btn-day" id="btn_month" onclick="toggleMonth()">🗓 Mesiac</button>
+  <button class="btn-day" id="btn_wprev" style="display:none" onclick="shiftWeek(-1)" title="predchádzajúce obdobie">◀ týždeň</button>
   <button class="btn-day" id="btn_wnext" style="display:none" onclick="shiftWeek(1)" title="nasledujúci týždeň">týždeň ▶</button>
   <button class="btn-act" onclick="copyProgram()">📋 Kopírovať</button>
   <button class="btn-print" onclick="window.print()">🖨️ Tlač</button>
@@ -159,6 +172,8 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
 </div>
 
 <div class="week" id="week"></div>
+
+<div class="month" id="month"></div>
 
 <div class="zas-wrap" id="zas_wrap">
   <details>
@@ -242,7 +257,7 @@ let ZAS=[];          // zásobník (datum='zasobnik')
 let MODE='day';      // day | week
 let NEW_POZID=null;  // prepojenie novej položky na kartu v Požiadavkách
 const TV=new URLSearchParams(location.search).get('tv')==='1';
-const STAVY={na_oddeleni:'🛏 na oddelení',poslat:'🚑 poslať pre pacienta',caka:'⏳ čaká pred sálou',na_sale:'🔵 na sále',hotovy:'✅ hotový'};
+const STAVY={na_oddeleni:'🛏 na oddelení',poslat:'🚑 poslať pre pacienta',caka:'⏳ čaká pred sálou',na_sale:'💉 na sále',hotovy:'✅ hotový'};
 function g(id){return (document.getElementById(id)||{}).value||'';}
 function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function todayISO(off){const d=new Date();d.setDate(d.getDate()+(off||0));return d.toISOString().slice(0,10);}
@@ -259,6 +274,7 @@ function markDayButtons(){
 
 async function loadRows(){
   if(MODE==='week'){renderWeek();return;}
+  if(MODE==='month'){renderMonth();return;}
   markDayButtons();
   const d=g('datum');if(!d)return;
   try{
@@ -301,7 +317,7 @@ function stavLabel(row){
   const sv=row.stav_vykonu||'na_oddeleni';
   if(sv==='na_sale'&&row.vykon_start){
     const m=Math.max(0,Math.round((Date.now()-new Date(row.vykon_start))/60000));
-    return '🔵 na sále • '+m+' min';
+    return '💉 na sále • '+m+' min';
   }
   if(sv==='hotovy'&&row.vykon_start&&row.vykon_koniec){
     const m=Math.max(0,Math.round((new Date(row.vykon_koniec)-new Date(row.vykon_start))/60000));
@@ -565,20 +581,66 @@ function pridajZPoziadavky(i){
 // ── Týždenný pohľad ──────────────────────────────────────────
 function shiftWeek(dir){
   const d=new Date(g('datum'));
-  d.setDate(d.getDate()+7*dir);
+  if(MODE==='month'){d.setDate(1);d.setMonth(d.getMonth()+dir);}
+  else d.setDate(d.getDate()+7*dir);
   document.getElementById('datum').value=d.toISOString().slice(0,10);
   loadRows();
 }
-function toggleWeek(){
-  MODE=MODE==='week'?'day':'week';
-  document.getElementById('btn_wprev').style.display=MODE==='week'?'':'none';
-  document.getElementById('btn_wnext').style.display=MODE==='week'?'':'none';
-  document.getElementById('btn_week').classList.toggle('active',MODE==='week');
-  document.querySelector('.list').style.display=MODE==='week'?'none':'';
-  document.getElementById('zas_wrap').style.display=MODE==='week'?'none':'';
+function setMode(m){
+  MODE=m;
+  document.getElementById('btn_week').classList.toggle('active',m==='week');
+  document.getElementById('btn_month').classList.toggle('active',m==='month');
+  document.querySelector('.list').style.display=m==='day'?'':'none';
+  document.getElementById('zas_wrap').style.display=m==='day'?'':'none';
   document.getElementById('navrhy').style.display='none';
-  document.getElementById('week').style.display=MODE==='week'?'grid':'none';
+  document.getElementById('week').style.display=m==='week'?'grid':'none';
+  document.getElementById('month').style.display=m==='month'?'grid':'none';
+  const obdobie=m==='week'||m==='month';
+  document.getElementById('btn_wprev').style.display=obdobie?'':'none';
+  document.getElementById('btn_wnext').style.display=obdobie?'':'none';
+  document.getElementById('btn_wprev').textContent=m==='month'?'◀ mesiac':'◀ týždeň';
+  document.getElementById('btn_wnext').textContent=m==='month'?'mesiac ▶':'týždeň ▶';
   loadRows();
+}
+function toggleWeek(){setMode(MODE==='week'?'day':'week');}
+function toggleMonth(){setMode(MODE==='month'?'day':'month');}
+
+async function renderMonth(){
+  const box=document.getElementById('month');box.innerHTML='';
+  const base=new Date(g('datum'));base.setDate(1);
+  const y=base.getFullYear(),m=base.getMonth();
+  const mesiace=['Január','Február','Marec','Apríl','Máj','Jún','Júl','August','September','Október','November','December'];
+  document.getElementById('h_datum').textContent=mesiace[m]+' '+y;
+  const first=new Date(y,m,1),last=new Date(y,m+1,0);
+  const iso=d=>{const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10);};
+  let all=[];
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?datum=gte.${iso(first)}&datum=lte.${iso(last)}&order=poradie.asc&limit=1000`,{headers:H()});
+    if(r.ok)all=await r.json();
+  }catch(e){}
+  ['Po','Ut','St','Št','Pi','So','Ne'].forEach(dn=>{
+    const h=document.createElement('div');h.className='mhead';h.textContent=dn;box.appendChild(h);
+  });
+  const cur=new Date(y,m,1);
+  cur.setDate(1-((first.getDay()+6)%7)); // začni pondelkom
+  while(true){
+    const dk=iso(cur);
+    const inMonth=cur.getMonth()===m;
+    const rows=all.filter(x=>x.datum===dk&&x.stav!=='vyradeny');
+    const cell=document.createElement('div');
+    cell.className='mday'+(inMonth?'':' other')+(dk===todayISO(0)?' today-col':'');
+    cell.innerHTML=`<div class="mnum">${cur.getDate()} ${rows.length?'<span class="mcnt">'+rows.length+'</span>':''}</div>`
+      +rows.slice(0,3).map(x=>`<div class="mpac">${escHtml(x.meno||'?')}${x.vykon?' – '+escHtml(x.vykon):''}</div>`).join('')
+      +(rows.length>3?`<div class="mpac" style="color:#9ca3af">+ ${rows.length-3} ďalší</div>`:'');
+    if(inMonth){
+      const dkFix=dk;
+      cell.addEventListener('click',()=>{document.getElementById('datum').value=dkFix;setMode('day');});
+      cell.title='kliknutím otvoríte deň';
+    }
+    box.appendChild(cell);
+    cur.setDate(cur.getDate()+1);
+    if(cur>last&&((cur.getDay()+6)%7)===0)break;
+  }
 }
 function mondayOf(dstr){
   const d=new Date(dstr);
@@ -608,9 +670,8 @@ async function renderWeek(){
     if(dk!=='zasobnik'){
       col.style.cursor='pointer';
       col.addEventListener('click',()=>{
-        MODE='day';toggleWeekOff();
         document.getElementById('datum').value=dk;
-        loadRows();
+        setMode('day');
       });
     }
     rows.forEach(x=>{
@@ -635,14 +696,7 @@ async function renderWeek(){
     box.appendChild(col);
   });
 }
-function toggleWeekOff(){
-  document.getElementById('btn_wprev').style.display='none';
-  document.getElementById('btn_wnext').style.display='none';
-  document.getElementById('btn_week').classList.remove('active');
-  document.querySelector('.list').style.display='';
-  document.getElementById('zas_wrap').style.display='';
-  document.getElementById('week').style.display='none';
-}
+
 
 // ── Kopírovanie (NIS-safe) ───────────────────────────────────
 function nisSafeTxt(t){return t.replace(/─/g,'-').replace(/\n\n/g,'\n \n').replace(/\r?\n/g,'\r\n');}
