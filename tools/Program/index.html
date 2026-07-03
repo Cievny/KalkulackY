@@ -83,6 +83,22 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
   .prow input,.addrow input{font-size:13px;}
   .pacts{grid-column:1/-1;justify-content:flex-end;}
 }
+/* modal presunu */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,30,61,.55);z-index:300;align-items:center;justify-content:center;padding:16px;}
+.overlay.open{display:flex;}
+.dmodal{background:#fff;border-radius:14px;padding:22px 24px;width:100%;max-width:360px;box-shadow:0 10px 40px rgba(0,0,0,.25);}
+.dmodal h2{font-size:15px;color:#1a2745;margin-bottom:4px;}
+.dmodal .dsub{font-size:12.5px;color:#6b7280;margin-bottom:14px;}
+.dmodal input[type=date]{width:100%;padding:10px 12px;border:1.5px solid #dde1ea;border-radius:8px;font-size:15px;font-weight:600;color:#1a2745;outline:none;}
+.dmodal input[type=date]:focus{border-color:#3b82f6;}
+.dmodal .dbtns{display:flex;gap:8px;margin-top:14px;}
+.dmodal .dbtns button{flex:1;padding:10px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;border:none;}
+.dbtn-ok{background:#1e40af;color:#fff;}
+.dbtn-ok:hover{background:#1737a0;}
+.dbtn-no{background:#fff;color:#374151;border:1.5px solid #dde1ea!important;}
+.dquick{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.dquick button{padding:5px 10px;border:1.5px solid #bfdbfe;border-radius:12px;background:#fff;color:#1e40af;font-size:12px;font-weight:600;cursor:pointer;}
+.dquick button:hover{background:#eff6ff;}
 @media print{
   .shared-nav,.toolbar,.pacts,.addrow,.navrhy,.page-sub,.hdr{display:none!important;}
   body{background:#fff;}
@@ -141,6 +157,24 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
     <summary>📦 Zásobník – nezaradení pacienti (<span id="zas_cnt">0</span>)</summary>
     <div id="zas_rows"></div>
   </details>
+</div>
+
+<!-- Modal: presun na iný deň -->
+<div class="overlay" id="den_overlay" onclick="if(event.target===this)zavriPresun()">
+  <div class="dmodal">
+    <h2>📆 Presunúť pacienta na iný deň</h2>
+    <div class="dsub" id="den_kto"></div>
+    <input type="date" id="den_datum">
+    <div class="dquick">
+      <button onclick="denQuick(1)">Zajtra</button>
+      <button onclick="denQuick(2)">Pozajtra</button>
+      <button onclick="denQuick(7)">O týždeň</button>
+    </div>
+    <div class="dbtns">
+      <button class="dbtn-ok" onclick="confirmPresun()">Presunúť</button>
+      <button class="dbtn-no" onclick="zavriPresun()">Zrušiť</button>
+    </div>
+  </div>
 </div>
 
 <datalist id="dl_poloha">
@@ -395,14 +429,27 @@ function vyradit(id){
 }
 
 // presun pacienta na iný deň: kópia na cieľový deň + v pôvodnom dni ostane prečiarknutý so stopou
-async function presunDen(id){
+let PRESUN_ID=null;
+function presunDen(id){
   const row=ROWS.find(r=>r.id===id);if(!row)return;
+  PRESUN_ID=id;
+  document.getElementById('den_kto').textContent=(row.meno||'?')+(row.rocnik?' ('+row.rocnik+')':'')+(row.vykon?' – '+row.vykon:'');
   const d=new Date(g('datum'));d.setDate(d.getDate()+1);
-  const novy=prompt('Presunúť pacienta na deň (RRRR-MM-DD):',d.toISOString().slice(0,10));
-  if(novy===null)return;
-  const ciel=novy.trim();
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(ciel)){msg('⚠️ Dátum zadajte v tvare RRRR-MM-DD','#b45309');return;}
+  document.getElementById('den_datum').value=d.toISOString().slice(0,10);
+  document.getElementById('den_overlay').classList.add('open');
+}
+function zavriPresun(){document.getElementById('den_overlay').classList.remove('open');PRESUN_ID=null;}
+function denQuick(dni){
+  const d=new Date(g('datum'));d.setDate(d.getDate()+dni);
+  document.getElementById('den_datum').value=d.toISOString().slice(0,10);
+}
+async function confirmPresun(){
+  const id=PRESUN_ID;if(!id)return;
+  const row=ROWS.find(r=>r.id===id);if(!row){zavriPresun();return;}
+  const ciel=g('den_datum');
+  if(!ciel){msg('⚠️ Vyberte dátum v kalendári','#b45309');return;}
   if(ciel===g('datum')){msg('⚠️ To je ten istý deň','#b45309');return;}
+  zavriPresun();
   try{
     // poradie na konci cieľového dňa
     let maxP=0;
