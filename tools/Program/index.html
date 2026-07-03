@@ -20,7 +20,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .live{font-size:11.5px;color:#16a34a;font-weight:600;}
 .msg{font-size:12.5px;font-weight:600;}
 .list{padding:16px 20px 8px;max-width:1200px;}
-.prow{display:grid;grid-template-columns:44px 1.25fr .45fr 1.1fr 1fr .95fr 360px;gap:8px;align-items:center;background:#fff;border:1.5px solid #e5e9f5;border-radius:10px;padding:8px 12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.prow{display:grid;grid-template-columns:44px 1.25fr .45fr 1.1fr 1fr .95fr 400px;gap:8px;align-items:center;background:#fff;border:1.5px solid #e5e9f5;border-radius:10px;padding:8px 12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
 .psub{grid-column:2/-1;display:grid;grid-template-columns:.5fr .8fr .95fr .8fr 1.35fr;gap:8px;}
 .stav-chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:10px;cursor:pointer;border:none;white-space:nowrap;line-height:1;}
 .stav-caka{background:#f0f2f7;color:#6b7280;}
@@ -67,8 +67,8 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
 .bmini-del{border-color:#fca5a5;color:#dc2626;}
 .bmini-out{border-color:#fcd34d;color:#b45309;}
 .vyr-dovod{grid-column:2/-1;font-size:12px;color:#991b1b;font-weight:600;padding-left:2px;}
-.hdr{display:grid;grid-template-columns:44px 1.25fr .45fr 1.1fr 1fr .95fr 360px;gap:8px;padding:0 12px 4px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;}
-.addrow{display:grid;grid-template-columns:44px 1.25fr .45fr 1.1fr 1fr .95fr 360px;gap:8px;align-items:center;background:#eff6ff;border:1.5px dashed #93c5fd;border-radius:10px;padding:8px 12px;margin-bottom:8px;}
+.hdr{display:grid;grid-template-columns:44px 1.25fr .45fr 1.1fr 1fr .95fr 400px;gap:8px;padding:0 12px 4px;font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;}
+.addrow{display:grid;grid-template-columns:44px 1.25fr .45fr 1.1fr 1fr .95fr 400px;gap:8px;align-items:center;background:#eff6ff;border:1.5px dashed #93c5fd;border-radius:10px;padding:8px 12px;margin-bottom:8px;}
 .addrow input{width:100%;padding:7px 9px;border:1.5px solid #bfdbfe;border-radius:6px;font-size:13.5px;font-family:inherit;outline:none;background:#fff;}
 .addrow input:focus{border-color:#3b82f6;}
 .btn-add{padding:7px 14px;background:#1e40af;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
@@ -121,6 +121,8 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
   <button class="btn-day" id="btn_zajtra" onclick="setDay(1)">Zajtra</button>
   <input type="date" id="datum" onchange="loadRows()">
   <button class="btn-day" id="btn_week" onclick="toggleWeek()">🗓 Týždeň</button>
+  <button class="btn-day" id="btn_wprev" style="display:none" onclick="shiftWeek(-1)" title="predchádzajúci týždeň">◀ týždeň</button>
+  <button class="btn-day" id="btn_wnext" style="display:none" onclick="shiftWeek(1)" title="nasledujúci týždeň">týždeň ▶</button>
   <button class="btn-act" onclick="copyProgram()">📋 Kopírovať</button>
   <button class="btn-print" onclick="window.print()">🖨️ Tlač</button>
   <a class="btn-day" href="?tv=1" target="_blank" title="režim na monitor oddelenia – len na čítanie, veľké písmo">📺 TV</a>
@@ -173,6 +175,28 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
     <div class="dbtns">
       <button class="dbtn-ok" onclick="confirmPresun()">Presunúť</button>
       <button class="dbtn-no" onclick="zavriPresun()">Zrušiť</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: vyradenie s dôvodom -->
+<div class="overlay" id="vyr_overlay" onclick="if(event.target===this)zavriVyradit()">
+  <div class="dmodal">
+    <h2>⛔ Vyradiť z programu</h2>
+    <div class="dsub" id="vyr_kto"></div>
+    <select id="vyr_dovod" style="width:100%;padding:10px 12px;border:1.5px solid #dde1ea;border-radius:8px;font-size:14px;font-family:inherit;color:#1a2745;outline:none" onchange="document.getElementById('vyr_iny').style.display=this.value==='iný'?'':'none'">
+      <option>Kontraindikovaný k výkonu</option>
+      <option>Nespolupráca</option>
+      <option>Nedostavil sa na hospitalizáciu</option>
+      <option>Ochorel</option>
+      <option>Chirurgický výkon</option>
+      <option>Konzervatívny postup</option>
+      <option value="iný">Iný dôvod…</option>
+    </select>
+    <input id="vyr_iny" placeholder="napíšte dôvod…" style="display:none;width:100%;margin-top:8px;padding:10px 12px;border:1.5px solid #dde1ea;border-radius:8px;font-size:14px;font-family:inherit;outline:none">
+    <div class="dbtns">
+      <button class="dbtn-ok" style="background:#b45309" onclick="confirmVyradit()">⛔ Vyradiť</button>
+      <button class="dbtn-no" onclick="zavriVyradit()">Zrušiť</button>
     </div>
   </div>
 </div>
@@ -340,7 +364,8 @@ function render(){
         <button class="bmini" title="posunúť nižšie" onclick="moveRow(${idx},1)">▼</button>
         ${vyr?`<button class="bmini" onclick="patchRow('${row.id}','stav','planovany');patchRow('${row.id}','vyradeny_dovod',null)">↩ Vrátiť</button>`
              :`<button class="bmini bmini-out" onclick="vyradit('${row.id}')">⛔ Vyradiť</button>
-        <button class="bmini" title="presunúť na iný deň" onclick="presunDen('${row.id}')">📆 Iný deň</button>`}
+        <button class="bmini" title="presunúť na iný deň" onclick="presunDen('${row.id}')">📆 Iný deň</button>
+        <button class="bmini" title="odložiť do zásobníka (bez termínu)" onclick="doZasobnika('${row.id}')">📦</button>`}
         <button class="bmini bmini-del" title="zmazať úplne" onclick="delRow('${row.id}')">🗑</button>
       </div>
       <div class="psub">
@@ -421,11 +446,41 @@ async function moveRow(idx,dir){
   await loadRows();
 }
 
+let VYR_ID=null;
 function vyradit(id){
-  const dovod=prompt('Dôvod vyradenia z programu (nepovinné):','');
-  if(dovod===null)return;
-  patchRow(id,'stav','vyradeny');
-  if(dovod.trim())patchRow(id,'vyradeny_dovod',dovod.trim());
+  const row=ROWS.find(r=>r.id===id);if(!row)return;
+  VYR_ID=id;
+  document.getElementById('vyr_kto').textContent=(row.meno||'?')+(row.rocnik?' ('+row.rocnik+')':'')+(row.vykon?' – '+row.vykon:'');
+  document.getElementById('vyr_dovod').selectedIndex=0;
+  document.getElementById('vyr_iny').style.display='none';
+  document.getElementById('vyr_iny').value='';
+  document.getElementById('vyr_overlay').classList.add('open');
+}
+function zavriVyradit(){document.getElementById('vyr_overlay').classList.remove('open');VYR_ID=null;}
+async function confirmVyradit(){
+  const id=VYR_ID;if(!id)return;
+  let dovod=g('vyr_dovod');
+  if(dovod==='iný')dovod=g('vyr_iny').trim()||'iný dôvod';
+  zavriVyradit();
+  await patchRow(id,'stav','vyradeny');
+  await patchRow(id,'vyradeny_dovod',dovod);
+}
+
+// odloženie pacienta do zásobníka (kópia bez termínu, v dni ostane stopa)
+async function doZasobnika(id){
+  const row=ROWS.find(r=>r.id===id);if(!row)return;
+  try{
+    const kopia={datum:'zasobnik',poradie:0,stav:'planovany',
+      meno:row.meno,rocnik:row.rocnik,diagnoza:row.diagnoza,vykon:row.vykon,lozko:row.lozko,
+      poloha:row.poloha,miesto_punkcie:row.miesto_punkcie,operator:row.operator,
+      poziadavka_id:row.poziadavka_id,poznamka:row.poznamka};
+    const r1=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(kopia)});
+    if(!r1.ok){msg('❌ Chyba: '+r1.status,'#dc2626');return;}
+    await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+      body:JSON.stringify({stav:'vyradeny',vyradeny_dovod:'presunutý do zásobníka',updated_at:new Date().toISOString()})});
+    msg('✓ Odložený do zásobníka','#1d6f42');
+    await loadRows();
+  }catch(e){msg('❌ Chyba siete','#dc2626');}
 }
 
 // presun pacienta na iný deň: kópia na cieľový deň + v pôvodnom dni ostane prečiarknutý so stopou
@@ -505,8 +560,16 @@ function pridajZPoziadavky(i){
 }
 
 // ── Týždenný pohľad ──────────────────────────────────────────
+function shiftWeek(dir){
+  const d=new Date(g('datum'));
+  d.setDate(d.getDate()+7*dir);
+  document.getElementById('datum').value=d.toISOString().slice(0,10);
+  loadRows();
+}
 function toggleWeek(){
   MODE=MODE==='week'?'day':'week';
+  document.getElementById('btn_wprev').style.display=MODE==='week'?'':'none';
+  document.getElementById('btn_wnext').style.display=MODE==='week'?'':'none';
   document.getElementById('btn_week').classList.toggle('active',MODE==='week');
   document.querySelector('.list').style.display=MODE==='week'?'none':'';
   document.getElementById('zas_wrap').style.display=MODE==='week'?'none':'';
@@ -562,6 +625,8 @@ async function renderWeek(){
   });
 }
 function toggleWeekOff(){
+  document.getElementById('btn_wprev').style.display='none';
+  document.getElementById('btn_wnext').style.display='none';
   document.getElementById('btn_week').classList.remove('active');
   document.querySelector('.list').style.display='';
   document.getElementById('zas_wrap').style.display='';
