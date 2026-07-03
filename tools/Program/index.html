@@ -259,7 +259,9 @@ const TV=new URLSearchParams(location.search).get('tv')==='1';
 const STAVY={na_oddeleni:'🛏 na oddelení',poslat:'🚑 poslať pre pacienta',caka:'⏳ čaká pred sálou',na_sale:'💉 na sále',hotovy:'✅ hotový'};
 function g(id){return (document.getElementById(id)||{}).value||'';}
 function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function todayISO(off){const d=new Date();d.setDate(d.getDate()+(off||0));return d.toISOString().slice(0,10);}
+function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
+function parseISO(s){const p=(''+s).split('-');return new Date(+p[0],(+p[1]||1)-1,+p[2]||1);} // lokálna polnoc, bez UTC posunu
+function todayISO(off){const d=new Date();d.setDate(d.getDate()+(off||0));return isoLocal(d);}
 function msg(t,c){const el=document.getElementById('p_msg');el.textContent=t;el.style.color=c;setTimeout(()=>{if(el.textContent===t)el.textContent='';},4000);}
 function fmtD(d){if(!d)return'';const x=new Date(d);return isNaN(x)?'':x.toLocaleDateString('sk-SK');}
 
@@ -507,14 +509,14 @@ function presunDen(id){
   const row=ROWS.find(r=>r.id===id);if(!row)return;
   PRESUN_ID=id;
   document.getElementById('den_kto').textContent=(row.meno||'?')+(row.rocnik?' ('+row.rocnik+')':'')+(row.vykon?' – '+row.vykon:'');
-  const d=new Date(g('datum'));d.setDate(d.getDate()+1);
-  document.getElementById('den_datum').value=d.toISOString().slice(0,10);
+  const d=parseISO(g('datum'));d.setDate(d.getDate()+1);
+  document.getElementById('den_datum').value=isoLocal(d);
   document.getElementById('den_overlay').classList.add('open');
 }
 function zavriPresun(){document.getElementById('den_overlay').classList.remove('open');PRESUN_ID=null;}
 function denQuick(dni){
-  const d=new Date(g('datum'));d.setDate(d.getDate()+dni);
-  document.getElementById('den_datum').value=d.toISOString().slice(0,10);
+  const d=parseISO(g('datum'));d.setDate(d.getDate()+dni);
+  document.getElementById('den_datum').value=isoLocal(d);
 }
 async function confirmPresun(){
   const id=PRESUN_ID;if(!id)return;
@@ -579,10 +581,10 @@ function pridajZPoziadavky(i){
 
 // ── Týždenný pohľad ──────────────────────────────────────────
 function shiftWeek(dir){
-  const d=new Date(g('datum'));
+  const d=parseISO(g('datum'));
   if(MODE==='month'){d.setDate(1);d.setMonth(d.getMonth()+dir);}
   else d.setDate(d.getDate()+7*dir);
-  document.getElementById('datum').value=d.toISOString().slice(0,10);
+  document.getElementById('datum').value=isoLocal(d);
   loadRows();
 }
 function setMode(m){
@@ -606,12 +608,12 @@ function toggleMonth(){setMode(MODE==='month'?'day':'month');}
 
 async function renderMonth(){
   const box=document.getElementById('month');box.innerHTML='';
-  const base=new Date(g('datum'));base.setDate(1);
+  const base=parseISO(g('datum'));base.setDate(1);
   const y=base.getFullYear(),m=base.getMonth();
   const mesiace=['Január','Február','Marec','Apríl','Máj','Jún','Júl','August','September','Október','November','December'];
   document.getElementById('h_datum').textContent=mesiace[m]+' '+y;
   const first=new Date(y,m,1),last=new Date(y,m+1,0);
-  const iso=d=>{const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10);};
+  const iso=isoLocal;
   let all=[];
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}?datum=gte.${iso(first)}&datum=lte.${iso(last)}&order=poradie.asc&limit=1000`,{headers:H()});
@@ -642,7 +644,7 @@ async function renderMonth(){
   }
 }
 function mondayOf(dstr){
-  const d=new Date(dstr);
+  const d=parseISO(dstr);
   const day=(d.getDay()+6)%7; // 0=pondelok
   d.setDate(d.getDate()-day);
   return d;
@@ -652,7 +654,7 @@ async function renderWeek(){
   const box=document.getElementById('week');box.innerHTML='';
   const mon=mondayOf(g('datum'));
   const days=[];
-  for(let i=0;i<5;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);days.push(d.toISOString().slice(0,10));}
+  for(let i=0;i<5;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);days.push(isoLocal(d));}
   document.getElementById('h_datum').textContent=fmtD(days[0])+' – '+fmtD(days[4]);
   let all=[];
   try{

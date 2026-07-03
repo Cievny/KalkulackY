@@ -17,53 +17,69 @@ jobs:
           SB_EMAIL: ${{ secrets.SUPABASE_BACKUP_EMAIL }}
           SB_PASSWORD: ${{ secrets.SUPABASE_BACKUP_PASSWORD }}
         run: |
-          set -e
-          # Prihlásenie -> JWT (RLS vyžaduje authenticated rolu)
-          TOKEN=$(curl -sf "$SB_URL/auth/v1/token?grant_type=password" \
-            -H "apikey: $SB_ANON" -H "Content-Type: application/json" \
-            -d "{\"email\":\"$SB_EMAIL\",\"password\":\"$SB_PASSWORD\"}" | python3 -c "import sys,json;print(json.load(sys.stdin)['access_token'])")
+          set -euo pipefail
+          # Prihlásenie -> JWT (RLS vyžaduje authenticated rolu). JSON staviame cez python, nie shell-interpoláciou.
+          export TOKEN=$(python3 -c "import os,json,urllib.request; \
+            d=json.dumps({'email':os.environ['SB_EMAIL'],'password':os.environ['SB_PASSWORD']}).encode(); \
+            req=urllib.request.Request(os.environ['SB_URL']+'/auth/v1/token?grant_type=password',data=d, \
+              headers={'apikey':os.environ['SB_ANON'],'Content-Type':'application/json'}); \
+            print(json.load(urllib.request.urlopen(req))['access_token'])")
+          if [ -z "$TOKEN" ]; then echo '::error::Prihlásenie do Supabase zlyhalo (skontrolujte secrets)'; exit 1; fi
 
           mkdir -p backup
-          STAMP=$(date +%Y-%m-%d)
-          for T in evk_vykony cas_vykony pevar_vykony evk_followup pevar_followup cas_followup ideas aorta_indikacie aorta_prilohy denny_program oznamy \
-                   cz_evk_vykony cz_cas_vykony cz_pevar_vykony cz_evk_followup cz_pevar_followup cz_cas_followup cz_ideas; do
-            echo "→ $T"
-            curl -sf "$SB_URL/rest/v1/$T?order=created_at.asc&limit=10000" \
-              -H "apikey: $SB_ANON" -H "Authorization: Bearer $TOKEN" \
-              -o "backup/${T}_${STAMP}.json" || echo "[]" > "backup/${T}_${STAMP}.json"
-            python3 -c "import json;d=json.load(open('backup/${T}_${STAMP}.json'));print(f'   {len(d)} záznamov')"
-          done
-
-          # Súborové prílohy zo Storage bucketu aorta-prilohy (fotky, dokumenty)
-          echo "→ Storage: aorta-prilohy"
-          mkdir -p backup/aorta-prilohy-subory
-          python3 - <<PYEOF
-          import json,os,urllib.request,urllib.parse
-
-          SB_URL=os.environ['SB_URL'];SB_ANON=os.environ['SB_ANON'];TOKEN="""$TOKEN"""
-          def api(path,data=None,raw=False):
+          export STAMP=$(date +%Y-%m-%d)
+          # Jeden Python blok: tabuľky so stránkovaním + oba storage buckety. TOKEN ide cez os.environ (nie interpolácia do zdroja).
+          python3 - <<'PYEOF'
+          import json,os,sys,urllib.request,urllib.parse
+          SB_URL=os.environ['SB_URL'];SB_ANON=os.environ['SB_ANON'];TOKEN=os.environ['TOKEN'];STAMP=os.environ['STAMP']
+          def api(path,raw=False):
               req=urllib.request.Request(SB_URL+path,
-                  data=json.dumps(data).encode() if data is not None else None,
-                  headers={'apikey':SB_ANON,'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'})
+                  headers={'apikey':SB_ANON,'Authorization':'Bearer '+TOKEN})
               with urllib.request.urlopen(req) as r:
                   return r.read() if raw else json.loads(r.read())
+          def fetch_all(table):
+              out=[];off=0
+              while True:
+                  chunk=api(f'/rest/v1/{table}?order=created_at.asc,id.asc&limit=1000&offset={off}')
+                  out+=chunk
+                  if len(chunk)<1000:break
+                  off+=1000
+              return out
 
-          # cesty súborov vezmeme z tabuľky príloh (obsahuje storage_path)
-          try:
-              rows=api('/rest/v1/aorta_prilohy?select=storage_path&typ=eq.subor&limit=10000')
-          except Exception as e:
-              print('   tabuľka aorta_prilohy nedostupná:',e);rows=[]
-          n=0
-          for row in rows:
-              p=row.get('storage_path')
-              if not p:continue
+          TABLES=['evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
+                  'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy',
+                  'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup',
+                  'cz_cas_followup','cz_ideas']
+          errors=[]
+          for t in TABLES:
               try:
-                  data=api('/storage/v1/object/aorta-prilohy/'+urllib.parse.quote(p),raw=True)
-                  dest='backup/aorta-prilohy-subory/'+p.replace('/','__')
-                  open(dest,'wb').write(data);n+=1
+                  rows=fetch_all(t)
+                  json.dump(rows,open(f'backup/{t}_{STAMP}.json','w'),ensure_ascii=False)
+                  print(f'→ {t}: {len(rows)} záznamov')
               except Exception as e:
-                  print('   CHYBA pri',p,':',e)
-          print(f'   {n} súborov stiahnutých')
+                  print(f'::error::CHYBA pri tabuľke {t}: {e}');errors.append(t)
+
+          # Storage: aorta-prilohy (podľa aorta_prilohy.storage_path) + oznamy-prilohy (podľa oznamy.priloha_path)
+          def backup_bucket(bucket,table,col,folder):
+              os.makedirs('backup/'+folder,exist_ok=True);n=0
+              try:
+                  rows=fetch_all(f'{table}?select={col}')
+              except Exception as e:
+                  print(f'::error::{table} nedostupná pre prílohy: {e}');errors.append(bucket);return
+              for row in rows:
+                  p=row.get(col)
+                  if not p:continue
+                  try:
+                      data=api('/storage/v1/object/'+bucket+'/'+urllib.parse.quote(p),raw=True)
+                      open('backup/'+folder+'/'+p.replace('/','__'),'wb').write(data);n+=1
+                  except Exception as e:
+                      print(f'::warning::súbor {p} z {bucket}: {e}')
+              print(f'→ storage {bucket}: {n} súborov')
+          backup_bucket('aorta-prilohy','aorta_prilohy','storage_path','aorta-prilohy-subory')
+          backup_bucket('oznamy-prilohy','oznamy','priloha_path','oznamy-prilohy-subory')
+
+          if errors:
+              print('::error::Záloha neúplná – zlyhali: '+', '.join(errors));sys.exit(1)
           PYEOF
 
       - name: Ulož zálohu ako artefakt (30 dní)

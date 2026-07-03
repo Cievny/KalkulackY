@@ -152,7 +152,7 @@ ALTER TABLE evk_vykony      ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (au
 ALTER TABLE cas_vykony      ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
 ALTER TABLE pevar_vykony    ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
 ALTER TABLE evk_followup    ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
-ALTER TABLE ideas           ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
+ALTER TABLE IF EXISTS ideas ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email'); -- IF EXISTS: `ideas` sa vytvára nižšie (fresh-install safe)
 ALTER TABLE IF EXISTS cz_evk_vykony   ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
 ALTER TABLE IF EXISTS cz_cas_vykony   ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
 ALTER TABLE IF EXISTS cz_pevar_vykony ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
@@ -268,6 +268,8 @@ ALTER TABLE ideas ADD COLUMN IF NOT EXISTS hlasy INT DEFAULT 0;
 ALTER TABLE ideas ADD COLUMN IF NOT EXISTS komentare TEXT; -- JSON [{t,a,d}]
 ALTER TABLE IF EXISTS cz_ideas ADD COLUMN IF NOT EXISTS hlasy INT DEFAULT 0;
 ALTER TABLE IF EXISTS cz_ideas ADD COLUMN IF NOT EXISTS komentare TEXT;
+-- created_by pre `ideas` musí byť až tu (po CREATE TABLE ideas vyššie)
+ALTER TABLE ideas ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
 
 -- ============================================================
 -- 2. STĹPCE (ADD COLUMN IF NOT EXISTS – bezpečné opakovane)
@@ -283,6 +285,10 @@ ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_nav TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_kat TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_sheath TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS pristup_sheath_dlz TEXT;
+-- intervenčný sheath (samostatný od prístupového) – používa EVK formulár
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS interv_sheath TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS interv_sheath_dlz TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS interv_sheath_znacka TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS vodic TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS prechod_leziou TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS dsa_nalez TEXT;
@@ -490,67 +496,80 @@ ALTER TABLE cz_pevar_followup ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cz_cas_followup   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE denny_program     ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "anon all evk"      ON evk_vykony;
-DROP POLICY IF EXISTS "anon insert evk"   ON evk_vykony;
-DROP POLICY IF EXISTS "anon select evk"   ON evk_vykony;
-CREATE POLICY "anon all evk"   ON evk_vykony   FOR ALL TO anon USING (true) WITH CHECK (true);
+-- ------------------------------------------------------------
+-- DATABÁZA JE ZAMKNUTÁ: pacientske a klinické dáta iba pre prihlásených (authenticated).
+-- Jediná výnimka pre anon je INŠTITUCIONÁLNA SCHRÁNKA – zúžený INSERT do `ideas`.
+-- (Táto sekcia nahrádza pôvodné „anon all“ politiky aj samostatný skript zamknutie_databazy.sql.)
+-- ------------------------------------------------------------
 
-DROP POLICY IF EXISTS "anon all cas"      ON cas_vykony;
-DROP POLICY IF EXISTS "anon insert cas"   ON cas_vykony;
-DROP POLICY IF EXISTS "anon select cas"   ON cas_vykony;
-CREATE POLICY "anon all cas"   ON cas_vykony   FOR ALL TO anon USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "anon all pevar"    ON pevar_vykony;
-DROP POLICY IF EXISTS "anon insert pevar" ON pevar_vykony;
-DROP POLICY IF EXISTS "anon select pevar" ON pevar_vykony;
-DROP POLICY IF EXISTS "anon delete pevar" ON pevar_vykony;
-CREATE POLICY "anon all pevar" ON pevar_vykony FOR ALL TO anon USING (true) WITH CHECK (true);
-
+-- Odstráň všetky staré, príliš otvorené anon politiky
+DROP POLICY IF EXISTS "anon all evk"        ON evk_vykony;
+DROP POLICY IF EXISTS "anon insert evk"     ON evk_vykony;
+DROP POLICY IF EXISTS "anon select evk"     ON evk_vykony;
+DROP POLICY IF EXISTS "anon all cas"        ON cas_vykony;
+DROP POLICY IF EXISTS "anon insert cas"     ON cas_vykony;
+DROP POLICY IF EXISTS "anon select cas"     ON cas_vykony;
+DROP POLICY IF EXISTS "anon all pevar"      ON pevar_vykony;
+DROP POLICY IF EXISTS "anon insert pevar"   ON pevar_vykony;
+DROP POLICY IF EXISTS "anon select pevar"   ON pevar_vykony;
+DROP POLICY IF EXISTS "anon delete pevar"   ON pevar_vykony;
+DROP POLICY IF EXISTS "anon all followup"   ON evk_followup;
 DROP POLICY IF EXISTS "anon insert followup" ON evk_followup;
 DROP POLICY IF EXISTS "anon select followup" ON evk_followup;
 DROP POLICY IF EXISTS "anon delete followup" ON evk_followup;
-DROP POLICY IF EXISTS "anon all followup"    ON evk_followup;
-CREATE POLICY "anon all followup" ON evk_followup FOR ALL TO anon USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "anon all ideas" ON ideas;
-CREATE POLICY "anon all ideas" ON ideas FOR ALL TO anon USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "anon all aorta" ON aorta_indikacie;
-CREATE POLICY "anon all aorta" ON aorta_indikacie FOR ALL TO anon USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS "auth all aorta" ON aorta_indikacie;
-CREATE POLICY "auth all aorta" ON aorta_indikacie FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
+DROP POLICY IF EXISTS "anon all ideas"      ON ideas;
+DROP POLICY IF EXISTS "anon all aorta"      ON aorta_indikacie;
 DROP POLICY IF EXISTS "anon all aorta prilohy" ON aorta_prilohy;
-CREATE POLICY "anon all aorta prilohy" ON aorta_prilohy FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "anon all pevar fu"   ON pevar_followup;
+DROP POLICY IF EXISTS "anon all cas fu"     ON cas_followup;
+DROP POLICY IF EXISTS "anon all cz pevar fu" ON cz_pevar_followup;
+DROP POLICY IF EXISTS "anon all cz cas fu"  ON cz_cas_followup;
+DROP POLICY IF EXISTS "anon all program"    ON denny_program;
+
+-- Authenticated má plný prístup ku všetkým tabuľkám
+DROP POLICY IF EXISTS "auth all evk"        ON evk_vykony;
+CREATE POLICY "auth all evk"        ON evk_vykony      FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all cas"        ON cas_vykony;
+CREATE POLICY "auth all cas"        ON cas_vykony      FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all pevar"      ON pevar_vykony;
+CREATE POLICY "auth all pevar"      ON pevar_vykony    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all followup"   ON evk_followup;
+CREATE POLICY "auth all followup"   ON evk_followup    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all ideas"      ON ideas;
+CREATE POLICY "auth all ideas"      ON ideas           FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all aorta"      ON aorta_indikacie;
+CREATE POLICY "auth all aorta"      ON aorta_indikacie FOR ALL TO authenticated USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "auth all aorta prilohy" ON aorta_prilohy;
 CREATE POLICY "auth all aorta prilohy" ON aorta_prilohy FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
-DROP POLICY IF EXISTS "anon all pevar fu" ON pevar_followup;
-CREATE POLICY "anon all pevar fu" ON pevar_followup FOR ALL TO anon USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS "auth all pevar fu" ON pevar_followup;
-CREATE POLICY "auth all pevar fu" ON pevar_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS "anon all cas fu" ON cas_followup;
-CREATE POLICY "anon all cas fu" ON cas_followup FOR ALL TO anon USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS "auth all cas fu" ON cas_followup;
-CREATE POLICY "auth all cas fu" ON cas_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS "anon all cz pevar fu" ON cz_pevar_followup;
-CREATE POLICY "anon all cz pevar fu" ON cz_pevar_followup FOR ALL TO anon USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all pevar fu"   ON pevar_followup;
+CREATE POLICY "auth all pevar fu"   ON pevar_followup  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all cas fu"     ON cas_followup;
+CREATE POLICY "auth all cas fu"     ON cas_followup    FOR ALL TO authenticated USING (true) WITH CHECK (true);
 DROP POLICY IF EXISTS "auth all cz pevar fu" ON cz_pevar_followup;
 CREATE POLICY "auth all cz pevar fu" ON cz_pevar_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS "anon all cz cas fu" ON cz_cas_followup;
-CREATE POLICY "anon all cz cas fu" ON cz_cas_followup FOR ALL TO anon USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS "auth all cz cas fu" ON cz_cas_followup;
-CREATE POLICY "auth all cz cas fu" ON cz_cas_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all cz cas fu"  ON cz_cas_followup;
+CREATE POLICY "auth all cz cas fu"  ON cz_cas_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all program"    ON denny_program;
+CREATE POLICY "auth all program"    ON denny_program   FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
-DROP POLICY IF EXISTS "anon all program" ON denny_program;
-CREATE POLICY "anon all program" ON denny_program FOR ALL TO anon USING (true) WITH CHECK (true);
-DROP POLICY IF EXISTS "auth all program" ON denny_program;
-CREATE POLICY "auth all program" ON denny_program FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- SCHRÁNKA: anon smie IBA vložiť podnet do `ideas`, a to len ako kartu v stĺpci „napady“,
+-- v povolenej kategórii, bez hlasov/komentárov a bez podvrhnutého autora (created_by).
+-- Bráni to zaplaveniu internej nástenky, falšovaniu hlasov aj XSS cez neplatnú kategóriu.
+DROP POLICY IF EXISTS "anon insert ideas schranka" ON ideas;
+CREATE POLICY "anon insert ideas schranka" ON ideas
+  FOR INSERT TO anon
+  WITH CHECK (
+    col = 'napady'
+    AND coalesce(kategoria,'apka') IN ('apka','oddelenie')
+    AND created_by IS NULL
+    AND coalesce(hlasy,0) = 0
+    AND komentare IS NULL
+  );
 
--- Storage politiky pre bucket aorta-prilohy (anon aj authenticated)
+-- Storage politiky pre bucket aorta-prilohy – iba prihlásení (obsahuje pacientske dokumenty/fotky)
 DROP POLICY IF EXISTS "aorta prilohy storage select" ON storage.objects;
 DROP POLICY IF EXISTS "aorta prilohy storage insert" ON storage.objects;
 DROP POLICY IF EXISTS "aorta prilohy storage delete" ON storage.objects;
-CREATE POLICY "aorta prilohy storage select" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id='aorta-prilohy');
-CREATE POLICY "aorta prilohy storage insert" ON storage.objects FOR INSERT TO anon, authenticated WITH CHECK (bucket_id='aorta-prilohy');
-CREATE POLICY "aorta prilohy storage delete" ON storage.objects FOR DELETE TO anon, authenticated USING (bucket_id='aorta-prilohy');
+CREATE POLICY "aorta prilohy storage select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id='aorta-prilohy');
+CREATE POLICY "aorta prilohy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='aorta-prilohy');
+CREATE POLICY "aorta prilohy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='aorta-prilohy');

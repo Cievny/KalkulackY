@@ -111,7 +111,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 </div>
 
 <div class="arch-wrap">
-  <details>
+  <details id="archiv_det">
     <summary>🗄 Archív (vybavené požiadavky) – <span id="arch_cnt">0</span></summary>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
     <table class="arch-table">
@@ -305,7 +305,8 @@ let editId=null;   // id práve otvorenej karty v modáli (null = nová)
 let archId=null;   // id karty pre archiváciu
 
 function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function today(){return new Date().toISOString().slice(0,10);}
+function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
+function today(){return isoLocal(new Date());}
 function fmtD(d){if(!d)return'–';const x=new Date(d);return isNaN(x)?'–':x.toLocaleDateString('sk-SK');}
 function daysBetween(a,b){const A=new Date(a),B=new Date(b);if(isNaN(A)||isNaN(B))return null;return Math.max(0,Math.round((B-A)/86400000));}
 function parseHist(item){try{const h=JSON.parse(item.historia||'[]');return Array.isArray(h)?h:[];}catch{return[];}}
@@ -347,15 +348,24 @@ function parseRC(rc){
 }
 
 // ── Načítanie a render ───────────────────────────────────────
+async function fetchAllRows(table){
+  let all=[],offset=0;
+  while(true){
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.asc,id.asc&limit=1000&offset=${offset}`,{headers:SB_HEAD()});
+    if(!r.ok)throw new Error(r.status);
+    const chunk=await r.json();
+    all=all.concat(chunk);
+    if(chunk.length<1000)break;
+    offset+=1000;
+  }
+  return all;
+}
 async function loadItems(){
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?order=created_at.asc&limit=1000`,{headers:SB_HEAD()});
-    if(!r.ok){msg('top_msg','⚠️ Tabuľka '+TBL+' nie je v Supabase (spustite setup SQL)','#b45309');ITEMS=[];render();return;}
-    ITEMS=await r.json();
-  }catch{ITEMS=[];msg('top_msg','⚠️ Chyba spojenia','#dc2626');}
+    ITEMS=await fetchAllRows(TBL);
+  }catch(e){ITEMS=[];msg('top_msg','⚠️ Tabuľka '+TBL+' nie je dostupná (spustite setup SQL) – '+e.message,'#b45309');render();return;}
   try{
-    const rp=await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}?order=created_at.asc&limit=5000`,{headers:SB_HEAD()});
-    PRILOHY=rp.ok?await rp.json():[];
+    PRILOHY=await fetchAllRows(TBL_PRIL);
   }catch{PRILOHY=[];}
   render();
   if(editId)renderPrilohy();
@@ -397,7 +407,7 @@ function render(){
 
 function renderKontroly(q){
   const limit=new Date();limit.setDate(limit.getDate()+30);
-  const lim=limit.toISOString().slice(0,10);
+  const lim=isoLocal(limit);
   const rows=ITEMS.filter(i=>i.status!=='archiv'&&i.dalsia_kontrola&&i.dalsia_kontrola<=lim&&matchesSearch(i,q||''))
     .sort((a,b)=>(a.dalsia_kontrola||'').localeCompare(b.dalsia_kontrola||''));
   document.getElementById('kontroly_cnt').textContent=rows.length;
@@ -422,7 +432,7 @@ function renderKontroly(q){
 // drag & drop stav + archív ako cieľ
 let DRAG={};
 function initArchDrop(){
-  const det=document.querySelector('.arch-wrap details');
+  const det=document.getElementById('archiv_det');
   det.addEventListener('dragover',e=>{if(DRAG.id){e.preventDefault();det.classList.add('drop-ok');}});
   det.addEventListener('dragleave',()=>det.classList.remove('drop-ok'));
   det.addEventListener('drop',e=>{
@@ -475,8 +485,9 @@ function navrhKontrolu(){
   else if(d<45){mes=12;txt='40–44 mm → kontrola o 1 rok';}
   else if(d<50){mes=6;txt='45–49 mm → kontrola o 6 mesiacov';}
   else{mes=3;txt='≥ 50 mm → kontrola o 3 mesiace (zvážiť indikáciu na výkon!)';}
-  const t=new Date();t.setMonth(t.getMonth()+mes);
-  document.getElementById('af_dalsia_kontrola').value=t.toISOString().slice(0,10);
+  const t=new Date();t.setDate(1);t.setMonth(t.getMonth()+mes); // deň=1 zabráni pretečeniu mesiaca
+  t.setDate(Math.min(new Date().getDate(),new Date(t.getFullYear(),t.getMonth()+1,0).getDate()));
+  document.getElementById('af_dalsia_kontrola').value=isoLocal(t);
   info.textContent='ESVS: '+txt;
 }
 

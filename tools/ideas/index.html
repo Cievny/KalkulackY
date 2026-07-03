@@ -147,7 +147,7 @@ let ITEMS=[];
 let FILTER='';
 const KOMOPEN=new Set(); // rozbalené komentáre prežijú prerender
 
-function escHtml(t){return (t==null?'':''+t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escHtml(t){return (t==null?'':''+t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function myName(){const e=(typeof sbUserEmail==='function'?sbUserEmail():'')||'';return e.split('@')[0];}
 
 function setFilter(f,btn){
@@ -180,7 +180,7 @@ function render(){
       const date=new Date(item.created_at).toLocaleDateString('sk-SK',{day:'numeric',month:'short',year:'numeric'});
       const moveButtons=COLS.filter(c=>c!==col).map(c=>`<button class="btn-move" onclick="moveCard('${item.id}','${c}')">${COL_LABELS[c]}</button>`).join('');
       const noteHtml=item.note?`<div class="card-note">📝 ${escHtml(item.note)}</div>`:'';
-      const kat=(item.kategoria||'apka');
+      const kat=(item.kategoria==='oddelenie'?'oddelenie':'apka');
       const katBadge=`<span class="kat-badge kat-${kat}">${kat==='oddelenie'?'🏥 oddelenie':'💻 apka'}</span>`;
       const who=item.author?`<span class="author">👤 ${escHtml(item.author)}</span>`:`<span class="author">🕶 anonym</span>`;
       const voted=!!localStorage.getItem('idea_v_'+item.id);
@@ -215,7 +215,7 @@ function renderArchiv(){
   const box=document.getElementById('cards-archiv');box.innerHTML='';
   if(!rows.length){box.innerHTML='<div style="font-size:12px;color:#9ca3af;margin-top:8px">Archív je prázdny.</div>';return;}
   rows.forEach(item=>{
-    const kat=(item.kategoria||'apka');
+    const kat=(item.kategoria==='oddelenie'?'oddelenie':'apka');
     const date=new Date(item.created_at).toLocaleDateString('sk-SK');
     const div=document.createElement('div');div.className='arch-card';
     div.innerHTML=`<span class="kat-badge kat-${kat}">${kat==='oddelenie'?'🏥':'💻'}</span>

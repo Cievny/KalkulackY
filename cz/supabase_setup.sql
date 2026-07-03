@@ -84,6 +84,11 @@ CREATE TABLE IF NOT EXISTS cz_ideas (
   author      TEXT
 );
 ALTER TABLE cz_ideas ADD COLUMN IF NOT EXISTS note TEXT;
+-- kategórie, hlasy, komentáre, autor – rovnaká výbava ako SK ideas (nezávislé od poradia skriptov)
+ALTER TABLE cz_ideas ADD COLUMN IF NOT EXISTS kategoria TEXT DEFAULT 'apka';
+ALTER TABLE cz_ideas ADD COLUMN IF NOT EXISTS hlasy INT DEFAULT 0;
+ALTER TABLE cz_ideas ADD COLUMN IF NOT EXISTS komentare TEXT;
+ALTER TABLE cz_ideas ADD COLUMN IF NOT EXISTS created_by TEXT DEFAULT (auth.jwt()->>'email');
 
 -- ============================================================
 -- 2. STĹPCE (ADD COLUMN IF NOT EXISTS – bezpečné opakovane)
@@ -299,27 +304,30 @@ ALTER TABLE cz_pevar_vykony ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cz_evk_followup ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cz_ideas        ENABLE ROW LEVEL SECURITY;
 
+-- ZAMKNUTÉ: české tabuľky sú prístupné len prihláseným (authenticated)
 DROP POLICY IF EXISTS "anon all evk"      ON cz_evk_vykony;
 DROP POLICY IF EXISTS "anon insert evk"   ON cz_evk_vykony;
 DROP POLICY IF EXISTS "anon select evk"   ON cz_evk_vykony;
-CREATE POLICY "anon all evk"   ON cz_evk_vykony   FOR ALL TO anon USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "anon all cas"      ON cz_cas_vykony;
 DROP POLICY IF EXISTS "anon insert cas"   ON cz_cas_vykony;
 DROP POLICY IF EXISTS "anon select cas"   ON cz_cas_vykony;
-CREATE POLICY "anon all cas"   ON cz_cas_vykony   FOR ALL TO anon USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "anon all pevar"    ON cz_pevar_vykony;
 DROP POLICY IF EXISTS "anon insert pevar" ON cz_pevar_vykony;
 DROP POLICY IF EXISTS "anon select pevar" ON cz_pevar_vykony;
 DROP POLICY IF EXISTS "anon delete pevar" ON cz_pevar_vykony;
-CREATE POLICY "anon all pevar" ON cz_pevar_vykony FOR ALL TO anon USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "anon insert followup" ON cz_evk_followup;
 DROP POLICY IF EXISTS "anon select followup" ON cz_evk_followup;
 DROP POLICY IF EXISTS "anon delete followup" ON cz_evk_followup;
 DROP POLICY IF EXISTS "anon all followup"    ON cz_evk_followup;
-CREATE POLICY "anon all followup" ON cz_evk_followup FOR ALL TO anon USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "anon all cz_ideas" ON cz_ideas;
-CREATE POLICY "anon all cz_ideas" ON cz_ideas FOR ALL TO anon USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "auth all evk"      ON cz_evk_vykony;
+CREATE POLICY "auth all evk"   ON cz_evk_vykony   FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all cas"      ON cz_cas_vykony;
+CREATE POLICY "auth all cas"   ON cz_cas_vykony   FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all pevar"    ON cz_pevar_vykony;
+CREATE POLICY "auth all pevar" ON cz_pevar_vykony FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all followup" ON cz_evk_followup;
+CREATE POLICY "auth all followup" ON cz_evk_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all cz_ideas" ON cz_ideas;
+CREATE POLICY "auth all cz_ideas" ON cz_ideas FOR ALL TO authenticated USING (true) WITH CHECK (true);
