@@ -23,9 +23,13 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .prow{display:grid;grid-template-columns:44px 1.25fr 90px 1.1fr 1fr .95fr 400px;gap:8px;align-items:center;background:#fff;border:1.5px solid #e5e9f5;border-radius:10px;padding:8px 12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
 .psub{grid-column:2/-1;display:grid;grid-template-columns:.8fr .95fr .8fr 1.45fr;gap:8px;}
 .stav-chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:10px;cursor:pointer;border:none;white-space:nowrap;line-height:1;}
-.stav-caka{background:#f0f2f7;color:#6b7280;}
+.stav-na_oddeleni{background:#f0f2f7;color:#6b7280;}
+.stav-poslat{background:#fef3c7;color:#b45309;}
+.stav-caka{background:#e0e7ff;color:#3730a3;}
 .stav-na_sale{background:#dbeafe;color:#1e40af;}
 .stav-hotovy{background:#dcfce7;color:#166534;}
+.prow.st-poslat{border-left:4px solid #f59e0b;}
+.prow.st-caka{border-left:4px solid #6366f1;}
 .prow.st-na_sale{border-left:4px solid #3b82f6;}
 .prow.st-hotovy{border-left:4px solid #22c55e;}
 /* zásobník */
@@ -238,7 +242,7 @@ let ZAS=[];          // zásobník (datum='zasobnik')
 let MODE='day';      // day | week
 let NEW_POZID=null;  // prepojenie novej položky na kartu v Požiadavkách
 const TV=new URLSearchParams(location.search).get('tv')==='1';
-const STAVY={caka:'⏳ čaká',na_sale:'🔵 na sále',hotovy:'✅ hotový'};
+const STAVY={na_oddeleni:'🛏 na oddelení',poslat:'🚑 poslať pre pacienta',caka:'⏳ čaká',na_sale:'🔵 na sále',hotovy:'✅ hotový'};
 function g(id){return (document.getElementById(id)||{}).value||'';}
 function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function todayISO(off){const d=new Date();d.setDate(d.getDate()+(off||0));return d.toISOString().slice(0,10);}
@@ -294,7 +298,7 @@ async function zaradZoZasobnika(id){
 
 // ── Stav výkonu počas dňa (čaká → na sále → hotový) ─────────
 function stavLabel(row){
-  const sv=row.stav_vykonu||'caka';
+  const sv=row.stav_vykonu||'na_oddeleni';
   if(sv==='na_sale'&&row.vykon_start){
     const m=Math.max(0,Math.round((Date.now()-new Date(row.vykon_start))/60000));
     return '🔵 na sále • '+m+' min';
@@ -307,13 +311,14 @@ function stavLabel(row){
 }
 async function cycleStav(id){
   const row=ROWS.find(r=>r.id===id);if(!row)return;
-  const ord=['caka','na_sale','hotovy'];
-  const next=ord[(ord.indexOf(row.stav_vykonu||'caka')+1)%3];
+  const ord=['na_oddeleni','poslat','caka','na_sale','hotovy'];
+  const cur=ord.includes(row.stav_vykonu)?row.stav_vykonu:'na_oddeleni';
+  const next=ord[(ord.indexOf(cur)+1)%ord.length];
   const now=new Date().toISOString();
   const body={stav_vykonu:next,updated_at:now};
   if(next==='na_sale'){body.vykon_start=now;body.vykon_koniec=null;}       // štart stopiek
   else if(next==='hotovy'){body.vykon_koniec=now;}                          // stop stopiek
-  else{body.vykon_start=null;body.vykon_koniec=null;}                       // reset na „čaká"
+  else if(next==='na_oddeleni'){body.vykon_start=null;body.vykon_koniec=null;} // reset kolobehu
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
     if(r.ok){Object.assign(row,body);render();}
@@ -343,9 +348,9 @@ function render(){
   ROWS.forEach((row,idx)=>{
     const vyr=row.stav==='vyradeny';
     if(!vyr)cislo++;
-    const sv=row.stav_vykonu||'caka';
+    const sv=STAVY[row.stav_vykonu]?row.stav_vykonu:'na_oddeleni';
     const div=document.createElement('div');
-    div.className='prow'+(vyr?' vyradeny':(sv!=='caka'?' st-'+sv:''));
+    div.className='prow'+(vyr?' vyradeny':(sv!=='na_oddeleni'?' st-'+sv:''));
     // drag & drop za číslo poradia
     div.addEventListener('dragover',e=>{if(DRAGP!==null&&DRAGP!==idx){e.preventDefault();div.classList.add('drag-over');}});
     div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
@@ -358,7 +363,7 @@ function render(){
       <input value="${escHtml(row.vykon||'')}" list="dl_vykon" onchange="patchRow('${row.id}','vykon',this.value)" placeholder="výkon">
       <input value="${escHtml(row.lozko||'')}" onchange="patchRow('${row.id}','lozko',this.value)" placeholder="odd./izba">
       <div class="pacts">
-        ${vyr?'':`<button class="stav-chip stav-${sv}" id="chip_${row.id}" onclick="cycleStav('${row.id}')" title="klik prepína: čaká → na sále → hotový">${stavLabel(row)}</button>`}
+        ${vyr?'':`<button class="stav-chip stav-${sv}" id="chip_${row.id}" onclick="cycleStav('${row.id}')" title="klik prepína: na oddelení → poslať pre pacienta → čaká → na sále → hotový">${stavLabel(row)}</button>`}
         <button class="bmini" title="posunúť vyššie" onclick="moveRow(${idx},-1)">▲</button>
         <button class="bmini" title="posunúť nižšie" onclick="moveRow(${idx},1)">▼</button>
         ${vyr?`<button class="bmini" onclick="patchRow('${row.id}','stav','planovany');patchRow('${row.id}','vyradeny_dovod',null)">↩ Vrátiť</button>`
@@ -413,6 +418,7 @@ async function addRow(pre,doZasobnika){
   data.datum=doZasobnika?'zasobnik':g('datum');
   data.poradie=doZasobnika?0:(ROWS.length?Math.max(...ROWS.map(r=>r.poradie||0))+1:1);
   data.stav='planovany';
+  data.stav_vykonu='na_oddeleni';
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
     if(r.ok){
@@ -467,7 +473,7 @@ async function confirmVyradit(){
 async function doZasobnika(id){
   const row=ROWS.find(r=>r.id===id);if(!row)return;
   try{
-    const kopia={datum:'zasobnik',poradie:0,stav:'planovany',
+    const kopia={datum:'zasobnik',poradie:0,stav:'planovany',stav_vykonu:'na_oddeleni',
       meno:row.meno,rocnik:row.rocnik,diagnoza:row.diagnoza,vykon:row.vykon,lozko:row.lozko,
       poloha:row.poloha,miesto_punkcie:row.miesto_punkcie,operator:row.operator,
       poziadavka_id:row.poziadavka_id,poznamka:row.poznamka};
@@ -507,7 +513,7 @@ async function confirmPresun(){
     let maxP=0;
     const r0=await fetch(`${SB_URL}/rest/v1/${TBL}?datum=eq.${ciel}&select=poradie`,{headers:H()});
     if(r0.ok){const ex=await r0.json();maxP=ex.length?Math.max(...ex.map(x=>x.poradie||0)):0;}
-    const kopia={datum:ciel,poradie:maxP+1,stav:'planovany',
+    const kopia={datum:ciel,poradie:maxP+1,stav:'planovany',stav_vykonu:'na_oddeleni',
       meno:row.meno,rocnik:row.rocnik,diagnoza:row.diagnoza,vykon:row.vykon,lozko:row.lozko,
       cas_okno:row.cas_okno,poloha:row.poloha,miesto_punkcie:row.miesto_punkcie,
       operator:row.operator,poziadavka_id:row.poziadavka_id,poznamka:row.poznamka};
@@ -598,7 +604,15 @@ async function renderWeek(){
     const col=document.createElement('div');
     col.className='wday'+(dk===todayISO(0)?' today-col':'');
     const title=dk==='zasobnik'?'📦 Zásobník':dni[di]+' '+fmtD(dk);
-    col.innerHTML=`<h3 ${dk!=='zasobnik'?`onclick="MODE='day';toggleWeekOff();document.getElementById('datum').value='${dk}';loadRows()" title="otvoriť deň"`:''}><span>${title}</span><span style="color:#6b7280">${rows.filter(x=>x.stav!=='vyradeny').length}</span></h3>`;
+    col.innerHTML=`<h3 title="${dk==='zasobnik'?'':'kliknutím otvoríte deň'}"><span>${title}</span><span style="color:#6b7280">${rows.filter(x=>x.stav!=='vyradeny').length}</span></h3>`;
+    if(dk!=='zasobnik'){
+      col.style.cursor='pointer';
+      col.addEventListener('click',()=>{
+        MODE='day';toggleWeekOff();
+        document.getElementById('datum').value=dk;
+        loadRows();
+      });
+    }
     rows.forEach(x=>{
       const c=document.createElement('div');
       c.className='wcard'+(x.stav==='vyradeny'?' vyr':'');
