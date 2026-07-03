@@ -223,6 +223,20 @@ ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS vykon TEXT; -- planovany vyko
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS vykon_start TEXT;  -- stopky: zaciatok (prepnutie na 'na sale')
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS vykon_koniec TEXT; -- stopky: koniec (prepnutie na 'hotovy')
 
+-- oznamy – nástenka oddelenia
+CREATE TABLE IF NOT EXISTS oznamy (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  nadpis TEXT,
+  text TEXT,
+  dolezite BOOLEAN DEFAULT false,
+  platne_do TEXT,
+  created_by TEXT DEFAULT (auth.jwt()->>'email')
+);
+ALTER TABLE oznamy ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "auth all oznamy" ON oznamy;
+CREATE POLICY "auth all oznamy" ON oznamy FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

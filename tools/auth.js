@@ -100,14 +100,17 @@
 
   // Inject shared nav after DOM ready
   const NAV_LINKS=[
-    {href:'/tools/EVK/',label:'EVK'},
-    {href:'/tools/CAS-generator/',label:'CAS'},
-    {href:'/tools/PEVAR/',label:'PEVAR'},
-    {href:'/tools/Aorta/',label:'📥 Požiadavky'},
     {href:'/tools/Program/',label:'📅 Program'},
-    {href:'/tools/analytics/',label:'📊 Štatistiky'},
-    {href:'/tools/zaznamy/',label:'📁 Záznamy'},
+    {href:'/tools/Aorta/',label:'📥 Požiadavky'},
+    {label:'📝 Popisy',children:[
+      {href:'/tools/EVK/',label:'EVK – endovaskulárne výkony'},
+      {href:'/tools/CAS-generator/',label:'CAS – karotídy'},
+      {href:'/tools/PEVAR/',label:'PEVAR – aortálne stentgrafty'},
+      {href:'/tools/zaznamy/',label:'📁 Záznamy výkonov'},
+    ]},
+    {href:'/tools/oznamy/',label:'📢 Oznamy'},
     {href:'/tools/ideas/',label:'💡 Nápady'},
+    {href:'/tools/analytics/',label:'📊 Štatistiky'},
     {href:'/tools/zaloha/',label:'💾 Záloha'},
   ];
 
@@ -119,11 +122,44 @@
     nav.className='shared-nav';
     nav.style.cssText='background:#0f1e3d;display:flex;align-items:center;padding:0 16px;gap:2px;position:sticky;top:0;z-index:200;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;';
     const cur=location.pathname.replace(/\/$/,'');
+    const linkCss=act=>'padding:9px 16px;font-size:13px;font-weight:600;color:'+(act?'#fff':'#8fa3c8')+';text-decoration:none;border-bottom:3px solid '+(act?'#3b82f6':'transparent')+';transition:.15s;white-space:nowrap;flex-shrink:0;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer;font-family:inherit;';
     NAV_LINKS.forEach(l=>{
+      if(l.children){
+        // rozbaľovacie menu (Popisy)
+        const active=l.children.some(c=>cur===c.href.replace(/\/$/,''));
+        const btn=document.createElement('button');
+        btn.textContent=l.label+' ▾';
+        btn.style.cssText=linkCss(active);
+        const menu=document.createElement('div');
+        menu.style.cssText='position:fixed;display:none;background:#0f1e3d;border:1px solid #2a3f66;border-radius:0 0 10px 10px;box-shadow:0 12px 30px rgba(0,0,0,.4);z-index:1000;min-width:250px;padding:6px 0;';
+        l.children.forEach(c=>{
+          const ca=document.createElement('a');
+          ca.href=c.href;
+          const cact=cur===c.href.replace(/\/$/,'');
+          ca.textContent=c.label;
+          ca.style.cssText='display:block;padding:10px 16px;font-size:13px;font-weight:600;color:'+(cact?'#fff':'#8fa3c8')+';text-decoration:none;white-space:nowrap;'+(cact?'background:#1a2c52;':'');
+          ca.onmouseover=()=>{ca.style.background='#1a2c52';ca.style.color='#fff';};
+          ca.onmouseout=()=>{ca.style.background=cact?'#1a2c52':'none';ca.style.color=cact?'#fff':'#8fa3c8';};
+          menu.appendChild(ca);
+        });
+        document.body.appendChild(menu);
+        btn.onclick=e=>{
+          e.stopPropagation();
+          const open=menu.style.display==='block';
+          menu.style.display=open?'none':'block';
+          if(!open){const r=btn.getBoundingClientRect();menu.style.left=Math.round(r.left)+'px';menu.style.top=Math.round(r.bottom)+'px';}
+        };
+        document.addEventListener('click',()=>{menu.style.display='none';});
+        nav.addEventListener('scroll',()=>{menu.style.display='none';});
+        btn.onmouseover=()=>{if(!active)btn.style.color='#fff';};
+        btn.onmouseout=()=>{if(!active)btn.style.color='#8fa3c8';};
+        nav.appendChild(btn);
+        return;
+      }
       const a=document.createElement('a');
       a.href=l.href;
       const active=cur===l.href.replace(/\/$/,'');
-      a.style.cssText='padding:9px 16px;font-size:13px;font-weight:600;color:'+(active?'#fff':'#8fa3c8')+';text-decoration:none;border-bottom:3px solid '+(active?'#3b82f6':'transparent')+';transition:.15s;white-space:nowrap;flex-shrink:0;';
+      a.style.cssText=linkCss(active);
       a.onmouseover=()=>{if(!active)a.style.color='#fff';};
       a.onmouseout=()=>{if(!active)a.style.color='#8fa3c8';};
       a.textContent=l.label;

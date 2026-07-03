@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Oznamy – cievny.sk</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f7;min-height:100vh;}
+h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;max-width:860px;margin:0 auto;}
+.page-sub{font-size:13px;color:#6b7280;padding:4px 20px 0;max-width:860px;margin:0 auto;}
+.wrap{max-width:860px;margin:0 auto;padding:16px 20px 30px;}
+.add-card{background:#eff6ff;border:1.5px dashed #93c5fd;border-radius:12px;padding:14px 16px;margin-bottom:18px;}
+.add-card input[type=text],.add-card textarea{width:100%;padding:9px 11px;border:1.5px solid #bfdbfe;border-radius:8px;font-size:13.5px;font-family:inherit;outline:none;background:#fff;color:#1a2745;}
+.add-card textarea{min-height:70px;resize:vertical;margin-top:8px;}
+.add-card input:focus,.add-card textarea:focus{border-color:#3b82f6;}
+.add-opts{display:flex;gap:12px;align-items:center;margin-top:8px;flex-wrap:wrap;}
+.add-opts label{font-size:12.5px;color:#374151;display:flex;align-items:center;gap:5px;cursor:pointer;font-weight:600;}
+.add-opts input[type=date]{padding:6px 9px;border:1.5px solid #bfdbfe;border-radius:7px;font-size:12.5px;outline:none;background:#fff;}
+.btn-add{padding:9px 18px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;margin-left:auto;}
+.btn-add:hover{background:#1737a0;}
+.oznam{background:#fff;border:1.5px solid #e5e9f5;border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.oznam.dolezity{border-left:5px solid #dc2626;background:#fffbfb;}
+.oznam.expirovany{opacity:.55;}
+.o-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.o-nadpis{font-size:15px;font-weight:700;color:#1a2745;flex:1;min-width:150px;}
+.o-badge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:9px;background:#fee2e2;color:#dc2626;letter-spacing:.4px;}
+.o-badge-exp{background:#f0f2f7;color:#6b7280;}
+.o-text{font-size:13.5px;color:#374151;line-height:1.55;margin-top:7px;white-space:pre-wrap;word-break:break-word;}
+.o-meta{font-size:11px;color:#9ca3af;margin-top:9px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.o-del{margin-left:auto;font-size:11px;font-weight:600;padding:3px 9px;border:1.5px solid #fca5a5;border-radius:5px;background:#fff;cursor:pointer;color:#dc2626;}
+.o-del:hover{background:#fef2f2;}
+.empty{padding:26px;text-align:center;color:#9ca3af;font-size:13.5px;}
+.msg{font-size:12.5px;font-weight:600;margin-left:10px;}
+details.exp-box summary{font-size:13px;font-weight:700;color:#6b7280;cursor:pointer;padding:8px 0;user-select:none;}
+</style>
+</head>
+<body>
+<script src="/tools/auth.js"></script>
+<script>checkAuth();</script>
+
+<h1>📢 Oznamy oddelenia</h1>
+<p class="page-sub">Dôležité informácie pre celý tím — vidia ich všetci prihlásení.</p>
+
+<div class="wrap">
+  <div class="add-card">
+    <input type="text" id="n_nadpis" placeholder="Nadpis oznamu (napr. Zajtra seminár o 7:30)" maxlength="120">
+    <textarea id="n_text" placeholder="Text oznamu…"></textarea>
+    <div class="add-opts">
+      <label><input type="checkbox" id="n_dolezite"> 🔴 Dôležité (navrchu, zvýraznené)</label>
+      <label>Platí do: <input type="date" id="n_platne_do" title="po tomto dátume sa oznam presunie medzi staršie"></label>
+      <button class="btn-add" onclick="addOznam()">📢 Zverejniť</button>
+      <span class="msg" id="o_msg"></span>
+    </div>
+  </div>
+
+  <div id="oznamy_list"></div>
+
+  <details class="exp-box" id="exp_box" style="display:none">
+    <summary>🗂 Staršie / neplatné oznamy (<span id="exp_cnt">0</span>)</summary>
+    <div id="exp_list"></div>
+  </details>
+</div>
+
+<script>
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
+const H=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
+
+let OZNAMY=[];
+function g(id){return (document.getElementById(id)||{}).value||'';}
+function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function shortMail(e){return (e||'').split('@')[0];}
+function msg(t,c){const el=document.getElementById('o_msg');el.textContent=t;el.style.color=c;setTimeout(()=>{if(el.textContent===t)el.textContent='';},4000);}
+function fmtD(d){if(!d)return'';const x=new Date(d);return isNaN(x)?'':x.toLocaleDateString('sk-SK');}
+function jeExpirovany(o){return o.platne_do&&o.platne_do<new Date().toISOString().slice(0,10);}
+
+async function load(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/oznamy?order=created_at.desc&limit=300`,{headers:H()});
+    if(!r.ok){document.getElementById('oznamy_list').innerHTML='<div class="empty">⚠️ Tabuľka oznamy nie je v Supabase — spustite priložený SQL.</div>';return;}
+    OZNAMY=await r.json();
+  }catch(e){msg('⚠️ Chyba spojenia','#dc2626');return;}
+  render();
+}
+
+function oznamEl(o){
+  const div=document.createElement('div');
+  div.className='oznam'+(o.dolezite?' dolezity':'')+(jeExpirovany(o)?' expirovany':'');
+  const datum=new Date(o.created_at).toLocaleDateString('sk-SK',{day:'numeric',month:'numeric',year:'numeric'});
+  div.innerHTML=`
+    <div class="o-head">
+      ${o.dolezite?'<span class="o-badge">📌 DÔLEŽITÉ</span>':''}
+      ${jeExpirovany(o)?'<span class="o-badge o-badge-exp">neplatné</span>':''}
+      <span class="o-nadpis">${escHtml(o.nadpis||'(bez nadpisu)')}</span>
+      <button class="o-del" onclick="delOznam('${o.id}')">🗑 Zmazať</button>
+    </div>
+    ${o.text?'<div class="o-text">'+escHtml(o.text)+'</div>':''}
+    <div class="o-meta">
+      <span>👤 ${o.created_by?escHtml(shortMail(o.created_by)):'–'}</span>
+      <span>🗓 ${datum}</span>
+      ${o.platne_do?'<span>⏳ platí do '+fmtD(o.platne_do)+'</span>':''}
+    </div>`;
+  return div;
+}
+
+function render(){
+  const platne=OZNAMY.filter(o=>!jeExpirovany(o))
+    .sort((a,b)=>(b.dolezite?1:0)-(a.dolezite?1:0)||(b.created_at||'').localeCompare(a.created_at||''));
+  const stare=OZNAMY.filter(jeExpirovany);
+  const box=document.getElementById('oznamy_list');box.innerHTML='';
+  if(!platne.length)box.innerHTML='<div class="empty">Žiadne aktuálne oznamy.</div>';
+  platne.forEach(o=>box.appendChild(oznamEl(o)));
+  const eb=document.getElementById('exp_box');
+  eb.style.display=stare.length?'':'none';
+  document.getElementById('exp_cnt').textContent=stare.length;
+  const el=document.getElementById('exp_list');el.innerHTML='';
+  stare.forEach(o=>el.appendChild(oznamEl(o)));
+}
+
+async function addOznam(){
+  const nadpis=g('n_nadpis').trim();
+  const text=g('n_text').trim();
+  if(!nadpis&&!text){msg('⚠️ Napíšte nadpis alebo text','#b45309');return;}
+  const body={
+    nadpis:nadpis||null,
+    text:text||null,
+    dolezite:document.getElementById('n_dolezite').checked,
+    platne_do:g('n_platne_do')||null
+  };
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/oznamy`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
+    if(r.ok){
+      ['n_nadpis','n_text','n_platne_do'].forEach(i=>document.getElementById(i).value='');
+      document.getElementById('n_dolezite').checked=false;
+      msg('✓ Zverejnené','#1d6f42');
+      await load();
+    }else msg('❌ Chyba: '+r.status+(r.status===404?' (spustite setup SQL)':''),'#dc2626');
+  }catch(e){msg('❌ Chyba siete','#dc2626');}
+}
+
+async function delOznam(id){
+  if(!confirm('Zmazať tento oznam?'))return;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/oznamy?id=eq.${id}`,{method:'DELETE',headers:H()});
+    if(r.ok)await load();
+  }catch(e){msg('❌ Chyba siete','#dc2626');}
+}
+
+load();
+// oznamy sa obnovujú každú minútu (nástenka môže byť otvorená celý deň)
+setInterval(()=>{if(document.visibilityState==='visible')load();},60000);
+</script>
+</body>
+</html>
