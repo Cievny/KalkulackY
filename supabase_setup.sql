@@ -220,6 +220,8 @@ ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS stav_vykonu TEXT DEFAULT 'cak
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS operator TEXT;
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS poziadavka_id UUID; -- prepojenie na aorta_indikacie
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS vykon TEXT; -- planovany vykon (PEVAR/CAS/PTA...)
+ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS vykon_start TEXT;  -- stopky: zaciatok (prepnutie na 'na sale')
+ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS vykon_koniec TEXT; -- stopky: koniec (prepnutie na 'hotovy')
 
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (

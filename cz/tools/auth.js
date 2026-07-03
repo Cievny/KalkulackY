@@ -53,7 +53,7 @@
 
   window.checkAuth=function(){
     if(sessionStorage.getItem(KEY)!=='1'){
-      sessionStorage.setItem('cievny_return',location.pathname);
+      sessionStorage.setItem('cievny_return',location.pathname+location.search);
       location.replace('/cz/tools/login/');
       return;
     }
