@@ -638,7 +638,8 @@ async function loadPOZ(){
       return (d!=null&&d>=0&&d<1000)?d:null;}catch(e){return null;}
   }).filter(x=>x!=null).sort((a,b)=>a-b);
   const median=closedDays.length?closedDays[Math.floor(closedDays.length/2)]:null;
-  const poTermine=active.filter(r=>r.termin&&new Date(r.termin)<dnes).length;
+  const dnesStr=(()=>{const z=n=>String(n).padStart(2,'0');return dnes.getFullYear()+'-'+z(dnes.getMonth()+1)+'-'+z(dnes.getDate());})();
+  const poTermine=active.filter(r=>r.termin&&(''+r.termin).slice(0,10)<dnesStr).length; // porovnanie dátum-na-dátum, dnešok nie je „po termíne“
   document.getElementById('poz-stats').innerHTML=[
     statCard('Aktívne požiadavky',active.length),
     statCard('AORTA / INÉ',active.filter(r=>r.kategoria!=='ine').length+' / '+active.filter(r=>r.kategoria==='ine').length),

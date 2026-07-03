@@ -255,6 +255,7 @@ let ROWS=[];
 let ZAS=[];          // zásobník (datum='zasobnik')
 let MODE='day';      // day | week
 let NEW_POZID=null;  // prepojenie novej položky na kartu v Požiadavkách
+let NEW_POZ_ROCNIK=null; // ročník pacienta z návrhu (poistka proti zámene)
 const TV=new URLSearchParams(location.search).get('tv')==='1';
 const STAVY={na_oddeleni:'🛏 na oddelení',poslat:'🚑 poslať pre pacienta',caka:'⏳ čaká pred sálou',na_sale:'💉 na sále',hotovy:'✅ hotový'};
 function g(id){return (document.getElementById(id)||{}).value||'';}
@@ -331,6 +332,10 @@ async function cycleStav(id){
   const ord=['na_oddeleni','poslat','caka','na_sale','hotovy'];
   const cur=ord.includes(row.stav_vykonu)?row.stav_vykonu:'na_oddeleni';
   const next=ord[(ord.indexOf(cur)+1)%ord.length];
+  // z „hotový“ späť na „na oddelení“ = vymaže nameraný čas výkonu → vyžiadaj potvrdenie
+  if(cur==='hotovy'&&next==='na_oddeleni'&&row.vykon_start&&row.vykon_koniec){
+    if(!confirm('Naozaj vrátiť stav na „na oddelení“? Vymaže sa nameraný čas výkonu.'))return;
+  }
   const now=new Date().toISOString();
   const body={stav_vykonu:next,updated_at:now};
   if(next==='na_sale'){body.vykon_start=now;body.vykon_koniec=null;}       // štart stopiek
@@ -347,14 +352,20 @@ async function cycleStav(id){
 }
 async function uzavriPoziadavku(pid){
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/aorta_indikacie?id=eq.${pid}&select=historia`,{headers:H()});
+    const r=await fetch(`${SB_URL}/rest/v1/aorta_indikacie?id=eq.${pid}&select=historia,updated_at`,{headers:H()});
     if(!r.ok)return;
     const rows=await r.json();if(!rows.length)return;
     let hist=[];try{hist=JSON.parse(rows[0].historia||'[]');if(!Array.isArray(hist))hist=[];}catch(e){}
-    hist.push({s:'archiv',d:new Date().toISOString().slice(0,10)});
-    await fetch(`${SB_URL}/rest/v1/aorta_indikacie?id=eq.${pid}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+    hist.push({s:'archiv',d:isoLocal(new Date())});
+    // podmienený zápis: iba ak kartu medzitým nikto v Požiadavkách nezmenil (bráni prepísaniu histórie)
+    const loaded=rows[0].updated_at;
+    const cond=loaded?`&updated_at=eq.${encodeURIComponent(loaded)}`:'';
+    const w=await fetch(`${SB_URL}/rest/v1/aorta_indikacie?id=eq.${pid}${cond}`,{method:'PATCH',headers:{...H(),'Prefer':'return=representation'},
       body:JSON.stringify({status:'archiv',vysledok:'výkon vykonaný – endovaskulárne',historia:JSON.stringify(hist),updated_at:new Date().toISOString()})});
-    msg('✓ Požiadavka uzavretá do archívu','#1d6f42');
+    if(w.ok){const res=await w.json();
+      if(res.length)msg('✓ Požiadavka uzavretá do archívu','#1d6f42');
+      else msg('⚠️ Kartu medzitým niekto upravil – uzavrite ju ručne v Požiadavkách','#b45309');
+    }
   }catch(e){}
 }
 
@@ -429,7 +440,8 @@ async function addRow(pre,doZasobnika){
     miesto_punkcie:g('n_punkcia').trim()||null,
     operator:g('n_operator').trim()||null,
     poznamka:g('n_poznamka').trim()||null,
-    poziadavka_id:NEW_POZID||null
+    // prepojenie na Požiadavky zruš, ak medzitým lekár prepísal ročník na iného pacienta
+    poziadavka_id:(NEW_POZID&&(!NEW_POZ_ROCNIK||parseInt(g('n_rocnik'))===NEW_POZ_ROCNIK))?NEW_POZID:null
   };
   if(!data.meno){msg('⚠️ Vyplňte meno pacienta','#b45309');return;}
   data.datum=doZasobnika?'zasobnik':g('datum');
@@ -439,7 +451,7 @@ async function addRow(pre,doZasobnika){
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
     if(r.ok){
-      NEW_POZID=null;
+      NEW_POZID=null;NEW_POZ_ROCNIK=null;
       if(!pre)['n_meno','n_rocnik','n_diagnoza','n_vykon','n_lozko','n_poloha','n_punkcia','n_operator','n_poznamka'].forEach(i=>document.getElementById(i).value='');
       await loadRows();
       if(!pre)document.getElementById('n_meno').focus();
@@ -459,10 +471,10 @@ async function patchRow(id,field,value){
 async function moveRow(idx,dir){
   const j=idx+dir;
   if(j<0||j>=ROWS.length)return;
-  const a=ROWS[idx],b=ROWS[j];
-  const pa=a.poradie,pb=b.poradie;
-  await patchRow(a.id,'poradie',pb);
-  await patchRow(b.id,'poradie',pa);
+  // prehoď v poli a prečísluj postupne – odolné aj voči duplicitným hodnotám poradia
+  const arr=ROWS.slice();
+  const [it]=arr.splice(idx,1);arr.splice(j,0,it);
+  await Promise.all(arr.map((r,i)=>r.poradie!==i+1?patchRow(r.id,'poradie',i+1):null).filter(Boolean));
   await loadRows();
 }
 
@@ -492,7 +504,7 @@ async function doZasobnika(id){
   try{
     const kopia={datum:'zasobnik',poradie:0,stav:'planovany',stav_vykonu:'na_oddeleni',
       meno:row.meno,rocnik:row.rocnik,diagnoza:row.diagnoza,vykon:row.vykon,lozko:row.lozko,
-      poloha:row.poloha,miesto_punkcie:row.miesto_punkcie,operator:row.operator,
+      cas_okno:row.cas_okno,poloha:row.poloha,miesto_punkcie:row.miesto_punkcie,operator:row.operator,
       poziadavka_id:row.poziadavka_id,poznamka:row.poznamka};
     const r1=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(kopia)});
     if(!r1.ok){msg('❌ Chyba: '+r1.status,'#dc2626');return;}
@@ -575,6 +587,7 @@ function pridajZPoziadavky(i){
   document.getElementById('n_poznamka').value=p.rodne_cislo?('r.č. '+p.rodne_cislo):'';
   document.getElementById('n_operator').value=p.indikoval1||'';
   NEW_POZID=p.id; // prepojenie: pri „hotový" sa ponúkne uzavretie požiadavky
+  NEW_POZ_ROCNIK=p.rocnik||null; // poistka proti prilepeniu na nesprávneho pacienta
   document.getElementById('n_meno').focus();
   msg('Doplňte celé meno pacienta a pridajte (karta bude prepojená s Požiadavkami)','#3b82f6');
 }
@@ -721,6 +734,7 @@ function buildProgram(){
   return L.join('\n');
 }
 function copyProgram(){
+  if(MODE!=='day'){msg('Prepnite na denný pohľad – kopíruje sa zobrazený deň','#b45309');return;}
   const txt=nisSafeTxt(buildProgram());
   const ok=()=>msg('✓ Program skopírovaný','#1d6f42');
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok).catch(()=>msg('⚠️ Označte text ručne','#b45309'));

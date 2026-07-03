@@ -166,6 +166,13 @@ async function loadItems(){
 }
 
 function parseKom(item){try{const k=JSON.parse(item.komentare||'[]');return Array.isArray(k)?k:[];}catch(e){return[];}}
+// čerstvé prečítanie jednej karty tesne pred zápisom (bráni prepísaniu cudzieho hlasu/komentára)
+async function fetchOne(id){
+  const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}&select=hlasy,komentare&limit=1`,{headers:SB_HEAD()});
+  if(!r.ok)return null;const a=await r.json();return a[0]||null;
+}
+// automatické obnovenie nástenky (pauza kým používateľ píše do niektorého poľa)
+setInterval(()=>{if(document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName))return;loadItems();},60000);
 
 function render(){
   COLS.forEach(col=>{
@@ -229,9 +236,9 @@ function renderArchiv(){
 
 async function vote(id){
   if(localStorage.getItem('idea_v_'+id))return;
-  const item=ITEMS.find(i=>i.id===id);if(!item)return;
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({hlasy:(item.hlasy||0)+1})});
+    const cur=await fetchOne(id);if(!cur)return;
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({hlasy:(cur.hlasy||0)+1})});
     if(r.ok){localStorage.setItem('idea_v_'+id,'1');await loadItems();}
   }catch(e){}
 }
@@ -246,12 +253,12 @@ async function addKoment(id){
   const inp=document.getElementById('kin_'+id);
   const t=(inp.value||'').trim();if(!t)return;
   const anon=document.getElementById('kan_'+id).checked;
-  const item=ITEMS.find(i=>i.id===id);if(!item)return;
-  const kom=parseKom(item);
-  kom.push({t,a:anon?null:(myName()||null),d:new Date().toLocaleDateString('sk-SK')});
   try{
+    const cur=await fetchOne(id);if(!cur)return;
+    const kom=parseKom(cur);
+    kom.push({t,a:anon?null:(myName()||null),d:new Date().toLocaleDateString('sk-SK')});
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({komentare:JSON.stringify(kom)})});
-    if(r.ok){KOMOPEN.add(id);await loadItems();}
+    if(r.ok){KOMOPEN.add(id);inp.value='';await loadItems();}
     else alert('Chyba pri ukladaní: '+r.status);
   }catch(e){alert('Chyba siete: '+e.message);}
 }
