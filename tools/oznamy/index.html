@@ -76,7 +76,7 @@ const BUCKET='oznamy-prilohy';
 
 let OZNAMY=[];
 function g(id){return (document.getElementById(id)||{}).value||'';}
-function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function shortMail(e){return (e||'').split('@')[0];}
 function msg(t,c){const el=document.getElementById('o_msg');el.textContent=t;el.style.color=c;setTimeout(()=>{if(el.textContent===t)el.textContent='';},4000);}
 function fmtD(d){if(!d)return'';const x=new Date(d);return isNaN(x)?'':x.toLocaleDateString('sk-SK');}

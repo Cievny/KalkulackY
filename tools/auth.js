@@ -69,8 +69,9 @@
     if(!email){msg.textContent='Zadajte email.';msg.style.color='#dc2626';document.getElementById('email').focus();return;}
     msg.textContent='Prihlasujem…';msg.style.color='#6b7280';
     function go(){
-      const ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
+      let ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
       sessionStorage.removeItem('cievny_return');
+      if(!/^\/[^/]/.test(ret))ret='/tools/EVK/'; // len interné cesty (nie //host, nie externé) – ochrana pred open-redirect
       location.replace(ret);
     }
     // Supabase Auth – email je povinný
@@ -90,6 +91,11 @@
   };
 
   window.doLogout=function(){
+    // zruš reláciu aj na serveri, aby ukradnutý refresh token prestal platiť
+    const at=sessionStorage.getItem(TK);
+    if(at&&at!==SB_ANON){
+      try{fetch(SB_URL+'/auth/v1/logout',{method:'POST',headers:{'apikey':SB_ANON,'Authorization':'Bearer '+at},keepalive:true});}catch(e){}
+    }
     sessionStorage.removeItem(KEY);
     sessionStorage.removeItem(TK);
     sessionStorage.removeItem(RK);

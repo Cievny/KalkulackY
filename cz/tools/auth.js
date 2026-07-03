@@ -52,7 +52,7 @@
 
   window.checkAuth=function(){
     if(sessionStorage.getItem(KEY)!=='1'){
-      sessionStorage.setItem('cievny_return',location.pathname+location.search);
+      sessionStorage.setItem('cievny_return_cz',location.pathname+location.search);
       location.replace('/cz/tools/login/');
       return;
     }
@@ -69,8 +69,9 @@
     if(!email){msg.textContent='Zadejte email.';msg.style.color='#dc2626';document.getElementById('email').focus();return;}
     msg.textContent='Přihlašuji…';msg.style.color='#6b7280';
     function go(){
-      const ret=sessionStorage.getItem('cievny_return')||'/cz/tools/EVK/';
-      sessionStorage.removeItem('cievny_return');
+      let ret=sessionStorage.getItem('cievny_return_cz')||'/cz/tools/EVK/';
+      sessionStorage.removeItem('cievny_return_cz');
+      if(!/^\/[^/]/.test(ret))ret='/cz/tools/EVK/'; // jen interní cesty (ochrana proti open-redirect)
       location.replace(ret);
     }
     // Supabase Auth – email je povinný
@@ -90,6 +91,10 @@
   };
 
   window.doLogout=function(){
+    const at=sessionStorage.getItem(TK);
+    if(at&&at!==SB_ANON){
+      try{fetch(SB_URL+'/auth/v1/logout',{method:'POST',headers:{'apikey':SB_ANON,'Authorization':'Bearer '+at},keepalive:true});}catch(e){}
+    }
     sessionStorage.removeItem(KEY);
     sessionStorage.removeItem(TK);
     sessionStorage.removeItem(RK);
@@ -151,9 +156,9 @@
   // PWA: manifest + ikona pro "Přidat na plochu" (mobil)
   function injectPWA(){
     if(document.querySelector('link[rel="manifest"]'))return;
-    const l=document.createElement('link');l.rel='manifest';l.href='/manifest.webmanifest';document.head.appendChild(l);
+    const l=document.createElement('link');l.rel='manifest';l.href='/cz/manifest.webmanifest';document.head.appendChild(l);
     const a=document.createElement('link');a.rel='apple-touch-icon';a.href='/icons/icon-192.png';document.head.appendChild(a);
-    const m=document.createElement('meta');m.name='theme-color';m.content='#0f1e3d';document.head.appendChild(m);
+    const m=document.createElement('meta');m.name='theme-color';m.content='#5b0e1a';document.head.appendChild(m);
   }
   injectPWA();
 

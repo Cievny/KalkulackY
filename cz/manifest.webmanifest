@@ -1,0 +1,13 @@
+{
+  "name": "cievny.sk – klinické nástroje (CZ)",
+  "short_name": "cievny.cz",
+  "description": "EVK, CAS, PEVAR generátory nálezů a záznamy výkonů",
+  "start_url": "/cz/tools/EVK/",
+  "display": "standalone",
+  "background_color": "#f0f2f7",
+  "theme_color": "#5b0e1a",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
