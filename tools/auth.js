@@ -21,6 +21,29 @@
     return sessionStorage.getItem(EK)||'';
   };
 
+  // Prihlásenie cez Google (OAuth) – presmeruje na Supabase, ten na Google a späť
+  window.doGoogle=function(){
+    const redirect=location.origin+'/tools/login/';
+    location.href=SB_URL+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(redirect);
+  };
+  // Spracovanie návratu z OAuth: tokeny prídu v URL fragmente (#access_token=…)
+  async function handleOAuthCallback(){
+    if(!location.hash||location.hash.indexOf('access_token=')<0)return false;
+    const p=new URLSearchParams(location.hash.slice(1));
+    const at=p.get('access_token');if(!at)return false;
+    const d={access_token:at,refresh_token:p.get('refresh_token')||'',expires_in:parseInt(p.get('expires_in')||'3600')};
+    try{
+      const r=await fetch(SB_URL+'/auth/v1/user',{headers:{'apikey':SB_ANON,'Authorization':'Bearer '+at}});
+      if(r.ok){const u=await r.json();d.user={email:u.email};}
+    }catch(e){}
+    storeSession(d);
+    history.replaceState(null,'',location.pathname+location.search); // vyčisti tokeny z URL
+    const ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
+    sessionStorage.removeItem('cievny_return');
+    location.replace(ret);
+    return true;
+  }
+
   // Token pre REST volania: JWT prihláseného usera, fallback na anon kľúč (kým nie je RLS sprísnené)
   window.sbToken=function(){
     return sessionStorage.getItem(TK)||SB_ANON;
@@ -199,9 +222,13 @@
   }
   injectPWA();
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',injectNav);
-  } else {
-    injectNav();
-  }
+  // ak sa vraciame z Google (tokeny v URL fragmente), spracuj a presmeruj – inak bežná inicializácia
+  handleOAuthCallback().then(handled=>{
+    if(handled)return; // prebehne presmerovanie
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded',injectNav);
+    } else {
+      injectNav();
+    }
+  });
 })();
