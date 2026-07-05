@@ -37,10 +37,12 @@ jobs:
                   headers={'apikey':SB_ANON,'Authorization':'Bearer '+TOKEN})
               with urllib.request.urlopen(req) as r:
                   return r.read() if raw else json.loads(r.read())
-          def fetch_all(table):
+          def fetch_all(table, select=None, order='created_at.asc,id.asc'):
               out=[];off=0
+              base=[('select='+select) if select else None, 'order='+order, 'limit=1000']
+              base=[x for x in base if x]
               while True:
-                  chunk=api(f'/rest/v1/{table}?order=created_at.asc,id.asc&limit=1000&offset={off}')
+                  chunk=api(f'/rest/v1/{table}?'+'&'.join(base+[f'offset={off}']))
                   out+=chunk
                   if len(chunk)<1000:break
                   off+=1000
@@ -48,13 +50,15 @@ jobs:
 
           TABLES=['evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
                   'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy',
-                  'objednavky_dni','objednavky',
+                  'objednavky_dni','objednavky','povoleni_pouzivatelia',
                   'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup',
                   'cz_cas_followup','cz_ideas']
+          # tabuľky bez stĺpca id majú vlastné triedenie
+          ORDER={'povoleni_pouzivatelia':'email.asc'}
           errors=[]
           for t in TABLES:
               try:
-                  rows=fetch_all(t)
+                  rows=fetch_all(t, order=ORDER.get(t,'created_at.asc,id.asc'))
                   json.dump(rows,open(f'backup/{t}_{STAMP}.json','w'),ensure_ascii=False)
                   print(f'→ {t}: {len(rows)} záznamov')
               except Exception as e:
@@ -64,7 +68,7 @@ jobs:
           def backup_bucket(bucket,table,col,folder):
               os.makedirs('backup/'+folder,exist_ok=True);n=0
               try:
-                  rows=fetch_all(f'{table}?select={col}')
+                  rows=fetch_all(table, select=col)
               except Exception as e:
                   print(f'::error::{table} nedostupná pre prílohy: {e}');errors.append(bucket);return
               for row in rows:

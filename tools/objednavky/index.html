@@ -209,7 +209,7 @@ function genSlots(od,doo,step){
   step=step||15;
   const p=s=>{const m=(''+s).match(/^(\d{1,2}):(\d{2})$/);return m?(+m[1])*60+(+m[2]):null;};
   let a=p(od),b=p(doo);if(a==null||b==null||b<=a)return[];
-  const out=[];for(let t=a;t<b;t+=step){out.push(String((t/60|0)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'));}
+  const out=[];for(let t=a;t+step<=b;t+=step){out.push(String((t/60|0)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'));} // t+step<=b: posledný slot sa celý zmestí do okna
   return out;
 }
 function daySM(dk){return (DNI[dk]&&DNI[dk].slot_min)||15;}
@@ -371,6 +371,7 @@ async function pridajObj(){
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${T_OBJ}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
     if(r.ok){pmsg('✓ Objednané');await loadMonth();}
+    else if(r.status===409){pmsg('Termín medzitým obsadili – obnovujem.','#b45309');await loadMonth();}
     else pmsg('❌ Chyba: '+r.status+(r.status===400?' (spustite objednavky.sql)':''),'#dc2626');
   }catch(e){pmsg('❌ Chyba siete','#dc2626');}
 }
@@ -446,6 +447,8 @@ async function denModalOk(){
     if(!(n>0)){alert('Zadajte kladné číslo miest.');return;}
     if(DEN_M.edit){
       const cnt=countFor(dk);
+      // zmena časového dňa na „počet miest" (alebo naopak) so živými objednávkami by rozhodila prepočet – zablokuj
+      if((DNI[dk].cas_od&&DNI[dk].cas_do)&&cnt>0){alert('Deň má termíny aj objednávky – najprv ich zrušte, potom prepnite na „počet miest".');return;}
       if(n<cnt){alert('Počet miest ('+n+') nemôže byť menší než počet objednaných ('+cnt+').');return;}
       zavriDenModal();await patchDen(DNI[dk].id,{cas_od:null,cas_do:null,kapacita:n});
     }else{
@@ -485,6 +488,12 @@ async function zavriDen(dk){
 }
 
 loadMonth();
-setInterval(()=>{if(document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName))return;loadMonth();},60000);
+setInterval(()=>{
+  const ae=document.activeElement;
+  if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return; // needituj/neresetuj pod rukami
+  const m=document.getElementById('o_meno');
+  if(m&&m.value.trim())return; // rozpísaná objednávka – nezahoď ju
+  loadMonth();
+},60000);
 </script>
 </body></html>

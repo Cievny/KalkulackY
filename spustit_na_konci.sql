@@ -1,13 +1,14 @@
 -- ============================================================
 -- FINÁLNY SQL – spustiť v Supabase → SQL Editor (celé naraz, Run).
 -- Idempotentné: dá sa spustiť opakovane bez škody.
--- Obsahuje: (A) tabuľky+stĺpce objednávok CEUS/CT, (B) zoznam povolených
--- používateľov (allowlist) zapojený do RLS – aj pri zapnutom Google
--- prihlásení sa k dátam dostanú IBA emaily na zozname.
+-- Obsahuje: (A) tabuľky+stĺpce objednávok CEUS/CT + zámok proti dvojitému objednaniu,
+-- (B) zoznam povolených používateľov (allowlist) zapojený do RLS.
+-- Roly: povolený = číta všetko + zapisuje pacientske dáta; TV konto = LEN čítanie;
+--       správu otvorených dní (objednavky_dni) a zoznam povolených menia LEN administrátori.
 -- ============================================================
 
 -- =========================================================
--- (A) OBJEDNÁVKY CEUS / CT – tabuľky a stĺpce
+-- (A) OBJEDNÁVKY CEUS / CT – tabuľky, stĺpce, zámok slotu
 -- =========================================================
 CREATE TABLE IF NOT EXISTS objednavky_dni (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,9 +32,13 @@ CREATE TABLE IF NOT EXISTS objednavky (
 ALTER TABLE objednavky ADD COLUMN IF NOT EXISTS cas   TEXT;
 ALTER TABLE objednavky ADD COLUMN IF NOT EXISTS sloty INT DEFAULT 1;
 CREATE INDEX IF NOT EXISTS idx_objednavky_typ_datum ON objednavky (typ, datum);
+-- zámok proti dvojitému objednaniu na ten istý začiatok termínu (zrušené a bezčasové sa nerátajú)
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_objednavky_slot
+  ON objednavky (typ, datum, cas)
+  WHERE cas IS NOT NULL AND stav <> 'zruseny';
 
 -- =========================================================
--- (B) ZOZNAM POVOLENÝCH POUŽÍVATEĽOV (allowlist)
+-- (B) ZOZNAM POVOLENÝCH POUŽÍVATEĽOV (allowlist) + ROLY
 -- =========================================================
 CREATE TABLE IF NOT EXISTS povoleni_pouzivatelia (
   email      TEXT PRIMARY KEY,
@@ -46,19 +51,22 @@ CREATE TABLE IF NOT EXISTS povoleni_pouzivatelia (
 INSERT INTO povoleni_pouzivatelia (email)
 SELECT email FROM auth.users WHERE email IS NOT NULL
 ON CONFLICT (email) DO NOTHING;
--- + istota: kľúčové kontá
+-- + istota: kľúčové kontá (vrátane TV a zálohovacieho, nech nikdy nevypadnú)
 INSERT INTO povoleni_pouzivatelia (email) VALUES
   ('vincze.lukas@gmail.com'), ('oira@cievny.sk'), ('tv@cievny.sk')
 ON CONFLICT (email) DO NOTHING;
 
--- Funkcia: je prihlásený email na zozname? (SECURITY DEFINER = číta zoznam bez ohľadu na RLS)
+-- Pomocné funkcie (SECURITY DEFINER = čítajú zoznam bez ohľadu na RLS)
 CREATE OR REPLACE FUNCTION je_povoleny() RETURNS boolean
 LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $fn$
-  SELECT EXISTS (
-    SELECT 1 FROM povoleni_pouzivatelia
-    WHERE lower(email) = lower(coalesce(auth.jwt()->>'email',''))
-  );
-$fn$;
+  SELECT EXISTS (SELECT 1 FROM povoleni_pouzivatelia
+    WHERE lower(email) = lower(coalesce(auth.jwt()->>'email',''))); $fn$;
+CREATE OR REPLACE FUNCTION je_tv() RETURNS boolean
+LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $fn$
+  SELECT lower(coalesce(auth.jwt()->>'email','')) = 'tv@cievny.sk'; $fn$;
+CREATE OR REPLACE FUNCTION je_admin() RETURNS boolean
+LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $fn$
+  SELECT lower(coalesce(auth.jwt()->>'email','')) IN ('vincze.lukas@gmail.com','oira@cievny.sk'); $fn$;
 
 -- RLS samotného zoznamu: povolení ho vidia; meniť ho môžu len administrátori
 ALTER TABLE povoleni_pouzivatelia ENABLE ROW LEVEL SECURITY;
@@ -66,13 +74,14 @@ DROP POLICY IF EXISTS "povoleni select" ON povoleni_pouzivatelia;
 CREATE POLICY "povoleni select" ON povoleni_pouzivatelia FOR SELECT TO authenticated USING (je_povoleny());
 DROP POLICY IF EXISTS "povoleni manage" ON povoleni_pouzivatelia;
 CREATE POLICY "povoleni manage" ON povoleni_pouzivatelia FOR ALL TO authenticated
-  USING  (lower(coalesce(auth.jwt()->>'email','')) IN ('vincze.lukas@gmail.com','oira@cievny.sk'))
-  WITH CHECK (lower(coalesce(auth.jwt()->>'email','')) IN ('vincze.lukas@gmail.com','oira@cievny.sk'));
+  USING (je_admin()) WITH CHECK (je_admin());
 
--- Prepni VŠETKY dátové tabuľky na „len povolený". Najprv zmaž všetky staré politiky
--- (nech nezostane žiadna, ktorá by púšťala každého prihláseného), potom vytvor jednu novú.
+-- Prepni VŠETKY dátové tabuľky na role. Najprv zmaž všetky staré politiky,
+-- potom vytvor 4 samostatné (SELECT / INSERT / UPDATE / DELETE):
+--   čítať smie každý povolený; zapisovať povolený OKREM TV konta;
+--   pri objednavky_dni (otváranie dní) smú zapisovať LEN administrátori.
 DO $do$
-DECLARE t text; pol record;
+DECLARE t text; pol record; write_expr text;
 BEGIN
   FOR t IN SELECT unnest(ARRAY[
     'evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
@@ -84,7 +93,14 @@ BEGIN
       FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename=t LOOP
         EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, t);
       END LOOP;
-      EXECUTE format('CREATE POLICY "povoleni all %1$s" ON public.%1$I FOR ALL TO authenticated USING (je_povoleny()) WITH CHECK (je_povoleny())', t);
+      -- kto smie zapisovať do tejto tabuľky
+      IF t = 'objednavky_dni' THEN write_expr := 'je_admin()';
+      ELSE write_expr := 'je_povoleny() AND NOT je_tv()';
+      END IF;
+      EXECUTE format('CREATE POLICY "pov sel %1$s" ON public.%1$I FOR SELECT TO authenticated USING (je_povoleny())', t);
+      EXECUTE format('CREATE POLICY "pov ins %1$s" ON public.%1$I FOR INSERT TO authenticated WITH CHECK (%2$s)', t, write_expr);
+      EXECUTE format('CREATE POLICY "pov upd %1$s" ON public.%1$I FOR UPDATE TO authenticated USING (%2$s) WITH CHECK (%2$s)', t, write_expr);
+      EXECUTE format('CREATE POLICY "pov del %1$s" ON public.%1$I FOR DELETE TO authenticated USING (%2$s)', t, write_expr);
     END IF;
   END LOOP;
 END $do$;
@@ -101,23 +117,23 @@ CREATE POLICY "anon insert ideas schranka" ON ideas
     AND komentare IS NULL
   );
 
--- Storage (prílohy) tiež len pre povolených
+-- Storage (prílohy): čítať povolený, zapisovať povolený okrem TV
 DROP POLICY IF EXISTS "aorta prilohy storage select" ON storage.objects;
 DROP POLICY IF EXISTS "aorta prilohy storage insert" ON storage.objects;
 DROP POLICY IF EXISTS "aorta prilohy storage delete" ON storage.objects;
 CREATE POLICY "aorta prilohy storage select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id='aorta-prilohy' AND je_povoleny());
-CREATE POLICY "aorta prilohy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='aorta-prilohy' AND je_povoleny());
-CREATE POLICY "aorta prilohy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='aorta-prilohy' AND je_povoleny());
+CREATE POLICY "aorta prilohy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='aorta-prilohy' AND je_povoleny() AND NOT je_tv());
+CREATE POLICY "aorta prilohy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='aorta-prilohy' AND je_povoleny() AND NOT je_tv());
 
 DROP POLICY IF EXISTS "auth oznamy storage select" ON storage.objects;
 DROP POLICY IF EXISTS "auth oznamy storage insert" ON storage.objects;
 DROP POLICY IF EXISTS "auth oznamy storage delete" ON storage.objects;
 CREATE POLICY "auth oznamy storage select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id='oznamy-prilohy' AND je_povoleny());
-CREATE POLICY "auth oznamy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='oznamy-prilohy' AND je_povoleny());
-CREATE POLICY "auth oznamy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='oznamy-prilohy' AND je_povoleny());
+CREATE POLICY "auth oznamy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='oznamy-prilohy' AND je_povoleny() AND NOT je_tv());
+CREATE POLICY "auth oznamy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='oznamy-prilohy' AND je_povoleny() AND NOT je_tv());
 
 -- ============================================================
--- SPRÁVA ZOZNAMU (príklady – spúšťajte podľa potreby):
+-- SPRÁVA ZOZNAMU (príklady):
 --   pridať:   INSERT INTO povoleni_pouzivatelia(email,meno) VALUES ('novy@gmail.com','Dr. Nový') ON CONFLICT DO NOTHING;
 --   odobrať:  DELETE FROM povoleni_pouzivatelia WHERE email='niekto@gmail.com';
 --   zoznam:   SELECT * FROM povoleni_pouzivatelia ORDER BY email;

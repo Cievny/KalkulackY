@@ -71,11 +71,13 @@ async function load(){
           <td>${escHtml(u.email)} ${u.email&&u.email.toLowerCase()===ME?'<span class="me">(vy)</span>':''}</td>
           <td>${escHtml(u.meno||'')}</td>
           <td style="color:#94a3b8;font-size:12px">${escHtml((u.pridal||'').split('@')[0])}</td>
-          <td style="text-align:right">${(u.email&&u.email.toLowerCase()===ME)?'':`<button class="del" onclick="odober('${escHtml(u.email)}')">✕ odobrať</button>`}</td>
+          <td style="text-align:right">${(u.email&&u.email.toLowerCase()===ME)?'':`<button class="del" data-email="${escHtml(u.email)}">✕ odobrať</button>`}</td>
         </tr>`).join('')||'<tr><td colspan="4" style="color:#94a3b8;padding:14px">Zoznam je prázdny.</td></tr>'}</tbody>
       </table>
     </div>
     <div class="sub">Počet povolených: <b>${rows.length}</b>. Seba nemôžete odobrať (poistka proti zamknutiu sa von).</div>`;
+  // odoberanie cez data-atribút (bezpečné aj pri emaile s apostrofom)
+  c.querySelectorAll('button.del').forEach(b=>b.addEventListener('click',()=>odober(b.dataset.email)));
 }
 function msg(t,c){const m=document.getElementById('msg');if(m){m.textContent=t;m.style.color=c||'#16a34a';}}
 

@@ -23,12 +23,18 @@
 
   // Prihlásenie cez Google (OAuth) – presmeruje na Supabase, ten na Google a späť
   window.doGoogle=function(){
+    // náhodný „state" – návrat prijmeme len ak flow inicioval tento prehliadač (proti podvrhnutiu relácie)
+    try{sessionStorage.setItem('cievny_oauth_state',Math.random().toString(36).slice(2)+Date.now().toString(36));}catch(e){}
     const redirect=location.origin+'/tools/login/';
     location.href=SB_URL+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(redirect);
   };
   // Spracovanie návratu z OAuth: tokeny prídu v URL fragmente (#access_token=…)
   async function handleOAuthCallback(){
     if(!location.hash||location.hash.indexOf('access_token=')<0)return false;
+    // prijmi tokeny LEN ak Google prihlásenie spustil tento prehliadač (inak ignoruj – ochrana pred session fixation)
+    const started=sessionStorage.getItem('cievny_oauth_state');
+    sessionStorage.removeItem('cievny_oauth_state');
+    if(!started){history.replaceState(null,'',location.pathname+location.search);return false;}
     const p=new URLSearchParams(location.hash.slice(1));
     const at=p.get('access_token');if(!at)return false;
     const d={access_token:at,refresh_token:p.get('refresh_token')||'',expires_in:parseInt(p.get('expires_in')||'3600')};
@@ -38,8 +44,9 @@
     }catch(e){}
     storeSession(d);
     history.replaceState(null,'',location.pathname+location.search); // vyčisti tokeny z URL
-    const ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
+    let ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
     sessionStorage.removeItem('cievny_return');
+    if(!/^\/[^/]/.test(ret))ret='/tools/EVK/'; // len interné cesty (ochrana pred open-redirect)
     location.replace(ret);
     return true;
   }
@@ -75,6 +82,9 @@
 
   window.checkAuth=function(){
     if(sessionStorage.getItem(KEY)!=='1'){
+      // TV kiosk (bez klávesnice) → obnov cez TV bránu s uloženým kódom, nie cez ľudský login
+      const tvParam=new URLSearchParams(location.search).get('tv')==='1';
+      if(localStorage.getItem('cievny_tv_kiosk')==='1'||tvParam){location.replace('/tools/tv/');return;}
       sessionStorage.setItem('cievny_return',location.pathname+location.search);
       location.replace('/tools/login/');
       return;
