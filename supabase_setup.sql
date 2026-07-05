@@ -573,3 +573,41 @@ DROP POLICY IF EXISTS "aorta prilohy storage delete" ON storage.objects;
 CREATE POLICY "aorta prilohy storage select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id='aorta-prilohy');
 CREATE POLICY "aorta prilohy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='aorta-prilohy');
 CREATE POLICY "aorta prilohy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='aorta-prilohy');
+
+-- ============================================================
+-- 5. OBJEDNÁVKY CEUS / CT (odblokované dni + objednávky)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS objednavky_dni (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  typ        TEXT NOT NULL,
+  datum      DATE NOT NULL,
+  kapacita   INT  NOT NULL DEFAULT 0,
+  created_by TEXT DEFAULT (auth.jwt()->>'email'),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (typ, datum)
+);
+CREATE TABLE IF NOT EXISTS objednavky (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  typ         TEXT NOT NULL,
+  datum       DATE NOT NULL,
+  meno        TEXT,
+  rocnik      INT,
+  rodne_cislo TEXT,
+  diagnoza    TEXT,
+  indikacia   TEXT,
+  oddelenie   TEXT,
+  objednal    TEXT,
+  poznamka    TEXT,
+  stav        TEXT DEFAULT 'objednany',
+  created_by  TEXT DEFAULT (auth.jwt()->>'email'),
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_objednavky_typ_datum ON objednavky (typ, datum);
+ALTER TABLE objednavky_dni ENABLE ROW LEVEL SECURITY;
+ALTER TABLE objednavky     ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "auth all objednavky_dni" ON objednavky_dni;
+CREATE POLICY "auth all objednavky_dni" ON objednavky_dni FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "auth all objednavky" ON objednavky;
+CREATE POLICY "auth all objednavky" ON objednavky FOR ALL TO authenticated USING (true) WITH CHECK (true);

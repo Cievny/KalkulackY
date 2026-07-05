@@ -48,6 +48,7 @@ jobs:
 
           TABLES=['evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
                   'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy',
+                  'objednavky_dni','objednavky',
                   'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup',
                   'cz_cas_followup','cz_ideas']
           errors=[]

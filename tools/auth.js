@@ -108,6 +108,7 @@
   const NAV_LINKS=[
     {href:'/tools/Program/',label:'📅 Program'},
     {href:'/tools/Aorta/',label:'📥 Požiadavky'},
+    {href:'/tools/objednavky/',label:'🩻 CEUS/CT'},
     {label:'📝 Popisy',children:[
       {href:'/tools/EVK/',label:'EVK – endovaskulárne výkony'},
       {href:'/tools/CAS-generator/',label:'CAS – karotídy'},
