@@ -43,6 +43,8 @@ h1{font-size:20px;margin:6px 0 2px}
 .brow .bmain{flex:1}
 .brow .bmeta{color:#64748b;font-size:12px}
 .brow button{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fee2e2;color:#991b1b;cursor:pointer}
+.brow.slotfree{cursor:pointer;border-radius:8px}
+.brow.slotfree:hover{background:#eff6ff}
 .form{display:grid;grid-template-columns:1.3fr .5fr .9fr 1.2fr;gap:8px;margin-top:12px}
 .form input{padding:9px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;font-family:inherit}
 .form .full{grid-column:1/-1}
@@ -52,6 +54,26 @@ h1{font-size:20px;margin:6px 0 2px}
 .empty{color:#94a3b8;font-size:13px;padding:10px 0}
 .legend{font-size:11.5px;color:#6b7280;margin-top:10px}
 @media(max-width:700px){.form{grid-template-columns:1fr 1fr}.day{min-height:74px}.bar .mlabel{min-width:120px;font-size:14px}}
+/* modal na otváranie dňa */
+.ov{position:fixed;inset:0;background:rgba(15,30,61,.55);display:flex;align-items:center;justify-content:center;z-index:500;padding:16px}
+.modal{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:390px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.modal h3{margin:0 0 3px;font-size:17px}
+.modal .msub{font-size:12.5px;color:#6b7280;margin-bottom:15px}
+.seg{display:flex;gap:6px;margin-bottom:16px;background:#f1f5f9;padding:4px;border-radius:11px}
+.segb{flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:700;background:transparent;color:#475569;cursor:pointer}
+.segb.active{background:#fff;color:#1e40af;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tp{display:flex;gap:12px}
+.tp label,#den_cnt label{flex:1;font-size:12px;font-weight:600;color:#475569;display:flex;flex-direction:column;gap:6px}
+.tp input,#den_cnt input{padding:12px;border:1.5px solid #dde1ea;border-radius:10px;font-size:17px;font-family:inherit;width:100%;text-align:center}
+.quickr{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.quickr button{padding:6px 12px;border:1px solid #cbd5e1;background:#fff;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;color:#334155}
+.quickr button:hover{background:#eff6ff;border-color:#3b82f6;color:#1e40af}
+.slotinfo{margin-top:14px;font-size:13.5px;font-weight:700;color:#166534}
+.slotinfo.bad{color:#b91c1c}
+.mact{display:flex;gap:10px;margin-top:20px}
+.mact button{flex:1;padding:13px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;border:none}
+.mact .mc{background:#e5e7eb;color:#374151}
+.mact .mo{background:#16a34a;color:#fff}
 </style>
 </head>
 <body>
@@ -82,6 +104,38 @@ h1{font-size:20px;margin:6px 0 2px}
     <div id="booklist"></div>
     <div id="formwrap"></div>
     <div class="msg" id="pmsg"></div>
+  </div>
+</div>
+
+<!-- Modal: otvoriť / upraviť deň -->
+<div id="den_ov" class="ov" style="display:none" onclick="if(event.target===this)zavriDenModal()">
+  <div class="modal">
+    <h3 id="den_h">Otvoriť deň</h3>
+    <div class="msub" id="den_sub"></div>
+    <div class="seg">
+      <button class="segb active" id="seg_cas" onclick="denMode('cas')">🕒 Časové termíny</button>
+      <button class="segb" id="seg_cnt" onclick="denMode('cnt')">🔢 Počet miest</button>
+    </div>
+    <div id="den_cas">
+      <div class="tp">
+        <label>Od<input type="time" id="d_od" value="08:00" step="900" oninput="updateSlotInfo()"></label>
+        <label>Do<input type="time" id="d_do" value="12:00" step="900" oninput="updateSlotInfo()"></label>
+      </div>
+      <div class="quickr">
+        <button onclick="setRange('08:00','12:00')">8–12</button>
+        <button onclick="setRange('07:30','11:30')">7:30–11:30</button>
+        <button onclick="setRange('12:30','15:00')">12:30–15</button>
+        <button onclick="setRange('08:00','14:00')">8–14</button>
+      </div>
+      <div class="slotinfo" id="d_slotinfo"></div>
+    </div>
+    <div id="den_cnt" style="display:none">
+      <label>Počet miest (vyšetrení)<input type="number" id="d_cnt" min="1" value="6"></label>
+    </div>
+    <div class="mact">
+      <button class="mc" onclick="zavriDenModal()">Zrušiť</button>
+      <button class="mo" id="den_ok" onclick="denModalOk()">Otvoriť</button>
+    </div>
   </div>
 </div>
 
@@ -191,6 +245,13 @@ function renderCal(){
 }
 
 function selectDay(dk){SEL=dk;renderCal();renderPanel();document.getElementById('panel').scrollIntoView({behavior:'smooth',block:'nearest'});}
+// klik na voľný termín v zozname → predvyplní čas vo formulári a skočí na meno
+function pickSlot(t){
+  const sel=document.getElementById('o_cas');if(sel)sel.value=t;
+  const meno=document.getElementById('o_meno');
+  if(meno){meno.focus();meno.scrollIntoView({behavior:'smooth',block:'center'});}
+  const pm=document.getElementById('pmsg');if(pm){pm.textContent='Vybraný termín '+t+' – doplňte meno pacienta.';pm.style.color='#2563eb';}
+}
 
 function bookMeta(o){
   return `${o.indikacia?'<span class="bmeta"> – '+escHtml(o.indikacia)+'</span>':''}`
@@ -210,7 +271,7 @@ function renderPanel(){
       if(o)return `<div class="brow"><span class="bnum" style="width:44px">${t}</span>
         <span class="bmain"><b>${escHtml(o.meno||'?')}</b>${o.rocnik?' ('+o.rocnik+')':''}${bookMeta(o)}</span>
         <button onclick="zrusObj('${o.id}')">✕ zrušiť</button></div>`;
-      return `<div class="brow" style="opacity:.7"><span class="bnum" style="width:44px">${t}</span><span class="bmain" style="color:#94a3b8">voľný termín</span></div>`;
+      return `<div class="brow slotfree" onclick="pickSlot('${t}')"><span class="bnum" style="width:44px">${t}</span><span class="bmain" style="color:#2563eb;font-weight:600">voľný termín — klik pre objednanie ＋</span></div>`;
     }).join('');
   }else{
     bl.innerHTML=list.length?list.map((o,i)=>
@@ -224,7 +285,7 @@ function renderPanel(){
   if(full){
     fw.innerHTML=`<div class="empty" style="color:#991b1b;font-weight:600">Deň je plný (${list.length}/${kap}). ${isAdmin()?'Rozsah/kapacitu môžete zmeniť tlačidlom „upraviť" v kalendári.':''}</div>`;
   }else{
-    const casSel=slots?`<select id="o_cas" class="full" style="padding:9px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px">${freeSlots.map(t=>`<option value="${t}">termín ${t}</option>`).join('')}</select>`:'';
+    const casSel=slots?`<label class="full" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:-3px">🕒 Termín (vyberte voľný čas):</label><select id="o_cas" class="full" style="padding:11px 10px;border:1.5px solid #93c5fd;border-radius:8px;font-size:15px;font-weight:600;background:#eff6ff">${freeSlots.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>`:'';
     fw.innerHTML=`<div class="form">
       ${casSel}
       <input id="o_meno" placeholder="Meno pacienta" onkeydown="if(event.key==='Enter')pridajObj()">
@@ -281,49 +342,84 @@ async function zrusObj(id){
 
 // ── Admin: otváranie / zatváranie dní ──
 function normHM(s){const m=(''+s).match(/^(\d{1,2}):(\d{2})$/);return m?String(+m[1]).padStart(2,'0')+':'+m[2]:s;}
-async function otvorDen(dk){
+let DEN_M={dk:null,edit:false,mode:'cas'};
+function setRange(od,doo){document.getElementById('d_od').value=od;document.getElementById('d_do').value=doo;updateSlotInfo();}
+function zavriDenModal(){document.getElementById('den_ov').style.display='none';}
+function denMode(m){
+  DEN_M.mode=m;
+  document.getElementById('seg_cas').classList.toggle('active',m==='cas');
+  document.getElementById('seg_cnt').classList.toggle('active',m==='cnt');
+  document.getElementById('den_cas').style.display=m==='cas'?'':'none';
+  document.getElementById('den_cnt').style.display=m==='cnt'?'':'none';
+  if(m==='cas')updateSlotInfo();
+}
+function updateSlotInfo(){
+  const el=document.getElementById('d_slotinfo');
+  const slots=genSlots(document.getElementById('d_od').value,document.getElementById('d_do').value);
+  if(!slots.length){el.className='slotinfo bad';el.textContent='⚠️ Čas „Od" musí byť skôr než „Do".';}
+  else{el.className='slotinfo';el.textContent='= '+slots.length+' termínov po 15 min ('+slots[0]+' … '+slots[slots.length-1]+')';}
+}
+function otvorDen(dk){
   if(!isAdmin())return;
-  const ans=prompt('Otvoriť '+fmtD(dk)+' pre '+TYP.toUpperCase()+'.\n\nZadajte čas OD-DO (termíny po 15 min), napr. 8:00-12:00\nalebo len počet miest bez časov (napr. 6):','8:00-12:00');
-  if(ans===null)return;
-  const body={typ:TYP,datum:dk};
-  const rng=ans.match(/^\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\s*$/);
-  if(rng){
-    const slots=genSlots(rng[1],rng[2]);
-    if(!slots.length){alert('Neplatný rozsah – čas OD musí byť skôr než DO.');return;}
-    body.cas_od=normHM(rng[1]);body.cas_do=normHM(rng[2]);body.kapacita=slots.length;
-  }else{
-    const n=parseInt(ans);if(!(n>0)){alert('Zadajte čas OD-DO (napr. 8:00-12:00) alebo počet miest.');return;}
-    body.kapacita=n;
-  }
+  DEN_M={dk,edit:false,mode:'cas'};
+  document.getElementById('den_h').textContent='Otvoriť deň';
+  document.getElementById('den_sub').textContent=fmtD(dk)+' · '+TYP.toUpperCase();
+  document.getElementById('den_ok').textContent='Otvoriť';
+  document.getElementById('d_od').value='08:00';
+  document.getElementById('d_do').value='12:00';
+  document.getElementById('d_cnt').value='6';
+  denMode('cas');
+  document.getElementById('den_ov').style.display='flex';
+}
+async function postDen(body){
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${T_DNI}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
     if(r.ok)await loadMonth();
-    else alert('Chyba pri otváraní: '+r.status+(r.status===409?' – deň je už otvorený':(r.status===400?' (spustite objednavky.sql – doplňte stĺpce cas_od/cas_do)':'')));
+    else alert('Chyba pri otváraní: '+r.status+(r.status===409?' – deň je už otvorený':(r.status===400?' (spustite objednavky.sql – doplňte cas_od/cas_do)':'')));
   }catch(e){alert('Chyba siete');}
+}
+async function denModalOk(){
+  const dk=DEN_M.dk;if(!dk)return;
+  if(DEN_M.mode==='cas'){
+    const od=document.getElementById('d_od').value, doo=document.getElementById('d_do').value;
+    const slots=genSlots(od,doo);
+    if(!slots.length){alert('Neplatný rozsah – čas „Od" musí byť skôr než „Do".');return;}
+    if(DEN_M.edit){
+      const noCas=OBJ.filter(o=>o.datum===dk&&!o.cas).length;
+      if(noCas){alert('Deň má '+noCas+' objednávok bez času – nedajú sa previesť na termíny. Najprv ich zrušte.');return;}
+      const lost=OBJ.filter(o=>o.datum===dk&&o.cas).map(o=>normHM(o.cas)).filter(c=>!slots.includes(c));
+      if(lost.length){alert('Nový rozsah by vynechal už objednané termíny: '+[...new Set(lost)].join(', ')+'. Najprv ich zrušte alebo presuňte.');return;}
+      zavriDenModal();await patchDen(DNI[dk].id,{cas_od:normHM(od),cas_do:normHM(doo),kapacita:slots.length});
+    }else{
+      zavriDenModal();await postDen({typ:TYP,datum:dk,cas_od:normHM(od),cas_do:normHM(doo),kapacita:slots.length});
+    }
+  }else{
+    const n=parseInt(document.getElementById('d_cnt').value);
+    if(!(n>0)){alert('Zadajte kladné číslo miest.');return;}
+    if(DEN_M.edit){
+      const cnt=countFor(dk);
+      if(n<cnt){alert('Počet miest ('+n+') nemôže byť menší než počet objednaných ('+cnt+').');return;}
+      zavriDenModal();await patchDen(DNI[dk].id,{cas_od:null,cas_do:null,kapacita:n});
+    }else{
+      zavriDenModal();await postDen({typ:TYP,datum:dk,kapacita:n});
+    }
+  }
 }
 async function patchDen(id,fields){
   try{const r=await fetch(`${SB_URL}/rest/v1/${T_DNI}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify({...fields,updated_at:new Date().toISOString()})});if(r.ok)await loadMonth();}catch(e){}
 }
-async function upravKap(dk){
+function upravKap(dk){
   if(!isAdmin()||!DNI[dk])return;
-  const d=DNI[dk], cnt=countFor(dk);
-  if(d.cas_od&&d.cas_do){ // časový deň – upravujeme rozsah
-    const ans=prompt('Upraviť čas dňa '+fmtD(dk)+' (termíny po 15 min).\nObsadené: '+cnt,d.cas_od+'-'+d.cas_do);
-    if(ans===null)return;
-    const rng=ans.match(/^\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\s*$/);
-    if(!rng){alert('Zadajte čas v tvare 8:00-12:00.');return;}
-    const slots=genSlots(rng[1],rng[2]);
-    if(!slots.length){alert('Neplatný rozsah – OD musí byť skôr než DO.');return;}
-    const lost=OBJ.filter(o=>o.datum===dk&&o.cas).map(o=>normHM(o.cas)).filter(c=>!slots.includes(c));
-    if(lost.length){alert('Nový rozsah by vynechal už objednané termíny: '+[...new Set(lost)].join(', ')+'. Najprv ich zrušte alebo presuňte.');return;}
-    await patchDen(d.id,{cas_od:normHM(rng[1]),cas_do:normHM(rng[2]),kapacita:slots.length});
-  }else{ // deň bez časov – upravujeme počet miest
-    const kap=prompt('Upraviť počet miest pre '+fmtD(dk)+'.\nObsadené: '+cnt,d.kapacita);
-    if(kap===null)return;
-    const n=parseInt(kap);if(!(n>0)){alert('Zadajte kladné číslo.');return;}
-    if(n<cnt){alert('Počet miest ('+n+') nemôže byť menší než počet už objednaných ('+cnt+').');return;}
-    await patchDen(d.id,{kapacita:n});
-  }
+  const d=DNI[dk];
+  DEN_M={dk,edit:true,mode:(d.cas_od&&d.cas_do)?'cas':'cnt'};
+  document.getElementById('den_h').textContent='Upraviť deň';
+  document.getElementById('den_sub').textContent=fmtD(dk)+' · '+TYP.toUpperCase()+' · obsadené '+countFor(dk);
+  document.getElementById('den_ok').textContent='Uložiť';
+  document.getElementById('d_od').value=d.cas_od||'08:00';
+  document.getElementById('d_do').value=d.cas_do||'12:00';
+  document.getElementById('d_cnt').value=d.kapacita||6;
+  denMode(DEN_M.mode);
+  document.getElementById('den_ov').style.display='flex';
 }
 async function zavriDen(dk){
   if(!isAdmin()||!DNI[dk])return;
