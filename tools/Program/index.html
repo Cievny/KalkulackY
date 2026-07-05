@@ -750,9 +750,17 @@ if(TV){
   document.getElementById('datum').value=todayISO(new Date().getHours()<12?0:1);
 }
 loadRows();
+let tvTicks=0;
 setInterval(()=>{
+  if(TV){
+    tvTicks++;
+    // raz za ~30 min (120×15s) načítaj celú stránku nanovo → TV chytí novú verziu appky,
+    // obnoví prihlásenie a zotaví sa z akéhokoľvek zaseknutého stavu (cache-bust ?_=)
+    if(tvTicks%120===0){location.replace(location.pathname+'?tv=1&_='+Date.now());return;}
+    document.getElementById('datum').value=todayISO(0);loadRows();  // TV obnovuje vždy (aj keď TV hlási „skrytú" záložku)
+    return;
+  }
   if(document.visibilityState!=='visible')return;
-  if(TV){document.getElementById('datum').value=todayISO(0);loadRows();return;}
   const ae=document.activeElement;
   if(ae&&ae.tagName==='INPUT'&&ae.closest('.list'))return; // needituj pod rukami
   loadRows();
