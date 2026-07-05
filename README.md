@@ -24,8 +24,17 @@ Skripty sú idempotentné, ale **poradie je dôležité** kvôli zdieľaným tab
 Skripty možno bezpečne spustiť opakovane (`IF NOT EXISTS` / `IF EXISTS`).
 
 ## Zálohy
-- Automaticky: GitHub Actions workflow `.github/workflows/backup.yml` beží **2× denne** (~6:07 a ~16:07 SELČ), stránkuje všetky tabuľky a sťahuje prílohy z bucketov `aorta-prilohy` aj `oznamy-prilohy`. Vyžaduje secrets `SUPABASE_BACKUP_EMAIL` a `SUPABASE_BACKUP_PASSWORD`. Pri chybe workflow **spadne** (nezamaskuje prázdnu zálohu).
-- Ručne: `/tools/zaloha/` stiahne JSON všetkých tabuliek (bez súborových príloh).
+- Automaticky: GitHub Actions workflow `.github/workflows/backup.yml` beží **2× denne** (~6:07 a ~16:07 SELČ), stránkuje všetky tabuľky a sťahuje prílohy z bucketov `aorta-prilohy` aj `oznamy-prilohy`. Pri chybe workflow **spadne** (nezamaskuje prázdnu zálohu).
+- **Repozitár je verejný, preto sa záloha pred nahraním ako artefakt šifruje (GPG AES256).** Artefakt je bez hesla nečitateľný.
+- Potrebné secrets (Settings → Secrets and variables → Actions):
+  - `SUPABASE_BACKUP_EMAIL`, `SUPABASE_BACKUP_PASSWORD` – prihlásenie do Supabase (účet s prístupom k dátam),
+  - `BACKUP_PASSPHRASE` – heslo na šifrovanie zálohy (uchovajte ho bezpečne mimo repozitára – bez neho zálohu neotvoríte).
+- **Dešifrovanie stiahnutého artefaktu:**
+  ```
+  gpg --output zaloha.tar.gz --decrypt zaloha-RRRR-MM-DD.tar.gz.gpg
+  tar xzf zaloha.tar.gz
+  ```
+- Ručne (bez šifrovania, len na osobné použitie): `/tools/zaloha/` stiahne JSON všetkých tabuliek (bez súborových príloh).
 
 ## Vývoj a nasadenie
 Zmeny sa musia dostať do `main`, aby boli viditeľné na GitHub Pages. Odporúčaný postup:

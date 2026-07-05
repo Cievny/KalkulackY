@@ -82,9 +82,27 @@ jobs:
               print('::error::Záloha neúplná – zlyhali: '+', '.join(errors));sys.exit(1)
           PYEOF
 
-      - name: Ulož zálohu ako artefakt (30 dní)
+      - name: Zašifruj zálohu (GPG AES256) – repo je verejný, artefakt nesmie byť čitateľný
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BACKUP_PASSPHRASE:-}" ]; then
+            echo '::error::Chýba secret BACKUP_PASSPHRASE – bez neho by záloha ostala nešifrovaná na verejnom repozitári. Prerušené.'
+            exit 1
+          fi
+          STAMP=$(date +%Y-%m-%d)
+          tar czf "zaloha-${STAMP}.tar.gz" -C backup .
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
+              --cipher-algo AES256 --symmetric --output "zaloha-${STAMP}.tar.gz.gpg" "zaloha-${STAMP}.tar.gz"
+          rm -rf backup "zaloha-${STAMP}.tar.gz"   # ponechaj IBA zašifrovaný súbor (žiadny plaintext do artefaktu)
+          mkdir -p backup-enc
+          mv "zaloha-${STAMP}.tar.gz.gpg" backup-enc/
+          echo "✓ Zašifrované: backup-enc/zaloha-${STAMP}.tar.gz.gpg"
+
+      - name: Ulož zašifrovanú zálohu ako artefakt (30 dní)
         uses: actions/upload-artifact@v4
         with:
           name: cievny-zaloha-${{ github.run_id }}
-          path: backup/
+          path: backup-enc/
           retention-days: 30
