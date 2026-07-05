@@ -8,18 +8,24 @@ CREATE TABLE IF NOT EXISTS objednavky_dni (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   typ        TEXT NOT NULL,                 -- 'ceus' | 'ct'
   datum      DATE NOT NULL,
-  kapacita   INT  NOT NULL DEFAULT 0,       -- počet miest v daný deň
+  kapacita   INT  NOT NULL DEFAULT 0,       -- počet miest (pri časových dňoch = počet 15-min termínov)
+  cas_od     TEXT,                          -- 'HH:MM' začiatok termínov (voliteľné)
+  cas_do     TEXT,                          -- 'HH:MM' koniec termínov (voliteľné)
   created_by TEXT DEFAULT (auth.jwt()->>'email'),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE (typ, datum)
 );
+-- pre už existujúce inštalácie:
+ALTER TABLE objednavky_dni ADD COLUMN IF NOT EXISTS cas_od TEXT;
+ALTER TABLE objednavky_dni ADD COLUMN IF NOT EXISTS cas_do TEXT;
 
 -- Samotné objednávky pacientov
 CREATE TABLE IF NOT EXISTS objednavky (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   typ         TEXT NOT NULL,                -- 'ceus' | 'ct'
   datum       DATE NOT NULL,
+  cas         TEXT,                         -- 'HH:MM' termín (pri časových dňoch)
   meno        TEXT,
   rocnik      INT,
   rodne_cislo TEXT,
@@ -33,6 +39,7 @@ CREATE TABLE IF NOT EXISTS objednavky (
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE objednavky ADD COLUMN IF NOT EXISTS cas TEXT; -- pre už existujúce inštalácie
 CREATE INDEX IF NOT EXISTS idx_objednavky_typ_datum ON objednavky (typ, datum);
 
 -- RLS: prístup len pre prihlásených (rovnako ako zvyšok databázy)

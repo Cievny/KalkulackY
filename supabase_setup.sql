@@ -582,15 +582,20 @@ CREATE TABLE IF NOT EXISTS objednavky_dni (
   typ        TEXT NOT NULL,
   datum      DATE NOT NULL,
   kapacita   INT  NOT NULL DEFAULT 0,
+  cas_od     TEXT,
+  cas_do     TEXT,
   created_by TEXT DEFAULT (auth.jwt()->>'email'),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE (typ, datum)
 );
+ALTER TABLE objednavky_dni ADD COLUMN IF NOT EXISTS cas_od TEXT;
+ALTER TABLE objednavky_dni ADD COLUMN IF NOT EXISTS cas_do TEXT;
 CREATE TABLE IF NOT EXISTS objednavky (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   typ         TEXT NOT NULL,
   datum       DATE NOT NULL,
+  cas         TEXT,
   meno        TEXT,
   rocnik      INT,
   rodne_cislo TEXT,
@@ -604,6 +609,7 @@ CREATE TABLE IF NOT EXISTS objednavky (
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE objednavky ADD COLUMN IF NOT EXISTS cas TEXT;
 CREATE INDEX IF NOT EXISTS idx_objednavky_typ_datum ON objednavky (typ, datum);
 ALTER TABLE objednavky_dni ENABLE ROW LEVEL SECURITY;
 ALTER TABLE objednavky     ENABLE ROW LEVEL SECURITY;
