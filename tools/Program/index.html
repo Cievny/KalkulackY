@@ -756,7 +756,12 @@ setInterval(()=>{
     tvTicks++;
     // raz za ~30 min (120×15s) načítaj celú stránku nanovo → TV chytí novú verziu appky,
     // obnoví prihlásenie a zotaví sa z akéhokoľvek zaseknutého stavu (cache-bust ?_=)
-    if(tvTicks%120===0){location.replace(location.pathname+'?tv=1&_='+Date.now());return;}
+    if(tvTicks%120===0){
+      // kiosk spustený cez TV kód → obnov cez /tools/tv/ (znovu prihlási čerstvým tokenom); inak len reload
+      const kiosk=localStorage.getItem('cievny_tv_kiosk')==='1';
+      location.replace((kiosk?'/tools/tv/':location.pathname+'?tv=1')+(kiosk?'?':'&')+'_='+Date.now());
+      return;
+    }
     document.getElementById('datum').value=todayISO(0);loadRows();  // TV obnovuje vždy (aj keď TV hlási „skrytú" záložku)
     return;
   }
