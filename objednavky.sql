@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS objednavky_dni (
   kapacita   INT  NOT NULL DEFAULT 0,       -- počet miest (pri časových dňoch = počet 15-min termínov)
   cas_od     TEXT,                          -- 'HH:MM' začiatok termínov (voliteľné)
   cas_do     TEXT,                          -- 'HH:MM' koniec termínov (voliteľné)
+  slot_min   INT DEFAULT 15,                -- dĺžka jedného termínu v minútach
   created_by TEXT DEFAULT (auth.jwt()->>'email'),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS objednavky_dni (
 -- pre už existujúce inštalácie:
 ALTER TABLE objednavky_dni ADD COLUMN IF NOT EXISTS cas_od TEXT;
 ALTER TABLE objednavky_dni ADD COLUMN IF NOT EXISTS cas_do TEXT;
+ALTER TABLE objednavky_dni ADD COLUMN IF NOT EXISTS slot_min INT DEFAULT 15;
 
 -- Samotné objednávky pacientov
 CREATE TABLE IF NOT EXISTS objednavky (

@@ -64,7 +64,7 @@ h1{font-size:20px;margin:6px 0 2px}
 .segb.active{background:#fff;color:#1e40af;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .tp{display:flex;gap:12px}
 .tp label,#den_cnt label{flex:1;font-size:12px;font-weight:600;color:#475569;display:flex;flex-direction:column;gap:6px}
-.tp input,#den_cnt input{padding:12px;border:1.5px solid #dde1ea;border-radius:10px;font-size:17px;font-family:inherit;width:100%;text-align:center}
+.tp input,.tp select,#den_cnt input{padding:12px;border:1.5px solid #dde1ea;border-radius:10px;font-size:16px;font-family:inherit;width:100%;text-align:center;background:#fff}
 .quickr{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
 .quickr button{padding:6px 12px;border:1px solid #cbd5e1;background:#fff;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;color:#334155}
 .quickr button:hover{background:#eff6ff;border-color:#3b82f6;color:#1e40af}
@@ -120,6 +120,16 @@ h1{font-size:20px;margin:6px 0 2px}
       <div class="tp">
         <label>Od<input type="time" id="d_od" value="08:00" step="900" oninput="updateSlotInfo()"></label>
         <label>Do<input type="time" id="d_do" value="12:00" step="900" oninput="updateSlotInfo()"></label>
+        <label>Dĺžka slotu
+          <select id="d_slotmin" onchange="updateSlotInfo()">
+            <option value="10">10 min</option>
+            <option value="15" selected>15 min</option>
+            <option value="20">20 min</option>
+            <option value="30">30 min</option>
+            <option value="45">45 min</option>
+            <option value="60">60 min</option>
+          </select>
+        </label>
       </div>
       <div class="quickr">
         <button onclick="setRange('08:00','12:00')">8–12</button>
@@ -127,6 +137,7 @@ h1{font-size:20px;margin:6px 0 2px}
         <button onclick="setRange('12:30','15:00')">12:30–15</button>
         <button onclick="setRange('08:00','14:00')">8–14</button>
       </div>
+      <div id="d_slotlock" style="font-size:11.5px;color:#b45309;margin-top:8px;display:none">🔒 Dĺžku slotu nemožno zmeniť, kým sú na deň objednávky.</div>
       <div class="slotinfo" id="d_slotinfo"></div>
     </div>
     <div id="den_cnt" style="display:none">
@@ -177,7 +188,7 @@ async function loadMonth(){
   DNI={};OBJ=[];
   try{
     const rd=await fetch(`${SB_URL}/rest/v1/${T_DNI}?typ=eq.${TYP}&datum=gte.${first}&datum=lte.${last}&limit=200`,{headers:H()});
-    if(rd.ok){(await rd.json()).forEach(r=>{DNI[r.datum]={id:r.id,kapacita:r.kapacita,updated_at:r.updated_at,cas_od:r.cas_od,cas_do:r.cas_do};});}
+    if(rd.ok){(await rd.json()).forEach(r=>{DNI[r.datum]={id:r.id,kapacita:r.kapacita,updated_at:r.updated_at,cas_od:r.cas_od,cas_do:r.cas_do,slot_min:r.slot_min};});}
     else if(rd.status===404||rd.status===400){legendErr();return;}
     const ro=await fetch(`${SB_URL}/rest/v1/${T_OBJ}?typ=eq.${TYP}&datum=gte.${first}&datum=lte.${last}&stav=neq.zruseny&order=created_at.asc&limit=1000`,{headers:H()});
     if(ro.ok)OBJ=await ro.json();
@@ -192,14 +203,17 @@ function legendErr(){
 // obsadené = súčet zablokovaných termínov (jeden pacient môže zabrať viac termínov)
 function countFor(dk){return OBJ.filter(o=>o.datum===dk).reduce((s,o)=>s+(o.sloty||1),0);}
 function addMin(hm,mins){const m=(''+hm).match(/^(\d{1,2}):(\d{2})$/);if(!m)return hm;const t=(+m[1])*60+(+m[2])+mins;return String(t/60|0).padStart(2,'0')+':'+String(t%60).padStart(2,'0');}
-// generuj časové sloty po 15 min z "HH:MM"–"HH:MM" (posledný slot = do−15)
-function genSlots(od,doo){
+function plTermin(k){return k===1?'termín':(k>=2&&k<=4?'termíny':'termínov');}
+// generuj časové sloty z "HH:MM"–"HH:MM" s krokom `step` min (predvolene 15)
+function genSlots(od,doo,step){
+  step=step||15;
   const p=s=>{const m=(''+s).match(/^(\d{1,2}):(\d{2})$/);return m?(+m[1])*60+(+m[2]):null;};
   let a=p(od),b=p(doo);if(a==null||b==null||b<=a)return[];
-  const out=[];for(let t=a;t<b;t+=15){out.push(String((t/60|0)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'));}
+  const out=[];for(let t=a;t<b;t+=step){out.push(String((t/60|0)).padStart(2,'0')+':'+String(t%60).padStart(2,'0'));}
   return out;
 }
-function daySlots(dk){const d=DNI[dk];return (d&&d.cas_od&&d.cas_do)?genSlots(d.cas_od,d.cas_do):null;}
+function daySM(dk){return (DNI[dk]&&DNI[dk].slot_min)||15;}
+function daySlots(dk){const d=DNI[dk];return (d&&d.cas_od&&d.cas_do)?genSlots(d.cas_od,d.cas_do,d.slot_min||15):null;}
 
 function renderCal(){
   const y=CUR.getFullYear(),m=CUR.getMonth();
@@ -262,9 +276,9 @@ function bookMeta(o){
 }
 function renderPanel(){
   const dk=SEL;if(!dk||!DNI[dk]){document.getElementById('panel').style.display='none';return;}
-  const d=DNI[dk], kap=d.kapacita, list=OBJ.filter(o=>o.datum===dk), slots=daySlots(dk), occ=countFor(dk);
+  const d=DNI[dk], kap=d.kapacita, list=OBJ.filter(o=>o.datum===dk), slots=daySlots(dk), occ=countFor(dk), sm=daySM(dk);
   document.getElementById('panel').style.display='';
-  document.getElementById('panel_title').innerHTML=`${TYP.toUpperCase()} – ${escHtml(fmtD(dk))} <span style="font-weight:600;color:#64748b;font-size:13px">(${occ}/${kap} obsadené${slots?', termíny '+escHtml(d.cas_od)+'–'+escHtml(d.cas_do):''})</span>`;
+  document.getElementById('panel_title').innerHTML=`${TYP.toUpperCase()} – ${escHtml(fmtD(dk))} <span style="font-weight:600;color:#64748b;font-size:13px">(${occ}/${kap} obsadené${slots?', termíny '+escHtml(d.cas_od)+'–'+escHtml(d.cas_do)+' po '+sm+' min':''})</span>`;
   const bl=document.getElementById('booklist');
   let freeSlots=null;
   if(slots){
@@ -278,9 +292,9 @@ function renderPanel(){
       const t=slots[i], cell=occMap[i];
       if(cell){
         if(!cell.start)continue; // pokračovanie predošlej rezervácie – nezobrazuj samostatne
-        const o=cell.o, n=o.sloty||1, endT=addMin(t,n*15);
+        const o=cell.o, n=o.sloty||1, endT=addMin(t,n*sm);
         rows+=`<div class="brow"><span class="bnum" style="width:78px;font-weight:700">${t}${n>1?'–'+endT:''}</span>
-          <span class="bmain"><b>${escHtml(o.meno||'?')}</b>${o.rocnik?' ('+o.rocnik+')':''}${n>1?' <span class="bmeta">· '+(n*15)+' min</span>':''}${bookMeta(o)}</span>
+          <span class="bmain"><b>${escHtml(o.meno||'?')}</b>${o.rocnik?' ('+o.rocnik+')':''}${n>1?' <span class="bmeta">· '+(n*sm)+' min</span>':''}${bookMeta(o)}</span>
           <button onclick="zrusObj('${o.id}')">✕ zrušiť</button></div>`;
       }else{
         rows+=`<div class="brow slotfree" onclick="pickSlot('${t}')"><span class="bnum" style="width:78px">${t}</span><span class="bmain" style="color:#2563eb;font-weight:600">voľný termín — klik pre objednanie ＋</span></div>`;
@@ -299,14 +313,9 @@ function renderPanel(){
     fw.innerHTML=`<div class="empty" style="color:#991b1b;font-weight:600">Deň je plný (${occ}/${kap}). ${isAdmin()?'Rozsah/kapacitu môžete zmeniť tlačidlom „upraviť" v kalendári.':''}</div>`;
   }else{
     const casSel=slots?`<label class="full" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:-3px">🕒 Termín (vyberte voľný čas):</label><select id="o_cas" class="full" style="padding:11px 10px;border:1.5px solid #93c5fd;border-radius:8px;font-size:15px;font-weight:600;background:#eff6ff">${freeSlots.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
-      <label class="full" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:-3px">⏱ Dĺžka (počet termínov po 15 min):</label>
+      <label class="full" style="font-size:12px;font-weight:700;color:#1e40af;margin-bottom:-3px">⏱ Dĺžka (termín má ${sm} min):</label>
       <select id="o_dur" class="full" style="padding:11px 10px;border:1.5px solid #93c5fd;border-radius:8px;font-size:15px;font-weight:600;background:#eff6ff">
-        <option value="1">15 min (1 termín)</option>
-        <option value="2">30 min (2 termíny)</option>
-        <option value="3">45 min (3 termíny)</option>
-        <option value="4">60 min (4 termíny)</option>
-        <option value="6">90 min (6 termínov)</option>
-        <option value="8">120 min (8 termínov)</option>
+        ${Array.from({length:Math.min(8,slots.length)},(_,i)=>i+1).map(k=>`<option value="${k}">${k*sm} min (${k} ${plTermin(k)})</option>`).join('')}
       </select>`:'';
     fw.innerHTML=`<div class="form">
       ${casSel}
@@ -329,7 +338,7 @@ async function pridajObj(){
   const g=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
   const meno=g('o_meno');
   if(!meno){pmsg('Zadajte meno pacienta.','#b45309');return;}
-  const slots=daySlots(dk), timed=!!slots;
+  const slots=daySlots(dk), timed=!!slots, sm=daySM(dk);
   let cas=null, sloty=1;
   if(timed){
     const cs=document.getElementById('o_cas');cas=cs?cs.value:null;if(!cas){pmsg('Vyberte termín.','#b45309');return;}
@@ -344,8 +353,8 @@ async function pridajObj(){
     if(timed){
       const rc=await fetch(`${SB_URL}/rest/v1/${T_OBJ}?typ=eq.${TYP}&datum=eq.${dk}&stav=neq.zruseny&select=cas,sloty`,{headers:H()});
       if(rc.ok){const cur=await rc.json();
-        const busy=new Set();cur.forEach(o=>{if(o.cas==null)return;const n=o.sloty||1;for(let i=0;i<n;i++)busy.add(addMin(normHM(o.cas),i*15));});
-        const need=[];for(let i=0;i<sloty;i++)need.push(addMin(cas,i*15));
+        const busy=new Set();cur.forEach(o=>{if(o.cas==null)return;const n=o.sloty||1;for(let i=0;i<n;i++)busy.add(addMin(normHM(o.cas),i*sm));});
+        const need=[];for(let i=0;i<sloty;i++)need.push(addMin(cas,i*sm));
         const clash=need.find(t=>busy.has(t));
         if(clash){pmsg('Termín '+clash+' medzitým obsadili – obnovujem.','#b45309');await loadMonth();return;}
       }
@@ -389,9 +398,10 @@ function denMode(m){
 }
 function updateSlotInfo(){
   const el=document.getElementById('d_slotinfo');
-  const slots=genSlots(document.getElementById('d_od').value,document.getElementById('d_do').value);
+  const step=parseInt(document.getElementById('d_slotmin').value)||15;
+  const slots=genSlots(document.getElementById('d_od').value,document.getElementById('d_do').value,step);
   if(!slots.length){el.className='slotinfo bad';el.textContent='⚠️ Čas „Od" musí byť skôr než „Do".';}
-  else{el.className='slotinfo';el.textContent='= '+slots.length+' termínov po 15 min ('+slots[0]+' … '+slots[slots.length-1]+')';}
+  else{el.className='slotinfo';el.textContent='= '+slots.length+' termínov po '+step+' min ('+slots[0]+' … '+slots[slots.length-1]+')';}
 }
 function otvorDen(dk){
   if(!isAdmin())return;
@@ -401,6 +411,9 @@ function otvorDen(dk){
   document.getElementById('den_ok').textContent='Otvoriť';
   document.getElementById('d_od').value='08:00';
   document.getElementById('d_do').value='12:00';
+  document.getElementById('d_slotmin').value='15';
+  document.getElementById('d_slotmin').disabled=false;
+  document.getElementById('d_slotlock').style.display='none';
   document.getElementById('d_cnt').value='6';
   denMode('cas');
   document.getElementById('den_ov').style.display='flex';
@@ -416,16 +429,17 @@ async function denModalOk(){
   const dk=DEN_M.dk;if(!dk)return;
   if(DEN_M.mode==='cas'){
     const od=document.getElementById('d_od').value, doo=document.getElementById('d_do').value;
-    const slots=genSlots(od,doo);
+    const sm=parseInt(document.getElementById('d_slotmin').value)||15;
+    const slots=genSlots(od,doo,sm);
     if(!slots.length){alert('Neplatný rozsah – čas „Od" musí byť skôr než „Do".');return;}
     if(DEN_M.edit){
       const noCas=OBJ.filter(o=>o.datum===dk&&!o.cas).length;
       if(noCas){alert('Deň má '+noCas+' objednávok bez času – nedajú sa previesť na termíny. Najprv ich zrušte.');return;}
-      const lost=OBJ.filter(o=>o.datum===dk&&o.cas).filter(o=>{const n=o.sloty||1;for(let i=0;i<n;i++)if(!slots.includes(addMin(normHM(o.cas),i*15)))return true;return false;}).map(o=>normHM(o.cas));
+      const lost=OBJ.filter(o=>o.datum===dk&&o.cas).filter(o=>{const n=o.sloty||1;for(let i=0;i<n;i++)if(!slots.includes(addMin(normHM(o.cas),i*sm)))return true;return false;}).map(o=>normHM(o.cas));
       if(lost.length){alert('Nový rozsah by vynechal už objednané termíny: '+[...new Set(lost)].join(', ')+'. Najprv ich zrušte alebo presuňte.');return;}
-      zavriDenModal();await patchDen(DNI[dk].id,{cas_od:normHM(od),cas_do:normHM(doo),kapacita:slots.length});
+      zavriDenModal();await patchDen(DNI[dk].id,{cas_od:normHM(od),cas_do:normHM(doo),slot_min:sm,kapacita:slots.length});
     }else{
-      zavriDenModal();await postDen({typ:TYP,datum:dk,cas_od:normHM(od),cas_do:normHM(doo),kapacita:slots.length});
+      zavriDenModal();await postDen({typ:TYP,datum:dk,cas_od:normHM(od),cas_do:normHM(doo),slot_min:sm,kapacita:slots.length});
     }
   }else{
     const n=parseInt(document.getElementById('d_cnt').value);
@@ -451,6 +465,10 @@ function upravKap(dk){
   document.getElementById('den_ok').textContent='Uložiť';
   document.getElementById('d_od').value=d.cas_od||'08:00';
   document.getElementById('d_do').value=d.cas_do||'12:00';
+  document.getElementById('d_slotmin').value=String(d.slot_min||15);
+  const lock=countFor(dk)>0; // kým sú objednávky, dĺžku slotu nemeníme (posunul by sa raster)
+  document.getElementById('d_slotmin').disabled=lock;
+  document.getElementById('d_slotlock').style.display=lock?'':'none';
   document.getElementById('d_cnt').value=d.kapacita||6;
   denMode(DEN_M.mode);
   document.getElementById('den_ov').style.display='flex';
