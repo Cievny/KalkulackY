@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS objednavky (
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 ALTER TABLE objednavky ADD COLUMN IF NOT EXISTS cas TEXT; -- pre už existujúce inštalácie
+ALTER TABLE objednavky ADD COLUMN IF NOT EXISTS sloty INT DEFAULT 1; -- počet 15-min termínov na jednu objednávku
 CREATE INDEX IF NOT EXISTS idx_objednavky_typ_datum ON objednavky (typ, datum);
 
 -- RLS: prístup len pre prihlásených (rovnako ako zvyšok databázy)
