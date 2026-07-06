@@ -43,9 +43,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS uniq_objednavky_slot
 CREATE TABLE IF NOT EXISTS povoleni_pouzivatelia (
   email      TEXT PRIMARY KEY,
   meno       TEXT,
+  admin      BOOLEAN NOT NULL DEFAULT false,   -- administrátor (spravuje zoznam + otvára dni)
   pridal     TEXT DEFAULT (auth.jwt()->>'email'),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE povoleni_pouzivatelia ADD COLUMN IF NOT EXISTS admin BOOLEAN NOT NULL DEFAULT false;
 
 -- Nikto, kto UŽ má konto, nepríde o prístup – naplň zoznam existujúcimi používateľmi
 INSERT INTO povoleni_pouzivatelia (email)
@@ -55,6 +57,9 @@ ON CONFLICT (email) DO NOTHING;
 INSERT INTO povoleni_pouzivatelia (email) VALUES
   ('vincze.lukas@gmail.com'), ('oira@cievny.sk'), ('tv@cievny.sk')
 ON CONFLICT (email) DO NOTHING;
+-- prví administrátori (odteraz sa dá admin meniť v appke /tools/pristupy/)
+UPDATE povoleni_pouzivatelia SET admin=true
+  WHERE lower(email) IN ('vincze.lukas@gmail.com','oira@cievny.sk');
 
 -- Pomocné funkcie (SECURITY DEFINER = čítajú zoznam bez ohľadu na RLS)
 CREATE OR REPLACE FUNCTION je_povoleny() RETURNS boolean
@@ -66,7 +71,8 @@ LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $fn$
   SELECT lower(coalesce(auth.jwt()->>'email','')) = 'tv@cievny.sk'; $fn$;
 CREATE OR REPLACE FUNCTION je_admin() RETURNS boolean
 LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $fn$
-  SELECT lower(coalesce(auth.jwt()->>'email','')) IN ('vincze.lukas@gmail.com','oira@cievny.sk'); $fn$;
+  SELECT EXISTS (SELECT 1 FROM povoleni_pouzivatelia
+    WHERE lower(email) = lower(coalesce(auth.jwt()->>'email','')) AND admin = true); $fn$;
 
 -- RLS samotného zoznamu: povolení ho vidia; meniť ho môžu len administrátori
 ALTER TABLE povoleni_pouzivatelia ENABLE ROW LEVEL SECURITY;

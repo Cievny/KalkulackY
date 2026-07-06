@@ -155,8 +155,16 @@ const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 const H=()=>({'apikey':SB_ANON,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
 const T_DNI='objednavky_dni', T_OBJ='objednavky';
-const ADMINS=['vincze.lukas@gmail.com','oira@cievny.sk'];
-function isAdmin(){const e=(window.sbUserEmail?sbUserEmail():'').toLowerCase();return ADMINS.includes(e);}
+const ADMINS=['vincze.lukas@gmail.com','oira@cievny.sk']; // fallback kým sa načíta príznak z DB
+let ADMIN_ME=ADMINS.includes((window.sbUserEmail?sbUserEmail():'').toLowerCase());
+function isAdmin(){return ADMIN_ME;}
+async function loadAdmin(){
+  const me=(window.sbUserEmail?sbUserEmail():'').toLowerCase();if(!me)return;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/povoleni_pouzivatelia?email=eq.${encodeURIComponent(me)}&select=admin`,{headers:H()});
+    if(r.ok){const a=await r.json();if(a.length&&typeof a[0].admin==='boolean')ADMIN_ME=a[0].admin;}
+  }catch(e){}
+}
 function escHtml(t){return (t==null?'':''+t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
 function parseISO(s){const p=(''+s).split('-');return new Date(+p[0],(+p[1]||1)-1,+p[2]||1);}
@@ -487,7 +495,7 @@ async function zavriDen(dk){
   }catch(e){}
 }
 
-loadMonth();
+loadAdmin().then(loadMonth);
 setInterval(()=>{
   const ae=document.activeElement;
   if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return; // needituj/neresetuj pod rukami

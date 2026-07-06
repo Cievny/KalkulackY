@@ -41,12 +41,12 @@ const H=()=>({'apikey':SB_ANON,'Authorization':'Bearer '+sbToken(),'Content-Type
 const TBL='povoleni_pouzivatelia';
 const ADMINS=['vincze.lukas@gmail.com','oira@cievny.sk'];
 const ME=(window.sbUserEmail?sbUserEmail():'').toLowerCase();
-function isAdmin(){return ADMINS.includes(ME);}
 function escHtml(t){return (t==null?'':''+t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+// efektívny admin: stĺpec `admin` v DB; ak ešte neexistuje (pred spustením SQL), fallback na pevný zoznam
+function isAdm(u){return u.admin===true || (u.admin===undefined && ADMINS.includes((u.email||'').toLowerCase()));}
 
 async function load(){
   const c=document.getElementById('content');
-  if(!isAdmin()){c.innerHTML='<div class="warn">Túto stránku môžu používať len administrátori ('+ADMINS.join(', ')+'). Vy ste prihlásený ako <b>'+escHtml(ME||'—')+'</b>.</div>';return;}
   let rows;
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}?order=email.asc&limit=1000`,{headers:H()});
@@ -55,41 +55,57 @@ async function load(){
   }catch(e){
     c.innerHTML='<div class="err">Tabuľka <code>povoleni_pouzivatelia</code> nie je dostupná (spustite SQL <code>spustit_na_konci.sql</code>). Chyba: '+escHtml(e.message)+'</div>';return;
   }
+  const meRow=rows.find(u=>(u.email||'').toLowerCase()===ME);
+  const meAdmin = meRow ? isAdm(meRow) : ADMINS.includes(ME);
+  if(!meAdmin){c.innerHTML='<div class="warn">Túto stránku môžu používať len administrátori. Vy ste prihlásený ako <b>'+escHtml(ME||'—')+'</b>. O pridanie medzi adminov požiadajte existujúceho administrátora.</div>';return;}
+  const adminCount=rows.filter(isAdm).length;
   c.innerHTML=`
     <div class="card">
       <div class="addf">
         <input id="a_email" type="email" placeholder="email@…" onkeydown="if(event.key==='Enter')pridaj()">
         <input id="a_meno" placeholder="meno (nepovinné)">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#374151"><input type="checkbox" id="a_admin"> admin</label>
         <button onclick="pridaj()">＋ Pridať</button>
       </div>
       <div class="msg" id="msg"></div>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
       <table>
-        <thead><tr><th>Email</th><th>Meno</th><th>Pridal</th><th></th></tr></thead>
-        <tbody>${rows.map(u=>`<tr>
-          <td>${escHtml(u.email)} ${u.email&&u.email.toLowerCase()===ME?'<span class="me">(vy)</span>':''}</td>
+        <thead><tr><th>Email</th><th>Meno</th><th>Rola</th><th>Pridal</th><th></th></tr></thead>
+        <tbody>${rows.map(u=>{const self=(u.email||'').toLowerCase()===ME;const adm=isAdm(u);return `<tr>
+          <td>${escHtml(u.email)} ${self?'<span class="me">(vy)</span>':''}</td>
           <td>${escHtml(u.meno||'')}</td>
+          <td>${adm?'<span class="badge-adm">👑 admin</span>':'<span style="color:#94a3b8;font-size:12px">používateľ</span>'}
+            ${self?'':`<button class="admtog" data-email="${escHtml(u.email)}" data-to="${adm?'0':'1'}">${adm?'zrušiť admina':'spraviť adminom'}</button>`}</td>
           <td style="color:#94a3b8;font-size:12px">${escHtml((u.pridal||'').split('@')[0])}</td>
-          <td style="text-align:right">${(u.email&&u.email.toLowerCase()===ME)?'':`<button class="del" data-email="${escHtml(u.email)}">✕ odobrať</button>`}</td>
-        </tr>`).join('')||'<tr><td colspan="4" style="color:#94a3b8;padding:14px">Zoznam je prázdny.</td></tr>'}</tbody>
+          <td style="text-align:right">${self?'':`<button class="del" data-email="${escHtml(u.email)}">✕ odobrať</button>`}</td>
+        </tr>`;}).join('')||'<tr><td colspan="5" style="color:#94a3b8;padding:14px">Zoznam je prázdny.</td></tr>'}</tbody>
       </table>
     </div>
-    <div class="sub">Počet povolených: <b>${rows.length}</b>. Seba nemôžete odobrať (poistka proti zamknutiu sa von).</div>`;
-  // odoberanie cez data-atribút (bezpečné aj pri emaile s apostrofom)
+    <div class="sub">Povolených: <b>${rows.length}</b> · administrátorov: <b>${adminCount}</b>. Seba nemôžete odobrať ani si zrušiť admina (poistka proti zamknutiu sa von).</div>`;
   c.querySelectorAll('button.del').forEach(b=>b.addEventListener('click',()=>odober(b.dataset.email)));
+  c.querySelectorAll('button.admtog').forEach(b=>b.addEventListener('click',()=>setAdmin(b.dataset.email,b.dataset.to==='1')));
 }
 function msg(t,c){const m=document.getElementById('msg');if(m){m.textContent=t;m.style.color=c||'#16a34a';}}
 
 async function pridaj(){
   const email=(document.getElementById('a_email').value||'').trim().toLowerCase();
   const meno=(document.getElementById('a_meno').value||'').trim();
+  const admin=document.getElementById('a_admin').checked;
   if(!email||email.indexOf('@')<0){msg('Zadajte platný email.','#b45309');return;}
   try{
-    const r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify({email,meno:meno||null})});
-    if(r.ok){msg('✓ Pridané: '+email);await load();}
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify({email,meno:meno||null,admin})});
+    if(r.ok){msg('✓ Pridané: '+email+(admin?' (admin)':''));await load();}
     else if(r.status===409){msg('Tento email už na zozname je.','#b45309');}
     else msg('❌ Chyba: '+r.status+(r.status===403?' – nemáte oprávnenie':''),'#dc2626');
+  }catch(e){msg('❌ Chyba siete','#dc2626');}
+}
+async function setAdmin(email,makeAdmin){
+  if(!confirm((makeAdmin?'Spraviť adminom: ':'Zrušiť admina: ')+email+'?'))return;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?email=eq.${encodeURIComponent(email)}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify({admin:makeAdmin})});
+    if(r.ok)await load();
+    else msg('❌ Chyba: '+r.status+(r.status===400?' – spustite SQL (chýba stĺpec admin)':(r.status===403?' – nemáte oprávnenie':'')),'#dc2626');
   }catch(e){msg('❌ Chyba siete','#dc2626');}
 }
 async function odober(email){
