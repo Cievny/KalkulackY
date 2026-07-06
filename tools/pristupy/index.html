@@ -23,6 +23,14 @@ tr:hover td{background:#f7faff}
 .msg{font-size:13px;min-height:18px;margin-top:8px}
 .warn{background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:8px;padding:12px;font-size:13px}
 .err{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;padding:12px;font-size:13px}
+.badge-adm{background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700}
+.admtog{margin-left:8px;background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:#334155}
+.admtog:hover{background:#eff6ff;border-color:#3b82f6;color:#1e40af}
+.linkbox{display:flex;gap:6px;align-items:center;margin-top:6px}
+.linkbox input{flex:1;padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:12px;font-family:ui-monospace,monospace;background:#f8fafc}
+.linkbox button,.icopy{padding:8px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#1e40af;color:#fff}
+.irow{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #eef0f5;font-size:13px;flex-wrap:wrap}
+.irev{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600}
 </style>
 </head>
 <body>
@@ -82,9 +90,77 @@ async function load(){
         </tr>`;}).join('')||'<tr><td colspan="5" style="color:#94a3b8;padding:14px">Zoznam je prázdny.</td></tr>'}</tbody>
       </table>
     </div>
-    <div class="sub">Povolených: <b>${rows.length}</b> · administrátorov: <b>${adminCount}</b>. Seba nemôžete odobrať ani si zrušiť admina (poistka proti zamknutiu sa von).</div>`;
+    <div class="sub">Povolených: <b>${rows.length}</b> · administrátorov: <b>${adminCount}</b>. Seba nemôžete odobrať ani si zrušiť admina (poistka proti zamknutiu sa von).</div>
+    <div class="card">
+      <h3 style="margin:0 0 4px;font-size:15px">🎟️ Pozývacie linky</h3>
+      <div class="sub" style="margin-bottom:10px">Vytvorte link a pošlite ho kolegovi. Keď sa cezeň prihlási (Google/heslo), automaticky sa pridá do zoznamu.</div>
+      <div class="addf">
+        <input id="i_pozn" placeholder="pre koho (nepovinné)">
+        <select id="i_exp" style="padding:10px 12px;border:1.5px solid #dde1ea;border-radius:8px;font-size:14px">
+          <option value="7">platí 7 dní</option><option value="30">platí 30 dní</option><option value="0">bez expirácie</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#374151"><input type="checkbox" id="i_admin"> ako admin</label>
+        <button onclick="vytvorPozvanku()">Vytvoriť link</button>
+      </div>
+      <div class="msg" id="imsg"></div>
+      <div id="ilist" style="margin-top:8px"></div>
+    </div>`;
   c.querySelectorAll('button.del').forEach(b=>b.addEventListener('click',()=>odober(b.dataset.email)));
   c.querySelectorAll('button.admtog').forEach(b=>b.addEventListener('click',()=>setAdmin(b.dataset.email,b.dataset.to==='1')));
+  loadInvites();
+}
+
+// ── Pozývacie linky ──
+function genToken(){return [...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2,'0')).join('');}
+function inviteUrl(tok){return location.origin+'/tools/pozvanka/?t='+tok;}
+function imsg(t,c){const m=document.getElementById('imsg');if(m){m.textContent=t;m.style.color=c||'#16a34a';}}
+async function vytvorPozvanku(){
+  const pozn=(document.getElementById('i_pozn').value||'').trim()||null;
+  const admin=document.getElementById('i_admin').checked;
+  const days=parseInt(document.getElementById('i_exp').value);
+  const token=genToken();
+  const body={token,ako_admin:admin,poznamka:pozn};
+  if(days>0)body.expiruje=new Date(Date.now()+days*86400000).toISOString();
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/pozvanky`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
+    if(r.ok){document.getElementById('i_pozn').value='';imsg('✓ Link vytvorený – skopírujte a pošlite ho.');await loadInvites(true,token);}
+    else imsg('❌ Chyba: '+r.status+(r.status===400?' – spustite pozvanky.sql':(r.status===403?' – len admin':'')),'#dc2626');
+  }catch(e){imsg('❌ Chyba siete','#dc2626');}
+}
+async function loadInvites(highlight,newTok){
+  const box=document.getElementById('ilist');if(!box)return;
+  let rows;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/pozvanky?aktivna=eq.true&order=created_at.desc&limit=100`,{headers:H()});
+    if(!r.ok){box.innerHTML='<div class="sub">Pozvánky nie sú nastavené (spustite <code>pozvanky.sql</code>).</div>';return;}
+    rows=await r.json();
+  }catch(e){return;}
+  if(!rows.length){box.innerHTML='<div class="sub">Žiadne aktívne pozvánky.</div>';return;}
+  box.innerHTML=rows.map(p=>{
+    const exp=p.expiruje?('platí do '+new Date(p.expiruje).toLocaleDateString('sk-SK')):'bez expirácie';
+    const expired=p.expiruje&&new Date(p.expiruje)<new Date();
+    const url=inviteUrl(p.token);
+    return `<div class="irow" style="${p.token===newTok?'background:#ecfdf5;border-radius:8px':''}">
+      <div style="flex:1;min-width:220px">
+        <div><b>${escHtml(p.poznamka||'(bez poznámky)')}</b> ${p.ako_admin?'<span class="badge-adm">👑 admin</span>':''} <span style="color:${expired?'#b91c1c':'#94a3b8'};font-size:12px">· ${expired?'EXPIROVALA':exp}</span></div>
+        <div class="linkbox"><input readonly value="${escHtml(url)}"><button class="icopy" data-url="${escHtml(url)}">Kopírovať</button></div>
+      </div>
+      <button class="irev" data-token="${escHtml(p.token)}">Zrušiť</button>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('button.icopy').forEach(b=>b.addEventListener('click',()=>{
+    const u=b.dataset.url;
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u).then(()=>{b.textContent='✓ Skopírované';setTimeout(()=>b.textContent='Kopírovať',1500);});
+    else{const i=b.previousElementSibling;i.select();document.execCommand('copy');}
+  }));
+  box.querySelectorAll('button.irev').forEach(b=>b.addEventListener('click',()=>zrusPozvanku(b.dataset.token)));
+}
+async function zrusPozvanku(token){
+  if(!confirm('Zrušiť tento pozývací link? Prestane platiť.'))return;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/pozvanky?token=eq.${encodeURIComponent(token)}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify({aktivna:false})});
+    if(r.ok)await loadInvites();
+  }catch(e){}
 }
 function msg(t,c){const m=document.getElementById('msg');if(m){m.textContent=t;m.style.color=c||'#16a34a';}}
 

@@ -144,3 +144,31 @@ CREATE POLICY "auth oznamy storage delete" ON storage.objects FOR DELETE TO auth
 --   odobrať:  DELETE FROM povoleni_pouzivatelia WHERE email='niekto@gmail.com';
 --   zoznam:   SELECT * FROM povoleni_pouzivatelia ORDER BY email;
 -- ============================================================
+
+-- =========================================================
+-- (C) POZÝVACIE LINKY (self-onboarding cez token)
+-- =========================================================
+CREATE TABLE IF NOT EXISTS pozvanky (
+  token TEXT PRIMARY KEY,
+  ako_admin BOOLEAN NOT NULL DEFAULT false,
+  poznamka TEXT, expiruje TIMESTAMPTZ, aktivna BOOLEAN NOT NULL DEFAULT true,
+  created_by TEXT DEFAULT (auth.jwt()->>'email'), created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE pozvanky ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "pozvanky admin" ON pozvanky;
+CREATE POLICY "pozvanky admin" ON pozvanky FOR ALL TO authenticated USING (je_admin()) WITH CHECK (je_admin());
+CREATE OR REPLACE FUNCTION uplatni_pozvanku(p_token TEXT) RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE r pozvanky%rowtype; myemail text;
+BEGIN
+  myemail := lower(coalesce(auth.jwt()->>'email',''));
+  IF myemail = '' THEN RETURN 'NEPRIHLASENY'; END IF;
+  SELECT * INTO r FROM pozvanky WHERE token = p_token;
+  IF NOT FOUND OR NOT r.aktivna THEN RETURN 'NEPLATNA'; END IF;
+  IF r.expiruje IS NOT NULL AND r.expiruje < now() THEN RETURN 'EXPIROVANA'; END IF;
+  INSERT INTO povoleni_pouzivatelia(email, admin) VALUES (myemail, r.ako_admin)
+    ON CONFLICT (email) DO UPDATE SET admin = (povoleni_pouzivatelia.admin OR r.ako_admin);
+  RETURN 'OK';
+END $$;
+REVOKE ALL ON FUNCTION uplatni_pozvanku(text) FROM public;
+GRANT EXECUTE ON FUNCTION uplatni_pozvanku(text) TO authenticated;

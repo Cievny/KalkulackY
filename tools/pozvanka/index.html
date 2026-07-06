@@ -1,0 +1,60 @@
+<!doctype html><html lang="sk"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Pozvánka – cievny.sk</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1e3d;color:#fff;padding:20px}
+.box{background:#16264a;border:1px solid #2a3f66;border-radius:18px;padding:34px 30px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.ico{font-size:40px;margin-bottom:8px}
+h1{font-size:20px;margin:0 0 6px}
+p{font-size:14px;color:#9fb3d8;line-height:1.55;margin:6px 0}
+.ok{color:#86efac;font-weight:700}
+.err{color:#fca5a5;font-weight:700}
+a.btn{display:inline-block;margin-top:18px;padding:12px 22px;background:#2563eb;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px}
+.small{font-size:12px;color:#6f83a8;margin-top:14px}
+</style>
+</head>
+<body>
+<script src="/tools/auth.js"></script>
+<script>checkAuth();</script>
+<div class="box">
+  <div class="ico" id="ico">🎟️</div>
+  <h1 id="title">Uplatňujem pozvánku…</h1>
+  <div id="body"><p>Moment, overujem pozvánku…</p></div>
+</div>
+<script>
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
+const token=new URLSearchParams(location.search).get('t');
+const me=(window.sbUserEmail?sbUserEmail():'')||'';
+function show(ico,title,html){document.getElementById('ico').textContent=ico;document.getElementById('title').innerHTML=title;document.getElementById('body').innerHTML=html;}
+
+(async function(){
+  if(!token){show('⚠️','Chýba pozvánka','<p class="err">Odkaz neobsahuje kód pozvánky.</p>');return;}
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/rpc/uplatni_pozvanku',{
+      method:'POST',
+      headers:{'apikey':SB_ANON,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'},
+      body:JSON.stringify({p_token:token})
+    });
+    if(!r.ok){
+      show('❌','Nepodarilo sa',`<p class="err">Chyba ${r.status}. Ak tabuľka pozvánok ešte nie je nastavená, spustite <code>pozvanky.sql</code>.</p>`);return;
+    }
+    const stav=await r.json(); // "OK" | "EXPIROVANA" | "NEPLATNA" | "NEPRIHLASENY"
+    if(stav==='OK'){
+      show('✅','Máte prístup!',`<p>Účet <b>${me?me.replace(/</g,'&lt;'):''}</b> bol pridaný medzi povolených používateľov.</p><a class="btn" href="/tools/EVK/">Vstúpiť do aplikácie</a>`);
+    }else if(stav==='EXPIROVANA'){
+      show('⌛','Pozvánka expirovala','<p class="err">Tento pozývací odkaz už neplatí. Požiadajte administrátora o nový.</p>');
+    }else if(stav==='NEPRIHLASENY'){
+      show('🔒','Najprv sa prihláste','<p>Prihláste sa a otvorte odkaz znova.</p>');
+    }else{
+      show('❌','Neplatná pozvánka','<p class="err">Tento pozývací odkaz neplatí alebo bol zrušený. Požiadajte administrátora o nový.</p>');
+    }
+  }catch(e){
+    show('❌','Chyba siete','<p class="err">Skúste odkaz otvoriť znova.</p>');
+  }
+})();
+</script>
+</body></html>
