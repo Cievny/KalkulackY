@@ -73,6 +73,29 @@
     }catch(e){return false;}
   }
 
+  window.sbRefresh=refreshToken; // umožní nástrojom obnoviť token pri 401 a zopakovať dotaz
+
+  // Globálna samooprava: ak Supabase odmietne REST dotaz kvôli expirovanému
+  // tokenu (401 – napr. po uspatí notebooka), obnov token a zopakuj dotaz raz.
+  // 401 znamená, že sa dotaz NEVYKONAL, takže opakovanie je bezpečné aj pri zápise.
+  (function(){
+    const _fetch=window.fetch.bind(window);
+    let refreshing=null;
+    window.fetch=async function(input,init){
+      const url=typeof input==='string'?input:(input&&input.url)||'';
+      const r=await _fetch(input,init);
+      if(r.status===401 && url.indexOf(SB_URL+'/rest/')===0 && init && init.headers){
+        const auth=init.headers['Authorization']||init.headers.Authorization||'';
+        if(auth.indexOf('Bearer ')===0 && auth!=='Bearer '+SB_ANON){
+          refreshing=refreshing||refreshToken();
+          const ok=await refreshing; refreshing=null;
+          if(ok)return _fetch(input,{...init,headers:{...init.headers,'Authorization':'Bearer '+window.sbToken()}});
+        }
+      }
+      return r;
+    };
+  })();
+
   function scheduleRefresh(){
     setInterval(()=>{
       const exp=parseInt(sessionStorage.getItem(XK)||'0');
