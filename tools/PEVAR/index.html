@@ -73,9 +73,10 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <div id="tab-drg" style="display:none;padding:24px;max-width:860px;margin:0 auto">
   <h2 style="font-size:16px;font-weight:700;color:#1a2745;margin-bottom:8px">📊 DRG kódy (ZV-DRG 2026) – automatický výpočet</h2>
   <div class="drg-info">
-    Kód sa generuje automaticky podľa katalógu prípadových paušálov 2026 (príloha 4 – ŠZM).<br>
+    Kódy sa generujú automaticky podľa zoznamu ZV-DRG 2026.<br>
     Štandardný PEVAR (bifurkačný aj unilaterálny stentgraft) = <strong>8r8q3.0</strong>. Pri fenestrovanom / branchovanom / chimney výkone vyberte variant nižšie.<br>
-    <em>Extenzie a domodelovanie sú súčasťou kódu implantácie – samostatne sa nekódujú.</em>
+    <strong>Extenzie do iliackých tepien</strong> sa vykazujú samostatne kódom <strong>8r8q5.x</strong> podľa počtu – počíta sa automaticky zo sekcie Extenzie.<br>
+    Domodelovanie (CODA/Atlas…) sa nekóduje ako PTA – vykazuje sa len počet balónikových katétrov (8r8x0).
   </div>
   <div class="f" style="max-width:420px;margin-bottom:12px">
     <label>Variant stentgraftu (pre DRG)</label>
@@ -88,6 +89,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
       <option value="5">stentgraft so 4 a viac fenestráciami</option>
       <option value="6">chimney technika</option>
       <option value="7">chimney technika, 2 a viac stentgraftov</option>
+      <option value="8">iné</option>
     </select>
   </div>
   <div id="drg_output"><div class="drg-empty">Kódy sa zobrazia automaticky.</div></div>
@@ -934,7 +936,7 @@ function showFuTab(t){
   }
 }
 
-// ── DRG kódy (katalóg prípadových paušálov 2026, príloha 4 – ŠZM) ──
+// ── DRG kódy (zoznam ZV-DRG 2026) ──
 const DRG_Q3={
   '0':'Perkutánna implantácia stentgraftu do abdominálnej aorty, aortálny stentgraft',
   '1':'Perkutánna implantácia stentgraftu do abdominálnej aorty, aortálny stentgraft, branchovaný stentgraft',
@@ -943,8 +945,11 @@ const DRG_Q3={
   '4':'Perkutánna implantácia stentgraftu do abdominálnej aorty, aortálny stentgraft s 3 fenestráciami',
   '5':'Perkutánna implantácia stentgraftu do abdominálnej aorty, aortálny stentgraft so 4 a viac fenestráciami',
   '6':'Perkutánna implantácia stentgraftu do abdominálnej aorty so zabezpečením cievneho vývodu Chimney technikou',
-  '7':'Perkutánna implantácia stentgraftu do abdominálnej aorty so zabezpečením cievneho vývodu Chimney technikou, 2 a viac stentgraftov'
+  '7':'Perkutánna implantácia stentgraftu do abdominálnej aorty so zabezpečením cievneho vývodu Chimney technikou, 2 a viac stentgraftov',
+  '8':'Perkutánna implantácia stentgraftu do abdominálnej aorty, iné'
 };
+// 8r8q5 – iliacké stentgrafty (extenzie) podľa počtu: 1→.2 … 6+→.7
+const DRG_Q5_CNT={1:'2',2:'3',3:'4',4:'5',5:'6'};
 function genDRGPevar(){
   const out=document.getElementById('drg_output');if(!out)return;
   const v=g('drg_variant')||'0';
@@ -952,14 +957,33 @@ function genDRGPevar(){
   const sgNazov=(function(){const e=document.getElementById('sg_nazov');if(!e)return'';return e.value==='vlastný'?(g('sg_nazov_custom')||''):e.value;})();
   const extN=document.querySelectorAll('#extenzie_list .ext-row').length;
   const extOn=document.getElementById('c_extenzie')?.checked&&extN>0;
-  let html='<div class="drg-section-hdr">Hlavný výkonový kód (ZV-DRG 2026)</div>';
+  let html='<div class="drg-section-hdr">DSA – diagnostické kódy (angiografia)</div>';
   html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
-  html+=`<tr><td class="drg-code-cell">8r8q3.${v}</td><td>${DRG_Q3[v]}</td></tr>`;
+  html+='<tr><td class="drg-code-cell" style="color:#059669">32302.3</td><td>Angiografia aorty (verifikácia odstupov renálnych tepien, kontrolná aortografia)</td></tr>';
+  html+='<tr><td class="drg-code-cell" style="color:#059669">32305</td><td>Artériografia panvových ciev</td></tr>';
   html+='</tbody></table>';
+  html+='<div class="drg-section-hdr" style="margin-top:16px">Hlavné intervenčné kódy</div>';
+  html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
+  html+=`<tr><td class="drg-code-cell">8r8q3.${v}</td><td>${DRG_Q3[v]}${sgNazov?' – '+sgNazov:''} (${sgTyp==='bifurkačného'?'bifurkačný':'unilaterálny'})</td></tr>`;
+  if(extOn){
+    const q5=DRG_Q5_CNT[extN]||'7';
+    const lbl=extN===1?'1 stentgraft':extN>=6?'6 a viac stentgraftov':extN+' stentgrafty';
+    html+=`<tr><td class="drg-code-cell">8r8q5.${q5}</td><td>Perkutánna implantácia stentgraftu v iliackých tepnách, iliacký stentgraft, ${lbl} (extenzie)</td></tr>`;
+  }
+  html+='</tbody></table>';
+  const bal=[];
+  if(document.getElementById('modelovanie_telo')?.checked)bal.push('telo SG');
+  if(document.getElementById('modelovanie_extenzie')?.checked)bal.push('extenzie');
+  if(bal.length){
+    html+='<div class="drg-section-hdr" style="margin-top:16px">Doplňujúce kódy 8r8x (počty zariadení)</div>';
+    html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
+    html+=`<tr><td class="drg-code-cell">8r8x0.${bal.length-1}</td><td>Počet balónikových katétrov: ${bal.length} (domodelovanie – ${bal.join(' + ')})</td></tr>`;
+    html+='</tbody></table>';
+  }
   html+='<div class="drg-section-hdr" style="margin-top:16px">Informatívne</div>';
   html+='<table class="drg-table"><tbody>';
   html+=`<tr><td class="drg-code-cell" style="color:#059669">F51B</td><td>DRG skupina: Endovaskulárna implantácia stentových protéz na aorte, nie torakálne (RV 6,53)</td></tr>`;
-  html+=`<tr><td></td><td style="color:#6b7280">Výkon: ${sgTyp==='bifurkačného'?'bifurkačný':'unilaterálny'} stentgraft${sgNazov?' '+sgNazov:''}${extOn?' + '+extN+'× extenzia (v cene kódu implantácie)':''}. Domodelovanie a uzáver prístupu sa samostatne nekódujú.</td></tr>`;
+  html+=`<tr><td></td><td style="color:#6b7280">Uzáver prístupu (ProGlide/Manta) sa samostatne nekóduje.</td></tr>`;
   html+='</tbody></table>';
   out.innerHTML=html;
 }
