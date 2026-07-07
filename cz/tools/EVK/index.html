@@ -932,7 +932,8 @@ function buildAutoZaver(){
   if(document.getElementById('c_sg').checked)interv.push('stentgraft ('+vN('sg_n')+')');
   if(document.getElementById('c_kiss').checked)interv.push('kissing stent');
   if(document.getElementById('c_cerab').checked)interv.push('CERAB technika');
-  const tu=[...document.querySelectorAll('input[name="tech_uspech"]:checked')][0];
+  const tuEl=[...document.querySelectorAll('input[name="tech_uspech"]:checked')][0];
+  const tu=tuEl?tuEl.value:'';
   const komp=chk('komp_ck').filter(k=>k!=='žádné');
   let z='';
   if(interv.length)z+='Provedena: '+interv.join(', ')+'. ';
@@ -979,10 +980,10 @@ function collectStatsRow(){
   const mat=[];
   document.querySelectorAll('#stent_list .dyn-row').forEach(row=>{const n=document.getElementById('stent_'+row.dataset.idx+'_n');if(n&&n.value!=='vlastní')mat.push(n.value);});
   document.querySelectorAll('#deb_list .dyn-row').forEach(row=>{const s=document.getElementById('deb_'+row.dataset.idx+'_s');if(s&&s.value!=='vlastní')mat.push(s.value);});
-  const tu=[...document.querySelectorAll('input[name="tech_uspech"]:checked')][0];
+  const tuEl=[...document.querySelectorAll('input[name="tech_uspech"]:checked')][0];
   const komp=chk('komp_ck').join(', ')+(g('komp_text')?' – '+g('komp_text'):'');
   const artVal=g('access_art');const art=artVal==='vlastny'?(g('access_art_c')||'vlastní'):artVal;
-  return {type:'vykon',row:[id,g('datum'),g('operator'),g('vek'),g('pohl')==='M'?'Muž':'Žena',g('ruth'),komor,tl,art+' '+g('strana'),g('anes'),[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join('+'),interv.join(', '),[...new Set(mat)].join(', '),tu?tu:'',komp,g('zaver')]};
+  return {type:'vykon',row:[id,g('datum'),g('operator'),g('vek'),g('pohl')==='M'?'Muž':'Žena',g('ruth'),komor,tl,art+' '+g('strana'),g('anes'),[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join('+'),interv.join(', '),[...new Set(mat)].join(', '),tuEl?tuEl.value:'',komp,g('zaver')]};
 }
 
 const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
