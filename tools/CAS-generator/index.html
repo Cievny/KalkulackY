@@ -42,6 +42,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .id-prefix{font-weight:700;font-size:13px;color:#3b82f6;background:#f0f7ff;border:1.5px solid #3b82f6;border-radius:6px;padding:6px 10px;white-space:nowrap}
 @media print{.tabnav,.shared-nav{display:none}.left{display:none}.right{border:none;height:auto;position:static}.btns{display:none}#out{border:none;font-family:inherit;font-size:13px;background:#fff}}
 details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:11.5px;color:#5a6a8a;font-weight:600;cursor:pointer;user-select:none;padding:5px 8px;background:#f7f8fc;border-radius:6px;border:1.5px solid #eef0f5;list-style:none}details.komor-details>summary::-webkit-details-marker{display:none}details.komor-details[open]>summary .komor-arr{transform:rotate(90deg)}details.komor-details>summary .komor-arr{display:inline-block;transition:transform .2s;font-size:10px;color:#9ca3af}
+.drg-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.drg-table th{text-align:left;padding:7px 10px;background:#f3f6fb;color:#5a6a8a;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px}
+.drg-table td{padding:8px 10px;border-bottom:1px solid #eef1f6;vertical-align:top}
+.drg-code-cell{font-family:'Courier New',monospace;font-weight:700;color:#1e40af;font-size:13px;white-space:nowrap}
+.drg-empty{color:#8fa3c8;font-style:italic;font-size:12px;padding:12px 0;text-align:center}
+.drg-section-hdr{font-size:12px;font-weight:700;color:#1a2745;margin:4px 0 6px}
+.drg-info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:10px 12px;font-size:11.5px;color:#1e3a5f;margin-bottom:12px;line-height:1.55}
+.drg-copy-btn{padding:7px 16px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;margin-top:10px;width:100%}
+.drg-copy-btn:hover{background:#1737a0}
 </style>
 </head>
 <body>
@@ -49,8 +58,22 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <script>checkAuth();</script>
 <nav class="tabnav">
   <button class="tnb active" id="tnb-nalez" onclick="showFuTab('nalez')">🧠 CAS</button>
+  <button class="tnb" id="tnb-drg" onclick="showFuTab('drg')">📊 DRG kódy</button>
   <button class="tnb" id="tnb-fu" onclick="showFuTab('fu')">📅 Follow-up</button>
 </nav>
+
+<!-- DRG KÓDY -->
+<div id="tab-drg" style="display:none;padding:24px;max-width:860px;margin:0 auto">
+  <h2 style="font-size:16px;font-weight:700;color:#1a2745;margin-bottom:8px">📊 DRG kódy (ZV-DRG 2026) – automatický výpočet</h2>
+  <div class="drg-info">
+    Kódy sa generujú automaticky podľa vyplneného formulára v záložke <strong>CAS</strong>.<br>
+    Predilatácia a domodelovanie pri stentingu sa <em>nekódujú</em> samostatne ako PTA – vykazuje sa len počet balónikových katétrov (8r8x0).
+  </div>
+  <label class="ck" style="display:block;margin-bottom:12px"><input type="checkbox" id="drg_stent_acc" onchange="genDRGCas()"> Stent presahuje cez bifurkáciu do ACC (kód 8r880.05 namiesto .04)</label>
+  <div id="drg_output"><div class="drg-empty">Kódy sa zobrazia automaticky.</div></div>
+  <button class="drg-copy-btn" onclick="copyDRG()">📋 Kopírovať kódy</button>
+  <div id="drg_cmsg" style="font-size:11px;text-align:center;min-height:16px;margin-top:6px"></div>
+</div>
 
 <!-- FOLLOW-UP -->
 <div id="tab-fu" style="display:none;padding:24px;max-width:700px;margin:0 auto">
@@ -883,14 +906,60 @@ function gen(){
 
 // ── Follow-up ────────────────────────────────────────────────
 function showFuTab(t){
-  document.querySelector('.wrap').style.display=t==='fu'?'none':'grid';
+  document.querySelector('.wrap').style.display=(t==='fu'||t==='drg')?'none':'grid';
   document.getElementById('tab-fu').style.display=t==='fu'?'block':'none';
-  document.getElementById('tnb-nalez').classList.toggle('active',t!=='fu');
+  document.getElementById('tab-drg').style.display=t==='drg'?'block':'none';
+  document.getElementById('tnb-nalez').classList.toggle('active',t!=='fu'&&t!=='drg');
   document.getElementById('tnb-fu').classList.toggle('active',t==='fu');
+  document.getElementById('tnb-drg').classList.toggle('active',t==='drg');
+  if(t==='drg')genDRGCas();
   if(t==='fu'){
     if(!g('fu_datum'))document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
     if(!g('fu_id')&&g('id_suffix'))document.getElementById('fu_id').value='CAS-'+new Date().getFullYear()+'-'+g('id_suffix');
   }
+}
+
+// ── DRG kódy (ZV-DRG 2026) ──────────────
+function genDRGCas(){
+  const out=document.getElementById('drg_output');if(!out)return;
+  const interv=g('postup_vykonu')==='intervencia';
+  const lok='ACI '+g('lokalizacia');
+  const acc=document.getElementById('drg_stent_acc')?.checked;
+  let html='<div class="drg-section-hdr">DSA – diagnostický kód (angiografia)</div>';
+  html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
+  html+='<tr><td class="drg-code-cell" style="color:#059669">32301.2</td><td>Artériografia extrakraniálnych ciev a ciev krku (selektívna DSA karotíd)</td></tr>';
+  html+='</tbody></table>';
+  if(interv){
+    html+='<div class="drg-section-hdr" style="margin-top:16px">Hlavné intervenčné kódy</div>';
+    html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
+    const stCode=acc?'8r880.05':'8r880.04';
+    const stDesc='Perkutánna transluminálna implantácia stentu neuvoľňujúceho lieky, 1 stent do a. carotis interna extrakraniálne'+(acc?' s a. carotis communis':'')+' – '+(g('stent_znacka')||'stent')+' '+(g('stent_velkost')||'')+' ('+lok+')';
+    html+='<tr><td class="drg-code-cell">'+stCode+'</td><td>'+stDesc+'</td></tr>';
+    if(g('emboloprotekcia'))html+='<tr><td class="drg-code-cell">8r870.0</td><td>Perkutánna transluminálna intervencia, použitie 1 emboloprotekčného systému ('+g('emboloprotekcia')+')</td></tr>';
+    html+='</tbody></table>';
+    const bal=[];
+    if(document.getElementById('vykonat_predilataciu')?.checked)bal.push('predilatácia');
+    if(document.getElementById('vykonat_domodelovanie')?.checked)bal.push('domodelovanie');
+    if(bal.length){
+      html+='<div class="drg-section-hdr" style="margin-top:16px">Doplňujúce kódy 8r8x (počty zariadení)</div>';
+      html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
+      html+='<tr><td class="drg-code-cell">8r8x0.'+(bal.length-1)+'</td><td>Počet balónikových katétrov: '+bal.length+' '+(bal.length===1?'balónikový katéter':'balónikové katétre')+' ('+bal.join(' + ')+')</td></tr>';
+      html+='</tbody></table>';
+    }
+  }else{
+    html+='<div class="drg-section-hdr" style="margin-top:16px">Intervencia</div>';
+    html+='<table class="drg-table"><tbody><tr><td class="drg-code-cell"></td><td style="color:#6b7280">Konzervatívny postup – bez intervenčných kódov, vykazuje sa len diagnostická DSA.</td></tr></tbody></table>';
+  }
+  out.innerHTML=html;
+}
+function copyDRG(){
+  const rows=[...document.querySelectorAll('.drg-table tbody tr')].filter(r=>r.cells[0].textContent.trim());
+  if(!rows.length)return;
+  const txt=rows.map(r=>r.cells[0].textContent.trim()+'\t'+r.cells[1].textContent.trim()).join('\n');
+  const ok=()=>{const el=document.getElementById('drg_cmsg');el.style.color='#1d6f42';el.textContent='✓ Skopírované';setTimeout(()=>el.textContent='',3000);};
+  navigator.clipboard.writeText(txt).then(ok).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);ok();
+  });
 }
 function msgFu(t,c){const el=document.getElementById('fu_msg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',4000);}
 async function saveFU(){
