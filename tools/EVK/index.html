@@ -474,7 +474,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <!-- Predilatácia -->
 <div class="tog"><label class="thdr"><input type="checkbox" id="c_pred" onchange="tB('pred');gen()"><span>Predilatácia PTA</span></label><div class="tbody" id="b_pred"><div id="pred_list"></div><button type="button" class="add-btn" onclick="addItem('pred','balon')">＋ Pridať balón</button></div></div>
 <!-- IVL -->
-<div class="tog"><label class="thdr"><input type="checkbox" id="c_sw" onchange="tB('sw');gen()"><span>IVL Shockwave</span></label><div class="tbody" id="b_sw"><div id="sw_list"></div><button type="button" class="add-btn" onclick="addItem('sw','balon_ivl')">＋ Pridať balón IVL</button></div></div>
+<div class="tog"><label class="thdr"><input type="checkbox" id="c_sw" onchange="tB('sw');gen()"><span>IVL (intravaskulárna litotripsia)</span></label><div class="tbody" id="b_sw"><div id="sw_list"></div><button type="button" class="add-btn" onclick="addItem('sw','balon_ivl')">＋ Pridať IVL katéter</button></div></div>
 <!-- PTA -->
 <div class="tog"><label class="thdr"><input type="checkbox" id="c_pta" onchange="tB('pta');gen()"><span>PTA (balónová angioplastika)</span></label><div class="tbody" id="b_pta"><div id="pta_list"></div><button type="button" class="add-btn" onclick="addItem('pta','balon')">＋ Pridať balón</button></div></div>
 <!-- DEB PTA -->
@@ -639,7 +639,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <script>
 const SO='<optgroup label="Stenózy a oklúzie"><option>bez závažnej stenózy</option><option>stenóza do 50%</option><option>stenóza 50–70%</option><option>stenóza 70–90%</option><option>kritická stenóza >90%</option><option>oklúzia</option></optgroup>'+'<optgroup label="Stav po intervencii"><option>stav po PVI</option><option>stav po stentingu</option><option>in-stent restenóza</option><option>oklúzia stentu</option><option>stav po bypasse</option></optgroup>'+'<optgroup label="Iné nálezy"><option>disekcia</option><option>aneuryzmatické zmeny</option><option>hypoplastická/aplastická</option><option>vlastný popis</option></optgroup>';
 const SO_AFC=SO.replace('<option>stav po bypasse</option>','<option>stav po bypasse</option><option>stav po profundoplastike</option><option>stav po TEA</option>');
-const OPTS={balon:['Jade','Armada','Passeo','CrossTella','vlastný'],balon_deb:['MagicTouch','Elutax','Selution SLR','IN.PACT','vlastný'],balon_vprep:['Chocolate','Cutting balloon','AngioSculpt','Spur','Wolverine','vlastný'],stent:['AbsolutePro','Pulsar','Astron','BioMimics','Supera','Eluvia','Nitides','Dynetic','Isthmus','vlastný']};
+const OPTS={balon:['Jade','Armada','Passeo','CrossTella','vlastný'],balon_deb:['MagicTouch','Elutax','Selution SLR','IN.PACT','vlastný'],balon_vprep:['Chocolate','Cutting balloon','AngioSculpt','Spur','Wolverine','vlastný'],balon_ivl:['Shockwave','Shockfast','vlastný'],stent:['AbsolutePro','Pulsar','Astron','BioMimics','Supera','Eluvia','Nitides','Dynetic','Isthmus','vlastný']};
 const STENT_TYP=['balónexpandibilný','samoexpandibilný','liekový (DES)'];
 const VESSEL_OPTS=['– tepna –','AIC l.sin.','AIC l.dx.','AIE l.sin.','AIE l.dx.','AII l.sin.','AII l.dx.','AFC l.sin.','AFC l.dx.','APF l.sin.','APF l.dx.','AFS l.sin.','AFS l.dx.','P1 l.sin.','P1 l.dx.','P2 l.sin.','P2 l.dx.','P3 l.sin.','P3 l.dx.','ATA l.sin.','ATA l.dx.','ATP l.sin.','ATP l.dx.','AFib l.sin.','AFib l.dx.','TTF l.sin.','TTF l.dx.'];
 const SEG_OPTS=['–','proximálny','stredný','distálny','celý'];
@@ -829,7 +829,8 @@ function addItem(pfx,kind,silent){
       <div class="row r2"><div class="f"><label>Priemer (mm)</label><input type="number" id="${id}_p" placeholder="7" oninput="gen()"></div><div class="f"><label>Dĺžka (mm)</label><input type="number" id="${id}_d" placeholder="100" oninput="gen()"></div></div>`;
   } else if(kind==='balon_ivl'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
-      <div class="row r2"><div class="f"><label>Priemer × Dĺžka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="60" oninput="gen()"></div></div><div class="f"><label>Počet pulzov</label><input type="number" id="${id}_u" placeholder="60" oninput="gen()"></div></div>`;
+      <div class="row r2" style="margin-bottom:6px"><div class="f"><label>Katéter</label><select id="${id}_s" onchange="chkVl('${id}_s');gen()">${selOpts(OPTS.balon_ivl)}</select><input type="text" id="${id}_s_c" placeholder="Vlastný..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Počet pulzov</label><input type="number" id="${id}_u" placeholder="60" oninput="gen()"></div></div>
+      <div class="row r2"><div class="f"><label>Priemer × Dĺžka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="60" oninput="gen()"></div></div><div class="f"></div></div>`;
   } else if(kind==='reentry'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>
       <div class="row r2" style="margin-bottom:6px">
@@ -881,8 +882,10 @@ function collectInterventionItems(){
   }
   if(document.getElementById('c_sw').checked){rows('sw').forEach(row=>{
     const idx=row.dataset.idx,id='sw_'+idx;
+    const sel=document.getElementById(id+'_s');
+    const kat=sel?(sel.value==='vlastný'?(g(id+'_s_c')||'IVL katéter'):sel.value):'Shockwave';
     const p=g(id+'_p'),d=g(id+'_d'),u=g(id+'_u');
-    let s='IVL Shockwave';if(p&&d)s+=' '+p+'×'+d+' mm';if(u)s+=', '+u+' pulzov podľa protokolu';
+    let s='IVL '+kat;if(p&&d)s+=' '+p+'×'+d+' mm';if(u)s+=', '+u+' pulzov podľa protokolu';
     items.push({tp:tp(id),sg:sg(id),desc:s,order:4});
   });}
   if(document.getElementById('c_pta').checked){rows('pta').forEach(row=>{
@@ -923,7 +926,7 @@ function buildAutoZaver(){
   if(document.getElementById('c_vprep').checked)interv.push('vessel preparation');
   if(document.getElementById('c_pred').checked)interv.push('predilatácia');
   if(document.getElementById('c_atek').checked){const t=chk('atek_t');interv.push('aterektómia'+(t.length?' ('+t.join(', ')+')':''));}
-  if(document.getElementById('c_sw').checked)interv.push('IVL Shockwave');
+  if(document.getElementById('c_sw').checked)interv.push('IVL');
   if(document.getElementById('c_reentry').checked){const rrows=document.querySelectorAll('#reentry_list .dyn-row');const rdevs=Array.from(rrows).map(row=>{const idx=row.dataset.idx,sel=document.getElementById('reentry_'+idx+'_s');return sel?(sel.value==='vlastný'?(g('reentry_'+idx+'_s_c')||'reentry katéter'):sel.value):'reentry katéter';});interv.push('reentry katéter ('+(rdevs.length?rdevs.join(', '):'reentry katéter')+')');}
   if(document.getElementById('c_trom').checked)interv.push('trombektómia');
   if(document.getElementById('c_pta').checked)interv.push('PTA');
@@ -1017,6 +1020,8 @@ function collectFullData(){
         item.stent_nazov=ns?(ns.value==='vlastný'?(g(id+'_n_c')||''):ns.value):'';
         item.priemer=g(id+'_p');item.dlzka=g(id+'_d');
       }else if(kind==='ivl'){
+        const ss=document.getElementById(id+'_s');
+        item.nazov=ss?(ss.value==='vlastný'?(g(id+'_s_c')||''):ss.value):'';
         item.priemer=g(id+'_p');item.dlzka=g(id+'_d');item.pulzy=g(id+'_u');
       }else{
         const ss=document.getElementById(id+'_s');
@@ -1429,7 +1434,7 @@ function genDRG(){
   }
   // IVL Shockwave
   if(document.getElementById('c_sw').checked){
-    [...new Set(drgListSuffixes('sw'))].forEach(s=>add('8r804.'+s,'IVL Shockwave (litotripsia rázovou vlnou): '+SL[s]));
+    [...new Set(drgListSuffixes('sw'))].forEach(s=>add('8r804.'+s,'IVL (intravaskulárna litotripsia rázovou vlnou): '+SL[s]));
   }
   // Aterektómia
   if(document.getElementById('c_atek').checked){
@@ -1545,7 +1550,7 @@ function genDRG(){
     if(n>0){
       const nc=suppCount(n,4);
       const nl=n>=5?'5 a viac':n;
-      addS('8r8x3.'+nc,'Počet IVL Shockwave balónov: '+nl+' ks');
+      addS('8r8x3.'+nc,'Počet IVL balónov: '+nl+' ks');
     }
   }
 
@@ -1831,6 +1836,7 @@ function restoreInterventionRows(record){
         sv(id+'_t',it.stent_typ);setSel(id+'_n',it.stent_nazov);
         sv(id+'_p',dia(it));sv(id+'_d',it.dlzka);
       }else if(kind==='balon_ivl'){
+        setSel(id+'_s',it.nazov);
         sv(id+'_p',dia(it));sv(id+'_d',it.dlzka);sv(id+'_u',it.pulzy);
       }else{
         setSel(id+'_s',it.nazov);
