@@ -347,6 +347,11 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <div class="f"><div class="lbl">Kontrastná látka</div>
   <div class="checks"><label class="ck"><input type="checkbox" class="kontr" value="Scanlux 370" onchange="gen()"> Scanlux 370</label><label class="ck"><input type="checkbox" class="kontr" value="Iomeron 350" onchange="gen()"> Iomeron 350</label><label class="ck"><input type="checkbox" class="kontr" value="Ultravist 300" onchange="gen()"> Ultravist 300</label><label class="ck"><input type="checkbox" class="kontr" value="CO2" onchange="gen()"> CO₂</label></div>
 </div>
+<div id="pelv_lat_wrap" style="display:none;margin-top:10px">
+  <div class="f"><label>Lateralita – panvové</label>
+    <select id="pelv_lat" onchange="buildPelvDSA();gen()"><option value="bilat">Bilaterálne (bilat.)</option><option value="sin">Ľavá (l.sin.)</option><option value="dx">Pravá (l.dx.)</option></select>
+  </div>
+</div>
 <div id="pelv_dsa" style="display:none"></div>
 <div id="fem_lat_wrap" style="margin-top:10px">
   <div class="f"><label>Lateralita – femoropopliteálne</label>
@@ -588,6 +593,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     <button class="btn bc" onclick="copyTxt()">📋 Kopírovať</button>
     <button class="btn bp" id="btn_save" onclick="saveToSheets()">💾 Uložiť</button>
     <button class="btn bw" onclick="window.print()">🖨️ Tlač</button>
+    <button class="btn" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1" onclick="novyNalez()">🗒 Nový nález</button>
   </div>
   <div id="cmsg"></div>
 </div>
@@ -760,21 +766,35 @@ function chkVl(id){const s=document.getElementById(id),i=document.getElementById
 function selOpts(arr){return arr.map(o=>`<option>${o}</option>`).join('');}
 function chkBezIntVl(){const r=[...document.querySelectorAll('input[name="bezint_r"]:checked')][0];document.getElementById('bezint_vlastny').style.display=(r&&r.value==='vlastny')?'block':'none';}
 function resetZaver(){zaverManual=false;gen();}
+function novyNalez(){
+  if(!confirm('Začať nový, prázdny nález? Neuložené údaje sa stratia.'))return;
+  window._dirty=false;
+  location.href=location.pathname; // čistá EVK stránka (bez ?edit), vynuluje formulár
+}
 function updateIdPrefix(){document.getElementById('id-prefix').textContent='EVK-'+new Date().getFullYear()+'-';}
 function msg(id,txt,col){const m=document.getElementById(id);m.textContent=txt;m.style.color=col;setTimeout(()=>m.textContent='',3000);}
 
 function buildPelvDSA(){
+  const lat=g('pelv_lat')||'bilat';
   const c=document.getElementById('pelv_dsa');c.innerHTML='';
   const h=document.createElement('div');h.className='st';h.style.marginTop='12px';h.textContent='Panvové riečisko';c.appendChild(h);
   const ao=document.createElement('div');
   ao.innerHTML=`<div style="display:grid;grid-template-columns:58px 1fr;gap:6px;align-items:center;margin-bottom:8px"><div class="bilat-lbl pelv" style="margin-top:0">Aorta</div><select id="v_Ao" onchange="cC('v_Ao');gen()">${SO}</select></div><input type="text" id="v_Ao_c" placeholder="Popis aorty..." oninput="gen()" style="display:none;margin-bottom:8px">`;
   c.appendChild(ao);
   PELV_VESSELS.forEach(([lbl,base])=>{
-    const row=document.createElement('div');row.className='bilat-row';
-    row.innerHTML=`<div class="bilat-lbl pelv">${lbl}</div>
-      <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${SO}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>
-      <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${SO}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
-    c.appendChild(row);
+    if(lat==='bilat'){
+      const row=document.createElement('div');row.className='bilat-row';
+      row.innerHTML=`<div class="bilat-lbl pelv">${lbl}</div>
+        <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${SO}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>
+        <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${SO}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
+      c.appendChild(row);
+    } else {
+      const sid=lat==='sin'?base+'_s':base+'_d';
+      const row=document.createElement('div');
+      row.style.cssText='display:grid;grid-template-columns:58px 1fr;gap:6px;margin-bottom:8px;align-items:center';
+      row.innerHTML=`<div class="bilat-lbl pelv">${lbl}</div><div><select id="${sid}" onchange="cC('${sid}');gen()">${SO}</select><input type="text" id="${sid}_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
+      c.appendChild(row);
+    }
   });
 }
 
@@ -804,6 +824,7 @@ function buildFemDSA(){
 
 function updateTerritory(){
   const t=g('territory'),sp=t==='pelv'||t==='both',sf=t==='fem'||t==='both';
+  document.getElementById('pelv_lat_wrap').style.display=sp?'block':'none';
   document.getElementById('pelv_dsa').style.display=sp?'block':'none';
   document.getElementById('fem_lat_wrap').style.display=sf?'block':'none';
   document.getElementById('fem_dsa').style.display=sf?'block':'none';
@@ -1749,6 +1770,13 @@ function applyDSAfromRecord(record){
       const hasS=femKeys.some(k=>/_s(_c)?$/.test(k)),hasD=femKeys.some(k=>/_d(_c)?$/.test(k));
       sv('fem_lat',hasS&&hasD?'bilat':hasS?'sin':'dx');
       buildFemDSA();
+    }
+    // Panvová lateralita — odvodíme z uložených kľúčov (v_AIC/AIE/AII), aorta je centrálna
+    const pelvKeys=Object.keys(dsa).filter(k=>k.indexOf('v_')===0&&k.indexOf('v_Ao')!==0);
+    if(pelvKeys.length){
+      const hasS=pelvKeys.some(k=>/_s(_c)?$/.test(k)),hasD=pelvKeys.some(k=>/_d(_c)?$/.test(k));
+      sv('pelv_lat',hasS&&hasD?'bilat':hasS?'sin':'dx');
+      buildPelvDSA();
     }
     Object.keys(dsa).forEach(k=>{sv(k,dsa[k]);});
     // custom text fields
