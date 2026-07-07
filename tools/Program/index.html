@@ -332,15 +332,21 @@ async function zaradZoZasobnika(id){
 }
 
 // ── Stav výkonu počas dňa (čaká → na sále → hotový) ─────────
+// Dĺžka výkonu čitateľne: do 60 min "45 min", inak "3 h 46 min"
+function fmtTrvanie(m){
+  if(m<60)return m+' min';
+  const h=Math.floor(m/60),mm=m%60;
+  return mm?h+' h '+mm+' min':h+' h';
+}
 function stavLabel(row){
   const sv=row.stav_vykonu||'na_oddeleni';
   if(sv==='na_sale'&&row.vykon_start){
     const m=Math.max(0,Math.round((Date.now()-new Date(row.vykon_start))/60000));
-    return '💉 na sále • '+m+' min';
+    return '💉 na sále • '+fmtTrvanie(m);
   }
   if(sv==='hotovy'&&row.vykon_start&&row.vykon_koniec){
     const m=Math.max(0,Math.round((new Date(row.vykon_koniec)-new Date(row.vykon_start))/60000));
-    return '✅ hotový • '+m+' min';
+    return '✅ hotový • '+fmtTrvanie(m);
   }
   return STAVY[sv];
 }
