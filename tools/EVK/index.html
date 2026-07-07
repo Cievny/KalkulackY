@@ -649,6 +649,8 @@ const OPTS={balon:['Jade','Armada','Passeo','CrossTella','vlastný'],balon_deb:[
 const STENT_TYP=['balónexpandibilný','samoexpandibilný','liekový (DES)'];
 const VESSEL_OPTS=['– tepna –','AIC l.sin.','AIC l.dx.','AIE l.sin.','AIE l.dx.','AII l.sin.','AII l.dx.','AFC l.sin.','AFC l.dx.','APF l.sin.','APF l.dx.','AFS l.sin.','AFS l.dx.','P1 l.sin.','P1 l.dx.','P2 l.sin.','P2 l.dx.','P3 l.sin.','P3 l.dx.','ATA l.sin.','ATA l.dx.','ATP l.sin.','ATP l.dx.','AFib l.sin.','AFib l.dx.','TTF l.sin.','TTF l.dx.'];
 const SEG_OPTS=['–','proximálny','stredný','distálny','celý'];
+const SEG_SEG=['proximálny','stredný','distálny','celý','odstup'];
+const SEG_ADV={'proximálny':'proximálne','stredný':'v strednej tretine','distálny':'distálne','celý':'v celom priebehu','odstup':'v odstupe'};
 const PELV_VESSELS=[['AIC','v_AIC'],['AIE','v_AIE'],['AII','v_AII']];
 const FEM_GROUPS=[{st:'Femorálne riečisko',vs:[['AFC','f_AFC'],['APF','f_APF'],['AFS','f_AFS']]},{st:'Popliteálne riečisko',vs:[['P1','p_P1'],['P2','p_P2'],['P3','p_P3']]},{st:'Predkolenie',vs:[['ATA','d_ATA'],['ATP','d_ATP'],['AFib','d_AFib'],['TTF','d_TTF']]}];
 let cnts={}, zaverManual=false, locCnt={};
@@ -757,6 +759,31 @@ function calcBMI(){
 }
 function cC(id){const s=document.getElementById(id),i=document.getElementById(id+'_c');if(i)i.style.display=s&&s.value==='vlastný popis'?'block':'none';}
 function gV(id){const s=document.getElementById(id);if(!s)return'–';return s.value==='vlastný popis'?(g(id+'_c')||'(vlastný popis)'):s.value;}
+
+// Viacero segmentov v jednej tepne (rôzna závažnosť stenózy v každom segmente)
+let segCnt={};
+function segUI(sid){return `<div id="${sid}_segs"></div><button type="button" onclick="addSeg('${sid}')" style="margin-top:3px;font-size:10.5px;padding:1px 8px;border:1px dashed #93c5fd;border-radius:5px;background:#eff6ff;color:#1e40af;cursor:pointer">＋ segment</button>`;}
+function addSeg(sid,silent){
+  if(segCnt[sid]===undefined)segCnt[sid]=0;
+  const n=segCnt[sid]++;const c=document.getElementById(sid+'_segs');if(!c)return;
+  const div=document.createElement('div');div.className='seg-row';div.dataset.sn=n;div.style.cssText='display:flex;gap:4px;margin-top:3px;align-items:center';
+  div.innerHTML=`<select id="${sid}_g${n}_seg" onchange="gen()" style="font-size:11px;flex:0 0 88px">${SEG_SEG.map(o=>`<option>${o}</option>`).join('')}</select><select id="${sid}_g${n}_val" onchange="cC('${sid}_g${n}_val');gen()" style="font-size:11px;flex:1">${SO}</select><input type="text" id="${sid}_g${n}_val_c" placeholder="Popis..." oninput="gen()" style="display:none;font-size:11px"><button type="button" onclick="delSeg('${sid}',${n})" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:5px;padding:2px 7px;cursor:pointer;flex:0 0 auto">✕</button>`;
+  c.appendChild(div);if(!silent)gen();
+}
+function delSeg(sid,n){const r=document.querySelector('#'+sid+'_segs [data-sn="'+n+'"]');if(r)r.remove();gen();}
+function segExtras(sid){
+  const out=[],c=document.getElementById(sid+'_segs');if(!c)return out;
+  c.querySelectorAll('.seg-row').forEach(r=>{const n=r.dataset.sn;const seg=g(sid+'_g'+n+'_seg');let val=g(sid+'_g'+n+'_val');if(val==='vlastný popis')val=g(sid+'_g'+n+'_val_c')||'(vlastný popis)';out.push({seg,val});});
+  return out;
+}
+// Zloží popis jednej tepny: hlavný nález + prípadné segmentové nálezy s rôznou závažnosťou
+function vesselFinding(sid){
+  const NORM='bez závažnej stenózy';
+  const main=gV(sid),ex=segExtras(sid),parts=[];
+  if(main&&main!=='–'&&main!==NORM)parts.push(main);
+  ex.forEach(e=>{if(!e.val||e.val==='–')return;const adv=SEG_ADV[e.seg]||'';parts.push((adv?adv+' ':'')+e.val);});
+  return {abn:parts.length>0,txt:parts.join(', ')};
+}
 function vN(id){const s=document.getElementById(id);if(!s)return'';return s.value==='vlastný'?(g(id+'_c')||''):s.value;}
 function vVodic(){document.getElementById('vodic_c').style.display=g('vodic')==='vlastný'?'block':'none';}
 function toggleRotarex(){document.getElementById('rotarex_detail').style.display=document.getElementById('trom_rotarex').checked?'block':'none';}
@@ -779,20 +806,20 @@ function buildPelvDSA(){
   const c=document.getElementById('pelv_dsa');c.innerHTML='';
   const h=document.createElement('div');h.className='st';h.style.marginTop='12px';h.textContent='Panvové riečisko';c.appendChild(h);
   const ao=document.createElement('div');
-  ao.innerHTML=`<div style="display:grid;grid-template-columns:58px 1fr;gap:6px;align-items:center;margin-bottom:8px"><div class="bilat-lbl pelv" style="margin-top:0">Aorta</div><select id="v_Ao" onchange="cC('v_Ao');gen()">${SO}</select></div><input type="text" id="v_Ao_c" placeholder="Popis aorty..." oninput="gen()" style="display:none;margin-bottom:8px">`;
+  ao.innerHTML=`<div style="display:grid;grid-template-columns:58px 1fr;gap:6px;align-items:start;margin-bottom:8px"><div class="bilat-lbl pelv" style="margin-top:0">Aorta</div><div><select id="v_Ao" onchange="cC('v_Ao');gen()">${SO}</select><input type="text" id="v_Ao_c" placeholder="Popis aorty..." oninput="gen()" style="display:none;margin-top:3px">${segUI('v_Ao')}</div></div>`;
   c.appendChild(ao);
   PELV_VESSELS.forEach(([lbl,base])=>{
     if(lat==='bilat'){
       const row=document.createElement('div');row.className='bilat-row';
       row.innerHTML=`<div class="bilat-lbl pelv">${lbl}</div>
-        <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${SO}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>
-        <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${SO}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
+        <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${SO}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(base+'_d')}</div>
+        <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${SO}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(base+'_s')}</div>`;
       c.appendChild(row);
     } else {
       const sid=lat==='sin'?base+'_s':base+'_d';
       const row=document.createElement('div');
-      row.style.cssText='display:grid;grid-template-columns:58px 1fr;gap:6px;margin-bottom:8px;align-items:center';
-      row.innerHTML=`<div class="bilat-lbl pelv">${lbl}</div><div><select id="${sid}" onchange="cC('${sid}');gen()">${SO}</select><input type="text" id="${sid}_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
+      row.style.cssText='display:grid;grid-template-columns:58px 1fr;gap:6px;margin-bottom:8px;align-items:start';
+      row.innerHTML=`<div class="bilat-lbl pelv">${lbl}</div><div><select id="${sid}" onchange="cC('${sid}');gen()">${SO}</select><input type="text" id="${sid}_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(sid)}</div>`;
       c.appendChild(row);
     }
   });
@@ -808,14 +835,14 @@ function buildFemDSA(){
       if(lat==='bilat'){
         const row=document.createElement('div');row.className='bilat-row';
         row.innerHTML=`<div class="bilat-lbl">${lbl}</div>
-          <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${so}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>
-          <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${so}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
+          <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${so}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(base+'_d')}</div>
+          <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${so}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(base+'_s')}</div>`;
         c.appendChild(row);
       } else {
         const sid=lat==='sin'?base+'_s':base+'_d';
         const row=document.createElement('div');
-        row.style.cssText='display:grid;grid-template-columns:58px 1fr;gap:6px;margin-bottom:8px;align-items:center';
-        row.innerHTML=`<div class="bilat-lbl">${lbl}</div><div><select id="${sid}" onchange="cC('${sid}');gen()">${so}</select><input type="text" id="${sid}_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px"></div>`;
+        row.style.cssText='display:grid;grid-template-columns:58px 1fr;gap:6px;margin-bottom:8px;align-items:start';
+        row.innerHTML=`<div class="bilat-lbl">${lbl}</div><div><select id="${sid}" onchange="cC('${sid}');gen()">${so}</select><input type="text" id="${sid}_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(sid)}</div>`;
         c.appendChild(row);
       }
     });
@@ -1051,6 +1078,10 @@ function collectFullData(){
       dsa[f]=val;
     }
   });
+  // segmentové nálezy (viac segmentov s rôznou závažnosťou v jednej tepne)
+  const segMap={};
+  dsaFields.forEach(f=>{const ex=segExtras(f);if(ex.length)segMap[f]=ex;});
+  if(Object.keys(segMap).length)dsa._segs=segMap;
   const interventionDetail=[];
   function collectList(pfx,kind){
     document.querySelectorAll('#'+pfx+'_list .dyn-row').forEach(row=>{
@@ -1300,14 +1331,14 @@ function gen(){
   // DSA: zoskupené podľa strany, vypisuje sa len patológia; zdravé tepny zhrnie jedna veta
   const NORM='bez závažnej stenózy';
   if(sp){
+    const platL=g('pelv_lat')||'bilat';
     L.push('DSA NÁLEZ – Panvové riečisko:');
-    const ao=gV('v_Ao');
-    if(ao!==NORM)L.push('Aorta – '+ao+'.');
-    const pdx=[],psin=[];let pnorm=(ao===NORM)?1:0;
+    const aoF=vesselFinding('v_Ao');
+    if(aoF.abn)L.push('Aorta – '+aoF.txt+'.');
+    const pdx=[],psin=[];let pnorm=aoF.abn?0:1;
     PELV_VESSELS.forEach(([lbl,base])=>{
-      const vd=gV(base+'_d'),vs=gV(base+'_s');
-      if(vd!==NORM)pdx.push(lbl+' l.dx. – '+vd);else pnorm++;
-      if(vs!==NORM)psin.push(lbl+' l.sin. – '+vs);else pnorm++;
+      if(platL!=='sin'){const fd=vesselFinding(base+'_d');if(fd.abn)pdx.push(lbl+' l.dx. – '+fd.txt);else pnorm++;}
+      if(platL!=='dx'){const fs=vesselFinding(base+'_s');if(fs.abn)psin.push(lbl+' l.sin. – '+fs.txt);else pnorm++;}
     });
     if(pdx.length)L.push(pdx.join(', ')+'.');
     if(psin.length)L.push(psin.join(', ')+'.');
@@ -1320,8 +1351,8 @@ function gen(){
     const fdx=[],fsin=[];let fnorm=0;
     FEM_GROUPS.forEach(group=>{
       group.vs.forEach(([lbl,base])=>{
-        if(lat!=='sin'){const vd=gV(base+'_d');if(vd!==NORM)fdx.push(lbl+' l.dx. – '+vd);else fnorm++;}
-        if(lat!=='dx'){const vs=gV(base+'_s');if(vs!==NORM)fsin.push(lbl+' l.sin. – '+vs);else fnorm++;}
+        if(lat!=='sin'){const fd=vesselFinding(base+'_d');if(fd.abn)fdx.push(lbl+' l.dx. – '+fd.txt);else fnorm++;}
+        if(lat!=='dx'){const fs=vesselFinding(base+'_s');if(fs.abn)fsin.push(lbl+' l.sin. – '+fs.txt);else fnorm++;}
       });
     });
     if(lat==='bilat'){
@@ -1790,21 +1821,28 @@ function applyDSAfromRecord(record){
   // DSA hodnoty zo JSON
   try{
     const dsa=typeof record.dsa_nalez==='string'?JSON.parse(record.dsa_nalez):(record.dsa_nalez||{});
+    const segMap=dsa._segs||{};
+    const segSids=Object.keys(segMap);
+    // pri odvodzovaní laterality zohľadni aj tepny, kde je patológia iba v segmente
+    const allKeys=Object.keys(dsa).filter(k=>k!=='_segs').concat(segSids);
     // Fem lateralita — stĺpec fem_lat v DB neexistuje, odvodíme z uložených DSA kľúčov
-    const femKeys=Object.keys(dsa).filter(k=>/^[fpd]_/.test(k));
+    const femKeys=allKeys.filter(k=>/^[fpd]_/.test(k));
     if(femKeys.length){
       const hasS=femKeys.some(k=>/_s(_c)?$/.test(k)),hasD=femKeys.some(k=>/_d(_c)?$/.test(k));
       sv('fem_lat',hasS&&hasD?'bilat':hasS?'sin':'dx');
       buildFemDSA();
     }
     // Panvová lateralita — odvodíme z uložených kľúčov (v_AIC/AIE/AII), aorta je centrálna
-    const pelvKeys=Object.keys(dsa).filter(k=>k.indexOf('v_')===0&&k.indexOf('v_Ao')!==0);
+    const pelvKeys=allKeys.filter(k=>k.indexOf('v_')===0&&k.indexOf('v_Ao')!==0);
     if(pelvKeys.length){
       const hasS=pelvKeys.some(k=>/_s(_c)?$/.test(k)),hasD=pelvKeys.some(k=>/_d(_c)?$/.test(k));
       sv('pelv_lat',hasS&&hasD?'bilat':hasS?'sin':'dx');
       buildPelvDSA();
     }
-    Object.keys(dsa).forEach(k=>{sv(k,dsa[k]);});
+    Object.keys(dsa).forEach(k=>{if(k!=='_segs')sv(k,dsa[k]);});
+    // obnova segmentových nálezov (viac segmentov v jednej tepne)
+    const setSelSeg=(id,val)=>{const el=document.getElementById(id);if(!el||!val)return;if([...el.options].some(o=>o.value===val)){el.value=val;return;}const vl=[...el.options].find(o=>o.value==='vlastný popis');if(vl){el.value='vlastný popis';const c=document.getElementById(id+'_c');if(c){c.value=val;c.style.display='block';}}};
+    segSids.forEach(sid=>{(segMap[sid]||[]).forEach(e=>{addSeg(sid,true);const n=segCnt[sid]-1;sv(sid+'_g'+n+'_seg',e.seg);setSelSeg(sid+'_g'+n+'_val',e.val);});});
     // custom text fields
     Object.keys(dsa).forEach(k=>{
       if(dsa[k]==='vlastný popis'||dsa[k]==='iné'){
