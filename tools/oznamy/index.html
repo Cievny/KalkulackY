@@ -36,6 +36,22 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;max-width:86
 .empty{padding:26px;text-align:center;color:#9ca3af;font-size:13.5px;}
 .msg{font-size:12.5px;font-weight:600;margin-left:10px;}
 details.exp-box summary{font-size:13px;font-weight:700;color:#6b7280;cursor:pointer;padding:8px 0;user-select:none;}
+.o-sec{margin-top:11px;padding-top:10px;border-top:1px dashed #e5e9f5;}
+.o-sec-h{font-size:11.5px;font-weight:800;color:#6b7280;letter-spacing:.3px;margin-bottom:7px;text-transform:uppercase;}
+.komm{font-size:12.5px;color:#374151;padding:6px 0;border-bottom:1px solid #f2f4f9;line-height:1.45;word-break:break-word;}
+.komm:last-child{border-bottom:none;}
+.komm .kmeta{font-size:10.5px;color:#9ca3af;margin-top:2px;}
+.komm .kdel{margin-left:7px;color:#dc2626;cursor:pointer;font-weight:700;text-decoration:none;}
+.kadd{display:flex;gap:6px;margin-top:8px;}
+.kadd input{flex:1;padding:7px 10px;border:1.5px solid #dde1ea;border-radius:7px;font-size:12.5px;outline:none;background:#fff;}
+.kadd input:focus{border-color:#3b82f6;}
+.kadd button{padding:7px 13px;background:#1e40af;color:#fff;border:none;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;}
+.pchip{display:inline-flex;align-items:center;gap:5px;background:#eef6ff;border:1px solid #cfe0ff;color:#1e40af;border-radius:20px;padding:3px 11px;font-size:12px;font-weight:600;margin:0 6px 6px 0;}
+.pchip .pdel{color:#dc2626;cursor:pointer;font-weight:700;}
+.pbtn{padding:7px 15px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;}
+.pbtn.off{background:#fff;color:#1e40af;border:1.5px solid #93c5fd;}
+.pbtn:disabled{background:#e5e7eb;color:#9ca3af;cursor:not-allowed;}
+.pfull{font-size:12px;font-weight:700;color:#b45309;margin-left:8px;}
 </style>
 </head>
 <body>
@@ -52,6 +68,11 @@ details.exp-box summary{font-size:13px;font-weight:700;color:#6b7280;cursor:poin
     <div class="add-opts">
       <label><input type="checkbox" id="n_dolezite"> 🔴 Dôležité (navrchu, zvýraznené)</label>
       <label>Platí do: <input type="date" id="n_platne_do" title="po tomto dátume sa oznam presunie medzi staršie"></label>
+    </div>
+    <div class="add-opts">
+      <label><input type="checkbox" id="n_komentare"> 💬 Povoliť komentáre</label>
+      <label><input type="checkbox" id="n_prihlas" onchange="document.getElementById('n_kap_wrap').style.display=this.checked?'inline-flex':'none'"> ✍️ Prihlasovanie (workshop / akcia)</label>
+      <label id="n_kap_wrap" style="display:none">Kapacita: <input type="number" id="n_kapacita" min="1" placeholder="napr. 20" style="width:84px;padding:6px 8px;border:1.5px solid #bfdbfe;border-radius:7px;font-size:12.5px;background:#fff"></label>
     </div>
     <div class="add-opts">
       <label style="flex:1">📎 Príloha: <input type="file" id="n_file" accept=".xls,.xlsx,.csv,.pdf,.doc,.docx,image/*" style="font-size:12px"></label>
@@ -74,7 +95,10 @@ const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 const H=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
 const BUCKET='oznamy-prilohy';
 
-let OZNAMY=[];
+let OZNAMY=[],REAKCIE={};
+const ADMINS=['vincze.lukas@gmail.com','oira@cievny.sk'];
+function myMail(){return (window.sbUserEmail&&window.sbUserEmail())||'';}
+function jeAdmin(){return ADMINS.includes(myMail());}
 function g(id){return (document.getElementById(id)||{}).value||'';}
 function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function shortMail(e){return (e||'').split('@')[0];}
@@ -87,6 +111,11 @@ async function load(){
     const r=await fetch(`${SB_URL}/rest/v1/oznamy?order=created_at.desc&limit=300`,{headers:H()});
     if(!r.ok){document.getElementById('oznamy_list').innerHTML='<div class="empty">⚠️ Tabuľka oznamy nie je v Supabase — spustite priložený SQL.</div>';return;}
     OZNAMY=await r.json();
+    REAKCIE={};
+    try{
+      const rr=await fetch(`${SB_URL}/rest/v1/oznam_reakcie?order=created_at.asc&limit=3000`,{headers:H()});
+      if(rr.ok)(await rr.json()).forEach(x=>{(REAKCIE[x.oznam_id]=REAKCIE[x.oznam_id]||[]).push(x);});
+    }catch(e){}
   }catch(e){msg('⚠️ Chyba spojenia','#dc2626');return;}
   render();
 }
@@ -108,8 +137,50 @@ function oznamEl(o){
       <span>👤 ${o.created_by?escHtml(shortMail(o.created_by)):'–'}</span>
       <span>🗓 ${datum}</span>
       ${o.platne_do?'<span>⏳ platí do '+fmtD(o.platne_do)+'</span>':''}
-    </div>`;
+    </div>
+    ${o.povolit_prihlasovanie?prihlaskySekcia(o):''}
+    ${o.povolit_komentare?komentareSekcia(o):''}`;
   return div;
+}
+
+function reakcieTyp(oznamId,typ){return (REAKCIE[oznamId]||[]).filter(r=>r.typ===typ);}
+function mozeZmazat(o,r){const me=myMail();return jeAdmin()||r.created_by===me||o.created_by===me;}
+
+function prihlaskySekcia(o){
+  const list=reakcieTyp(o.id,'prihlaska');
+  const me=myMail();
+  const mine=list.find(r=>r.created_by===me);
+  const kap=o.kapacita?parseInt(o.kapacita):0;
+  const full=kap>0&&list.length>=kap&&!mine;
+  const chips=list.map(r=>{
+    const nm=escHtml(r.meno||shortMail(r.created_by||''));
+    const del=mozeZmazat(o,r)?`<span class="pdel" onclick="delReakcia('${r.id}')" title="odhlásiť">✕</span>`:'';
+    return `<span class="pchip">✍️ ${nm}${del}</span>`;
+  }).join('');
+  const btn=mine
+    ? `<button class="pbtn off" onclick="odhlasit('${mine.id}')">Odhlásiť sa</button>`
+    : `<button class="pbtn" ${full?'disabled':''} onclick="prihlasit('${o.id}')">＋ Prihlásiť sa</button>`;
+  return `<div class="o-sec">
+    <div class="o-sec-h">✍️ Prihlásení (${list.length}${kap>0?' / '+kap:''})</div>
+    <div>${chips||'<span style="font-size:12px;color:#9ca3af">Zatiaľ nikto — buďte prvý.</span>'}</div>
+    <div style="margin-top:8px">${btn}${full?'<span class="pfull">Kapacita naplnená</span>':''}</div>
+  </div>`;
+}
+
+function komentareSekcia(o){
+  const list=reakcieTyp(o.id,'komentar');
+  const items=list.map(r=>{
+    const del=mozeZmazat(o,r)?`<a class="kdel" onclick="delReakcia('${r.id}')">zmazať</a>`:'';
+    return `<div class="komm">${escHtml(r.text||'')}<div class="kmeta">👤 ${escHtml(shortMail(r.created_by||'–'))} · ${fmtD(r.created_at)}${del}</div></div>`;
+  }).join('');
+  return `<div class="o-sec">
+    <div class="o-sec-h">💬 Komentáre (${list.length})</div>
+    <div>${items||'<span style="font-size:12px;color:#9ca3af">Žiadne komentáre.</span>'}</div>
+    <div class="kadd">
+      <input type="text" id="km_${o.id}" placeholder="Napíšte komentár…" maxlength="500" onkeydown="if(event.key==='Enter')addKomentar('${o.id}')">
+      <button onclick="addKomentar('${o.id}')">Pridať</button>
+    </div>
+  </div>`;
 }
 
 function render(){
@@ -132,11 +203,15 @@ async function addOznam(){
   const fInp=document.getElementById('n_file');
   const f=fInp.files&&fInp.files[0];
   if(!nadpis&&!text&&!f){msg('⚠️ Napíšte nadpis, text alebo priložte súbor','#b45309');return;}
+  const prihlas=document.getElementById('n_prihlas').checked;
   const body={
     nadpis:nadpis||null,
     text:text||null,
     dolezite:document.getElementById('n_dolezite').checked,
-    platne_do:g('n_platne_do')||null
+    platne_do:g('n_platne_do')||null,
+    povolit_komentare:document.getElementById('n_komentare').checked,
+    povolit_prihlasovanie:prihlas,
+    kapacita:(prihlas&&g('n_kapacita'))?parseInt(g('n_kapacita')):null
   };
   try{
     if(f){
@@ -152,8 +227,9 @@ async function addOznam(){
     }
     const r=await fetch(`${SB_URL}/rest/v1/oznamy`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
     if(r.ok){
-      ['n_nadpis','n_text','n_platne_do'].forEach(i=>document.getElementById(i).value='');
-      document.getElementById('n_dolezite').checked=false;
+      ['n_nadpis','n_text','n_platne_do','n_kapacita'].forEach(i=>document.getElementById(i).value='');
+      ['n_dolezite','n_komentare','n_prihlas'].forEach(i=>document.getElementById(i).checked=false);
+      document.getElementById('n_kap_wrap').style.display='none';
       fInp.value='';
       msg('✓ Zverejnené','#1d6f42');
       await load();
@@ -182,9 +258,47 @@ async function delOznam(id){
   }catch(e){msg('❌ Chyba siete','#dc2626');}
 }
 
+async function postReakcia(body){
+  const r=await fetch(`${SB_URL}/rest/v1/oznam_reakcie`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
+  if(!r.ok){msg('❌ Chyba: '+r.status+(r.status===404?' (spustite SQL pre oznam_reakcie)':''),'#dc2626');return false;}
+  return true;
+}
+
+async function addKomentar(oznamId){
+  const inp=document.getElementById('km_'+oznamId);
+  const t=(inp&&inp.value||'').trim();
+  if(!t)return;
+  if(await postReakcia({oznam_id:oznamId,typ:'komentar',text:t}))await load();
+}
+
+async function prihlasit(oznamId){
+  const o=OZNAMY.find(x=>x.id===oznamId);
+  const already=reakcieTyp(oznamId,'prihlaska').some(r=>r.created_by===myMail());
+  if(already)return;
+  // voliteľné celé meno (ak sa niekto prihlasuje a chce uviesť plné meno)
+  const meno=(prompt('Prihlásiť sa'+(o&&o.nadpis?' – '+o.nadpis:'')+'.\nMeno (nepovinné, inak sa použije váš login):','')||'').trim();
+  if(await postReakcia({oznam_id:oznamId,typ:'prihlaska',meno:meno||null}))await load();
+}
+
+async function odhlasit(reakciaId){return delReakcia(reakciaId,true);}
+
+async function delReakcia(id,skipConfirm){
+  if(!skipConfirm&&!confirm('Naozaj zmazať?'))return;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/oznam_reakcie?id=eq.${id}`,{method:'DELETE',headers:H()});
+    if(r.ok)await load();else msg('❌ Nepodarilo sa zmazať: '+r.status,'#dc2626');
+  }catch(e){msg('❌ Chyba siete','#dc2626');}
+}
+
 load();
 // oznamy sa obnovujú každú minútu (nástenka môže byť otvorená celý deň)
-setInterval(()=>{if(document.visibilityState==='visible')load();},60000);
+// – preskoč, ak práve niekto píše komentár / prihlášku (aby sa mu text nezmazal)
+setInterval(()=>{
+  if(document.visibilityState!=='visible')return;
+  const a=document.activeElement;
+  if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')&&a.value.trim())return;
+  load();
+},60000);
 </script>
 </body>
 </html>

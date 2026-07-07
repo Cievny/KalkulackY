@@ -253,6 +253,23 @@ ALTER TABLE oznamy ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "auth all oznamy" ON oznamy;
 CREATE POLICY "auth all oznamy" ON oznamy FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
+-- Oznamy: komentáre + prihlasovanie na akcie/workshopy (finálne RLS nastaví spustit_na_konci.sql)
+ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_komentare BOOLEAN DEFAULT false;
+ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;
+ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS kapacita INT;
+CREATE TABLE IF NOT EXISTS oznam_reakcie (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  oznam_id UUID NOT NULL REFERENCES oznamy(id) ON DELETE CASCADE,
+  typ TEXT NOT NULL DEFAULT 'komentar',   -- 'komentar' | 'prihlaska'
+  text TEXT,
+  meno TEXT,
+  created_by TEXT DEFAULT (auth.jwt()->>'email'),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE oznam_reakcie ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "auth all oznam_reakcie" ON oznam_reakcie;
+CREATE POLICY "auth all oznam_reakcie" ON oznam_reakcie FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

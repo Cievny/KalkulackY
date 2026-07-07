@@ -82,6 +82,20 @@ DROP POLICY IF EXISTS "povoleni manage" ON povoleni_pouzivatelia;
 CREATE POLICY "povoleni manage" ON povoleni_pouzivatelia FOR ALL TO authenticated
   USING (je_admin()) WITH CHECK (je_admin());
 
+-- Oznamy: komentáre + prihlasovanie (workshopy/akcie) + tabuľka reakcií
+ALTER TABLE IF EXISTS oznamy ADD COLUMN IF NOT EXISTS povolit_komentare BOOLEAN DEFAULT false;
+ALTER TABLE IF EXISTS oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;
+ALTER TABLE IF EXISTS oznamy ADD COLUMN IF NOT EXISTS kapacita INT;
+CREATE TABLE IF NOT EXISTS oznam_reakcie (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  oznam_id UUID NOT NULL REFERENCES oznamy(id) ON DELETE CASCADE,
+  typ TEXT NOT NULL DEFAULT 'komentar',   -- 'komentar' | 'prihlaska'
+  text TEXT,
+  meno TEXT,                              -- voliteľné celé meno prihláseného
+  created_by TEXT DEFAULT (auth.jwt()->>'email'),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- Prepni VŠETKY dátové tabuľky na role. Najprv zmaž všetky staré politiky,
 -- potom vytvor 4 samostatné (SELECT / INSERT / UPDATE / DELETE):
 --   čítať smie každý povolený; zapisovať povolený OKREM TV konta;
@@ -91,7 +105,7 @@ DECLARE t text; pol record; write_expr text;
 BEGIN
   FOR t IN SELECT unnest(ARRAY[
     'evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
-    'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy','objednavky_dni','objednavky',
+    'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy','oznam_reakcie','objednavky_dni','objednavky',
     'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup','cz_cas_followup','cz_ideas'
   ]) LOOP
     IF to_regclass('public.'||t) IS NOT NULL THEN
