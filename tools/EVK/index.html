@@ -651,7 +651,7 @@ const VESSEL_OPTS=['– tepna –','AIC l.sin.','AIC l.dx.','AIE l.sin.','AIE l.
 const SEG_OPTS=['–','proximálny','stredný','distálny','celý'];
 const PELV_VESSELS=[['AIC','v_AIC'],['AIE','v_AIE'],['AII','v_AII']];
 const FEM_GROUPS=[{st:'Femorálne riečisko',vs:[['AFC','f_AFC'],['APF','f_APF'],['AFS','f_AFS']]},{st:'Popliteálne riečisko',vs:[['P1','p_P1'],['P2','p_P2'],['P3','p_P3']]},{st:'Predkolenie',vs:[['ATA','d_ATA'],['ATP','d_ATP'],['AFib','d_AFib'],['TTF','d_TTF']]}];
-let cnts={}, zaverManual=false;
+let cnts={}, zaverManual=false, locCnt={};
 
 function vsel(){return VESSEL_OPTS.map(o=>`<option>${o}</option>`).join('');}
 function sgsel(){return SEG_OPTS.map(o=>`<option>${o}</option>`).join('');}
@@ -871,11 +871,30 @@ function addItem(pfx,kind,silent){
     const lbl=kind==='balon_vprep'?'Device':'Balón';
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
       <div class="row r2" style="margin-bottom:6px"><div class="f"><label>${lbl}</label><select id="${id}_s" onchange="chkVl('${id}_s');gen()">${selOpts(opts)}</select><input type="text" id="${id}_s_c" placeholder="Vlastný..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Priemer × Dĺžka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="80" oninput="gen()"></div></div></div>
-      <div class="row r2"><div class="f"><label>Inflácia (min)</label><input type="number" id="${id}_i" step="0.5" placeholder="3" oninput="gen()"></div><div class="f"><label>Tlak (ATM)</label><input type="number" id="${id}_a" placeholder="8" oninput="gen()"></div></div>`;
+      <div class="row r2"><div class="f"><label>Inflácia (min)</label><input type="number" id="${id}_i" step="0.5" placeholder="3" oninput="gen()"></div><div class="f"><label>Tlak (ATM)</label><input type="number" id="${id}_a" placeholder="8" oninput="gen()"></div></div>
+      <div id="${id}_locs"></div>
+      <button type="button" onclick="addLoc('${id}')" style="margin-top:6px;font-size:11px;padding:3px 9px;border:1px dashed #93c5fd;border-radius:6px;background:#eff6ff;color:#1e40af;cursor:pointer">＋ ten istý balón v ďalšej lokalite</button>`;
   }
   cont.appendChild(div);if(!silent)gen();
 }
 function delItem(pfx,idx){const r=document.querySelector('#'+pfx+'_list [data-idx="'+idx+'"]');if(r)r.remove();gen();}
+
+// Jeden balón použitý vo viacerých lokalitách – pridá ďalšiu tepnu/segment k existujúcemu balónu
+function addLoc(id,silent){
+  if(locCnt[id]===undefined)locCnt[id]=0;
+  const li=locCnt[id]++;
+  const cont=document.getElementById(id+'_locs');if(!cont)return;
+  const div=document.createElement('div');div.className='loc-row';div.dataset.li=li;div.style.cssText='margin-top:6px;padding-top:6px;border-top:1px dashed #dbeafe';
+  div.innerHTML=`<div class="row r2"><div class="f"><label>＋ Tepna (tá istá inflácia)</label><select id="${id}_l${li}_tp" onchange="gen()">${vsel()}</select></div><div class="f"><label>Segment</label><div style="display:flex;gap:6px"><select id="${id}_l${li}_sg" onchange="gen()" style="flex:1">${sgsel()}</select><button type="button" onclick="delLoc('${id}',${li})" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:0 10px;cursor:pointer;font-weight:700">✕</button></div></div></div>`;
+  cont.appendChild(div);if(!silent)gen();
+}
+function delLoc(id,li){const r=document.querySelector('#'+id+'_locs [data-li="'+li+'"]');if(r)r.remove();gen();}
+// Vráti extra lokality balónu (bez primárnej) ako [{tp,sg}]
+function extraLocs(id){
+  const out=[],c=document.getElementById(id+'_locs');if(!c)return out;
+  c.querySelectorAll('.loc-row').forEach(lr=>{const li=lr.dataset.li,sgv=g(id+'_l'+li+'_sg');out.push({tp:g(id+'_l'+li+'_tp'),sg:sgv&&sgv!=='–'?sgv:''});});
+  return out;
+}
 
 // Collect all tepna-based items for grouped output
 function collectInterventionItems(){
@@ -884,16 +903,18 @@ function collectInterventionItems(){
   function tp(id){return g(id+'_tp');}
   function sg(id){const v=g(id+'_sg');return v&&v!=='–'?v:'';}
   function balloonDesc(id,label,nm){const p=g(id+'_p'),d=g(id+'_d'),inf=g(id+'_i'),atm=g(id+'_a');let s=label+nm;if(p&&d)s+=' '+p+'×'+d+' mm';if(inf)s+=', inflácia '+inf+' min';if(atm)s+=' pri '+atm+' ATM';return s;}
+  // primárna + extra lokality toho istého balónu
+  function allLocs(id){return [{tp:tp(id),sg:sg(id)},...extraLocs(id)];}
 
   if(document.getElementById('c_vprep').checked){rows('vprep').forEach(row=>{
     const idx=row.dataset.idx,id='vprep_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
     const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný device'):sel.value;
-    items.push({tp:tp(id),sg:sg(id),desc:'vessel preparation: '+balloonDesc(id,'',nm),order:1});
+    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:'vessel preparation: '+balloonDesc(id,'',nm),order:1}));
   });}
   if(document.getElementById('c_pred').checked){rows('pred').forEach(row=>{
     const idx=row.dataset.idx,id='pred_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
     const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný balón'):sel.value;
-    items.push({tp:tp(id),sg:sg(id),desc:balloonDesc(id,'predilatácia PTA balónom ',nm),order:2});
+    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:balloonDesc(id,'predilatácia PTA balónom ',nm),order:2}));
   });}
   if(document.getElementById('c_trom').checked){
     const rot=document.getElementById('trom_rotarex').checked,asp=document.getElementById('trom_aspir').checked;
@@ -912,12 +933,12 @@ function collectInterventionItems(){
   if(document.getElementById('c_pta').checked){rows('pta').forEach(row=>{
     const idx=row.dataset.idx,id='pta_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
     const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný balón'):sel.value;
-    items.push({tp:tp(id),sg:sg(id),desc:balloonDesc(id,'PTA balónom ',nm),order:5});
+    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:balloonDesc(id,'PTA balónom ',nm),order:5}));
   });}
   if(document.getElementById('c_deb').checked){rows('deb').forEach(row=>{
     const idx=row.dataset.idx,id='deb_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
     const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný balón'):sel.value;
-    items.push({tp:tp(id),sg:sg(id),desc:balloonDesc(id,'DEB PTA balónom ',nm),order:6});
+    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:balloonDesc(id,'DEB PTA balónom ',nm),order:6}));
   });}
   if(document.getElementById('c_stent').checked){
     rows('stent').forEach(row=>{
@@ -930,7 +951,7 @@ function collectInterventionItems(){
     if(document.getElementById('c_post').checked){rows('post').forEach(row=>{
       const idx=row.dataset.idx,id='post_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
       const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný balón'):sel.value;
-      items.push({tp:tp(id),sg:sg(id),desc:balloonDesc(id,'postdilatácia balónom ',nm),order:8});
+      allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:balloonDesc(id,'postdilatácia balónom ',nm),order:8}));
     });}
   }
   if(document.getElementById('c_sg').checked){
@@ -1048,6 +1069,8 @@ function collectFullData(){
         const ss=document.getElementById(id+'_s');
         item.nazov=ss?(ss.value==='vlastný'?(g(id+'_s_c')||''):ss.value):'';
         item.priemer=g(id+'_p');item.dlzka=g(id+'_d');item.inflacia=g(id+'_i');item.atm=g(id+'_a');
+        const el=extraLocs(id).map(l=>({tepna:l.tp,segment:l.sg}));
+        if(el.length)item.extra_locs=el;
       }
       interventionDetail.push(item);
     });
@@ -1411,8 +1434,11 @@ function vesselSuffixAtek(tp){
 function drgListSuffixes(pfx){
   const out=[];
   document.querySelectorAll('#'+pfx+'_list .dyn-row').forEach(row=>{
-    const s=vesselSuffix(g(pfx+'_'+row.dataset.idx+'_tp'));
+    const id=pfx+'_'+row.dataset.idx;
+    const s=vesselSuffix(g(id+'_tp'));
     if(s)out.push(s);
+    // ten istý balón v ďalších lokalitách → generuje DRG suffix za každú lokalitu
+    extraLocs(id).forEach(loc=>{const es=vesselSuffix(loc.tp);if(es)out.push(es);});
   });
   return out;
 }
@@ -1870,6 +1896,7 @@ function restoreInterventionRows(record){
       }else{
         setSel(id+'_s',it.nazov);
         sv(id+'_p',dia(it));sv(id+'_d',it.dlzka);sv(id+'_i',it.inflacia);sv(id+'_a',it.atm);
+        if(Array.isArray(it.extra_locs))it.extra_locs.forEach(l=>{addLoc(id,true);const li=locCnt[id]-1;sv(id+'_l'+li+'_tp',l.tepna);sv(id+'_l'+li+'_sg',l.segment);});
       }
     });
   }catch(e){console.error('restoreInterventionRows:',e);}
