@@ -347,6 +347,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     </select>
   </div>
 </div>
+<div id="pristup_dx_hint" class="st" style="display:none;font-size:12px;margin:2px 0 4px;color:#5a6a8a">Pravá strana (l.dx.)</div>
 <div class="row r2">
   <div class="f"><label>Tepna</label><input type="text" id="punkcia_arteria" value="AFC" oninput="gen()"></div>
   <div class="f"><label>Technika punkcie</label><input type="text" id="punkcia_technika" value="Seldingerovou technikou, retrográdne" oninput="gen()"></div>
@@ -370,6 +371,25 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     <option value="za použitia preclosure techniky za použitia ProStyle zariadenia">Preclosure s ProStyle</option>
     <option value="odobratím hĺbky miesta vpichu kalibračným dilatátorom pre Manta systém">Kalibrácia pre Manta</option>
   </select>
+</div>
+<div id="pristup_sin_wrap" style="display:none;border-top:1px dashed #dde1ea;margin-top:10px;padding-top:8px">
+  <div class="st" style="font-size:12px;margin:0 0 6px;color:#5a6a8a">Ľavá strana (l.sin.) – prístup zvlášť</div>
+  <div class="row r2">
+    <div class="f"><label>Tepna SIN</label><input type="text" id="punkcia_arteria_sin" value="AFC" oninput="gen()"></div>
+    <div class="f"><label>Technika punkcie SIN</label><input type="text" id="punkcia_technika_sin" value="Seldingerovou technikou, retrográdne" oninput="gen()"></div>
+  </div>
+  <div class="row r2">
+    <div class="f"><label>Veľkosť sheathu SIN</label>
+      <select id="sheath_velkost_sin" onchange="gen()"><option>6F</option><option>7F</option><option selected>8F</option><option>9F</option><option>10F</option></select>
+    </div>
+    <div class="f"><label>Zabezpečenie vpichu SIN</label>
+      <select id="zabezpecenie_technika_sin" onchange="gen()">
+        <option value="preclosure technikou">Štandardná preclosure</option>
+        <option value="za použitia preclosure techniky za použitia ProStyle zariadenia">Preclosure s ProStyle</option>
+        <option value="odobratím hĺbky miesta vpichu kalibračným dilatátorom pre Manta systém">Kalibrácia pre Manta</option>
+      </select>
+    </div>
+  </div>
 </div>
 </div>
 
@@ -720,7 +740,17 @@ function gen(){
   const nav=navParts.length?' za použitia '+navParts.join(' a ')+' navigácie':'';
   const zabezp=g('zabezpecenie_technika');
   const sheath=g('sheath_velkost');
-  const pristupText=`${anestezia}, ${technika}${nav}, pungujeme ${arteria} ${stranaSkr}. Zabezpečujeme miesta vpichu ${zabezp} ${stranaText} a zavádzame ${stranaText} ${sheath} sheath.`;
+  const obojstr=(pristupVal[0]||'')==='obojstranne';
+  const sinWrapA=document.getElementById('pristup_sin_wrap');if(sinWrapA)sinWrapA.style.display=obojstr?'block':'none';
+  const dxHint=document.getElementById('pristup_dx_hint');if(dxHint)dxHint.style.display=obojstr?'block':'none';
+  let pristupText;
+  if(obojstr){
+    const arteriaSin=g('punkcia_arteria_sin')||arteria, technikaSin=g('punkcia_technika_sin')||technika;
+    const zabezpSin=g('zabezpecenie_technika_sin')||zabezp, sheathSin=g('sheath_velkost_sin')||sheath;
+    pristupText=`${anestezia}.${nav?' '+nav.replace(/^ /,'').replace(/^za/,'Za')+'.':''} Vpravo (l.dx.) pungujeme ${arteria} ${technika}, zavádzame ${sheath} sheath a miesto vpichu zabezpečujeme ${zabezp}. Vľavo (l.sin.) pungujeme ${arteriaSin} ${technikaSin}, zavádzame ${sheathSin} sheath a miesto vpichu zabezpečujeme ${zabezpSin}.`;
+  }else{
+    pristupText=`${anestezia}, ${technika}${nav}, pungujeme ${arteria} ${stranaSkr}. Zabezpečujeme miesta vpichu ${zabezp} ${stranaText} a zavádzame ${stranaText} ${sheath} sheath.`;
+  }
 
   const sgTyp=document.querySelector('input[name="sg_typ"]:checked')?.value||'bifurkačného';
   const isBifurk=sgTyp==='bifurkačného';
@@ -989,6 +1019,13 @@ async function saveToSupabase(){
     ext_strany:jn(extRows.map(e=>e.strana)),
     extenzie_detail:JSON.stringify(extRows)
   };
+  // ľavostranný prístup ukladáme len pri obojstrannom (aby jednostranné uloženie fungovalo aj bez SQL doplnku)
+  if((pristupVal[0]||'')==='obojstranne'){
+    payload.punkcia_arteria_sin=g('punkcia_arteria_sin');
+    payload.punkcia_technika_sin=g('punkcia_technika_sin');
+    payload.sheath_velkost_sin=g('sheath_velkost_sin');
+    payload.zabezpecenie_technika_sin=g('zabezpecenie_technika_sin');
+  }
   msg('Ukladám...','#5a6a8a');
   const _btn=document.getElementById('save_btn');
   if(_btn)_btn.disabled=true;
@@ -1041,6 +1078,10 @@ function loadEditRecord(){
     if(record.indikacia_typ){const rb=document.querySelector(`input[name="ind_typ"][value="${record.indikacia_typ}"]`);if(rb)rb.checked=true;}
     sv('zabezpecenie_technika',record.zabezpecenie_technika);
     if(record.pristup_strana){const sel=document.getElementById('pristup_strana');const opt=[...sel.options].find(o=>o.value.startsWith(record.pristup_strana));if(opt)sel.value=opt.value;}
+    sv('punkcia_arteria_sin',record.punkcia_arteria_sin);
+    sv('punkcia_technika_sin',record.punkcia_technika_sin);
+    sv('sheath_velkost_sin',record.sheath_velkost_sin);
+    sv('zabezpecenie_technika_sin',record.zabezpecenie_technika_sin);
     sv('sheath_velkost',record.sheath_velkost);
     sv('vodic_typ',record.vodic_typ);
     if(record.sg_konfiguracia){const rb=document.querySelector(`input[name="sg_typ"][value="${record.sg_konfiguracia}"]`);if(rb)rb.checked=true;}

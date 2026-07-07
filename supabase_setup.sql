@@ -427,6 +427,11 @@ ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS usg_nav                   BOOL
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS rtg_nav                   BOOLEAN;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS zabezpecenie_technika     TEXT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sheath_velkost            TEXT;
+-- prístup pre ľavú stranu zvlášť (pri obojstrannom prístupe)
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS punkcia_arteria_sin       TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS punkcia_technika_sin      TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS zabezpecenie_technika_sin TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sheath_velkost_sin        TEXT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS vodic_typ                 TEXT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sg_nazov                  TEXT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sg_rozmery                TEXT;
