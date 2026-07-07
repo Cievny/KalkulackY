@@ -311,6 +311,7 @@ async function zaradZoZasobnika(id){
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
       body:JSON.stringify({datum:g('datum'),poradie:maxP+1,updated_at:new Date().toISOString()})});
     if(r.ok){msg('✓ Zaradený do programu','#1d6f42');await loadRows();}
+    else msg('❌ Chyba: '+r.status,'#dc2626');
   }catch(e){msg('❌ Chyba siete','#dc2626');}
 }
 
@@ -423,8 +424,9 @@ async function reorderTo(from,to){
   ROWS.forEach((r,i)=>{if(r.poradie!==i+1){r.poradie=i+1;zmeny.push(r);}});
   render();
   try{
-    await Promise.all(zmeny.map(r=>fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${r.id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+    const resps=await Promise.all(zmeny.map(r=>fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${r.id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
       body:JSON.stringify({poradie:r.poradie,updated_at:new Date().toISOString()})})));
+    if(resps.some(r=>!r.ok))msg('❌ Chyba pri preusporiadaní – poradie sa neuložilo celé','#dc2626');
     await loadRows();
   }catch(e){msg('❌ Chyba siete pri preusporiadaní','#dc2626');loadRows();}
 }
@@ -508,8 +510,9 @@ async function doZasobnika(id){
       poziadavka_id:row.poziadavka_id,poznamka:row.poznamka};
     const r1=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(kopia)});
     if(!r1.ok){msg('❌ Chyba: '+r1.status,'#dc2626');return;}
-    await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+    const r2=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
       body:JSON.stringify({stav:'vyradeny',vyradeny_dovod:'presunutý do zásobníka',updated_at:new Date().toISOString()})});
+    if(!r2.ok){msg('❌ Chyba '+r2.status+': kópia je v zásobníku, ale pacient ostal aj v programe dňa – skontrolujte','#dc2626');await loadRows();return;}
     msg('✓ Odložený do zásobníka','#1d6f42');
     await loadRows();
   }catch(e){msg('❌ Chyba siete','#dc2626');}
@@ -548,8 +551,9 @@ async function confirmPresun(){
       operator:row.operator,poziadavka_id:row.poziadavka_id,poznamka:row.poznamka};
     const r1=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(kopia)});
     if(!r1.ok){msg('❌ Chyba pri presune: '+r1.status,'#dc2626');return;}
-    await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+    const r2=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
       body:JSON.stringify({stav:'vyradeny',vyradeny_dovod:'presunutý na '+fmtD(ciel),updated_at:new Date().toISOString()})});
+    if(!r2.ok){msg('❌ Chyba '+r2.status+': pacient je skopírovaný na '+fmtD(ciel)+', ale v pôvodnom dni ostal aktívny – skontrolujte oba dni','#dc2626');await loadRows();return;}
     msg('✓ Presunuté na '+fmtD(ciel),'#1d6f42');
     await loadRows();
   }catch(e){msg('❌ Chyba siete','#dc2626');}
@@ -576,7 +580,10 @@ async function loadNavrhy(d){
     document.getElementById('navrhy_chips').innerHTML=chips.map((p,i)=>
       `<span class="nchip" onclick="pridajZPoziadavky(${i})">${escHtml((p.inicialy||p.rodne_cislo||'?')+(p.rocnik?' ('+p.rocnik+')':'')+' – '+(p.diagnoza||'')+(p.vykon_typ?' – '+p.vykon_typ:''))} +</span>`).join('');
     window._navrhy=chips;
-  }catch(e){document.getElementById('navrhy').style.display='none';}
+  }catch(e){
+    document.getElementById('navrhy').style.display='';
+    document.getElementById('navrhy_chips').innerHTML='<span style="color:#b45309;font-weight:700">⚠️ Chyba spojenia — skúste obnoviť</span>';
+  }
 }
 function pridajZPoziadavky(i){
   const p=window._navrhy[i];if(!p)return;
@@ -630,8 +637,9 @@ async function renderMonth(){
   let all=[];
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}?datum=gte.${iso(first)}&datum=lte.${iso(last)}&order=poradie.asc&limit=1000`,{headers:H()});
-    if(r.ok)all=await r.json();
-  }catch(e){}
+    if(!r.ok){box.innerHTML='<div class="empty" style="grid-column:1/-1">⚠️ Chyba spojenia — skúste obnoviť</div>';msg('⚠️ Chyba spojenia — skúste obnoviť','#dc2626');return;}
+    all=await r.json();
+  }catch(e){box.innerHTML='<div class="empty" style="grid-column:1/-1">⚠️ Chyba spojenia — skúste obnoviť</div>';msg('⚠️ Chyba spojenia — skúste obnoviť','#dc2626');return;}
   ['Po','Ut','St','Št','Pi','So','Ne'].forEach(dn=>{
     const h=document.createElement('div');h.className='mhead';h.textContent=dn;box.appendChild(h);
   });
@@ -672,8 +680,9 @@ async function renderWeek(){
   let all=[];
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}?datum=in.(${days.join(',')},zasobnik)&order=poradie.asc&limit=500`,{headers:H()});
-    if(r.ok)all=await r.json();
-  }catch(e){}
+    if(!r.ok){box.innerHTML='<div class="empty" style="grid-column:1/-1">⚠️ Chyba spojenia — skúste obnoviť</div>';msg('⚠️ Chyba spojenia — skúste obnoviť','#dc2626');return;}
+    all=await r.json();
+  }catch(e){box.innerHTML='<div class="empty" style="grid-column:1/-1">⚠️ Chyba spojenia — skúste obnoviť</div>';msg('⚠️ Chyba spojenia — skúste obnoviť','#dc2626');return;}
   const dni=['Pondelok','Utorok','Streda','Štvrtok','Piatok'];
   days.concat(['zasobnik']).forEach((dk,di)=>{
     const rows=all.filter(x=>x.datum===dk);
@@ -703,8 +712,11 @@ async function renderWeek(){
       e.preventDefault();col.classList.remove('drop-ok');
       if(!WDRAG)return;
       const maxP=rows.length?Math.max(...rows.map(x=>x.poradie||0)):0;
-      await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${WDRAG.id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
-        body:JSON.stringify({datum:dk,poradie:maxP+1,updated_at:new Date().toISOString()})});
+      try{
+        const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${WDRAG.id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+          body:JSON.stringify({datum:dk,poradie:maxP+1,updated_at:new Date().toISOString()})});
+        if(!r.ok)msg('❌ Chyba pri presune: '+r.status,'#dc2626');
+      }catch(err){msg('❌ Chyba siete pri presune','#dc2626');}
       WDRAG=null;renderWeek();
     });
     box.appendChild(col);

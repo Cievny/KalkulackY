@@ -56,11 +56,18 @@ jobs:
           # tabuľky bez stĺpca id majú vlastné triedenie
           ORDER={'povoleni_pouzivatelia':'email.asc','pozvanky':'created_at.asc'}
           errors=[]
+          import urllib.error
           for t in TABLES:
               try:
                   rows=fetch_all(t, order=ORDER.get(t,'created_at.asc,id.asc'))
                   json.dump(rows,open(f'backup/{t}_{STAMP}.json','w'),ensure_ascii=False)
                   print(f'→ {t}: {len(rows)} záznamov')
+              except urllib.error.HTTPError as e:
+                  # 404 = tabuľka (ešte) neexistuje – varovanie, ale nezhoď celú zálohu
+                  if e.code==404:
+                      print(f'::warning::tabuľka {t} neexistuje – preskočená')
+                  else:
+                      print(f'::error::CHYBA pri tabuľke {t}: HTTP {e.code}');errors.append(t)
               except Exception as e:
                   print(f'::error::CHYBA pri tabuľke {t}: {e}');errors.append(t)
 
@@ -111,3 +118,15 @@ jobs:
           name: cievny-zaloha-${{ github.run_id }}
           path: backup-enc/
           retention-days: 30
+
+      - name: Je prvý deň v mesiaci?
+        id: cal
+        run: echo "prvy=$([ "$(date +%d)" = "01" ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+
+      - name: Mesačná záloha s dlhou retenciou (90 dní)
+        if: steps.cal.outputs.prvy == 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cievny-zaloha-mesacna-${{ github.run_id }}
+          path: backup-enc/
+          retention-days: 90

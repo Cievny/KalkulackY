@@ -251,8 +251,14 @@ CREATE POLICY "auth oznamy storage delete" ON storage.objects FOR DELETE TO auth
 
 ALTER TABLE oznamy ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "auth all oznamy" ON oznamy;
-CREATE POLICY "auth all oznamy" ON oznamy FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all oznamy" ON oznamy FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 -- Oznamy: komentáre + prihlasovanie na akcie/workshopy (finálne RLS nastaví spustit_na_konci.sql)
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_komentare BOOLEAN DEFAULT false;
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;
@@ -268,8 +274,14 @@ CREATE TABLE IF NOT EXISTS oznam_reakcie (
 );
 ALTER TABLE oznam_reakcie ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "auth all oznam_reakcie" ON oznam_reakcie;
-CREATE POLICY "auth all oznam_reakcie" ON oznam_reakcie FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all oznam_reakcie" ON oznam_reakcie FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 -- ideas – zdieľaný zápisník nápadov
 CREATE TABLE IF NOT EXISTS ideas (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -551,30 +563,83 @@ DROP POLICY IF EXISTS "anon all program"    ON denny_program;
 
 -- Authenticated má plný prístup ku všetkým tabuľkám
 DROP POLICY IF EXISTS "auth all evk"        ON evk_vykony;
-CREATE POLICY "auth all evk"        ON evk_vykony      FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all evk" ON evk_vykony FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all cas"        ON cas_vykony;
-CREATE POLICY "auth all cas"        ON cas_vykony      FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all cas" ON cas_vykony FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all pevar"      ON pevar_vykony;
-CREATE POLICY "auth all pevar"      ON pevar_vykony    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all pevar" ON pevar_vykony FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all followup"   ON evk_followup;
-CREATE POLICY "auth all followup"   ON evk_followup    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all followup" ON evk_followup FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all ideas"      ON ideas;
-CREATE POLICY "auth all ideas"      ON ideas           FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all ideas" ON ideas FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all aorta"      ON aorta_indikacie;
-CREATE POLICY "auth all aorta"      ON aorta_indikacie FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all aorta" ON aorta_indikacie FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all aorta prilohy" ON aorta_prilohy;
-CREATE POLICY "auth all aorta prilohy" ON aorta_prilohy FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all aorta prilohy" ON aorta_prilohy FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all pevar fu"   ON pevar_followup;
-CREATE POLICY "auth all pevar fu"   ON pevar_followup  FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all pevar fu" ON pevar_followup FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all cas fu"     ON cas_followup;
-CREATE POLICY "auth all cas fu"     ON cas_followup    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all cas fu" ON cas_followup FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all cz pevar fu" ON cz_pevar_followup;
-CREATE POLICY "auth all cz pevar fu" ON cz_pevar_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all cz pevar fu" ON cz_pevar_followup FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all cz cas fu"  ON cz_cas_followup;
-CREATE POLICY "auth all cz cas fu"  ON cz_cas_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all cz cas fu" ON cz_cas_followup FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all program"    ON denny_program;
-CREATE POLICY "auth all program"    ON denny_program   FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all program" ON denny_program FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 -- SCHRÁNKA: anon smie IBA vložiť podnet do `ideas`, a to len ako kartu v stĺpci „napady“,
 -- v povolenej kategórii, bez hlasov/komentárov a bez podvrhnutého autora (created_by).
 -- Bráni to zaplaveniu internej nástenky, falšovaniu hlasov aj XSS cez neplatnú kategóriu.
@@ -640,6 +705,20 @@ CREATE INDEX IF NOT EXISTS idx_objednavky_typ_datum ON objednavky (typ, datum);
 ALTER TABLE objednavky_dni ENABLE ROW LEVEL SECURITY;
 ALTER TABLE objednavky     ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "auth all objednavky_dni" ON objednavky_dni;
-CREATE POLICY "auth all objednavky_dni" ON objednavky_dni FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all objednavky_dni" ON objednavky_dni FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all objednavky" ON objednavky;
-CREATE POLICY "auth all objednavky" ON objednavky FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all objednavky" ON objednavky FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;

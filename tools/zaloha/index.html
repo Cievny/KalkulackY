@@ -88,14 +88,17 @@ async function downloadBackup(fmt){
   st.textContent='Sťahujem dáta…';st.style.color='#6b7280';
   const stamp=new Date().toISOString().slice(0,10);
   try{
-    const data={};
+    const data={};const failed=[];
     const tb=document.getElementById('sum_body');tb.innerHTML='';
     for(const t of TABLES){
       st.textContent='Sťahujem '+t+'…';
+      let ok=true;
       try{data[t]=await fetchAll(t);}
-      catch(e){data[t]=[];console.warn(e);}
+      catch(e){data[t]=[];failed.push(t);ok=false;console.warn(e);}
       const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${t}</td><td class="cnt">${data[t].length}</td>`;
+      tr.innerHTML=ok
+        ?`<td>${t}</td><td class="cnt">${data[t].length}</td>`
+        :`<td style="color:#dc2626;font-weight:700">${t}</td><td style="color:#dc2626;font-weight:700">❌ zlyhalo</td>`;
       tb.appendChild(tr);
     }
     document.getElementById('summary').style.display='';
@@ -108,7 +111,12 @@ async function downloadBackup(fmt){
         await new Promise(r=>setTimeout(r,300));
       }
     }
-    st.textContent='✅ Záloha hotová – '+total+' záznamov.';st.style.color='#16a34a';
+    if(failed.length){
+      st.textContent='⚠️ Záloha NEÚPLNÁ – zlyhali: '+failed.join(', ')+' (stiahnuté '+total+' záznamov z ostatných tabuliek)';
+      st.style.color='#dc2626';
+    }else{
+      st.textContent='✅ Záloha hotová – '+total+' záznamov.';st.style.color='#16a34a';
+    }
   }catch(e){
     st.textContent='❌ Chyba: '+e.message;st.style.color='#dc2626';
   }finally{

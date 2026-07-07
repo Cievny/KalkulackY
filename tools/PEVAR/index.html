@@ -136,7 +136,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <div class="st">Identifikácia výkonu</div>
 <div class="row r3">
   <div class="f"><label>ID výkonu</label>
-    <div class="id-row"><span class="id-prefix" id="id-prefix">PEVAR-2026-</span><input type="text" id="id_suffix" placeholder="001" oninput="updatePevarIdPrefix();gen()"></div>
+    <div class="id-row"><span class="id-prefix" id="id-prefix">PEVAR-</span><input type="text" id="id_suffix" placeholder="001" oninput="updatePevarIdPrefix();gen()"></div>
   </div>
   <div class="f"><label>Operatér</label>
     <select id="operator" onchange="gen()">
@@ -145,7 +145,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
       <option>Fľak</option><option>Širila</option><option>Vařejka</option><option>Maďarič</option>
     </select>
   </div>
-  <div class="f"><label>Dátum</label><input type="date" id="datum_zaznamu" oninput="gen()"></div>
+  <div class="f"><label>Dátum</label><input type="date" id="datum_zaznamu" oninput="updatePevarIdPrefix();gen()"></div>
 </div>
 </div>
 
@@ -673,7 +673,11 @@ function g(id){const el=document.getElementById(id);if(!el)return'';return el.va
 function chybaStud(){const M=[];if(!g('st_dur'))M.push('dĺžka výkonu');if(!g('st_fluoro'))M.push('skiaskopia');if(!g('st_dap'))M.push('DAP');if(!g('st_contrast'))M.push('kontrast');return M;}
 function chk(id){const el=document.getElementById(id);return el?el.checked:false;}
 function tB(id){const b=document.getElementById('b_'+id);if(b)b.classList.toggle('on');}
-function updatePevarIdPrefix(){document.getElementById('id-prefix').textContent='PEVAR-'+new Date().getFullYear()+'-';}
+// Lokálny ISO dátum (bez UTC posunu) – toISOString() by pri večerných hodinách vrátil iný deň
+function isoLocal(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+// Rok pre vykon_id – odvodený z poľa Dátum, fallback aktuálny rok
+function pevarYear(){const d=g('datum_zaznamu');const y=d?parseInt(d.slice(0,4),10):NaN;return(y&&y>1900)?y:new Date().getFullYear();}
+function updatePevarIdPrefix(){document.getElementById('id-prefix').textContent='PEVAR-'+pevarYear()+'-';}
 function kSub(id){const s=document.getElementById('ksub_'+id),c=document.getElementById('k_'+id);if(s)s.classList.toggle('on',c.checked);}
 function getKomor(){
   const list=[];
@@ -870,7 +874,7 @@ function gen(){
   // ── HLAVIČKA ──
   L.push('SPRÁVA Z ENDOVASKULÁRNEHO VÝKONU (PEVAR)');
   const datum=g('datum_zaznamu');if(datum){L.push('Dátum: '+datum.split('-').reverse().join('.'));}
-  const suf=g('id_suffix');if(suf)L.push('ID: PEVAR-'+new Date().getFullYear()+'-'+suf);
+  const suf=g('id_suffix');if(suf)L.push('ID: PEVAR-'+pevarYear()+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
   L.push('-'.repeat(46));
 
@@ -938,8 +942,8 @@ function showFuTab(t){
   document.getElementById('tnb-drg').classList.toggle('active',t==='drg');
   if(t==='drg')genDRGPevar();
   if(t==='fu'){
-    if(!g('fu_datum'))document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
-    if(!g('fu_id')&&g('id_suffix'))document.getElementById('fu_id').value='PEVAR-'+new Date().getFullYear()+'-'+g('id_suffix');
+    if(!g('fu_datum'))document.getElementById('fu_datum').value=isoLocal();
+    if(!g('fu_id')&&g('id_suffix'))document.getElementById('fu_id').value='PEVAR-'+pevarYear()+'-'+g('id_suffix');
   }
 }
 
@@ -961,7 +965,7 @@ function genDRGPevar(){
   const out=document.getElementById('drg_output');if(!out)return;
   const v=g('drg_variant')||'0';
   const sgTyp=document.querySelector('input[name="sg_typ"]:checked')?.value||'bifurkačného';
-  const sgNazov=(function(){const e=document.getElementById('sg_nazov');if(!e)return'';return e.value==='vlastný'?(g('sg_nazov_custom')||''):e.value;})();
+  const sgNazov=gSel('sg_nazov');
   const extN=document.querySelectorAll('#extenzie_list .ext-row').length;
   const extOn=document.getElementById('c_extenzie')?.checked&&extN>0;
   let html='<div class="drg-section-hdr">DSA – diagnostické kódy (angiografia)</div>';
@@ -1042,6 +1046,7 @@ function copyOut(){
 function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',3000);}
 
 async function saveToSupabase(){
+  if(!g('id_suffix').trim()){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
   const pristupVal=g('pristup_strana').split('|');
   // --- Flatten materiálov pre publikačnú štatistiku ---
   const extRows=[];
@@ -1056,10 +1061,10 @@ async function saveToSupabase(){
   // Rozmery tela SG "18-166-16" → prox priemer / dĺžka / dist priemer
   const sgNums=(g('sg_rozmery')||'').split(/[^0-9.]+/).filter(Boolean).map(Number);
   const payload={
-    vykon_id:'PEVAR-'+new Date().getFullYear()+'-'+(g('id_suffix')||'???'),
+    vykon_id:'PEVAR-'+pevarYear()+'-'+g('id_suffix').trim(),
     operator:g('operator'),
     komorbidity:getKomor().join(', '),
-    datum_zaznamu:g('datum_zaznamu')||new Date().toISOString().slice(0,10),
+    datum_zaznamu:g('datum_zaznamu')||isoLocal(),
     vek:parseInt(g('vek'))||null,
     pohlavie:g('pohlavie'),
     diagnoza:g('diagnoza'),
@@ -1141,6 +1146,14 @@ async function saveToSupabase(){
   if(_btn)_btn.disabled=true;
   try{
     const _isEdit=!!window._editRecordId;
+    if(!_isEdit){
+      // kontrola duplicitného ID pred INSERT-om
+      const _dupR=await fetch(SB_URL+'/rest/v1/pevar_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
+      if(_dupR.ok){
+        const _dup=await _dupR.json();
+        if(Array.isArray(_dup)&&_dup.length){msg('⚠️ ID '+payload.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}
+      }
+    }
     if(_isEdit){
       Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]==null)delete payload[k];});
       delete payload.vykon_id;
@@ -1181,6 +1194,14 @@ function loadEditRecord(){
     sv('st_contrast',record.contrast_ml);
     sv('st_konv',record.konverzia?'áno':'nie');
     sv('st_clavien',record.clavien_dindo);
+    // obnovenie checkboxov uložených ako ', '-joined reťazce
+    const restoreChecks=(cls,str)=>{
+      if(!str)return;
+      const vals=new Set(String(str).split(',').map(s=>s.trim()).filter(Boolean));
+      document.querySelectorAll('input.'+cls).forEach(cb=>{if(vals.has(cb.value))cb.checked=true;});
+    };
+    restoreChecks('st_cmp',record.komplikacie_struct);
+    restoreChecks('atb',record.antitrombotika);
     sv('punkcia_arteria',record.punkcia_arteria);
     sv('punkcia_technika',record.punkcia_technika);
     sv('kompr_dx',record.kompresia_dx_min);
@@ -1296,9 +1317,9 @@ window.addEventListener('pageshow', resetKomor);
 
 document.addEventListener('DOMContentLoaded',()=>{
   resetKomor();
-  document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
-  updatePevarIdPrefix();
+  document.getElementById('datum_zaznamu').value=isoLocal();
   loadEditRecord();
+  updatePevarIdPrefix();
   gen();
   window._dirty=false;
 });

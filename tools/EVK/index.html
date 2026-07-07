@@ -106,7 +106,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="f"><label>Operatér</label>
     <select id="operator" onchange="gen()"><option value="">– vybrať –</option><option>Vincze</option><option>Kocan</option><option>Nemiec</option><option>Fľak</option><option>Širila</option><option>Vařejka</option><option>Maďarič</option></select>
   </div>
-  <div class="f"><label>Dátum výkonu</label><input type="date" id="datum" onchange="gen()"></div>
+  <div class="f"><label>Dátum výkonu</label><input type="date" id="datum" onchange="updateIdPrefix();gen()"></div>
 </div>
 </div>
 
@@ -798,7 +798,10 @@ function novyNalez(){
   window._dirty=false;
   location.href=location.pathname; // čistá EVK stránka (bez ?edit), vynuluje formulár
 }
-function updateIdPrefix(){document.getElementById('id-prefix').textContent='EVK-'+new Date().getFullYear()+'-';}
+function isoLocal(d){const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+// Rok pre EVK ID sa odvodzuje z dátumu výkonu (decembrový výkon uložený v januári nesmie dostať nový rok)
+function evkYear(){const d=g('datum');return /^\d{4}/.test(d)?d.slice(0,4):String(new Date().getFullYear());}
+function updateIdPrefix(){document.getElementById('id-prefix').textContent='EVK-'+evkYear()+'-';}
 function msg(id,txt,col){const m=document.getElementById(id);m.textContent=txt;m.style.color=col;setTimeout(()=>m.textContent='',3000);}
 
 function buildPelvDSA(){
@@ -1048,7 +1051,7 @@ function copyTxt(){
 }
 
 function collectStatsRow(){
-  const y=new Date().getFullYear(),id='EVK-'+y+'-'+(g('id_suffix')||'???');
+  const y=evkYear(),id='EVK-'+y+'-'+(g('id_suffix')||'???');
   const komor=getKomor().join(', ');
   const terr=g('territory'),tl=terr==='fem'?'FP+predkolenie':terr==='pelv'?'Panvové':'Panvové+FP';
   const interv=[];
@@ -1134,7 +1137,14 @@ function collectFullData(){
   // --- Fixné techniky (aterektómia, trombektómia, kissing, stentgraft, CERAB) ---
   const nameOf=(sel)=>{const e=document.getElementById(sel);if(!e)return '';return e.value==='vlastný'?(g(sel+'_c')||''):e.value;};
   if(document.getElementById('c_atek').checked){
-    interventionDetail.push({typ:'aterektomia',tepna:g('atek_tp'),dlzka_lezie:g('atek_d'),emboloprotekcia:g('atek_e')});
+    interventionDetail.push({typ:'aterektomia',tepna:g('atek_tp'),dlzka_lezie:g('atek_d'),emboloprotekcia:g('atek_e'),subtypy:chk('atek_t')});
+  }
+  if(document.getElementById('c_reentry').checked){
+    document.querySelectorAll('#reentry_list .dyn-row').forEach(row=>{
+      const id='reentry_'+row.dataset.idx,sel=document.getElementById(id+'_s');
+      const dev=sel?(sel.value==='vlastný'?(g(id+'_s_c')||''):sel.value):'';
+      interventionDetail.push({typ:'reentry',device:dev,tepna:g(id+'_tp')});
+    });
   }
   if(document.getElementById('c_trom').checked){
     const base={typ:'trombektomia',tepna:g('trom_tp'),segment:g('trom_sg')};
@@ -1154,6 +1164,25 @@ function collectFullData(){
     [['ao','aorta'],['sin','l.sin.'],['dx','l.dx.']].forEach(([k,lab])=>{
       const nm=nameOf('cerab_'+k+'_n');if(!nm&&!g('cerab_'+k+'_p'))return;
       interventionDetail.push({typ:'stentgraft',subtyp:'CERAB',segment:lab,stent_nazov:nm,priemer:g('cerab_'+k+'_p'),dlzka:g('cerab_'+k+'_d')});
+    });
+  }
+  // --- Ostatné polia formulára (kompresia, podporný katéter, ďalšie ošetrenie, bez intervencie) ---
+  {
+    const bezOn=document.getElementById('c_bezint').checked;
+    const bezR=bezOn?([...document.querySelectorAll('input[name="bezint_r"]:checked')][0]||null):null;
+    const dalOn=document.getElementById('c_dal').checked;
+    interventionDetail.push({
+      typ:'ostatne',
+      kompr:g('kompr'),
+      support_kat:g('support_kat'),
+      support_kat_c:g('support_kat_c'),
+      dal:dalOn,
+      dal_d:dalOn?chk('dal_d'):[],
+      dal_t:dalOn?chk('dal_t'):[],
+      dal_text:dalOn?g('dal_text'):'',
+      bezint:bezR?bezR.value:'',
+      bezint_vlastny:bezR&&bezR.value==='vlastny'?g('bezint_vlastny'):'',
+      bezint_on:bezOn
     });
   }
   // --- Flatten materiálov pre publikačnú analýzu ---
@@ -1202,7 +1231,7 @@ function collectFullData(){
   };
   const artVal=g('access_art');
   const art=artVal==='vlastny'?(g('access_art_c')||''):artVal;
-  const y=new Date().getFullYear();
+  const y=evkYear();
   return{
     vykon_id:'EVK-'+y+'-'+(g('id_suffix')||'???'),
     datum:g('datum'),
@@ -1270,6 +1299,16 @@ async function saveToSheets(){
   msg('cmsg','⏳ Ukladám...','#3b82f6');
   try{
     const fullData=collectFullData();
+    // Kontrola duplicitného ID – len pri novom zázname (INSERT), nie pri úprave (PATCH)
+    if(!window._editRecordId){
+      try{
+        const r=await fetch(`${SB_URL}/rest/v1/evk_vykony?vykon_id=eq.${encodeURIComponent(fullData.vykon_id)}&select=id`,{headers:sbHeaders()});
+        if(r.ok){
+          const rows=await r.json();
+          if(Array.isArray(rows)&&rows.length){msg('cmsg','⚠️ ID '+fullData.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}
+        }
+      }catch(e){/* kontrola nedostupná – pokračujeme, insert samotný chybu ohlási */}
+    }
     const tasks=[];
     tasks.push(saveToSupabase('evk_vykony',fullData).then(r=>r.ok?'sb_ok':'sb_err:'+r.status).catch(()=>'sb_err'));
     const url=g('apps_script_url');
@@ -1311,7 +1350,8 @@ async function saveFUToSheets(){
     tasks.push(fetch(url,{method:'POST',body:JSON.stringify(data)}).then(r=>r.json()).then(j=>j.status==='ok'?'gs_ok':'gs_err').catch(()=>'gs_err'));
   }
   const results=await Promise.all(tasks);
-  if(results.some(r=>r==='sb_ok'||r==='gs_ok'))msg('fu_msg','✅ Follow-up uložený!','#1d6f42');
+  if(results[0]==='sb_ok')msg('fu_msg','✅ Follow-up uložený!','#1d6f42');
+  else if(results.includes('gs_ok'))msg('fu_msg','⚠️ Uložené len do Sheets – zápis do databázy zlyhal','#b45309');
   else msg('fu_msg','❌ Chyba uloženia','#dc2626');
 }
 
@@ -1324,7 +1364,7 @@ function gen(){
 
   L.push('SPRÁVA Z ENDOVASKULÁRNEHO VÝKONU');
   const datum=g('datum');if(datum){L.push('Dátum: '+datum.split('-').reverse().join('.'));}
-  const y=new Date().getFullYear(),suf=g('id_suffix');if(suf)L.push('ID: EVK-'+y+'-'+suf);
+  const y=evkYear(),suf=g('id_suffix');if(suf)L.push('ID: EVK-'+y+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
   const tl=terr==='fem'?'Femoropopliteálne + predkolenie':terr==='pelv'?'Panvové (aortoiliakálne)':'Panvové + Femoropopliteálne';
   L.push('Riečisko: '+tl);L.push('-'.repeat(46));
@@ -1345,7 +1385,6 @@ function gen(){
   if(kontr.length)L.push('KONTRASTNÁ LÁTKA: '+kontr.join(' + kombin. s '));
 
   // DSA: zoskupené podľa strany, vypisuje sa len patológia; zdravé tepny zhrnie jedna veta
-  const NORM='bez závažnej stenózy';
   if(sp){
     const platL=g('pelv_lat')||'bilat';
     L.push('DSA NÁLEZ – Panvové riečisko:');
@@ -1358,7 +1397,7 @@ function gen(){
     });
     if(pdx.length)L.push(pdx.join(', ')+'.');
     if(psin.length)L.push(psin.join(', ')+'.');
-    if(!pdx.length&&!psin.length&&ao===NORM)L.push('Tepny panvového riečiska bilat. bez závažnej stenózy.');
+    if(!pdx.length&&!psin.length&&!aoF.abn)L.push('Tepny panvového riečiska bilat. bez závažnej stenózy.');
     else if(pnorm>0)L.push('Ostatné tepny panvového riečiska bez závažnej stenózy.');
   }
   if(sf){
@@ -1730,6 +1769,7 @@ function loadEditRecord(){
     // Pacient
     if(record.vykon_id){const parts=record.vykon_id.split('-');sv('id_suffix',parts[parts.length-1]);}
     sv('datum',record.datum);
+    updateIdPrefix();
     sv('operator',record.operator);
     sv('vek',record.vek);
     if(record.pohlavie){const el=document.getElementById('pohl');if(el)el.value=record.pohlavie==='Muž'?'M':'Z';}
@@ -1915,6 +1955,31 @@ function restoreInterventionRows(record){
       if(it.typ==='aterektomia'){
         on('atek');
         sv('atek_tp',it.tepna);sv('atek_d',it.dlzka_lezie);sv('atek_e',it.emboloprotekcia);
+        if(Array.isArray(it.subtypy))document.querySelectorAll('.atek_t').forEach(c=>{if(it.subtypy.includes(c.value))c.checked=true;});
+        return;
+      }
+      if(it.typ==='reentry'){
+        on('reentry');
+        if(!cleared.reentry){const l=document.getElementById('reentry_list');if(l)l.innerHTML='';cleared.reentry=true;}
+        addItem('reentry','reentry',true);
+        const rid='reentry_'+(cnts.reentry-1);
+        setSel(rid+'_s',it.device);
+        sv(rid+'_tp',it.tepna);
+        return;
+      }
+      if(it.typ==='ostatne'){
+        sv('kompr',it.kompr);
+        sv('support_kat',it.support_kat);chkVl('support_kat');sv('support_kat_c',it.support_kat_c);
+        if(it.dal||(it.dal_d||[]).length||(it.dal_t||[]).length||it.dal_text){
+          const c=document.getElementById('c_dal');if(c&&!c.checked){c.checked=true;tB('dal');}
+          if(Array.isArray(it.dal_d))document.querySelectorAll('.dal_d').forEach(cb=>{if(it.dal_d.includes(cb.value))cb.checked=true;});
+          if(Array.isArray(it.dal_t))document.querySelectorAll('.dal_t').forEach(cb=>{if(it.dal_t.includes(cb.value))cb.checked=true;});
+          sv('dal_text',it.dal_text);
+        }
+        if(it.bezint_on||it.bezint){
+          const c=document.getElementById('c_bezint');if(c&&!c.checked){c.checked=true;tB('bezint');}
+          if(it.bezint){[...document.querySelectorAll('input[name="bezint_r"]')].forEach(r=>{r.checked=r.value===it.bezint;});chkBezIntVl();sv('bezint_vlastny',it.bezint_vlastny);}
+        }
         return;
       }
       if(it.typ==='trombektomia'){
@@ -1957,8 +2022,8 @@ function restoreInterventionRows(record){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('datum').value=new Date().toISOString().slice(0,10);
-  document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
+  document.getElementById('datum').value=isoLocal(new Date());
+  document.getElementById('fu_datum').value=isoLocal(new Date());
   updateIdPrefix();buildPelvDSA();buildFemDSA();
   loadEditRecord();
   if(window._pendingEditRecord){applyDSAfromRecord(window._pendingEditRecord);window._pendingEditRecord=null;}

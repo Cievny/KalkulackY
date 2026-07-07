@@ -29,6 +29,7 @@ const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 const token=new URLSearchParams(location.search).get('t');
 const me=(window.sbUserEmail?sbUserEmail():'')||'';
+function escHtml(t){return (t==null?'':''+t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function show(ico,title,html){document.getElementById('ico').textContent=ico;document.getElementById('title').innerHTML=title;document.getElementById('body').innerHTML=html;}
 
 (async function(){
@@ -44,7 +45,7 @@ function show(ico,title,html){document.getElementById('ico').textContent=ico;doc
     }
     const stav=await r.json(); // "OK" | "EXPIROVANA" | "NEPLATNA" | "NEPRIHLASENY"
     if(stav==='OK'){
-      show('✅','Máte prístup!',`<p>Účet <b>${me?me.replace(/</g,'&lt;'):''}</b> bol pridaný medzi povolených používateľov.</p><a class="btn" href="/tools/EVK/">Vstúpiť do aplikácie</a>`);
+      show('✅','Máte prístup!',`<p>Účet <b>${escHtml(me)}</b> bol pridaný medzi povolených používateľov.</p><a class="btn" href="/tools/EVK/">Vstúpiť do aplikácie</a>`);
     }else if(stav==='EXPIROVANA'){
       show('⌛','Pozvánka expirovala','<p class="err">Tento pozývací odkaz už neplatí. Požiadajte administrátora o nový.</p>');
     }else if(stav==='NEPRIHLASENY'){

@@ -1,8 +1,7 @@
 -- =====================================================================
 --  cievny.sk – SQL na spustenie TERAZ (Supabase → SQL Editor → Run)
---  Bezpečné spúšťať aj opakovane (IF NOT EXISTS / IF EXISTS).
---  Predpoklad: už ste raz spustili spustit_na_konci.sql
---  (existujú funkcie je_povoleny() / je_tv() / je_admin()).
+--  Bezpečné spúšťať aj opakovane (IF NOT EXISTS / DO bloky).
+--  Predpoklad: už bežal spustit_na_konci.sql (funkcie je_povoleny/je_tv/je_admin).
 -- =====================================================================
 
 -- 1) EVK – IVL katétre (Shockwave/Shockfast/vlastný) do štatistík
@@ -14,7 +13,18 @@ ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS punkcia_technika_sin      TEXT
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS zabezpecenie_technika_sin TEXT;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS sheath_velkost_sin        TEXT;
 
--- 3) Oznamy – komentáre + prihlasovanie (workshopy / akcie)
+-- 3) CZ – chýbajúce stĺpce (bez nich CZ EVK ukladanie padá na chybe 400)
+--    a parita s novými SK funkciami
+ALTER TABLE cz_evk_vykony ADD COLUMN IF NOT EXISTS interv_sheath        TEXT;
+ALTER TABLE cz_evk_vykony ADD COLUMN IF NOT EXISTS interv_sheath_dlz    TEXT;
+ALTER TABLE cz_evk_vykony ADD COLUMN IF NOT EXISTS interv_sheath_znacka TEXT;
+ALTER TABLE cz_evk_vykony ADD COLUMN IF NOT EXISTS ivl_brands           TEXT;
+ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS punkcia_arteria_sin       TEXT;
+ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS punkcia_technika_sin      TEXT;
+ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS zabezpecenie_technika_sin TEXT;
+ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS sheath_velkost_sin        TEXT;
+
+-- 4) Oznamy – komentáre + prihlasovanie (workshopy / akcie)
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_komentare     BOOLEAN DEFAULT false;
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS kapacita              INT;
@@ -24,21 +34,78 @@ CREATE TABLE IF NOT EXISTS oznam_reakcie (
   oznam_id UUID NOT NULL REFERENCES oznamy(id) ON DELETE CASCADE,
   typ TEXT NOT NULL DEFAULT 'komentar',   -- 'komentar' | 'prihlaska'
   text TEXT,
-  meno TEXT,                              -- voliteľné celé meno prihláseného
+  meno TEXT,
   created_by TEXT DEFAULT (auth.jwt()->>'email'),
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- RLS: čítať smie každý povolený; písať/mazať povolený OKREM TV kiosku
-ALTER TABLE oznam_reakcie ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "reakcie sel" ON oznam_reakcie;
-DROP POLICY IF EXISTS "reakcie ins" ON oznam_reakcie;
-DROP POLICY IF EXISTS "reakcie upd" ON oznam_reakcie;
-DROP POLICY IF EXISTS "reakcie del" ON oznam_reakcie;
-CREATE POLICY "reakcie sel" ON oznam_reakcie FOR SELECT TO authenticated USING (je_povoleny());
-CREATE POLICY "reakcie ins" ON oznam_reakcie FOR INSERT TO authenticated WITH CHECK (je_povoleny() AND NOT je_tv());
-CREATE POLICY "reakcie upd" ON oznam_reakcie FOR UPDATE TO authenticated USING (je_povoleny() AND NOT je_tv()) WITH CHECK (je_povoleny() AND NOT je_tv());
-CREATE POLICY "reakcie del" ON oznam_reakcie FOR DELETE TO authenticated USING (je_povoleny() AND NOT je_tv());
+-- 5) UNIKÁTNE ID VÝKONOV – zabráni dvom záznamom s rovnakým EVK-2026-001.
+--    Ak už duplicity existujú, index sa pre danú tabuľku nevytvorí a vypíše
+--    sa WARNING so zoznamom duplicít (premenujte ich a spustite znova).
+DO $do$
+DECLARE t text; dup record; has_dup boolean;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY['evk_vykony','cas_vykony','pevar_vykony',
+                               'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony']) LOOP
+    IF to_regclass('public.'||t) IS NULL THEN CONTINUE; END IF;
+    has_dup := false;
+    FOR dup IN EXECUTE format(
+      'SELECT vykon_id, count(*) c FROM public.%I
+        WHERE vykon_id IS NOT NULL AND position(''???'' in vykon_id) = 0
+        GROUP BY vykon_id HAVING count(*) > 1', t) LOOP
+      has_dup := true;
+      RAISE WARNING 'DUPLICITA v %: % (počet %) – premenujte a spustite znova', t, dup.vykon_id, dup.c;
+    END LOOP;
+    IF NOT has_dup THEN
+      EXECUTE format(
+        'CREATE UNIQUE INDEX IF NOT EXISTS uniq_%s_vykon_id ON public.%I(vykon_id)
+          WHERE vykon_id IS NOT NULL AND position(''???'' in vykon_id) = 0', t, t);
+    END IF;
+  END LOOP;
+END $do$;
 
--- Hotovo. Poznámka: DSA „viac segmentov v jednej tepne" nepotrebuje žiadnu
--- zmenu v databáze (ukladá sa do existujúceho stĺpca dsa_nalez).
+-- 6) ZNOVU-APLIKUJ ROLE POLITIKY na všetky dátové tabuľky.
+--    Rovnaký blok ako v spustit_na_konci.sql – zmaže staré/permisívne
+--    politiky (vrátane širokého "auth all ... USING(true)", ak ho omylom
+--    obnovil starý setup skript) a nastaví: čítanie = povolený;
+--    zápis = povolený okrem TV; objednavky_dni zápis = len admin.
+DO $do$
+DECLARE t text; pol record; write_expr text;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY[
+    'evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
+    'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy','oznam_reakcie','objednavky_dni','objednavky',
+    'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup','cz_cas_followup','cz_ideas'
+  ]) LOOP
+    IF to_regclass('public.'||t) IS NOT NULL THEN
+      EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+      FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename=t LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, t);
+      END LOOP;
+      IF t = 'objednavky_dni' THEN write_expr := 'je_admin()';
+      ELSE write_expr := 'je_povoleny() AND NOT je_tv()';
+      END IF;
+      EXECUTE format('CREATE POLICY "pov sel %1$s" ON public.%1$I FOR SELECT TO authenticated USING (je_povoleny())', t);
+      EXECUTE format('CREATE POLICY "pov ins %1$s" ON public.%1$I FOR INSERT TO authenticated WITH CHECK (%2$s)', t, write_expr);
+      EXECUTE format('CREATE POLICY "pov upd %1$s" ON public.%1$I FOR UPDATE TO authenticated USING (%2$s) WITH CHECK (%2$s)', t, write_expr);
+      EXECUTE format('CREATE POLICY "pov del %1$s" ON public.%1$I FOR DELETE TO authenticated USING (%2$s)', t, write_expr);
+    END IF;
+  END LOOP;
+END $do$;
+
+-- Schránka: obnov jedinú anon výnimku (verejný formulár podnetov do „ideas")
+DROP POLICY IF EXISTS "anon insert ideas schranka" ON ideas;
+CREATE POLICY "anon insert ideas schranka" ON ideas
+  FOR INSERT TO anon
+  WITH CHECK (
+    col = 'napady'
+    AND coalesce(kategoria,'apka') IN ('apka','oddelenie')
+    AND created_by IS NULL
+    AND coalesce(hlasy,0) = 0
+    AND komentare IS NULL
+  );
+
+-- Hotovo. Ak sa vypísali WARNINGY o duplicitných vykon_id:
+--   1. nájdite ich:  SELECT id, vykon_id, datum FROM evk_vykony WHERE vykon_id='EVK-2026-001';
+--   2. premenujte:   UPDATE evk_vykony SET vykon_id='EVK-2026-001b' WHERE id='<uuid>';
+--   3. spustite tento skript znova (vytvorí unikátny index).

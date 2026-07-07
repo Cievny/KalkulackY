@@ -109,18 +109,20 @@ const READONLY=['id','created_at'];
 const COMPL_KEYS=['komplikacie','komplikacie_struct','clavien_dindo','konverzia','tech_uspech'];
 
 let ROWS=[];
+let LOAD_ERR=false; // aspoň jedna tabuľka sa nenačítala (výpadok ≠ prázdna DB)
 let CURRENT=null; // {tool, table, data}
 
 function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 async function loadAll(){
   document.getElementById('tbody').innerHTML='<tr><td colspan="6" class="empty">Načítavam…</td></tr>';
-  ROWS=[];
+  ROWS=[];LOAD_ERR=false;
   for(const [tool,table] of Object.entries(TABLES)){
     try{
       const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.desc&limit=1000`,{headers:SB_HEAD()});
       if(r.ok){const arr=await r.json();arr.forEach(d=>ROWS.push({tool,table,data:d}));}
-    }catch(e){/* ignore */}
+      else LOAD_ERR=true;
+    }catch(e){LOAD_ERR=true;}
   }
   // zoradiť spolu podľa created_at desc
   ROWS.sort((a,b)=>String(b.data.created_at||'').localeCompare(String(a.data.created_at||'')));
@@ -145,8 +147,9 @@ function render(){
     return true;
   });
   const tb=document.getElementById('tbody');
-  if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="empty">Žiadne záznamy.</td></tr>';return;}
-  tb.innerHTML='';
+  const errRow='<tr><td colspan="6" style="text-align:center;padding:14px;background:#fef2f2;color:#dc2626;font-weight:700">⚠️ Chyba spojenia — skúste obnoviť stránku</td></tr>';
+  if(!rows.length){tb.innerHTML=LOAD_ERR?errRow:'<tr><td colspan="6" class="empty">Žiadne záznamy.</td></tr>';return;}
+  tb.innerHTML=LOAD_ERR?errRow:'';
   rows.forEach((r,i)=>{
     const d=r.data;
     const datum=d.datum||d.datum_zaznamu||(d.created_at?d.created_at.slice(0,10):'');

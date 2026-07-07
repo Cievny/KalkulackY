@@ -322,12 +322,41 @@ DROP POLICY IF EXISTS "anon all followup"    ON cz_evk_followup;
 DROP POLICY IF EXISTS "anon all cz_ideas" ON cz_ideas;
 
 DROP POLICY IF EXISTS "auth all evk"      ON cz_evk_vykony;
-CREATE POLICY "auth all evk"   ON cz_evk_vykony   FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all evk" ON cz_evk_vykony FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all cas"      ON cz_cas_vykony;
-CREATE POLICY "auth all cas"   ON cz_cas_vykony   FOR ALL TO authenticated USING (true) WITH CHECK (true);
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all cas" ON cz_cas_vykony FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all pevar"    ON cz_pevar_vykony;
-CREATE POLICY "auth all pevar" ON cz_pevar_vykony FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all pevar" ON cz_pevar_vykony FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all followup" ON cz_evk_followup;
-CREATE POLICY "auth all followup" ON cz_evk_followup FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all followup" ON cz_evk_followup FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all cz_ideas" ON cz_ideas;
-CREATE POLICY "auth all cz_ideas" ON cz_ideas FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all cz_ideas" ON cz_ideas FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;

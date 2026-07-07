@@ -116,7 +116,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
       <option>Fľak</option><option>Širila</option><option>Vařejka</option><option>Maďarič</option>
     </select>
   </div>
-  <div class="f"><label>Dátum</label><input type="date" id="datum_zaznamu" onchange="gen()"></div>
+  <div class="f"><label>Dátum</label><input type="date" id="datum_zaznamu" onchange="updateIdPrefix();gen()"></div>
 </div>
 </div>
 
@@ -809,7 +809,11 @@ function calcBMI(){
   const txt='BMI '+bmi+' → '+stupen;if(el)el.textContent=txt;return txt;
 }
 
-function updateIdPrefix(){document.getElementById('id-prefix').textContent='CAS-'+new Date().getFullYear()+'-';}
+// Lokálny ISO dátum (YYYY-MM-DD) – toISOString() je UTC a večer by dal zajtrajší/včerajší deň
+function isoLocal(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+// Rok pre vykon_id – z poľa datum_zaznamu, fallback aktuálny rok
+function casYear(){const d=g('datum_zaznamu');return /^\d{4}/.test(d)?d.slice(0,4):String(new Date().getFullYear());}
+function updateIdPrefix(){document.getElementById('id-prefix').textContent='CAS-'+casYear()+'-';}
 
 // Doplní jednotku "mm" k rozmerom, ak tam ešte nie je (napr. "8x20" -> "8x20 mm")
 function withMM(str){
@@ -839,7 +843,7 @@ function gen(){
   // ── HLAVIČKA ──
   L.push('SPRÁVA Z KAROTICKEJ INTERVENCIE (CAS)');
   const datum=g('datum_zaznamu');if(datum){L.push('Dátum: '+datum.split('-').reverse().join('.'));}
-  const suf=g('id_suffix');if(suf)L.push('ID: CAS-'+new Date().getFullYear()+'-'+suf);
+  const suf=g('id_suffix');if(suf)L.push('ID: CAS-'+casYear()+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
   L.push('Lokalizácia: '+(lok||strana));
   L.push('-'.repeat(46));
@@ -914,8 +918,8 @@ function showFuTab(t){
   document.getElementById('tnb-drg').classList.toggle('active',t==='drg');
   if(t==='drg')genDRGCas();
   if(t==='fu'){
-    if(!g('fu_datum'))document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
-    if(!g('fu_id')&&g('id_suffix'))document.getElementById('fu_id').value='CAS-'+new Date().getFullYear()+'-'+g('id_suffix');
+    if(!g('fu_datum'))document.getElementById('fu_datum').value=isoLocal();
+    if(!g('fu_id')&&g('id_suffix'))document.getElementById('fu_id').value='CAS-'+casYear()+'-'+g('id_suffix');
   }
 }
 
@@ -973,7 +977,7 @@ async function saveFU(){
   };
   try{
     const r=await fetch(SB_URL+'/rest/v1/cas_followup',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
-    if(r.ok){msgFu('✅ Follow-up uložený!','#1d6f42');['fu_sac','fu_pozn','fu_reint_detail'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});const ch=document.getElementById('fu_reint');if(ch)ch.checked=false;const el2=document.getElementById('fu_el');if(el2)el2.checked=false;}
+    if(r.ok){msgFu('✅ Follow-up uložený!','#1d6f42');['fu_rest','fu_neuro','fu_pozn','fu_reint_detail'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});const ch=document.getElementById('fu_reint');if(ch)ch.checked=false;}
     else msgFu('❌ Chyba: '+r.status+(r.status===404?' (spustite setup SQL)':''),'#dc2626');
   }catch(e){msgFu('❌ Chyba siete','#dc2626');}
 }
@@ -996,6 +1000,7 @@ function copyOut(){
 }
 
 async function saveData(){
+  if(!(window._editRecordId&&window._editVykonId)&&!g('id_suffix')){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
   const artVal=g('access_art');
   const _saveBtn=document.querySelector('button[onclick="saveData()"]');
   if(_saveBtn)_saveBtn.disabled=true;
@@ -1003,13 +1008,13 @@ async function saveData(){
   // Rozdelenie veľkosti materiálu "8x20mm" → priemer / dĺžka (pre štatistiku)
   const dimMM=(id,i)=>{const n=(g(id)||'').split(/[^0-9.]+/).filter(Boolean).map(Number);return n[i]!=null?n[i]:null;};
   const payload={
-    vykon_id:window._editRecordId&&window._editVykonId?window._editVykonId:'CAS-'+new Date().getFullYear()+'-'+(g('id_suffix')||'???'),
+    vykon_id:window._editRecordId&&window._editVykonId?window._editVykonId:'CAS-'+casYear()+'-'+g('id_suffix'),
     operator:g('operator'),
     komorbidity:getKomor().join(', '),
     dsa_nalez:getCasDsa(),
     dsa_acc_sin:g('dsa_acc_sin'),dsa_aci_sin:g('dsa_aci_sin_typ'),dsa_ace_sin:g('dsa_ace_sin'),dsa_av_sin:g('dsa_av_sin'),
     dsa_acc_dx:g('dsa_acc_dx'),dsa_aci_dx:g('dsa_aci_dx_typ'),dsa_ace_dx:g('dsa_ace_dx'),dsa_av_dx:g('dsa_av_dx'),
-    datum_zaznamu:g('datum_zaznamu')||new Date().toISOString().slice(0,10),
+    datum_zaznamu:g('datum_zaznamu')||isoLocal(),
     vek:parseInt(g('vek'))||null,
     pohlavie:g('pohlavie'),
     lokalizacia:g('lokalizacia'),
@@ -1077,6 +1082,11 @@ async function saveData(){
   try{
     const _isEdit=!!window._editRecordId;
     if(_isEdit){Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]==null)delete payload[k];});delete payload.vykon_id;}
+    else{
+      // Kontrola duplicitného ID pred INSERTom
+      const _dup=await fetch(SB_URL+'/rest/v1/cas_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
+      if(_dup.ok&&(await _dup.json()).length){msg('⚠️ ID '+payload.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}
+    }
     const _url=SB_URL+'/rest/v1/cas_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
     const r=await fetch(_url,{
       method:_isEdit?'PATCH':'POST',
@@ -1102,6 +1112,7 @@ function loadEditRecord(){
     // Pacient + indikácia
     if(record.vykon_id){const parts=record.vykon_id.split('-');sv('id_suffix',parts[parts.length-1]);}
     sv('datum_zaznamu',record.datum_zaznamu);
+    updateIdPrefix();
     sv('operator',record.operator);
     sv('vek',record.vek);
     sv('pohlavie',record.pohlavie);
@@ -1122,8 +1133,12 @@ function loadEditRecord(){
     sv('nascet_stenoza_dx',record.nascet_stenoza_dx);
     sv('nascet_metoda_sin',record.nascet_metoda_sin);
     sv('nascet_metoda_dx',record.nascet_metoda_dx);
-    // DSA lateralita – odvodená z lokalizácie (samostatne sa neukladá)
-    const _lat=(record.lokalizacia||'').includes('dx')?'dx':'sin';
+    // DSA lateralita – samostatne sa neukladá, odvodzujeme ju z textu dsa_nalez:
+    // getCasDsa() generuje sekcie s markermi 'l.sin.'/'l.dx.' len pre zvolené strany,
+    // takže prítomnosť oboch markerov znamená bilaterálnu DSA. Fallback: lokalizácia.
+    const _dn=record.dsa_nalez||'';
+    const _hasSin=_dn.includes('l.sin.'),_hasDx=_dn.includes('l.dx.');
+    const _lat=(_hasSin&&_hasDx)?'bi':(_hasDx?'dx':(_hasSin?'sin':((record.lokalizacia||'').includes('dx')?'dx':'sin')));
     const _latR=document.querySelector('input[name="dsa_lat"][value="'+_lat+'"]');
     if(_latR){_latR.checked=true;casDsaLat();}
     // Prístup
@@ -1176,6 +1191,8 @@ function loadEditRecord(){
     // Kontrastné látky + antitrombotiká
     (record.kontrast||'').split('+').map(s=>s.trim()).filter(Boolean).forEach(v=>{const cb=[...document.querySelectorAll('.kontr')].find(c=>c.value===v);if(cb)cb.checked=true;});
     (record.antitrombotika||'').split(', ').filter(Boolean).forEach(v=>{const cb=[...document.querySelectorAll('.atb')].find(c=>c.value===v);if(cb)cb.checked=true;});
+    // Komplikácie (štruktúrované) – obnovenie checkboxov podľa uloženého reťazca
+    if(record.komplikacie_struct){const _ks=record.komplikacie_struct;document.querySelectorAll('.st_cmp').forEach(cb=>{if(_ks.includes(cb.value))cb.checked=true;});}
     // Komorbidity – uložené ako čitateľný text, obnovujeme substring matchingom
     try{
       const ks=record.komorbidity||'';
@@ -1202,7 +1219,7 @@ function loadEditRecord(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
+  document.getElementById('datum_zaznamu').value=isoLocal();
   updateIdPrefix();
   casDsaLat();
   loadEditRecord();

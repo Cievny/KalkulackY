@@ -40,6 +40,8 @@ Skripty možno bezpečne spustiť opakovane (`IF NOT EXISTS` / `IF EXISTS`). Ove
   gpg --output zaloha.tar.gz --decrypt zaloha-RRRR-MM-DD.tar.gz.gpg
   tar xzf zaloha.tar.gz
   ```
+- Prvý deň v mesiaci sa navyše uloží **mesačný artefakt s retenciou 90 dní** (bežné zálohy majú 30 dní).
+- **Obnova do databázy:** po dešifrovaní spustite `python3 scripts/obnova_zalohy.py --dir obnova --email vas@email.sk` (najprv beží nasucho, ostrý zápis s `--naozaj`; vkladá tabuľky v poradí cudzích kľúčov a existujúce riadky preskočí). Prílohy z priečinkov `*-subory` sa nahrávajú ručne cez Supabase Studio → Storage.
 - Ručne (bez šifrovania, len na osobné použitie): `/tools/zaloha/` stiahne JSON všetkých tabuliek (bez súborových príloh).
 
 ## Vývoj a nasadenie

@@ -237,10 +237,19 @@ function renderArchiv(){
 async function vote(id){
   if(localStorage.getItem('idea_v_'+id))return;
   try{
-    const cur=await fetchOne(id);if(!cur)return;
-    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({hlasy:(cur.hlasy||0)+1})});
-    if(r.ok){localStorage.setItem('idea_v_'+id,'1');await loadItems();}
-  }catch(e){}
+    // optimistická súbežnosť: PATCH prejde len ak hlasy medzitým nikto nezmenil; inak refetch + 1 opakovanie
+    for(let pokus=0;pokus<2;pokus++){
+      const cur=await fetchOne(id);if(!cur)return;
+      const old=cur.hlasy||0;
+      const cond=cur.hlasy==null?'&hlasy=is.null':'&hlasy=eq.'+old;
+      const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}${cond}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify({hlasy:old+1})});
+      if(!r.ok){alert('Chyba pri hlasovaní: '+r.status);return;}
+      const res=await r.json();
+      if(res.length){localStorage.setItem('idea_v_'+id,'1');await loadItems();return;}
+    }
+    alert('Hlas sa nepodarilo uložiť – kartu medzitým niekto zmenil. Skúste znova.');
+    await loadItems();
+  }catch(e){alert('Chyba siete: '+e.message);}
 }
 
 function toggleKom(id){
@@ -254,12 +263,19 @@ async function addKoment(id){
   const t=(inp.value||'').trim();if(!t)return;
   const anon=document.getElementById('kan_'+id).checked;
   try{
-    const cur=await fetchOne(id);if(!cur)return;
-    const kom=parseKom(cur);
-    kom.push({t,a:anon?null:(myName()||null),d:new Date().toLocaleDateString('sk-SK')});
-    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({komentare:JSON.stringify(kom)})});
-    if(r.ok){KOMOPEN.add(id);inp.value='';await loadItems();}
-    else alert('Chyba pri ukladaní: '+r.status);
+    // optimistická súbežnosť: PATCH prejde len ak komentáre medzitým nikto nezmenil; inak refetch + 1 opakovanie
+    for(let pokus=0;pokus<2;pokus++){
+      const cur=await fetchOne(id);if(!cur)return;
+      const kom=parseKom(cur);
+      kom.push({t,a:anon?null:(myName()||null),d:new Date().toLocaleDateString('sk-SK')});
+      const cond=cur.komentare==null?'&komentare=is.null':'&komentare=eq.'+encodeURIComponent(cur.komentare);
+      const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}${cond}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify({komentare:JSON.stringify(kom)})});
+      if(!r.ok){alert('Chyba pri ukladaní: '+r.status);return;}
+      const res=await r.json();
+      if(res.length){KOMOPEN.add(id);inp.value='';await loadItems();return;}
+    }
+    alert('Komentár sa nepodarilo uložiť – kartu medzitým niekto zmenil. Skúste znova.');
+    await loadItems();
   }catch(e){alert('Chyba siete: '+e.message);}
 }
 

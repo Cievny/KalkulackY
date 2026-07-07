@@ -329,7 +329,7 @@ function renderPanel(){
       ${casSel}
       <input id="o_meno" placeholder="Meno pacienta" onkeydown="if(event.key==='Enter')pridajObj()">
       <input id="o_rocnik" type="number" placeholder="ročník" min="1900" max="2035">
-      <input id="o_rc" placeholder="r.č. (nepovinné)">
+      <input id="o_rc" placeholder="r.č. (nepovinné)" autocomplete="off">
       <input id="o_indik" placeholder="indikácia / dôvod">
       <input id="o_odd" class="full" placeholder="oddelenie / odosielajúci (nepovinné)">
       <input id="o_pozn" class="full" placeholder="poznámka (nepovinné)">
@@ -389,7 +389,8 @@ async function zrusObj(id){
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${T_OBJ}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify({stav:'zruseny',updated_at:new Date().toISOString()})});
     if(r.ok)await loadMonth();
-  }catch(e){}
+    else pmsg('❌ Chyba '+r.status+' – objednávka sa nezrušila, skúste znova.','#dc2626');
+  }catch(e){pmsg('❌ Chyba siete – objednávka sa nezrušila, skúste znova.','#dc2626');}
 }
 
 // ── Admin: otváranie / zatváranie dní ──
@@ -465,7 +466,11 @@ async function denModalOk(){
   }
 }
 async function patchDen(id,fields){
-  try{const r=await fetch(`${SB_URL}/rest/v1/${T_DNI}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify({...fields,updated_at:new Date().toISOString()})});if(r.ok)await loadMonth();}catch(e){}
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${T_DNI}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify({...fields,updated_at:new Date().toISOString()})});
+    if(r.ok)await loadMonth();
+    else alert('Chyba pri úprave dňa: '+r.status);
+  }catch(e){alert('Chyba siete – deň sa neupravil');}
 }
 function upravKap(dk){
   if(!isAdmin()||!DNI[dk])return;
@@ -492,15 +497,17 @@ async function zavriDen(dk){
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${T_DNI}?id=eq.${DNI[dk].id}`,{method:'DELETE',headers:H()});
     if(r.ok){if(SEL===dk){SEL=null;document.getElementById('panel').style.display='none';}await loadMonth();}
-  }catch(e){}
+    else alert('Chyba pri zatváraní dňa: '+r.status);
+  }catch(e){alert('Chyba siete – deň sa nezatvoril');}
 }
 
 loadAdmin().then(loadMonth);
 setInterval(()=>{
   const ae=document.activeElement;
   if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return; // needituj/neresetuj pod rukami
-  const m=document.getElementById('o_meno');
-  if(m&&m.value.trim())return; // rozpísaná objednávka – nezahoď ju
+  // rozpísaná objednávka (hociktoré pole formulára) – nezahoď ju obnovením panela
+  const rozpisane=[...document.querySelectorAll('#formwrap input, #formwrap textarea')].some(el=>el.value.trim());
+  if(rozpisane)return;
   loadMonth();
 },60000);
 </script>

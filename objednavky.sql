@@ -49,6 +49,20 @@ CREATE INDEX IF NOT EXISTS idx_objednavky_typ_datum ON objednavky (typ, datum);
 ALTER TABLE objednavky_dni ENABLE ROW LEVEL SECURITY;
 ALTER TABLE objednavky     ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "auth all objednavky_dni" ON objednavky_dni;
-CREATE POLICY "auth all objednavky_dni" ON objednavky_dni FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all objednavky_dni" ON objednavky_dni FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
 DROP POLICY IF EXISTS "auth all objednavky" ON objednavky;
-CREATE POLICY "auth all objednavky" ON objednavky FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all objednavky" ON objednavky FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;

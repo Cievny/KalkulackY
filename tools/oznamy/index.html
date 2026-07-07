@@ -104,7 +104,8 @@ function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt
 function shortMail(e){return (e||'').split('@')[0];}
 function msg(t,c){const el=document.getElementById('o_msg');el.textContent=t;el.style.color=c;setTimeout(()=>{if(el.textContent===t)el.textContent='';},4000);}
 function fmtD(d){if(!d)return'';const x=new Date(d);return isNaN(x)?'':x.toLocaleDateString('sk-SK');}
-function jeExpirovany(o){return o.platne_do&&o.platne_do<new Date().toISOString().slice(0,10);}
+function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
+function jeExpirovany(o){return o.platne_do&&o.platne_do<isoLocal(new Date());}
 
 async function load(){
   try{
@@ -252,9 +253,14 @@ async function delOznam(id){
   if(!confirm('Zmazať tento oznam?'))return;
   try{
     const o=OZNAMY.find(x=>x.id===id);
-    if(o&&o.priloha_path)await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${o.priloha_path}`,{method:'DELETE',headers:H()});
+    // najprv riadok, až potom prílohu – aby po zlyhaní neostal oznam bez prílohy
     const r=await fetch(`${SB_URL}/rest/v1/oznamy?id=eq.${id}`,{method:'DELETE',headers:H()});
-    if(r.ok)await load();
+    if(!r.ok){msg('❌ Nepodarilo sa zmazať oznam: '+r.status,'#dc2626');return;}
+    if(o&&o.priloha_path){
+      const rf=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${o.priloha_path}`,{method:'DELETE',headers:H()});
+      if(!rf.ok)msg('⚠️ Oznam zmazaný, ale prílohu sa nepodarilo odstrániť ('+rf.status+')','#b45309');
+    }
+    await load();
   }catch(e){msg('❌ Chyba siete','#dc2626');}
 }
 

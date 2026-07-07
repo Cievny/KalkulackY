@@ -26,4 +26,11 @@ CREATE POLICY "anon insert ideas schranka" ON ideas
 
 -- (pre istotu) prihlásení majú plný prístup k nápadom
 DROP POLICY IF EXISTS "auth all ideas" ON ideas;
-CREATE POLICY "auth all ideas" ON ideas FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Široká politika sa vytvorí LEN pri čerstvej inštalácii (bez allowlistu).
+-- Ak už existuje je_povoleny() (bežal spustit_na_konci.sql), preskočí sa,
+-- aby opätovné spustenie tohto skriptu nevyplo ochranu.
+DO $guard$ BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    EXECUTE 'CREATE POLICY "auth all ideas" ON ideas FOR ALL TO authenticated USING (true) WITH CHECK (true)';
+  END IF;
+END $guard$;
