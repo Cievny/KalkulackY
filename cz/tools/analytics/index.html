@@ -82,8 +82,12 @@ details summary:hover{color:#1737a0}
       <div class="chart-card"><h3>Stenty – značka</h3><div class="chart-wrap"><canvas id="ch-evk-stentbrand"></canvas></div></div>
     </div>
     <div class="row2">
+      <div class="chart-card"><h3>IVL katétry</h3><div class="chart-wrap"><canvas id="ch-evk-ivl"></canvas></div></div>
       <div class="chart-card"><h3>Speciální techniky</h3><div class="chart-wrap"><canvas id="ch-evk-spec"></canvas></div></div>
+    </div>
+    <div class="row2">
       <div class="chart-card"><h3>Délka výkonu (min)</h3><div class="chart-wrap"><canvas id="ch-evk-duration"></canvas></div></div>
+      <div class="chart-card" style="visibility:hidden"></div>
     </div>
     <div class="row2">
       <div class="chart-card"><h3>Komplikace (SVS)</h3><div class="chart-wrap"><canvas id="ch-evk-compl"></canvas></div></div>
@@ -204,6 +208,8 @@ const COLORS=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f973
 
 const charts={};
 function mkChart(id,type,labels,data,legend){
+  // pokud CDN s Chart.js není dostupné (offline), stránka nesmí spadnout – čísla zůstanou
+  if(typeof Chart==='undefined'){const el=document.getElementById(id);if(el&&el.parentNode)el.parentNode.insertAdjacentHTML('beforeend','<div style="color:#9ca3af;font-size:12px;text-align:center">graf není dostupný (offline)</div>');return;}
   if(charts[id])charts[id].destroy();
   const ctx=document.getElementById(id).getContext('2d');
   charts[id]=new Chart(ctx,{
@@ -387,6 +393,9 @@ async function loadEVK(){
 
   // Stenty – značka
   const sb=parseMultiField(rows,'stent_brands');if(sb.length)mkChart('ch-evk-stentbrand','bar',sb.map(x=>x[0]),sb.map(x=>x[1]),false);
+
+  // IVL katétry (Shockwave / Shockfast / …)
+  const ivlb=parseMultiField(rows,'ivl_brands');if(ivlb.length)mkChart('ch-evk-ivl','doughnut',ivlb.map(x=>x[0]),ivlb.map(x=>x[1]));
 
   // Speciální techniky
   const specLabels=['Kissing stent','CERAB','Aterektomie','Trombektomie'];

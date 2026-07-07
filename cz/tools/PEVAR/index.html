@@ -49,6 +49,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .id-prefix{font-weight:700;font-size:13px;color:#3b82f6;background:#f0f7ff;border:1.5px solid #3b82f6;border-radius:6px;padding:6px 10px;white-space:nowrap}
 @media print{.tabnav{display:none}.left{display:none}.right{border:none;height:auto;position:static}.btns{display:none}#out{border:none;font-family:inherit;font-size:13px;background:#fff}}
 details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:11.5px;color:#5a6a8a;font-weight:600;cursor:pointer;user-select:none;padding:5px 8px;background:#f7f8fc;border-radius:6px;border:1.5px solid #eef0f5;list-style:none}details.komor-details>summary::-webkit-details-marker{display:none}details.komor-details[open]>summary .komor-arr{transform:rotate(90deg)}details.komor-details>summary .komor-arr{display:inline-block;transition:transform .2s;font-size:10px;color:#9ca3af}
+.side-box{border:1.5px solid #cdd9f2;background:#f6f9ff;border-radius:9px;padding:10px 12px;margin-top:10px}
+.side-box.sin{border-color:#cbe5d6;background:#f5fbf7}
+.side-hdr{font-size:11px;font-weight:800;color:#1e40af;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.side-box.sin .side-hdr{color:#15803d}
 </style>
 </head>
 <body>
@@ -102,7 +106,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
       <option>Vařejka</option><option>Horáková</option><option>Ručka</option><option>Heller</option>
     </select>
   </div>
-  <div class="f"><label>Datum</label><input type="date" id="datum_zaznamu" oninput="gen()"></div>
+  <div class="f"><label>Datum</label><input type="date" id="datum_zaznamu" oninput="updatePevarIdPrefix();gen()"></div>
 </div>
 </div>
 
@@ -347,29 +351,51 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     </select>
   </div>
 </div>
-<div class="row r2">
-  <div class="f"><label>Tepna</label><input type="text" id="punkce_arteria" value="AFC" oninput="gen()"></div>
-  <div class="f"><label>Technika punkce</label><input type="text" id="punkce_technika" value="Seldingerovou technikou, retrográdně" oninput="gen()"></div>
+<div class="f" style="margin-bottom:4px"><label>Navigace punkce</label>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" id="usg_nav" onchange="gen()"><span>USG</span></label>
+    <label class="ck"><input type="checkbox" id="rtg_nav" onchange="gen()"><span>RTG</span></label>
+  </div>
 </div>
-<div class="row r2">
-  <div class="f"><label>Navigácia</label>
-    <div class="checks">
-      <label class="ck"><input type="checkbox" id="usg_nav" onchange="gen()"><span>USG</span></label>
-      <label class="ck"><input type="checkbox" id="rtg_nav" onchange="gen()"><span>RTG</span></label>
+<div id="pristup_dx_box" class="side-box">
+  <div class="side-hdr" id="pristup_dx_hint">Přístup</div>
+  <div class="row r2">
+    <div class="f"><label>Tepna</label><input type="text" id="punkce_arteria" value="AFC" oninput="gen()"></div>
+    <div class="f"><label>Technika punkce</label><input type="text" id="punkce_technika" value="Seldingerovou technikou, retrográdně" oninput="gen()"></div>
+  </div>
+  <div class="row r2">
+    <div class="f"><label>Velikost sheathu</label>
+      <select id="sheath_velkost" onchange="gen()">
+        <option>6F</option><option>7F</option><option selected>8F</option><option>9F</option><option>10F</option>
+      </select>
+    </div>
+    <div class="f"><label>Zajištění vpichu</label>
+      <select id="zabezpecenie_technika" onchange="gen()">
+        <option value="preclosure technikou">Standardní preclosure</option>
+        <option value="za použití preclosure techniky za použití ProStyle zařízení">Preclosure s ProStyle</option>
+        <option value="odebráním hloubky místa vpichu kalibračním dilatátorem pro Manta systém">Kalibrace pro Manta</option>
+      </select>
     </div>
   </div>
-  <div class="f"><label>Velikost sheathu</label>
-    <select id="sheath_velkost" onchange="gen()">
-      <option>6F</option><option>7F</option><option selected>8F</option><option>9F</option><option>10F</option>
-    </select>
-  </div>
 </div>
-<div class="f"><label>Technika zajištění vpichu</label>
-  <select id="zabezpecenie_technika" onchange="gen()">
-    <option value="preclosure technikou">Standardní preclosure</option>
-    <option value="za použití preclosure techniky za použití ProStyle zařízení">Preclosure s ProStyle</option>
-    <option value="odebráním hloubky místa vpichu kalibračním dilatátorem pro Manta systém">Kalibrace pro Manta</option>
-  </select>
+<div id="pristup_sin_wrap" class="side-box sin" style="display:none">
+  <div class="side-hdr">Levá strana (l.sin.)</div>
+  <div class="row r2">
+    <div class="f"><label>Tepna</label><input type="text" id="punkcia_arteria_sin" value="AFC" oninput="gen()"></div>
+    <div class="f"><label>Technika punkce</label><input type="text" id="punkcia_technika_sin" value="Seldingerovou technikou, retrográdně" oninput="gen()"></div>
+  </div>
+  <div class="row r2">
+    <div class="f"><label>Velikost sheathu</label>
+      <select id="sheath_velkost_sin" onchange="gen()"><option>6F</option><option>7F</option><option selected>8F</option><option>9F</option><option>10F</option></select>
+    </div>
+    <div class="f"><label>Zajištění vpichu</label>
+      <select id="zabezpecenie_technika_sin" onchange="gen()">
+        <option value="preclosure technikou">Standardní preclosure</option>
+        <option value="za použití preclosure techniky za použití ProStyle zařízení">Preclosure s ProStyle</option>
+        <option value="odebráním hloubky místa vpichu kalibračním dilatátorem pro Manta systém">Kalibrace pro Manta</option>
+      </select>
+    </div>
+  </div>
 </div>
 </div>
 
@@ -608,7 +634,11 @@ function g(id){const el=document.getElementById(id);if(!el)return'';return el.va
 function chybaStud(){const M=[];if(!g('st_dur'))M.push('délka výkonu');if(!g('st_fluoro'))M.push('skiaskopie');if(!g('st_dap'))M.push('DAP');if(!g('st_contrast'))M.push('kontrast');return M;}
 function chk(id){const el=document.getElementById(id);return el?el.checked:false;}
 function tB(id){const b=document.getElementById('b_'+id);if(b)b.classList.toggle('on');}
-function updatePevarIdPrefix(){document.getElementById('id-prefix').textContent='PEVAR-'+new Date().getFullYear()+'-';}
+// Lokální ISO datum (bez UTC posunu) – toISOString() by ve večerních hodinách vrátil jiný den
+function isoLocal(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+// Rok pro vykon_id – odvozen z pole Datum, fallback aktuální rok
+function pevarYear(){const d=g('datum_zaznamu');const y=d?parseInt(d.slice(0,4),10):NaN;return(y&&y>1900)?y:new Date().getFullYear();}
+function updatePevarIdPrefix(){document.getElementById('id-prefix').textContent='PEVAR-'+pevarYear()+'-';}
 function kSub(id){const s=document.getElementById('ksub_'+id),c=document.getElementById('k_'+id);if(s)s.classList.toggle('on',c.checked);}
 function getKomor(){
   const list=[];
@@ -720,7 +750,18 @@ function gen(){
   const nav=navParts.length?' za použití '+navParts.join(' a ')+' navigace':'';
   const zabezp=g('zabezpecenie_technika');
   const sheath=g('sheath_velkost');
-  const pristupText=`${anestezia}, ${technika}${nav}, punktujeme ${arteria} ${stranaSkr}. Zajišťujeme místa vpichu ${zabezp} ${stranaText} a zavádíme ${stranaText} ${sheath} sheath.`;
+  const obojstr=(pristupVal[0]||'')==='oboustranně';
+  const sinWrapA=document.getElementById('pristup_sin_wrap');if(sinWrapA)sinWrapA.style.display=obojstr?'block':'none';
+  const dxHint=document.getElementById('pristup_dx_hint');
+  if(dxHint)dxHint.textContent=obojstr?'Pravá strana (l.dx.)':(pristupVal[0]==='vlevo'?'Přístup vlevo (l.sin.)':'Přístup vpravo (l.dx.)');
+  let pristupText;
+  if(obojstr){
+    const arteriaSin=g('punkcia_arteria_sin')||arteria, technikaSin=g('punkcia_technika_sin')||technika;
+    const zabezpSin=g('zabezpecenie_technika_sin')||zabezp, sheathSin=g('sheath_velkost_sin')||sheath;
+    pristupText=`${anestezia}.${nav?' '+nav.replace(/^ /,'').replace(/^za/,'Za')+'.':''} Vpravo (l.dx.) punktujeme ${arteria} ${technika}, zavádíme ${sheath} sheath a místo vpichu zajišťujeme ${zabezp}. Vlevo (l.sin.) punktujeme ${arteriaSin} ${technikaSin}, zavádíme ${sheathSin} sheath a místo vpichu zajišťujeme ${zabezpSin}.`;
+  }else{
+    pristupText=`${anestezia}, ${technika}${nav}, punktujeme ${arteria} ${stranaSkr}. Zajišťujeme místa vpichu ${zabezp} ${stranaText} a zavádíme ${stranaText} ${sheath} sheath.`;
+  }
 
   const sgTyp=document.querySelector('input[name="sg_typ"]:checked')?.value||'bifurkačního';
   const isBifurk=sgTyp==='bifurkačního';
@@ -794,7 +835,7 @@ function gen(){
   // ── HLAVIČKA ──
   L.push('ZPRÁVA Z ENDOVASKULÁRNÍHO VÝKONU (PEVAR)');
   const datum=g('datum_zaznamu');if(datum){L.push('Datum: '+datum.split('-').reverse().join('.'));}
-  const suf=g('id_suffix');if(suf)L.push('ID: PEVAR-'+new Date().getFullYear()+'-'+suf);
+  const suf=g('id_suffix');if(suf)L.push('ID: PEVAR-'+pevarYear()+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
   L.push('-'.repeat(46));
 
@@ -859,8 +900,8 @@ function showFuTab(t){
   document.getElementById('tnb-nalez').classList.toggle('active',t!=='fu');
   document.getElementById('tnb-fu').classList.toggle('active',t==='fu');
   if(t==='fu'){
-    if(!g('fu_datum'))document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
-    if(!g('fu_id')&&g('id_suffix'))document.getElementById('fu_id').value='PEVAR-'+new Date().getFullYear()+'-'+g('id_suffix');
+    if(!g('fu_datum'))document.getElementById('fu_datum').value=isoLocal();
+    if(!g('fu_id')&&g('id_suffix'))document.getElementById('fu_id').value='PEVAR-'+pevarYear()+'-'+g('id_suffix');
   }
 }
 function msgFu(t,c){const el=document.getElementById('fu_msg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',4000);}
@@ -902,6 +943,7 @@ function copyOut(){
 function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',3000);}
 
 async function saveToSupabase(){
+  if(!g('id_suffix').trim()){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
   const pristupVal=g('pristup_strana').split('|');
   // --- Flatten materiálů pro publikační statistiku ---
   const extRows=[];
@@ -916,10 +958,10 @@ async function saveToSupabase(){
   // Rozmery tela SG "18-166-16" → prox průměr / délka / dist průměr
   const sgNums=(g('sg_rozmery')||'').split(/[^0-9.]+/).filter(Boolean).map(Number);
   const payload={
-    vykon_id:'PEVAR-'+new Date().getFullYear()+'-'+(g('id_suffix')||'???'),
+    vykon_id:'PEVAR-'+pevarYear()+'-'+g('id_suffix').trim(),
     operator:g('operator'),
     komorbidity:getKomor().join(', '),
-    datum_zaznamu:g('datum_zaznamu')||new Date().toISOString().slice(0,10),
+    datum_zaznamu:g('datum_zaznamu')||isoLocal(),
     vek:parseInt(g('vek'))||null,
     pohlavie:g('pohlavie'),
     diagnoza:g('diagnoza'),
@@ -989,11 +1031,26 @@ async function saveToSupabase(){
     ext_strany:jn(extRows.map(e=>e.strana)),
     extenzie_detail:JSON.stringify(extRows)
   };
+  // levostranný přístup ukládáme jen při oboustranném (aby jednostranné uložení fungovalo i bez SQL doplňku)
+  if((pristupVal[0]||'')==='oboustranně'){
+    payload.punkcia_arteria_sin=g('punkcia_arteria_sin');
+    payload.punkcia_technika_sin=g('punkcia_technika_sin');
+    payload.sheath_velkost_sin=g('sheath_velkost_sin');
+    payload.zabezpecenie_technika_sin=g('zabezpecenie_technika_sin');
+  }
   msg('Ukládám...','#5a6a8a');
   const _btn=document.getElementById('save_btn');
   if(_btn)_btn.disabled=true;
   try{
     const _isEdit=!!window._editRecordId;
+    if(!_isEdit){
+      // kontrola duplicitního ID před INSERTem
+      const _dupR=await fetch(SB_URL+'/rest/v1/cz_pevar_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
+      if(_dupR.ok){
+        const _dup=await _dupR.json();
+        if(Array.isArray(_dup)&&_dup.length){msg('⚠️ ID '+payload.vykon_id+' už existuje – zvolte jiné číslo','#b45309');return;}
+      }
+    }
     if(_isEdit){
       Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]==null)delete payload[k];});
       delete payload.vykon_id;
@@ -1034,6 +1091,14 @@ function loadEditRecord(){
     sv('st_contrast',record.contrast_ml);
     sv('st_konv',record.konverzia?'ano':'ne');
     sv('st_clavien',record.clavien_dindo);
+    // obnovení checkboxů uložených jako ', '-joined řetězce
+    const restoreChecks=(cls,str)=>{
+      if(!str)return;
+      const vals=new Set(String(str).split(',').map(s=>s.trim()).filter(Boolean));
+      document.querySelectorAll('input.'+cls).forEach(cb=>{if(vals.has(cb.value))cb.checked=true;});
+    };
+    restoreChecks('st_cmp',record.komplikacie_struct);
+    restoreChecks('atb',record.antitrombotika);
     sv('punkce_arteria',record.punkcia_arteria);
     sv('punkce_technika',record.punkcia_technika);
     sv('kompr_dx',record.kompresia_dx_min);
@@ -1041,6 +1106,10 @@ function loadEditRecord(){
     if(record.indikacia_typ){const rb=document.querySelector(`input[name="ind_typ"][value="${record.indikacia_typ}"]`);if(rb)rb.checked=true;}
     sv('zabezpecenie_technika',record.zabezpecenie_technika);
     if(record.pristup_strana){const sel=document.getElementById('pristup_strana');const opt=[...sel.options].find(o=>o.value.startsWith(record.pristup_strana));if(opt)sel.value=opt.value;}
+    sv('punkcia_arteria_sin',record.punkcia_arteria_sin);
+    sv('punkcia_technika_sin',record.punkcia_technika_sin);
+    sv('sheath_velkost_sin',record.sheath_velkost_sin);
+    sv('zabezpecenie_technika_sin',record.zabezpecenie_technika_sin);
     sv('sheath_velkost',record.sheath_velkost);
     sv('vodic_typ',record.vodic_typ);
     if(record.sg_konfiguracia){const rb=document.querySelector(`input[name="sg_typ"][value="${record.sg_konfiguracia}"]`);if(rb)rb.checked=true;}
@@ -1146,9 +1215,9 @@ window.addEventListener('pageshow', resetKomor);
 
 document.addEventListener('DOMContentLoaded',()=>{
   resetKomor();
-  document.getElementById('datum_zaznamu').value=new Date().toISOString().slice(0,10);
-  updatePevarIdPrefix();
+  document.getElementById('datum_zaznamu').value=isoLocal();
   loadEditRecord();
+  updatePevarIdPrefix();
   gen();
   window._dirty=false;
 });
