@@ -84,8 +84,12 @@ details summary:hover{color:#1737a0}
       <div class="chart-card"><h3>Stenty – značka</h3><div class="chart-wrap"><canvas id="ch-evk-stentbrand"></canvas></div></div>
     </div>
     <div class="row2">
+      <div class="chart-card"><h3>IVL katétre</h3><div class="chart-wrap"><canvas id="ch-evk-ivl"></canvas></div></div>
       <div class="chart-card"><h3>Špeciálne techniky</h3><div class="chart-wrap"><canvas id="ch-evk-spec"></canvas></div></div>
+    </div>
+    <div class="row2">
       <div class="chart-card"><h3>Dĺžka výkonu (min)</h3><div class="chart-wrap"><canvas id="ch-evk-duration"></canvas></div></div>
+      <div class="chart-card" style="visibility:hidden"></div>
     </div>
     <div class="row2">
       <div class="chart-card"><h3>Komplikácie (SVS)</h3><div class="chart-wrap"><canvas id="ch-evk-compl"></canvas></div></div>
@@ -436,6 +440,9 @@ async function loadEVK(){
 
   // Stenty – značka
   const sb=parseMultiField(rows,'stent_brands');if(sb.length)mkChart('ch-evk-stentbrand','bar',sb.map(x=>x[0]),sb.map(x=>x[1]),false);
+
+  // IVL katétre (Shockwave / Shockfast / …)
+  const ivlb=parseMultiField(rows,'ivl_brands');if(ivlb.length)mkChart('ch-evk-ivl','doughnut',ivlb.map(x=>x[0]),ivlb.map(x=>x[1]));
 
   // Špeciálne techniky
   const specLabels=['Kissing stent','CERAB','Aterektómia','Trombektómia'];

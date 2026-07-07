@@ -319,6 +319,7 @@ ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS balloon_brands    TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS balloon_sizes     TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS ivl_count         INT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS ivl_sizes         TEXT;
+ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS ivl_brands        TEXT;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_vessel_prep  BOOLEAN;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_predilat     BOOLEAN;
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS tech_aterektomia  BOOLEAN;

@@ -1087,6 +1087,7 @@ function collectFullData(){
     balloon_sizes:jn(balloons.map(sizeStr)),
     ivl_count:ivls.length,
     ivl_sizes:jn(ivls.map(sizeStr)),
+    ivl_brands:jn(ivls.map(i=>i.nazov)),
     sg_count:sgs.length,
     sg_brands:jn(sgs.map(s=>s.stent_nazov)),
     sg_sizes:jn(sgs.map(sizeStr)),
