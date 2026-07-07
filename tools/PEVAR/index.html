@@ -48,6 +48,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .id-prefix{font-weight:700;font-size:13px;color:#3b82f6;background:#f0f7ff;border:1.5px solid #3b82f6;border-radius:6px;padding:6px 10px;white-space:nowrap}
 @media print{.tabnav{display:none}.left{display:none}.right{border:none;height:auto;position:static}.btns{display:none}#out{border:none;font-family:inherit;font-size:13px;background:#fff}}
 details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:11.5px;color:#5a6a8a;font-weight:600;cursor:pointer;user-select:none;padding:5px 8px;background:#f7f8fc;border-radius:6px;border:1.5px solid #eef0f5;list-style:none}details.komor-details>summary::-webkit-details-marker{display:none}details.komor-details[open]>summary .komor-arr{transform:rotate(90deg)}details.komor-details>summary .komor-arr{display:inline-block;transition:transform .2s;font-size:10px;color:#9ca3af}
+.drg-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.drg-table th{text-align:left;padding:7px 10px;background:#f3f6fb;color:#5a6a8a;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px}
+.drg-table td{padding:8px 10px;border-bottom:1px solid #eef1f6;vertical-align:top}
+.drg-code-cell{font-family:'Courier New',monospace;font-weight:700;color:#1e40af;font-size:13px;white-space:nowrap}
+.drg-warn{color:#b45309}
+.drg-empty{color:#8fa3c8;font-style:italic;font-size:12px;padding:12px 0;text-align:center}
+.drg-section-hdr{font-size:12px;font-weight:700;color:#1a2745;margin:4px 0 6px}
+.drg-info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:10px 12px;font-size:11.5px;color:#1e3a5f;margin-bottom:12px;line-height:1.55}
+.drg-copy-btn{padding:7px 16px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;margin-top:10px;width:100%}
+.drg-copy-btn:hover{background:#1737a0}
 </style>
 </head>
 <body>
@@ -55,8 +65,35 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <script>checkAuth();</script>
 <nav class="tabnav">
   <button class="tnb active" id="tnb-nalez" onclick="showFuTab('nalez')">🫀 PEVAR</button>
+  <button class="tnb" id="tnb-drg" onclick="showFuTab('drg')">📊 DRG kódy</button>
   <button class="tnb" id="tnb-fu" onclick="showFuTab('fu')">📅 Follow-up</button>
 </nav>
+
+<!-- DRG KÓDY -->
+<div id="tab-drg" style="display:none;padding:24px;max-width:860px;margin:0 auto">
+  <h2 style="font-size:16px;font-weight:700;color:#1a2745;margin-bottom:8px">📊 DRG kódy (ZV-DRG 2026) – automatický výpočet</h2>
+  <div class="drg-info">
+    Kód sa generuje automaticky podľa katalógu prípadových paušálov 2026 (príloha 4 – ŠZM).<br>
+    Štandardný PEVAR (bifurkačný aj unilaterálny stentgraft) = <strong>8r8q3.0</strong>. Pri fenestrovanom / branchovanom / chimney výkone vyberte variant nižšie.<br>
+    <em>Extenzie a domodelovanie sú súčasťou kódu implantácie – samostatne sa nekódujú.</em>
+  </div>
+  <div class="f" style="max-width:420px;margin-bottom:12px">
+    <label>Variant stentgraftu (pre DRG)</label>
+    <select id="drg_variant" onchange="genDRGPevar()">
+      <option value="0">štandardný aortálny stentgraft (automaticky)</option>
+      <option value="1">branchovaný stentgraft</option>
+      <option value="2">stentgraft s 1 fenestráciou</option>
+      <option value="3">stentgraft s 2 fenestráciami</option>
+      <option value="4">stentgraft s 3 fenestráciami</option>
+      <option value="5">stentgraft so 4 a viac fenestráciami</option>
+      <option value="6">chimney technika</option>
+      <option value="7">chimney technika, 2 a viac stentgraftov</option>
+    </select>
+  </div>
+  <div id="drg_output"><div class="drg-empty">Kódy sa zobrazia automaticky.</div></div>
+  <button class="drg-copy-btn" onclick="copyDRG()">📋 Kopírovať kódy</button>
+  <div id="drg_cmsg" style="font-size:11px;text-align:center;min-height:16px;margin-top:6px"></div>
+</div>
 
 <!-- FOLLOW-UP -->
 <div id="tab-fu" style="display:none;padding:24px;max-width:700px;margin:0 auto">
@@ -884,14 +921,56 @@ function delExtenzia(idx){const r=document.querySelector('#extenzie_list [data-i
 
 // ── Follow-up ────────────────────────────────────────────────
 function showFuTab(t){
-  document.querySelector('.wrap').style.display=t==='fu'?'none':'grid';
+  document.querySelector('.wrap').style.display=(t==='fu'||t==='drg')?'none':'grid';
   document.getElementById('tab-fu').style.display=t==='fu'?'block':'none';
-  document.getElementById('tnb-nalez').classList.toggle('active',t!=='fu');
+  document.getElementById('tab-drg').style.display=t==='drg'?'block':'none';
+  document.getElementById('tnb-nalez').classList.toggle('active',t!=='fu'&&t!=='drg');
   document.getElementById('tnb-fu').classList.toggle('active',t==='fu');
+  document.getElementById('tnb-drg').classList.toggle('active',t==='drg');
+  if(t==='drg')genDRGPevar();
   if(t==='fu'){
     if(!g('fu_datum'))document.getElementById('fu_datum').value=new Date().toISOString().slice(0,10);
     if(!g('fu_id')&&g('id_suffix'))document.getElementById('fu_id').value='PEVAR-'+new Date().getFullYear()+'-'+g('id_suffix');
   }
+}
+
+// ── DRG kódy (katalóg prípadových paušálov 2026, príloha 4 – ŠZM) ──
+const DRG_Q3={
+  '0':'Perkutánna implantácia stentgraftu do abdominálnej aorty, aortálny stentgraft',
+  '1':'Perkutánna implantácia stentgraftu do abdominálnej aorty, aortálny stentgraft, branchovaný stentgraft',
+  '2':'Perkutánna implantácia stentgraftu do abdominálnej aorty, aortálny stentgraft s 1 fenestráciou',
+  '3':'Perkutánna implantácia stentgraftu do abdominálnej aorty, aortálny stentgraft s 2 fenestráciami',
+  '4':'Perkutánna implantácia stentgraftu do abdominálnej aorty, aortálny stentgraft s 3 fenestráciami',
+  '5':'Perkutánna implantácia stentgraftu do abdominálnej aorty, aortálny stentgraft so 4 a viac fenestráciami',
+  '6':'Perkutánna implantácia stentgraftu do abdominálnej aorty so zabezpečením cievneho vývodu Chimney technikou',
+  '7':'Perkutánna implantácia stentgraftu do abdominálnej aorty so zabezpečením cievneho vývodu Chimney technikou, 2 a viac stentgraftov'
+};
+function genDRGPevar(){
+  const out=document.getElementById('drg_output');if(!out)return;
+  const v=g('drg_variant')||'0';
+  const sgTyp=document.querySelector('input[name="sg_typ"]:checked')?.value||'bifurkačného';
+  const sgNazov=(function(){const e=document.getElementById('sg_nazov');if(!e)return'';return e.value==='vlastný'?(g('sg_nazov_custom')||''):e.value;})();
+  const extN=document.querySelectorAll('#extenzie_list .ext-row').length;
+  const extOn=document.getElementById('c_extenzie')?.checked&&extN>0;
+  let html='<div class="drg-section-hdr">Hlavný výkonový kód (ZV-DRG 2026)</div>';
+  html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
+  html+=`<tr><td class="drg-code-cell">8r8q3.${v}</td><td>${DRG_Q3[v]}</td></tr>`;
+  html+='</tbody></table>';
+  html+='<div class="drg-section-hdr" style="margin-top:16px">Informatívne</div>';
+  html+='<table class="drg-table"><tbody>';
+  html+=`<tr><td class="drg-code-cell" style="color:#059669">F51B</td><td>DRG skupina: Endovaskulárna implantácia stentových protéz na aorte, nie torakálne (RV 6,53)</td></tr>`;
+  html+=`<tr><td></td><td style="color:#6b7280">Výkon: ${sgTyp==='bifurkačného'?'bifurkačný':'unilaterálny'} stentgraft${sgNazov?' '+sgNazov:''}${extOn?' + '+extN+'× extenzia (v cene kódu implantácie)':''}. Domodelovanie a uzáver prístupu sa samostatne nekódujú.</td></tr>`;
+  html+='</tbody></table>';
+  out.innerHTML=html;
+}
+function copyDRG(){
+  const rows=[...document.querySelectorAll('.drg-table tbody tr')].filter(r=>r.cells[0].textContent.trim());
+  if(!rows.length)return;
+  const txt=rows.map(r=>r.cells[0].textContent.trim()+'\t'+r.cells[1].textContent.trim()).join('\n');
+  const ok=()=>{const el=document.getElementById('drg_cmsg');el.style.color='#1d6f42';el.textContent='✓ Skopírované';setTimeout(()=>el.textContent='',3000);};
+  navigator.clipboard.writeText(txt).then(ok).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);ok();
+  });
 }
 function msgFu(t,c){const el=document.getElementById('fu_msg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',4000);}
 async function saveFU(){
