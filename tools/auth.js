@@ -148,6 +148,7 @@
       {href:'/tools/PEVAR/',label:'PEVAR – aortálne stentgrafty'},
       {href:'/tools/zaznamy/',label:'📁 Záznamy výkonov'},
     ]},
+    {href:'/tools/kontroly/',label:'🩺 Kontroly'},
     {href:'/tools/oznamy/',label:'📢 Oznamy'},
     {href:'/tools/ideas/',label:'💡 Nápady'},
     {href:'/tools/analytics/',label:'📊 Štatistiky'},
@@ -231,6 +232,11 @@
     const m=document.createElement('meta');m.name='theme-color';m.content='#0f1e3d';document.head.appendChild(m);
   }
   injectPWA();
+
+  // Service worker – offline záchranná sieť (statika z cache, dáta vždy zo siete)
+  if('serviceWorker' in navigator){
+    try{navigator.serviceWorker.register('/sw.js').catch(function(){});}catch(e){}
+  }
 
   // ak sa vraciame z Google (tokeny v URL fragmente), spracuj a presmeruj – inak bežná inicializácia
   handleOAuthCallback().then(handled=>{

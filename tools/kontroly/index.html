@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Kontroly – cievny.sk</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f7;min-height:100vh;color:#1a2745;}
+.wrap{max-width:1200px;margin:0 auto;padding:20px;}
+h1{font-size:18px;font-weight:700;}
+.page-sub{font-size:13px;color:#6b7280;margin:4px 0 16px;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px;}
+.stat-card{background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.stat-val{font-size:30px;font-weight:700;color:#1e40af;line-height:1.1;}
+.stat-lbl{font-size:12px;color:#6b7280;margin-top:4px;}
+.stat-card.red .stat-val{color:#dc2626;}
+.stat-card.yellow .stat-val{color:#b45309;}
+.stat-card.green .stat-val{color:#16a34a;}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:#fff;border-radius:10px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:14px;}
+.toolbar select{padding:7px 10px;border:1.5px solid #dde1ea;border-radius:7px;font-size:13px;font-family:inherit;outline:none;}
+.btn{padding:7px 12px;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-reload{background:#1e40af;color:#fff;}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+th,td{text-align:left;padding:9px 12px;font-size:13px;border-bottom:1px solid #eef1f6;}
+th{background:#f8faff;font-weight:700;color:#374151;font-size:12px;text-transform:uppercase;letter-spacing:.3px;cursor:pointer;user-select:none;white-space:nowrap;}
+th:hover{color:#1e40af;}
+tr.row:hover{background:#f8faff;cursor:pointer;}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;}
+.tag-evk{background:#dbeafe;color:#1e40af;}
+.tag-cas{background:#fef3c7;color:#b45309;}
+.tag-pevar{background:#dcfce7;color:#166534;}
+.tag-aorta{background:#ede9fe;color:#6d28d9;}
+.st-done{color:#16a34a;font-weight:700;}
+.st-wait{color:#b45309;font-weight:700;}
+.st-late{color:#dc2626;font-weight:700;}
+.empty{text-align:center;padding:30px;color:#9ca3af;font-size:14px;}
+.err-row{text-align:center;padding:14px;background:#fef2f2;color:#dc2626;font-weight:700;}
+.dim{color:#9ca3af;}
+</style>
+</head>
+<body>
+<script src="/tools/auth.js"></script>
+<script>checkAuth();</script>
+
+<div class="wrap">
+  <h1>📅 Kontroly (dispenzár)</h1>
+  <p class="page-sub">Kto má prísť na kontrolu a kto mešká — follow-upy po EVK / CAS / PEVAR a dispenzár aorty.</p>
+
+  <div class="cards">
+    <div class="stat-card red"><div class="stat-val" id="c_late">–</div><div class="stat-lbl">🔴 Meškajúce kontroly</div></div>
+    <div class="stat-card yellow"><div class="stat-val" id="c_soon">–</div><div class="stat-lbl">🟡 Najbližších 30 dní</div></div>
+    <div class="stat-card green"><div class="stat-val" id="c_done">–</div><div class="stat-lbl">✅ Splnené tento mesiac</div></div>
+  </div>
+
+  <div class="toolbar">
+    <select id="f_typ" onchange="render()">
+      <option value="">Všetky typy</option>
+      <option value="evk">EVK</option>
+      <option value="cas">CAS</option>
+      <option value="pevar">PEVAR</option>
+      <option value="aorta">Aorta</option>
+    </select>
+    <select id="f_stav" onchange="render()">
+      <option value="">Všetky stavy</option>
+      <option value="late">🔴 Mešká</option>
+      <option value="wait">🟡 Čaká</option>
+      <option value="done">✅ Splnená</option>
+    </select>
+    <button class="btn btn-reload" onclick="loadAll()">↻ Načítať</button>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th onclick="setSort('typ')">Typ</th>
+      <th onclick="setSort('pacient')">ID / pacient</th>
+      <th onclick="setSort('vykon_datum')">Výkon dátum</th>
+      <th onclick="setSort('bod')">Kontrola</th>
+      <th onclick="setSort('termin')">Termín</th>
+      <th onclick="setSort('stav')">Stav</th>
+    </tr></thead>
+    <tbody id="tbody"><tr><td colspan="6" class="empty">Načítavam…</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+// vykony: evk má `datum`, cas/pevar `datum_zaznamu`
+const VYKONY=[
+  {typ:'evk',  table:'evk_vykony',  fu:'evk_followup'},
+  {typ:'cas',  table:'cas_vykony',  fu:'cas_followup'},
+  {typ:'pevar',table:'pevar_vykony',fu:'pevar_followup'},
+];
+const TYP_LABEL={evk:'EVK',cas:'CAS',pevar:'PEVAR',aorta:'Aorta'};
+const BODY={'1M':1,'6M':6,'12M':12};            // očakávané kontroly po výkone
+const EXPECTED=['1M','6M','12M'];
+const STAV_LABEL={done:'✅ splnená',wait:'🟡 čaká',late:'🔴 mešká'};
+const STAV_CLS={done:'st-done',wait:'st-wait',late:'st-late'};
+const STAV_ORD={late:0,wait:1,done:2};
+
+let ROWS=[];        // {typ,pacient,vykon_datum,bod,termin,stav}
+let LOAD_ERR=false;
+let SORT={key:'termin',dir:1};
+
+function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ---- dátumy (lokálne, bez UTC posunov) ----
+function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
+function parseISO(s){const p=(''+s).split('-');return new Date(+p[0],(+p[1]||1)-1,+p[2]||1);}
+function isDate(s){return /^\d{4}-\d{2}-\d{2}/.test(''+s);}
+function addMonths(iso,n){
+  const d=parseISO(iso);
+  const t=new Date(d.getFullYear(),d.getMonth()+n,d.getDate());
+  if(t.getDate()!==d.getDate())t.setDate(0);   // koniec mesiaca (31.1.+1M → 28.2.)
+  return isoLocal(t);
+}
+function daysDiff(fromIso,toIso){return Math.round((parseISO(toIso)-parseISO(fromIso))/86400000);}
+function fmtD(s){if(!isDate(s))return '—';const p=s.slice(0,10).split('-');return p[2]+'.'+p[1]+'.'+p[0];}
+
+async function sbGet(path){
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{headers:sbHeaders()});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+async function loadAll(){
+  document.getElementById('tbody').innerHTML='<tr><td colspan="6" class="empty">Načítavam…</td></tr>';
+  ROWS=[];LOAD_ERR=false;
+  const today=isoLocal(new Date());
+  const backLimit=addMonths(today,-18);   // meškajúce max 18 mesiacov dozadu
+  let anyVykon=false;
+
+  for(const t of VYKONY){
+    let vyk=[],fus=[];
+    try{
+      [vyk,fus]=await Promise.all([
+        sbGet(t.table+'?order=created_at.desc&limit=1000'),
+        sbGet(t.fu+'?select=vykon_id,casovy_bod,datum_kontroly&limit=2000'),
+      ]);
+    }catch(e){LOAD_ERR=true;continue;}
+    if(vyk.length)anyVykon=true;
+
+    // mapa splnených follow-upov: vykon_id|casovy_bod → datum_kontroly
+    const fuMap={};
+    fus.forEach(f=>{if(f.vykon_id&&f.casovy_bod)fuMap[f.vykon_id+'|'+f.casovy_bod]=f.datum_kontroly||'';});
+
+    const vykDatum={};
+    vyk.forEach(v=>{
+      const datum=v.datum||v.datum_zaznamu||(v.created_at?v.created_at.slice(0,10):'');
+      if(!v.vykon_id||!isDate(datum))return;
+      vykDatum[v.vykon_id]=datum;
+      const demo=[v.vek?v.vek+' r.':null,v.pohlavie||null].filter(Boolean).join(', ');
+      const pacient=v.vykon_id+(demo?' ('+demo+')':'');
+      EXPECTED.forEach(bod=>{
+        const due=addMonths(datum,BODY[bod]);
+        const key=v.vykon_id+'|'+bod;
+        if(key in fuMap){
+          ROWS.push({typ:t.typ,pacient,vykon_datum:datum,bod,termin:fuMap[key]||due,stav:'done'});
+          delete fuMap[key];
+          return;
+        }
+        const dd=daysDiff(today,due);           // + budúcnosť, − minulosť
+        if(dd>30)return;                        // ešte ďaleko
+        if(dd>=-14){ROWS.push({typ:t.typ,pacient,vykon_datum:datum,bod,termin:due,stav:'wait'});return;}
+        if(due>=backLimit)ROWS.push({typ:t.typ,pacient,vykon_datum:datum,bod,termin:due,stav:'late'});
+      });
+    });
+
+    // mimoriadne splnené kontroly (3M, 24M…) – zobraz ako splnené
+    Object.keys(fuMap).forEach(key=>{
+      const i=key.lastIndexOf('|');
+      const vid=key.slice(0,i),bod=key.slice(i+1);
+      ROWS.push({typ:t.typ,pacient:vid,vykon_datum:vykDatum[vid]||'',bod,termin:fuMap[key]||'',stav:'done'});
+    });
+  }
+
+  // Aorta dispenzár – dalsia_kontrola (CT/USG), bez archívu
+  try{
+    const ind=await sbGet('aorta_indikacie?select=inicialy,rocnik,rodne_cislo,diagnoza,status,dalsia_kontrola&limit=1000');
+    ind.filter(i=>i.status!=='archiv'&&isDate(i.dalsia_kontrola)).forEach(i=>{
+      const dd=daysDiff(today,i.dalsia_kontrola);
+      if(dd>30)return;
+      const kto=(i.inicialy||i.rodne_cislo||'?')+(i.rocnik?' ('+i.rocnik+')':'');
+      ROWS.push({typ:'aorta',pacient:kto+(i.diagnoza?' – '+i.diagnoza:''),vykon_datum:'',bod:'CT/USG',
+                 termin:i.dalsia_kontrola,stav:dd<0?'late':'wait'});
+    });
+  }catch(e){LOAD_ERR=true;}
+
+  // súhrny
+  document.getElementById('c_late').textContent=ROWS.filter(r=>r.stav==='late').length;
+  document.getElementById('c_soon').textContent=ROWS.filter(r=>r.stav==='wait').length;
+  const mes=isoLocal(new Date()).slice(0,7);
+  document.getElementById('c_done').textContent=ROWS.filter(r=>r.stav==='done'&&(''+r.termin).slice(0,7)===mes).length;
+
+  window._EMPTY=!anyVykon&&!ROWS.length;
+  render();
+}
+
+function setSort(key){
+  if(SORT.key===key)SORT.dir*=-1;else SORT={key,dir:1};
+  render();
+}
+
+function render(){
+  const ft=document.getElementById('f_typ').value;
+  const fs=document.getElementById('f_stav').value;
+  const rows=ROWS.filter(r=>(!ft||r.typ===ft)&&(!fs||r.stav===fs));
+  rows.sort((a,b)=>{
+    let va=a[SORT.key],vb=b[SORT.key];
+    if(SORT.key==='stav'){va=STAV_ORD[va];vb=STAV_ORD[vb];}
+    const c=va<vb?-1:va>vb?1:0;
+    return c*SORT.dir||(''+a.termin).localeCompare(''+b.termin);
+  });
+  const tb=document.getElementById('tbody');
+  tb.innerHTML='';
+  if(LOAD_ERR)tb.innerHTML='<tr><td colspan="6" class="err-row">⚠️ Chyba spojenia — skúste obnoviť</td></tr>';
+  if(!rows.length){
+    tb.innerHTML+=LOAD_ERR?'':'<tr><td colspan="6" class="empty">'+(window._EMPTY?'Zatiaľ žiadne výkony.':'Žiadne kontroly pre zvolený filter.')+'</td></tr>';
+    return;
+  }
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.className='row';
+    tr.onclick=()=>{window.location.href=r.typ==='aorta'?'/tools/Aorta/':'/tools/zaznamy/';};
+    tr.innerHTML=`<td><span class="tag tag-${r.typ}">${TYP_LABEL[r.typ]}</span></td>
+      <td>${escHtml(r.pacient)}</td>
+      <td>${r.vykon_datum?fmtD(r.vykon_datum):'<span class="dim">—</span>'}</td>
+      <td>${escHtml(r.bod)}</td>
+      <td>${r.termin?fmtD(r.termin):'<span class="dim">—</span>'}</td>
+      <td><span class="${STAV_CLS[r.stav]}">${STAV_LABEL[r.stav]}</span></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+loadAll();
+</script>
+</body>
+</html>

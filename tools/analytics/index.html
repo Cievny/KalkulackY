@@ -257,6 +257,8 @@ const COLORS=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f973
 
 const charts={};
 function mkChart(id,type,labels,data,legend){
+  // ak CDN s Chart.js nie je dostupné (offline), stránka nesmie spadnúť – čísla ostanú
+  if(typeof Chart==='undefined'){const el=document.getElementById(id);if(el&&el.parentNode)el.parentNode.insertAdjacentHTML('beforeend','<div style="color:#9ca3af;font-size:12px;text-align:center">graf nedostupný (offline)</div>');return;}
   if(charts[id])charts[id].destroy();
   const ctx=document.getElementById(id).getContext('2d');
   charts[id]=new Chart(ctx,{

@@ -1,0 +1,22 @@
+name: Smoke testy
+
+on:
+  push:
+    branches: ['main', 'claude/**']
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Nainštaluj Playwright + Chromium
+        run: |
+          npm init -y > /dev/null
+          npm i playwright --no-save > /dev/null
+          npx playwright install --with-deps chromium
+      - name: Spusti smoke testy
+        run: node tests/smoke.mjs
