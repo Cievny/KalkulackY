@@ -90,6 +90,15 @@
           refreshing=refreshing||refreshToken();
           const ok=await refreshing; refreshing=null;
           if(ok)return _fetch(input,{...init,headers:{...init.headers,'Authorization':'Bearer '+window.sbToken()}});
+          // prihlásenie je mŕtve (refresh zlyhal) → pošli používateľa na login,
+          // nech nevidí mätúce "401" hlášky v každom nástroji
+          sessionStorage.removeItem(KEY);sessionStorage.removeItem(TK);
+          sessionStorage.removeItem(RK);sessionStorage.removeItem(XK);
+          if(localStorage.getItem('cievny_tv_kiosk')==='1'){location.replace('/tools/tv/');}
+          else{
+            sessionStorage.setItem('cievny_return',location.pathname+location.search);
+            location.replace('/tools/login/');
+          }
         }
       }
       return r;
