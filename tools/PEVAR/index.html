@@ -58,6 +58,10 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 .drg-info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:10px 12px;font-size:11.5px;color:#1e3a5f;margin-bottom:12px;line-height:1.55}
 .drg-copy-btn{padding:7px 16px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;margin-top:10px;width:100%}
 .drg-copy-btn:hover{background:#1737a0}
+.side-box{border:1.5px solid #cdd9f2;background:#f6f9ff;border-radius:9px;padding:10px 12px;margin-top:10px}
+.side-box.sin{border-color:#cbe5d6;background:#f5fbf7}
+.side-hdr{font-size:11px;font-weight:800;color:#1e40af;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.side-box.sin .side-hdr{color:#15803d}
 </style>
 </head>
 <body>
@@ -386,42 +390,44 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     </select>
   </div>
 </div>
-<div id="pristup_dx_hint" class="st" style="display:none;font-size:12px;margin:2px 0 4px;color:#5a6a8a">Pravá strana (l.dx.)</div>
-<div class="row r2">
-  <div class="f"><label>Tepna</label><input type="text" id="punkcia_arteria" value="AFC" oninput="gen()"></div>
-  <div class="f"><label>Technika punkcie</label><input type="text" id="punkcia_technika" value="Seldingerovou technikou, retrográdne" oninput="gen()"></div>
+<div class="f" style="margin-bottom:4px"><label>Navigácia punkcie</label>
+  <div class="checks">
+    <label class="ck"><input type="checkbox" id="usg_nav" onchange="gen()"><span>USG</span></label>
+    <label class="ck"><input type="checkbox" id="rtg_nav" onchange="gen()"><span>RTG</span></label>
+  </div>
 </div>
-<div class="row r2">
-  <div class="f"><label>Navigácia</label>
-    <div class="checks">
-      <label class="ck"><input type="checkbox" id="usg_nav" onchange="gen()"><span>USG</span></label>
-      <label class="ck"><input type="checkbox" id="rtg_nav" onchange="gen()"><span>RTG</span></label>
+<div id="pristup_dx_box" class="side-box">
+  <div class="side-hdr" id="pristup_dx_hint">Prístup</div>
+  <div class="row r2">
+    <div class="f"><label>Tepna</label><input type="text" id="punkcia_arteria" value="AFC" oninput="gen()"></div>
+    <div class="f"><label>Technika punkcie</label><input type="text" id="punkcia_technika" value="Seldingerovou technikou, retrográdne" oninput="gen()"></div>
+  </div>
+  <div class="row r2">
+    <div class="f"><label>Veľkosť sheathu</label>
+      <select id="sheath_velkost" onchange="gen()">
+        <option>6F</option><option>7F</option><option selected>8F</option><option>9F</option><option>10F</option>
+      </select>
+    </div>
+    <div class="f"><label>Zabezpečenie vpichu</label>
+      <select id="zabezpecenie_technika" onchange="gen()">
+        <option value="preclosure technikou">Štandardná preclosure</option>
+        <option value="za použitia preclosure techniky za použitia ProStyle zariadenia">Preclosure s ProStyle</option>
+        <option value="odobratím hĺbky miesta vpichu kalibračným dilatátorom pre Manta systém">Kalibrácia pre Manta</option>
+      </select>
     </div>
   </div>
-  <div class="f"><label>Veľkosť sheathu</label>
-    <select id="sheath_velkost" onchange="gen()">
-      <option>6F</option><option>7F</option><option selected>8F</option><option>9F</option><option>10F</option>
-    </select>
-  </div>
 </div>
-<div class="f"><label>Technika zabezpečenia vpichu</label>
-  <select id="zabezpecenie_technika" onchange="gen()">
-    <option value="preclosure technikou">Štandardná preclosure</option>
-    <option value="za použitia preclosure techniky za použitia ProStyle zariadenia">Preclosure s ProStyle</option>
-    <option value="odobratím hĺbky miesta vpichu kalibračným dilatátorom pre Manta systém">Kalibrácia pre Manta</option>
-  </select>
-</div>
-<div id="pristup_sin_wrap" style="display:none;border-top:1px dashed #dde1ea;margin-top:10px;padding-top:8px">
-  <div class="st" style="font-size:12px;margin:0 0 6px;color:#5a6a8a">Ľavá strana (l.sin.) – prístup zvlášť</div>
+<div id="pristup_sin_wrap" class="side-box sin" style="display:none">
+  <div class="side-hdr">Ľavá strana (l.sin.)</div>
   <div class="row r2">
-    <div class="f"><label>Tepna SIN</label><input type="text" id="punkcia_arteria_sin" value="AFC" oninput="gen()"></div>
-    <div class="f"><label>Technika punkcie SIN</label><input type="text" id="punkcia_technika_sin" value="Seldingerovou technikou, retrográdne" oninput="gen()"></div>
+    <div class="f"><label>Tepna</label><input type="text" id="punkcia_arteria_sin" value="AFC" oninput="gen()"></div>
+    <div class="f"><label>Technika punkcie</label><input type="text" id="punkcia_technika_sin" value="Seldingerovou technikou, retrográdne" oninput="gen()"></div>
   </div>
   <div class="row r2">
-    <div class="f"><label>Veľkosť sheathu SIN</label>
+    <div class="f"><label>Veľkosť sheathu</label>
       <select id="sheath_velkost_sin" onchange="gen()"><option>6F</option><option>7F</option><option selected>8F</option><option>9F</option><option>10F</option></select>
     </div>
-    <div class="f"><label>Zabezpečenie vpichu SIN</label>
+    <div class="f"><label>Zabezpečenie vpichu</label>
       <select id="zabezpecenie_technika_sin" onchange="gen()">
         <option value="preclosure technikou">Štandardná preclosure</option>
         <option value="za použitia preclosure techniky za použitia ProStyle zariadenia">Preclosure s ProStyle</option>
@@ -781,7 +787,8 @@ function gen(){
   const sheath=g('sheath_velkost');
   const obojstr=(pristupVal[0]||'')==='obojstranne';
   const sinWrapA=document.getElementById('pristup_sin_wrap');if(sinWrapA)sinWrapA.style.display=obojstr?'block':'none';
-  const dxHint=document.getElementById('pristup_dx_hint');if(dxHint)dxHint.style.display=obojstr?'block':'none';
+  const dxHint=document.getElementById('pristup_dx_hint');
+  if(dxHint)dxHint.textContent=obojstr?'Pravá strana (l.dx.)':(pristupVal[0]==='vľavo'?'Prístup vľavo (l.sin.)':'Prístup vpravo (l.dx.)');
   let pristupText;
   if(obojstr){
     const arteriaSin=g('punkcia_arteria_sin')||arteria, technikaSin=g('punkcia_technika_sin')||technika;
