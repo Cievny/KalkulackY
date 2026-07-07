@@ -4,6 +4,35 @@
 --  Predpoklad: už bežal spustit_na_konci.sql (funkcie je_povoleny/je_tv/je_admin).
 -- =====================================================================
 
+-- 0) POISTKA: allowlist + pomocné funkcie so SECURITY DEFINER.
+--    Ak databáza mala staršiu verziu je_povoleny() BEZ „SECURITY DEFINER",
+--    čítanie tabuliek padalo na „permission denied for schema auth" (500 →
+--    v appke „Chyba spojenia"). Tu ich predefinujeme na správnu verziu,
+--    aby časť 6 (role politiky) fungovala bez ohľadu na to, čo tam bolo.
+CREATE TABLE IF NOT EXISTS povoleni_pouzivatelia (
+  email      TEXT PRIMARY KEY,
+  meno       TEXT,
+  admin      BOOLEAN NOT NULL DEFAULT false,
+  pridal     TEXT DEFAULT (auth.jwt()->>'email'),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE OR REPLACE FUNCTION je_povoleny() RETURNS boolean
+LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $fn$
+  SELECT EXISTS (SELECT 1 FROM povoleni_pouzivatelia
+    WHERE lower(email) = lower(coalesce(auth.jwt()->>'email',''))); $fn$;
+CREATE OR REPLACE FUNCTION je_tv() RETURNS boolean
+LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $fn$
+  SELECT lower(coalesce(auth.jwt()->>'email','')) = 'tv@cievny.sk'; $fn$;
+CREATE OR REPLACE FUNCTION je_admin() RETURNS boolean
+LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $fn$
+  SELECT EXISTS (SELECT 1 FROM povoleni_pouzivatelia
+    WHERE lower(email) = lower(coalesce(auth.jwt()->>'email','')) AND admin = true); $fn$;
+-- istota, že hlavné účty sú v zozname (inak by po sprísnení RLS videli prázdno)
+INSERT INTO povoleni_pouzivatelia(email,meno,admin) VALUES
+  ('vincze.lukas@gmail.com','Dr. Vincze',true),
+  ('oira@cievny.sk','OIRA',true)
+ON CONFLICT (email) DO UPDATE SET admin = true;
+
 -- 1) EVK – IVL katétre (Shockwave/Shockfast/vlastný) do štatistík
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS ivl_brands TEXT;
 
