@@ -106,7 +106,8 @@ BEGIN
   FOR t IN SELECT unnest(ARRAY[
     'evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
     'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy','oznam_reakcie','objednavky_dni','objednavky',
-    'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup','cz_cas_followup','cz_ideas'
+    'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup','cz_cas_followup','cz_ideas',
+    'zaujimavi_pacienti','cz_zaujimavi_pacienti'
   ]) LOOP
     IF to_regclass('public.'||t) IS NOT NULL THEN
       EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);

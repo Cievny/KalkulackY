@@ -56,6 +56,9 @@ ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS sheath_velkost_sin        T
 -- 3b) Denný program – dve sály (Sála OIRA A / Sála OIRA B).
 --     Staré záznamy = 'A'; UI sekcie sa objavia, až keď má B pacientov.
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS sala TEXT DEFAULT 'A';
+-- prepojenie pacienta v programe na napísaný nález (EVK/CAS/PEVAR)
+ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS nalez_tool     TEXT;
+ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS nalez_vykon_id TEXT;
 
 -- 3c) VÝSKUMNÝ ZBER – polia pre publikácie:
 --     rodné číslo (unikátni pacienti), eGFR, baseline ABI (EVK)
@@ -111,6 +114,19 @@ BEGIN
   END LOOP;
 END $do$;
 
+-- 3e) ZAUJÍMAVÍ PACIENTI – hviezdička v popisoch nálezov
+CREATE TABLE IF NOT EXISTS zaujimavi_pacienti (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  tool TEXT NOT NULL,              -- 'EVK' | 'CAS' | 'PEVAR'
+  vykon_id TEXT NOT NULL,
+  rodne_cislo TEXT,
+  popis TEXT,
+  poznamka TEXT,
+  created_by TEXT DEFAULT (auth.jwt()->>'email')
+);
+CREATE TABLE IF NOT EXISTS cz_zaujimavi_pacienti (LIKE zaujimavi_pacienti INCLUDING ALL);
+
 -- 4) Oznamy – komentáre + prihlasovanie (workshopy / akcie)
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_komentare     BOOLEAN DEFAULT false;
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;
@@ -162,7 +178,8 @@ BEGIN
   FOR t IN SELECT unnest(ARRAY[
     'evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
     'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy','oznam_reakcie','objednavky_dni','objednavky',
-    'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup','cz_cas_followup','cz_ideas'
+    'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup','cz_cas_followup','cz_ideas',
+    'zaujimavi_pacienti','cz_zaujimavi_pacienti'
   ]) LOOP
     IF to_regclass('public.'||t) IS NOT NULL THEN
       EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);

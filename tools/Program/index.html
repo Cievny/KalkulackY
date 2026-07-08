@@ -236,6 +236,21 @@ body.tv .sala-grid .stav-chip{font-size:12.5px;padding:5px 8px;}
 </div>
 
 <!-- Modal: vyradenie s dôvodom -->
+<div class="overlay" id="nalez_overlay" onclick="if(event.target===this)zavriNalez()">
+  <div class="dmodal">
+    <h2>📝 Napísať nález</h2>
+    <div class="dsub" id="nalez_kto"></div>
+    <div style="display:grid;gap:8px;margin-top:6px">
+      <button class="dbtn-ok" style="background:#1e40af" onclick="otvorGenerator('EVK')">🦵 EVK – endovaskulárny výkon</button>
+      <button class="dbtn-ok" style="background:#0e7490" onclick="otvorGenerator('CAS')">🧠 CAS – karotída</button>
+      <button class="dbtn-ok" style="background:#7c3aed" onclick="otvorGenerator('PEVAR')">🫀 PEVAR / aortálny stentgraft</button>
+    </div>
+    <div class="dbtns">
+      <button class="dbtn-no" onclick="zavriNalez()">Zrušiť</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="vyr_overlay" onclick="if(event.target===this)zavriVyradit()">
   <div class="dmodal">
     <h2>⛔ Vyradiť z programu</h2>
@@ -479,7 +494,10 @@ function makeRow(row,idx,numLabel){
         <button class="bmini" title="posunúť vyššie" onclick="moveRow(${idx},-1)">▲</button>
         <button class="bmini" title="posunúť nižšie" onclick="moveRow(${idx},1)">▼</button>
         ${vyr?`<button class="bmini" onclick="patchRow('${row.id}','stav','planovany');patchRow('${row.id}','vyradeny_dovod',null)">↩ Vrátiť</button>`
-             :`<button class="bmini" title="presunúť na sálu ${salaOf(row)==='A'?'B':'A'}" onclick="toggleSala('${row.id}')">🏥 ${salaOf(row)}</button>
+             :`${row.nalez_vykon_id
+                ?`<button class="bmini" style="border-color:#86efac;color:#166534;background:#f0fdf4" title="nález napísaný – otvoriť v Záznamoch" onclick="location.href='/tools/zaznamy/'">📝 ${escHtml(row.nalez_vykon_id)}</button>`
+                :`<button class="bmini" title="napísať nález k tomuto pacientovi" onclick="napisatNalez('${row.id}')">📝 Nález</button>`}
+        <button class="bmini" title="presunúť na sálu ${salaOf(row)==='A'?'B':'A'}" onclick="toggleSala('${row.id}')">🏥 ${salaOf(row)}</button>
         <button class="bmini bmini-out" onclick="vyradit('${row.id}')">⛔ Vyradiť</button>
         <button class="bmini" title="presunúť na iný deň" onclick="presunDen('${row.id}')">📆 Iný deň</button>
         <button class="bmini" title="odložiť do zásobníka (bez termínu)" onclick="doZasobnika('${row.id}')">📦</button>`}
@@ -580,6 +598,26 @@ async function moveRow(idx,dir){
   const [it]=arr.splice(idx,1);arr.splice(j<idx?j:j,0,it);
   await Promise.all(arr.map((r,i)=>r.poradie!==i+1?patchRow(r.id,'poradie',i+1):null).filter(Boolean));
   await loadRows();
+}
+
+// ── Napísať nález: výber formulára + handoff do generátora ──
+let NALEZ_ID=null;
+function napisatNalez(id){
+  const row=ROWS.find(r=>r.id===id);if(!row)return;
+  NALEZ_ID=id;
+  document.getElementById('nalez_kto').textContent=(row.meno||'?')+(row.rocnik?' ('+row.rocnik+')':'')+(row.vykon?' – '+row.vykon:'');
+  document.getElementById('nalez_overlay').classList.add('open');
+}
+function zavriNalez(){document.getElementById('nalez_overlay').classList.remove('open');NALEZ_ID=null;}
+function otvorGenerator(tool){
+  const row=ROWS.find(r=>r.id===NALEZ_ID);if(!row)return;
+  // handoff pre generátor: predvyplní polia a po uložení prepojí nález späť na program
+  sessionStorage.setItem('cievny_novy_nalez',JSON.stringify({
+    program_id:row.id,tool,
+    meno:row.meno||'',rocnik:row.rocnik||null,diagnoza:row.diagnoza||'',
+    vykon:row.vykon||'',operator:row.operator||''
+  }));
+  location.href=tool==='EVK'?'/tools/EVK/':tool==='CAS'?'/tools/CAS-generator/':'/tools/PEVAR/';
 }
 
 let VYR_ID=null;
