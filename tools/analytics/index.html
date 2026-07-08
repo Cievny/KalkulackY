@@ -37,6 +37,18 @@ h1{font-size:22px;font-weight:700;color:#1a2745;margin-bottom:4px}
 .tbl-wrap{overflow-x:auto;margin-top:8px}
 details summary{cursor:pointer;font-size:13px;font-weight:600;color:#1e40af;padding:8px 0;user-select:none}
 details summary:hover{color:#1737a0}
+/* --- 📄 Publikácie --- */
+.pubtbl{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff}
+.pubtbl th,.pubtbl td{border:1px solid #cbd5e1;padding:5px 10px;text-align:left;vertical-align:top}
+.pubtbl thead th{background:#f1f5f9;font-weight:700;color:#1a2745}
+.pubtbl td.num,.pubtbl thead th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pubtbl tr.pub-sub th{background:#e8edf5;font-weight:700;color:#1a2745}
+.pub-btn{padding:5px 12px;background:#e5e7eb;color:#374151;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;margin-left:6px}
+.pub-btn:hover{background:#d1d5db}
+.pub-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.pub-f label{display:block;font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px}
+.pub-f select,.pub-f input{padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff}
+@media print{.tabs,.refresh-btn,.pub-btn,.shared-nav{display:none!important}}
 </style>
 </head>
 <body>
@@ -53,6 +65,7 @@ details summary:hover{color:#1737a0}
   <button class="tab" onclick="showTab('pevar',this)">PEVAR – Aorta</button>
   <button class="tab" onclick="showTab('poz',this)">📥 Požiadavky</button>
   <button class="tab" onclick="showTab('prog',this)">📅 Program</button>
+  <button class="tab" onclick="showTab('pub',this)">📄 Publikácie</button>
 </div>
 
 <div id="sec-evk" class="section active">
@@ -247,6 +260,48 @@ details summary:hover{color:#1737a0}
       <div class="chart-card"><h3>Dôvody vyradenia</h3><div class="chart-wrap"><canvas id="ch-prog-vyrad"></canvas></div></div>
       <div class="chart-card"><h3>Vek pacientov (podľa ročníka)</h3><div class="chart-wrap"><canvas id="ch-prog-vek"></canvas></div></div>
     </div>
+  </div>
+</div>
+
+<div id="sec-pub" class="section">
+  <div class="chart-card">
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between">
+      <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">
+        <div class="pub-f"><label id="pub-lbl-typ">Výkon</label><select id="pub-typ" onchange="renderPub()"><option value="evk">EVK</option><option value="cas">CAS</option><option value="pevar">PEVAR</option></select></div>
+        <div class="pub-f"><label id="pub-lbl-od">Od</label><input type="date" id="pub-od" onchange="renderPub()"></div>
+        <div class="pub-f"><label id="pub-lbl-do">Do</label><input type="date" id="pub-do" onchange="renderPub()"></div>
+        <div class="pub-f" id="pub-riecisko-wrap"><label id="pub-lbl-riec">Riečisko</label><select id="pub-riecisko" onchange="renderPub()"><option value="">Všetky</option></select></div>
+      </div>
+      <div style="display:flex;gap:4px">
+        <button id="pub-lang-sk" class="tab active" onclick="setPubLang('sk')">SK</button>
+        <button id="pub-lang-en" class="tab" onclick="setPubLang('en')">EN</button>
+      </div>
+    </div>
+    <div id="pub-cohort" style="margin-top:12px;font-size:14px;font-weight:700;color:#1e40af"></div>
+    <div id="pub-status" class="loading" style="display:none;padding:12px"></div>
+  </div>
+  <div class="chart-card">
+    <div class="pub-head"><h3 id="pub-methods-title">Metódy</h3><button class="pub-btn" id="pub-methods-copy" onclick="copyPubText('pub-methods')">📋 <span class="pub-copy-lbl">Kopírovať</span></button></div>
+    <p id="pub-methods" style="font-size:13px;line-height:1.65;color:#374151"></p>
+  </div>
+  <div class="chart-card">
+    <div class="pub-head"><h3 id="pub-t1-title"></h3><div><button class="pub-btn" onclick="copyPubTable('t1',this)">📋 <span class="pub-copy-lbl">Kopírovať</span></button><button class="pub-btn" onclick="csvPubTable('t1')">⬇ CSV</button></div></div>
+    <div class="tbl-wrap" id="pub-t1"></div>
+  </div>
+  <div class="chart-card">
+    <div class="pub-head"><h3 id="pub-t2-title"></h3><div><button class="pub-btn" onclick="copyPubTable('t2',this)">📋 <span class="pub-copy-lbl">Kopírovať</span></button><button class="pub-btn" onclick="csvPubTable('t2')">⬇ CSV</button></div></div>
+    <div class="tbl-wrap" id="pub-t2"></div>
+  </div>
+  <div class="chart-card">
+    <div class="pub-head"><h3 id="pub-t3-title"></h3><div><button class="pub-btn" onclick="copyPubTable('t3',this)">📋 <span class="pub-copy-lbl">Kopírovať</span></button><button class="pub-btn" onclick="csvPubTable('t3')">⬇ CSV</button></div></div>
+    <div class="tbl-wrap" id="pub-t3"></div>
+  </div>
+  <div class="chart-card">
+    <div class="pub-head"><h3 id="pub-km-title"></h3><div><button class="pub-btn" id="pub-km-copy" onclick="copyPubTable('km',this)">📋 Kopírovať KM tabuľku</button><button class="pub-btn" onclick="csvPubTable('km')">⬇ CSV</button></div></div>
+    <div id="pub-km-note" style="font-size:12px;color:#6b7280;margin-bottom:8px"></div>
+    <div class="chart-wrap" style="height:300px"><canvas id="ch-pub-km"></canvas></div>
+    <div class="tbl-wrap" id="pub-km-risk" style="margin-top:8px"></div>
+    <div class="tbl-wrap" id="pub-km-tbl" style="margin-top:10px"></div>
   </div>
 </div>
 
@@ -764,7 +819,12 @@ async function loadAll(){
   document.getElementById('err-box').style.display='none';
   loadPOZ(); // nezávisle – nesmie zhodiť ostatné sekcie
   loadPROG(); // nezávisle – nesmie zhodiť ostatné sekcie
-  try{await Promise.all([loadEVK(),loadCAS(),loadPEVAR()]);}
+  const p=Promise.all([loadEVK(),loadCAS(),loadPEVAR()]);
+  window._pubDataP=p.catch(()=>{}); // Publikácie počkajú na dáta (chyby rieši catch nižšie)
+  try{
+    await p;
+    if(PUB.fetched)renderPub(); // po Obnoviť prepočítaj aj publikačné tabuľky
+  }
   catch(e){
     const eb=document.getElementById('err-box');
     eb.textContent='❌ Chyba načítania dát: '+e.message+'. Skontrolujte RLS politiky v Supabase.';
@@ -778,7 +838,560 @@ function showTab(name,btn){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('sec-'+name).classList.add('active');
   btn.classList.add('active');
+  if(name==='pub')openPub(); // lazy výpočet publikačných štatistík
 }
+
+/* ==================== 📄 PUBLIKÁCIE – publikačné štatistiky ==================== */
+const PUB={lang:'sk',fetched:false,fetching:false,fu:{evk:[],cas:[],pevar:[]},tables:{}};
+const PUB_FU_TBL={evk:'evk_followup',cas:'cas_followup',pevar:'pevar_followup'};
+
+// --- Popisky (SK/EN) ---
+const PUB_L={
+sk:{
+ typ:'Výkon',od:'Od',do:'Do',riec:'Riečisko',all:'Všetky',copy:'Kopírovať',
+ cohort:(n,a,b)=>`Kohorta: n = ${n} výkonov (obdobie ${a} – ${b})`,
+ cohort0:'Kohorta: n = 0 výkonov',
+ loading:'⏳ Načítavam follow-up dáta…',
+ methodsTitle:'Metódy – text pre rukopis',
+ t1:'Tabuľka 1 – Základné charakteristiky',
+ t2:'Tabuľka 2 – Procedurálne charakteristiky',
+ t3:'Tabuľka 3 – Výsledky follow-up podľa časových bodov',
+ kmEvk:'Kaplan–Meier – primárna patencia (EVK)',
+ kmCas:'Kaplan–Meier – prežívanie bez restenózy ≥50 % (CAS)',
+ kmPevar:'Kaplan–Meier – prežívanie bez reintervencie (PEVAR)',
+ kmCopy:'📋 Kopírovať KM tabuľku',
+ kmNote:(n,ev,ex)=>`Zahrnutých ${n} výkonov s follow-up (${ev} udalostí); ${ex} výkonov bez follow-up bolo vylúčených.`,
+ kmDefEvk:'Udalosť: restenóza alebo oklúzia pri kontrole, reintervencia alebo amputácia.',
+ kmDefCas:'Udalosť: restenóza ≥50 % (50–70 %, >70 %, oklúzia stentu) alebo reintervencia.',
+ kmDefPevar:'Udalosť: reintervencia alebo endoleak typu Ia/Ib/III.',
+ kmTime:'Čas (mesiace)',kmAtRisk:'V riziku',kmEvents:'Udalosti',kmEst:'Odhad % (95 % IS)',kmMonths:'Mesiace',
+ char:'Charakteristika',value:'Hodnota',indicator:'Ukazovateľ',
+ nProc:'Počet výkonov, n',age:'Vek (roky)',meanSd:'priemer ± SD',medIqr:'medián (IQR)',range:'min–max',
+ male:'Mužské pohlavie, n/N (%)',ruth:'Rutherfordova kategória, n (%)',
+ komor:'Komorbidity, n (%)',atb:'Antitrombotická liečba, n (%)',
+ sympt:'Symptomatický, n (%)',neckD:'Priemer krčka (mm)',neckL:'Dĺžka krčka (mm)',ifuOut:'Mimo IFU (hostile neck), n (%)',
+ klin:'Klinický stav, n (%)',plaque:'Typ AS plátu, n (%)',
+ anes:'Anestézia, n (%)',access:'Prístupová artéria, n (%)',accessMode:'Spôsob prístupu, n (%)',accessSide:'Strana prístupu, n (%)',terr:'Riečisko, n (%)',
+ techniques:'Použité techniky, n (%)',balloons:'Balónikové katétre na výkon',stents:'Stenty na výkon',ivls:'IVL katétre na výkon',devices:'Najčastejšie zariadenia (top 8), n (%)',
+ sgConf:'Konfigurácia stentgraftu, n (%)',sgBrand:'Stentgraft – telo, n (%)',extPer:'Extenzie na výkon',closure:'Uzáver prístupu, n (%)',
+ casStent:'Stent – značka, n (%)',epd:'Emboloprotekcia, n (%)',predil:'Predilatácia, n (%)',postdil:'Domodelovanie (postdilatácia), n (%)',
+ contrast:'Kontrastná látka (ml)',fluoro:'Skiaskopický čas (min)',dap:'DAP (Gy·cm²)',dur:'Trvanie výkonu (min)',
+ techSucc:'Technický výsledok, n (%)',conv:'Konverzia, n (%)',anyCompl:'Akákoľvek komplikácia, n (%)',complBr:'Komplikácie – rozpis, n (%)',clavien:'Clavien-Dindo, n (%)',
+ fuN:'Počet kontrol, n',pat:'Patencia, n (%)',abi:'ABI',reint:'Reintervencia, n (%)',amput:'Amputácia, n (%)',
+ el:'Endoleak, n (%)',elTyp:'Endoleak – typ, n (%)',sac:'Vývoj vaku, n (%)',sacD:'Priemer vaku (mm)',
+ rest:'Restenóza, n (%)',neuro:'Neurologická príhoda, n (%)',
+ komDM:'Diabetes mellitus',komAH:'Artériová hypertenzia',komCKD:'Chronická choroba obličiek (CKD)',komICHS:'Ischemická choroba srdca',komIM:'St.p. infarkte myokardu',komCMP:'St.p. cievnej mozgovej príhode',komFaj:'Fajčenie (aktívne alebo v minulosti)',komDysl:'Dyslipidémia',komObez:'Obezita',komCHOCHP:'CHOCHP',
+ tPTA:'PTA',tDEB:'DEB PTA (liekový balónik)',tSTENT:'Stenting',tIVL:'Intravaskulárna litotrypsia (IVL)',tATER:'Aterektómia',tTROM:'Trombektómia',tVP:'Vessel prep',tRE:'Re-entry katéter',tKISS:'Kissing stent',tCERAB:'CERAB',tSG:'Stentgraft',tPRED:'Predilatácia',tPOST:'Postdilatácia',
+ endpEvk:'Primárna patencia',endpCas:'Prežívanie bez restenózy ≥50 %',endpPevar:'Prežívanie bez reintervencie',
+ methods:e=>`Spojité premenné sú prezentované ako priemer ± smerodajná odchýlka (SD) a medián (medzikvartilové rozpätie, IQR); kategóriové premenné ako počty (percentá). Percentá sú počítané z počtu výkonov s dostupným údajom. Ukazovateľ „${e}“ bol odhadnutý Kaplanovou–Meierovou metódou; 95 % intervaly spoľahlivosti boli odvodené z Greenwoodovho vzorca. Pacienti bez udalosti boli cenzurovaní pri poslednej kontrole; výkony bez follow-up boli z analýzy prežívania vylúčené. Dáta boli zbierané prospektívne na Oddelení intervenčnej rádiológie a angiológie (OIRA).`
+},
+en:{
+ typ:'Procedure',od:'From',do:'To',riec:'Territory',all:'All',copy:'Copy',
+ cohort:(n,a,b)=>`Cohort: n = ${n} procedures (period ${a} – ${b})`,
+ cohort0:'Cohort: n = 0 procedures',
+ loading:'⏳ Loading follow-up data…',
+ methodsTitle:'Methods – manuscript paragraph',
+ t1:'Table 1 – Baseline characteristics',
+ t2:'Table 2 – Procedural characteristics',
+ t3:'Table 3 – Follow-up outcomes by time point',
+ kmEvk:'Kaplan–Meier – primary patency (EVK)',
+ kmCas:'Kaplan–Meier – freedom from restenosis ≥50 % (CAS)',
+ kmPevar:'Kaplan–Meier – freedom from reintervention (PEVAR)',
+ kmCopy:'📋 Copy KM table',
+ kmNote:(n,ev,ex)=>`${n} procedures with follow-up included (${ev} events); ${ex} procedures without follow-up were excluded.`,
+ kmDefEvk:'Event: restenosis or occlusion at follow-up, reintervention, or amputation.',
+ kmDefCas:'Event: restenosis ≥50 % (50–70 %, >70 %, stent occlusion) or reintervention.',
+ kmDefPevar:'Event: reintervention or type Ia/Ib/III endoleak.',
+ kmTime:'Time (months)',kmAtRisk:'At risk',kmEvents:'Events',kmEst:'Estimate % (95% CI)',kmMonths:'Months',
+ char:'Characteristic',value:'Value',indicator:'Outcome',
+ nProc:'Number of procedures, n',age:'Age (years)',meanSd:'mean ± SD',medIqr:'median (IQR)',range:'min–max',
+ male:'Male sex, n/N (%)',ruth:'Rutherford category, n (%)',
+ komor:'Comorbidities, n (%)',atb:'Antithrombotic therapy, n (%)',
+ sympt:'Symptomatic, n (%)',neckD:'Neck diameter (mm)',neckL:'Neck length (mm)',ifuOut:'Outside IFU (hostile neck), n (%)',
+ klin:'Clinical presentation, n (%)',plaque:'Plaque type, n (%)',
+ anes:'Anaesthesia, n (%)',access:'Access artery, n (%)',accessMode:'Access technique, n (%)',accessSide:'Access side, n (%)',terr:'Target territory, n (%)',
+ techniques:'Techniques used, n (%)',balloons:'Balloon catheters per procedure',stents:'Stents per procedure',ivls:'IVL catheters per procedure',devices:'Most frequent devices (top 8), n (%)',
+ sgConf:'Stent-graft configuration, n (%)',sgBrand:'Stent-graft main body, n (%)',extPer:'Extensions per procedure',closure:'Access closure, n (%)',
+ casStent:'Stent brand, n (%)',epd:'Embolic protection, n (%)',predil:'Predilatation, n (%)',postdil:'Post-dilatation, n (%)',
+ contrast:'Contrast volume (ml)',fluoro:'Fluoroscopy time (min)',dap:'Dose–area product (Gy·cm²)',dur:'Procedure duration (min)',
+ techSucc:'Technical outcome, n (%)',conv:'Conversion, n (%)',anyCompl:'Any complication, n (%)',complBr:'Complication breakdown, n (%)',clavien:'Clavien-Dindo grade, n (%)',
+ fuN:'Patients followed, n',pat:'Patency, n (%)',abi:'ABI',reint:'Reintervention, n (%)',amput:'Amputation, n (%)',
+ el:'Endoleak, n (%)',elTyp:'Endoleak type, n (%)',sac:'Sac behaviour, n (%)',sacD:'Sac diameter (mm)',
+ rest:'Restenosis, n (%)',neuro:'Neurological event, n (%)',
+ komDM:'Diabetes mellitus',komAH:'Arterial hypertension',komCKD:'Chronic kidney disease',komICHS:'Coronary artery disease',komIM:'Previous myocardial infarction',komCMP:'Previous stroke',komFaj:'Smoking (current or former)',komDysl:'Dyslipidaemia',komObez:'Obesity',komCHOCHP:'COPD',
+ tPTA:'PTA',tDEB:'Drug-coated balloon PTA',tSTENT:'Stenting',tIVL:'Intravascular lithotripsy (IVL)',tATER:'Atherectomy',tTROM:'Thrombectomy',tVP:'Vessel preparation',tRE:'Re-entry catheter',tKISS:'Kissing stent',tCERAB:'CERAB',tSG:'Stent-graft',tPRED:'Predilatation',tPOST:'Post-dilatation',
+ endpEvk:'Primary patency',endpCas:'Freedom from restenosis ≥50 %',endpPevar:'Freedom from reintervention',
+ methods:e=>`Continuous variables are presented as mean ± standard deviation (SD) and median (interquartile range, IQR); categorical variables as counts (percentages). Percentages were calculated from the number of procedures with available data. ${e} was estimated using the Kaplan–Meier method; 95% confidence intervals were derived from Greenwood's formula. Patients without an event were censored at the last follow-up visit; procedures without any follow-up were excluded from the survival analysis. Data were collected prospectively at the Department of Interventional Radiology and Angiology (OIRA).`
+}
+};
+
+// --- Prekladový slovník dátových hodnôt (SK → EN) ---
+const PUB_VAL_EN={
+'Muž':'Male','Žena':'Female','M':'Male','Ž':'Female',
+'primárna patencia':'primary patency','asistovaná primárna patencia':'assisted primary patency','sekundárna patencia':'secondary patency','restenóza':'restenosis','oklúzia':'occlusion',
+'bez restenózy':'no restenosis','oklúzia stentu':'stent occlusion',
+'bez príhody':'no event','minor CMP':'minor stroke','major CMP':'major stroke',
+'regresia (≥5 mm)':'regression (≥5 mm)','stacionárny':'stable','rast (≥5 mm)':'growth (≥5 mm)',
+'V (endotenzia)':'V (endotension)',
+'asymptomatický':'asymptomatic','CMP':'stroke','minor stroke':'minor stroke','retinálna ischémia':'retinal ischaemia','amaurosis fugax':'amaurosis fugax',
+'Technický úspech':'technical success','Parciálny úspech':'partial success','Technický neúspech':'technical failure',
+'perkutánne':'percutaneous','chirurgický cut-down':'surgical cut-down',
+'FP+predkolenie':'femoropopliteal + infrapopliteal','Panvové':'iliac','Panvové+FP':'iliac + femoropopliteal',
+'v rámci IFU':'within IFU','mimo IFU (hostile neck)':'outside IFU (hostile neck)',
+'bifurkačného':'bifurcated','unilaterálneho':'uni-iliac',
+'V lokálnej anestézii':'local anaesthesia','V celkovej anestézii':'general anaesthesia','V spinálnej anestézii':'spinal anaesthesia',
+'obojstranne':'bilateral','vpravo':'right','vľavo':'left',
+'LA':'local (LA)','SA':'spinal (SA)','GA':'general (GA)',
+'bez antitrombotík':'none','klopidogrel':'clopidogrel','warfarín':'warfarin',
+'hematóm':'haematoma','pseudoaneuryzma':'pseudoaneurysm','krvácanie s intervenciou':'bleeding requiring intervention','infekcia prístupu':'access-site infection','distálna embolizácia':'distal embolisation','flow-limit. disekcia':'flow-limiting dissection','trombóza/oklúzia':'thrombosis/occlusion','perforácia/ruptúra':'perforation/rupture','kontrastová nefropatia (CIN)':'contrast-induced nephropathy','IM ≤30d':'MI ≤30 d','CMP ≤30d':'stroke ≤30 d','major amputácia ≤30d':'major amputation ≤30 d','urgentná reintervencia ≤30d':'urgent reintervention ≤30 d','úmrtie ≤30d':'death ≤30 d',
+'Manuálna kompresia':'manual compression','dotiahnutím sutúr ProStyle zariadenia':'ProStyle suture-mediated closure','pomocou Manta systému':'MANTA closure device','pomocou AngioSeal':'AngioSeal','pomocou FemoSeal':'FemoSeal',
+'0/0 – Asymptomatický':'0/0 – asymptomatic','I/1 – Ľahká klaudikácia':'I/1 – mild claudication','I/2 – Stredná klaudikácia':'I/2 – moderate claudication','I/3 – Ťažká klaudikácia':'I/3 – severe claudication','II/4 – Ischemická kľudová bolesť':'II/4 – ischaemic rest pain','II/5 – Menšia tkanivová strata':'II/5 – minor tissue loss','III/6 – Väčšia tkanivová strata':'III/6 – major tissue loss',
+'mäkký (s dif.dg. trombom)':'soft (possible thrombus)','mäkký':'soft','hrubo kalcifikovaný':'heavily calcified','zmiešaný':'mixed',
+'veľká':'major','malá':'minor','áno':'yes','nie':'no'
+};
+
+// Preferované poradie kategórií v tabuľkách
+const PUB_ORD={
+ patencia:['primárna patencia','asistovaná primárna patencia','sekundárna patencia','restenóza','oklúzia'],
+ restenoza:['bez restenózy','<50 %','50–70 %','>70 %','oklúzia stentu'],
+ neuro:['bez príhody','TIA','minor CMP','major CMP'],
+ sac_zmena:['regresia (≥5 mm)','stacionárny','rast (≥5 mm)'],
+ tech_uspech:['Technický úspech','Parciálny úspech','Technický neúspech'],
+ endoleak_typ:['Ia','Ib','II','III','IV','V (endotenzia)'],
+ rutherford:['0/0 – Asymptomatický','I/1 – Ľahká klaudikácia','I/2 – Stredná klaudikácia','I/3 – Ťažká klaudikácia','II/4 – Ischemická kľudová bolesť','II/5 – Menšia tkanivová strata','III/6 – Väčšia tkanivová strata']
+};
+
+// Detekcia komorbidít podreťazcom (case-insensitive) z voľného textu komorbidity
+const PUB_KOMOR=[
+ ['komDM',/\bDM\d?\b/i],
+ ['komAH',/\bAH\b/],
+ ['komCKD',/CKD|CHRI/i],
+ ['komICHS',/ICHS/i],
+ ['komIM',/St\.?\s?p\.?\s?IM/i],
+ ['komCMP',/CMP/i],
+ ['komFaj',/faj|kuř/i],
+ ['komDysl',/dyslip/i],
+ ['komObez',/obez/i],
+ ['komCHOCHP',/CHOCHP|CHOPN|COPD/i]
+];
+
+const PUB_TECH=[['tech_pta','tPTA'],['tech_deb','tDEB'],['tech_stenting','tSTENT'],['tech_ivl','tIVL'],['tech_aterektomia','tATER'],['tech_trombektomia','tTROM'],['tech_vessel_prep','tVP'],['tech_reentry','tRE'],['tech_kissing','tKISS'],['tech_cerab','tCERAB'],['tech_stentgraft','tSG'],['tech_predilat','tPRED'],['tech_postdilat','tPOST']];
+
+// --- Pomocné funkcie ---
+function pubEl(id){return document.getElementById(id);}
+function LT(k){const d=PUB_L[PUB.lang]||PUB_L.sk;return (k in d)?d[k]:((k in PUB_L.sk)?PUB_L.sk[k]:k);}
+function TV(v){v=(v==null?'':''+v).trim();if(!v)return'–';if(PUB.lang==='en'&&PUB_VAL_EN[v])return PUB_VAL_EN[v];return v;}
+function fnum(x,dec){if(x==null||!isFinite(x))return'–';let s=Number(x).toFixed(dec==null?1:dec);if(PUB.lang!=='en')s=s.replace('.',',');return s;}
+function pubNums(rows,key){return rows.map(r=>r[key]).filter(v=>v!=null&&v!==''&&isFinite(+v)).map(Number);}
+function pubMean(v){return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;}
+function pubSD(v){if(!v.length)return null;if(v.length===1)return 0;const m=pubMean(v);return Math.sqrt(v.reduce((s,x)=>s+(x-m)*(x-m),0)/(v.length-1));}
+function pubQ(sorted,p){const n=sorted.length;if(!n)return null;const i=(n-1)*p,lo=Math.floor(i),f=i-lo;return sorted[lo]+((sorted[Math.min(lo+1,n-1)]-sorted[lo])*f);}
+function fMeanSD(v,dec){if(!v.length)return'–';return fnum(pubMean(v),dec)+' ± '+fnum(pubSD(v),dec);}
+function fMedIQR(v,dec){if(!v.length)return'–';const s=[...v].sort((a,b)=>a-b);return fnum(pubQ(s,.5),dec)+' ('+fnum(pubQ(s,.25),dec)+'–'+fnum(pubQ(s,.75),dec)+')';}
+function fPct(n,N){return N?`${n} (${fnum(100*n/N,1)} %)`:`${n} (–)`;}
+function fRatio(n,N){return N?`${n}/${N} (${fnum(100*n/N,1)} %)`:'–';}
+function pubIsAmput(v){if(v===true)return true;if(typeof v!=='string')return false;v=v.trim().toLowerCase();return !!v&&v!=='nie'&&v!=='ne';}
+function pubParseDate(s){if(!s)return null;const m=(''+s).slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(m))return null;const d=new Date(m+'T00:00:00');return isNaN(d)?null:d;}
+function pubDateOf(r,typ){return ((typ==='evk'?(r.datum||r.datum_zaznamu):(r.datum_zaznamu||r.datum))||r.created_at||'').toString().slice(0,10);}
+
+function pubCats(rows,key){
+  const m={};let N=0;
+  rows.forEach(r=>{const v=(r[key]==null?'':''+r[key]).trim();if(!v)return;N++;m[v]=(m[v]||0)+1;});
+  const order=PUB_ORD[key];
+  let ents=Object.entries(m);
+  if(order)ents.sort((a,b)=>{const ia=order.indexOf(a[0]),ib=order.indexOf(b[0]);return ((ia<0?999:ia)-(ib<0?999:ib))||(b[1]-a[1]);});
+  else ents.sort((a,b)=>b[1]-a[1]);
+  return {ents,N};
+}
+function pubBrandCount(rows,keys){ // počet výkonov, pri ktorých bolo zariadenie použité (aspoň raz)
+  const m={};
+  rows.forEach(r=>{
+    const set=new Set();
+    keys.forEach(k=>((r[k]==null?'':''+r[k])).split(/[;,]/).forEach(v=>{v=v.trim();if(v&&v!=='N/A'&&v!=='-')set.add(v);}));
+    set.forEach(v=>m[v]=(m[v]||0)+1);
+  });
+  return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+
+// --- Render tabuľky + kopírovanie ---
+function pubRenderTable(contId,tblKey,rows){
+  PUB.tables[tblKey]=rows;
+  const el=pubEl(contId);if(!el)return;
+  if(!rows.length){el.innerHTML='';return;}
+  const cols=Math.max(...rows.map(r=>r.length));
+  let h='<table class="pubtbl"><thead><tr>'+rows[0].map((c,i)=>`<th${i?' class="num"':''}>${escHtml(c)}</th>`).join('')+'</tr></thead><tbody>';
+  rows.slice(1).forEach(r=>{
+    if(r.length===1){h+=`<tr class="pub-sub"><th colspan="${cols}">${escHtml(r[0])}</th></tr>`;return;}
+    h+='<tr>'+r.map((c,i)=>`<td class="${i?'num':''}">${escHtml(c)}</td>`).join('')+'</tr>';
+  });
+  el.innerHTML=h+'</tbody></table>';
+}
+function pubTSV(key){
+  const rows=PUB.tables[key]||[];if(!rows.length)return'';
+  const cols=Math.max(...rows.map(r=>r.length));
+  return rows.map(r=>{const c=[...r];while(c.length<cols)c.push('');return c.map(x=>(''+x).replace(/[\t\n]/g,' ')).join('\t');}).join('\n');
+}
+function pubClip(txt,btn){
+  const ok=()=>{if(btn){const t=btn.innerHTML;btn.innerHTML='✓';setTimeout(()=>btn.innerHTML=t,1200);}};
+  const fb=()=>{const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok();}catch(e){}document.body.removeChild(ta);};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok).catch(fb);
+  else fb();
+}
+function copyPubTable(key,btn){pubClip(pubTSV(key),btn);}
+function copyPubText(id,btn){pubClip((pubEl(id)||{}).textContent||'',btn);}
+function csvPubTable(key){
+  const rows=PUB.tables[key]||[];if(!rows.length)return;
+  const cols=Math.max(...rows.map(r=>r.length));
+  const esc=v=>{v=(v==null?'':''+v).replace(/"/g,'""');return /[";\n]/.test(v)?`"${v}"`:v;};
+  const csv=rows.map(r=>{const c=[...r];while(c.length<cols)c.push('');return c.map(esc).join(';');}).join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='publikacia_'+key+'_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+// --- Kohorta ---
+function pubCohort(){
+  const typ=pubEl('pub-typ').value;
+  const od=pubEl('pub-od').value,doo=pubEl('pub-do').value;
+  const riec=typ==='evk'?pubEl('pub-riecisko').value:'';
+  return (RAW[typ]||[]).filter(r=>{
+    const d=pubDateOf(r,typ);
+    if(od&&(!d||d<od))return false;
+    if(doo&&(!d||d>doo))return false;
+    if(riec&&((r.riecisko||'').trim()!==riec))return false;
+    return true;
+  });
+}
+
+// --- Tabuľka 1: základné charakteristiky ---
+function pubT1(typ,rows){
+  const N=rows.length;
+  const IND=' '; // odsadenie podpoložiek
+  const out=[[LT('char'),LT('value')]];
+  out.push([LT('nProc'),''+N]);
+  const ages=pubNums(rows,'vek');
+  out.push([LT('age')+(ages.length<N?` (N=${ages.length})`:'')]);
+  out.push([IND+LT('meanSd'),fMeanSD(ages,1)]);
+  out.push([IND+LT('medIqr'),fMedIQR(ages,1)]);
+  out.push([IND+LT('range'),ages.length?(fnum(Math.min(...ages),0)+'–'+fnum(Math.max(...ages),0)):'–']);
+  const sexOf=r=>(r.pohlavie==null?'':''+r.pohlavie).trim();
+  const sexKnown=rows.filter(r=>['Muž','Žena','M','Ž','muž','žena'].includes(sexOf(r)));
+  const males=sexKnown.filter(r=>['Muž','M','muž'].includes(sexOf(r))).length;
+  out.push([LT('male'),fRatio(males,sexKnown.length)]);
+  if(typ==='evk'){
+    const {ents,N:rn}=pubCats(rows,'rutherford');
+    if(rn){out.push([LT('ruth')+` (N=${rn})`]);ents.forEach(([v,c])=>out.push([IND+TV(v),fPct(c,rn)]));}
+  }
+  if(typ==='cas'){
+    const {ents,N:kn}=pubCats(rows,'klinicky_stav');
+    if(kn){out.push([LT('klin')+` (N=${kn})`]);ents.forEach(([v,c])=>out.push([IND+TV(v),fPct(c,kn)]));}
+    const {ents:pe,N:pn}=pubCats(rows,'typ_platu');
+    if(pn){out.push([LT('plaque')+` (N=${pn})`]);pe.forEach(([v,c])=>out.push([IND+TV(v),fPct(c,pn)]));}
+  }
+  if(typ==='pevar'){
+    out.push([LT('sympt'),fPct(rows.filter(r=>r.symptomaticky===true).length,N)]);
+    const nd=pubNums(rows,'neck_diameter_mm'),nl=pubNums(rows,'neck_length_mm');
+    out.push([LT('neckD')+`, ${LT('meanSd')} (N=${nd.length})`,fMeanSD(nd,1)]);
+    out.push([LT('neckL')+`, ${LT('meanSd')} (N=${nl.length})`,fMeanSD(nl,1)]);
+    const ifuKnown=rows.filter(r=>(r.neck_ifu||'').trim()).length;
+    out.push([LT('ifuOut')+` (N=${ifuKnown})`,fPct(rows.filter(r=>/mimo IFU/i.test(r.neck_ifu||'')).length,ifuKnown)]);
+  }
+  out.push([LT('komor')]);
+  PUB_KOMOR.forEach(([lk,re])=>{
+    const c=rows.filter(r=>re.test((r.komorbidity==null?'':''+r.komorbidity))).length;
+    out.push([IND+LT(lk),fPct(c,N)]);
+  });
+  const atbRows=rows.filter(r=>(r.antitrombotika||'').trim());
+  if(atbRows.length){
+    out.push([LT('atb')+` (N=${atbRows.length})`]);
+    const am={};atbRows.forEach(r=>(''+r.antitrombotika).split(',').forEach(v=>{v=v.trim();if(v)am[v]=(am[v]||0)+1;}));
+    Object.entries(am).sort((a,b)=>b[1]-a[1]).forEach(([v,c])=>out.push([IND+TV(v),fPct(c,atbRows.length)]));
+  }
+  pubRenderTable('pub-t1','t1',out);
+}
+
+// --- Tabuľka 2: procedurálne charakteristiky ---
+function pubT2(typ,rows){
+  const N=rows.length;
+  const IND=' ';
+  const out=[[LT('char'),LT('value')]];
+  const catSec=(labelKey,key,top)=>{
+    const {ents,N:n}=pubCats(rows,key);
+    if(!n)return;
+    out.push([LT(labelKey)+` (N=${n})`]);
+    (top?ents.slice(0,top):ents).forEach(([v,c])=>out.push([IND+TV(v),fPct(c,n)]));
+  };
+  if(typ==='evk'){
+    catSec('anes','anestazia');
+    catSec('access','pristup_arteria');
+    catSec('accessMode','pristup_sposob');
+    catSec('terr','riecisko');
+    out.push([LT('techniques')]);
+    PUB_TECH.forEach(([key,lk])=>out.push([IND+LT(lk),fPct(rows.filter(r=>r[key]===true).length,N)]));
+    const bc=pubNums(rows,'balloon_count'),sc=pubNums(rows,'stent_count'),ic=pubNums(rows,'ivl_count');
+    out.push([LT('balloons')+`, ${LT('meanSd')} (N=${bc.length})`,fMeanSD(bc,1)]);
+    out.push([LT('stents')+`, ${LT('meanSd')} (N=${sc.length})`,fMeanSD(sc,1)]);
+    out.push([LT('ivls')+`, ${LT('meanSd')} (N=${ic.length})`,fMeanSD(ic,1)]);
+    const brands=pubBrandCount(rows,['stent_brands','balloon_brands','ivl_brands']).slice(0,8);
+    if(brands.length){out.push([LT('devices')]);brands.forEach(([v,c])=>out.push([IND+v,fPct(c,N)]));}
+  }
+  if(typ==='pevar'){
+    catSec('anes','anestezia_typ');
+    catSec('accessSide','pristup_strana');
+    catSec('sgConf','sg_konfiguracia');
+    catSec('sgBrand','sg_nazov',8);
+    const ec=pubNums(rows,'ext_count');
+    out.push([LT('extPer')+`, ${LT('meanSd')} (N=${ec.length})`,fMeanSD(ec,1)]);
+    catSec('closure','uzaver_dx_technika');
+  }
+  if(typ==='cas'){
+    catSec('anes','anestazia');
+    catSec('access','pristupova_arteria');
+    catSec('casStent','stent_znacka',8);
+    out.push([LT('epd'),fPct(rows.filter(r=>(r.emboloprotekcia||'').trim()).length,N)]);
+    out.push([LT('predil'),fPct(rows.filter(r=>r.predilatacia_vykonana==='Ano').length,N)]);
+    out.push([LT('postdil'),fPct(rows.filter(r=>r.domodelovanie_vykonane==='Ano').length,N)]);
+  }
+  [['contrast','contrast_ml'],['fluoro','fluoro_time_min'],['dap','dap'],['dur','proc_duration_min']].forEach(([lk,key])=>{
+    const v=pubNums(rows,key);
+    out.push([LT(lk)+` (N=${v.length})`]);
+    out.push([IND+LT('meanSd'),fMeanSD(v,1)]);
+    out.push([IND+LT('medIqr'),fMedIQR(v,1)]);
+  });
+  if(typ!=='pevar'){
+    const {ents:tuE,N:tuN}=pubCats(rows,'tech_uspech');
+    if(tuN){out.push([LT('techSucc')+` (N=${tuN})`]);tuE.forEach(([v,c])=>out.push([IND+TV(v),fPct(c,tuN)]));}
+  }
+  out.push([LT('conv'),fPct(rows.filter(r=>r.konverzia===true).length,N)]);
+  const compl=rows.filter(r=>(r.komplikacie_struct||'').trim());
+  out.push([LT('anyCompl'),fPct(compl.length,N)]);
+  if(compl.length){
+    out.push([LT('complBr')]);
+    const cm={};compl.forEach(r=>(''+r.komplikacie_struct).split(',').forEach(v=>{v=v.trim();if(v)cm[v]=(cm[v]||0)+1;}));
+    Object.entries(cm).sort((a,b)=>b[1]-a[1]).forEach(([v,c])=>out.push([IND+TV(v),fPct(c,N)]));
+  }
+  const cdRows=rows.filter(r=>(r.clavien_dindo==null?'':''+r.clavien_dindo).trim());
+  if(cdRows.length){
+    out.push([LT('clavien')+` (N=${cdRows.length})`]);
+    const {ents}=pubCats(cdRows,'clavien_dindo');
+    ents.sort((a,b)=>(''+a[0]).localeCompare(''+b[0]));
+    ents.forEach(([v,c])=>out.push([IND+v,fPct(c,cdRows.length)]));
+  }
+  pubRenderTable('pub-t2','t2',out);
+}
+
+// --- Tabuľka 3: follow-up podľa časových bodov ---
+function pubT3(typ,rows){
+  const IND=' ';
+  const ids=new Set(rows.map(r=>(r.vykon_id==null?'':''+r.vykon_id).trim()).filter(Boolean));
+  const my=(PUB.fu[typ]||[]).filter(f=>ids.has((f.vykon_id==null?'':''+f.vykon_id).trim()));
+  const tpOf=f=>(f.casovy_bod==null?'':''+f.casovy_bod).trim();
+  const known=[...new Set(my.map(tpOf).filter(Boolean))];
+  known.sort((a,b)=>{const na=parseInt(a),nb=parseInt(b);return (isNaN(na)?9999:na)-(isNaN(nb)?9999:nb)||a.localeCompare(b);});
+  const byTp={};known.forEach(tp=>byTp[tp]=my.filter(f=>tpOf(f)===tp));
+  const out=[[LT('indicator'),...known]];
+  out.push([LT('fuN'),...known.map(tp=>''+byTp[tp].length)]);
+  const catBlock=(labelKey,key)=>{
+    const vals=[...new Set(my.map(f=>(f[key]==null?'':''+f[key]).trim()).filter(Boolean))];
+    if(!vals.length)return;
+    const order=PUB_ORD[key];
+    if(order)vals.sort((a,b)=>{const ia=order.indexOf(a),ib=order.indexOf(b);return ((ia<0?999:ia)-(ib<0?999:ib))||a.localeCompare(b);});
+    else vals.sort();
+    out.push([LT(labelKey)]);
+    vals.forEach(v=>{
+      out.push([IND+TV(v),...known.map(tp=>{
+        const grp=byTp[tp];
+        const denom=grp.filter(f=>(f[key]==null?'':''+f[key]).trim()).length;
+        const c=grp.filter(f=>(f[key]==null?'':''+f[key]).trim()===v).length;
+        return denom?fPct(c,denom):'–';
+      })]);
+    });
+  };
+  const boolRow=(labelKey,fn)=>out.push([LT(labelKey),...known.map(tp=>{const g=byTp[tp];return g.length?fPct(g.filter(fn).length,g.length):'–';})]);
+  const numRow=(labelKey,key,dec)=>out.push([LT(labelKey)+', '+LT('meanSd'),...known.map(tp=>{const v=pubNums(byTp[tp],key);return v.length?fMeanSD(v,dec):'–';})]);
+  if(typ==='evk'){
+    catBlock('pat','patencia');
+    numRow('abi','abi',2);
+    boolRow('reint',f=>f.reintervencia===true);
+    boolRow('amput',f=>pubIsAmput(f.amputacia));
+  }
+  if(typ==='pevar'){
+    boolRow('el',f=>f.endoleak===true);
+    catBlock('elTyp','endoleak_typ');
+    catBlock('sac','sac_zmena');
+    numRow('sacD','sac_diameter_mm',1);
+    boolRow('reint',f=>f.reintervencia===true);
+  }
+  if(typ==='cas'){
+    catBlock('rest','restenoza');
+    catBlock('neuro','neuro');
+    boolRow('reint',f=>f.reintervencia===true);
+  }
+  pubRenderTable('pub-t3','t3',out);
+}
+
+// --- Kaplan–Meier (product-limit + Greenwood) ---
+function computeKM(subs){
+  const pts=(subs||[]).filter(s=>s&&isFinite(+s.t)&&(+s.t)>=0).map(s=>({t:+s.t,e:s.e?1:0})).sort((a,b)=>a.t-b.t);
+  let n=pts.length,S=1,vs=0;
+  const steps=[];let i=0;
+  while(i<pts.length){
+    const t=pts[i].t;let d=0,c=0;
+    while(i<pts.length&&pts[i].t===t){if(pts[i].e)d++;else c++;i++;}
+    if(d>0){
+      S=S*(1-d/n);
+      let se=null;
+      if(n-d>0){vs+=d/(n*(n-d));se=S*Math.sqrt(vs);}
+      steps.push({t,n,d,S,se,lo:se==null?null:Math.max(0,S-1.96*se),hi:se==null?null:Math.min(1,S+1.96*se)});
+    }
+    n-=(d+c);
+  }
+  return{
+    steps,
+    total:pts.length,
+    events:steps.reduce((a,s)=>a+s.d,0),
+    maxT:pts.length?pts[pts.length-1].t:0,
+    atRisk:t=>pts.reduce((a,p)=>a+(p.t>=t?1:0),0)
+  };
+}
+window.computeKM=computeKM; // exportované pre testy
+
+const PUB_KM_EVENT={
+  evk:f=>{const p=(f.patencia==null?'':''+f.patencia).trim().toLowerCase();return p==='restenóza'||p.indexOf('okl')===0||f.reintervencia===true||pubIsAmput(f.amputacia);},
+  pevar:f=>f.reintervencia===true||['Ia','Ib','III'].includes((f.endoleak_typ==null?'':''+f.endoleak_typ).trim()),
+  cas:f=>{const v=(f.restenoza==null?'':''+f.restenoza).replace(/\s+/g,'');return /^50[–-]70%$/.test(v)||/^>70%$/.test(v)||/^okl/i.test(v)||f.reintervencia===true;}
+};
+
+function pubKMSubjects(typ,rows){
+  const by={};
+  (PUB.fu[typ]||[]).forEach(f=>{const id=(f.vykon_id==null?'':''+f.vykon_id).trim();if(!id)return;(by[id]=by[id]||[]).push(f);});
+  const evFn=PUB_KM_EVENT[typ];
+  const subs=[];let excl=0;
+  rows.forEach(r=>{
+    const id=(r.vykon_id==null?'':''+r.vykon_id).trim();
+    const d0=pubParseDate(pubDateOf(r,typ));
+    const valid=(id&&d0&&by[id]?by[id]:[])
+      .map(f=>({f,d:pubParseDate(f.datum_kontroly)}))
+      .filter(x=>x.d&&d0&&x.d>=d0)
+      .map(x=>({f:x.f,t:Math.round((x.d-d0)/86400000)}))
+      .sort((a,b)=>a.t-b.t);
+    if(!valid.length){excl++;return;}
+    const ev=valid.find(x=>evFn(x.f));
+    if(ev)subs.push({t:ev.t,e:1});
+    else subs.push({t:valid[valid.length-1].t,e:0});
+  });
+  return{subs,excl};
+}
+
+function drawKMChart(km){
+  const id='ch-pub-km';
+  const cv=pubEl(id);if(!cv)return;
+  const off=cv.parentNode.querySelector('.km-off');if(off)off.remove();
+  if(typeof Chart==='undefined'){cv.parentNode.insertAdjacentHTML('beforeend','<div class="km-off" style="color:#9ca3af;font-size:12px;text-align:center">graf nedostupný (offline)</div>');return;}
+  const M=30.44;
+  const est=[{x:0,y:1}],lo=[{x:0,y:1}],hi=[{x:0,y:1}];
+  let pS=1,pL=1,pH=1;
+  km.steps.forEach(s=>{
+    const x=s.t/M;
+    est.push({x,y:pS},{x,y:s.S});pS=s.S;
+    if(s.lo!=null){lo.push({x,y:pL},{x,y:s.lo});pL=s.lo;hi.push({x,y:pH},{x,y:s.hi});pH=s.hi;}
+  });
+  const end=Math.max(km.maxT/M,0.1);
+  est.push({x:end,y:pS});lo.push({x:end,y:pL});hi.push({x:end,y:pH});
+  if(charts[id])charts[id].destroy();
+  const ctx=cv.getContext('2d');
+  charts[id]=new Chart(ctx,{type:'line',data:{datasets:[
+    {label:'KM',data:est,stepped:'before',borderColor:'#1e40af',borderWidth:2,pointRadius:0,fill:false},
+    {label:'95% CI horná',data:hi,stepped:'before',borderColor:'#93c5fd',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false},
+    {label:'95% CI dolná',data:lo,stepped:'before',borderColor:'#93c5fd',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:'-1',backgroundColor:'rgba(59,130,246,.10)'}
+  ]},options:{responsive:true,maintainAspectRatio:false,parsing:false,animation:false,
+    plugins:{legend:{display:false},tooltip:{enabled:false}},
+    scales:{x:{type:'linear',min:0,title:{display:true,text:LT('kmMonths')}},y:{min:0,max:1,ticks:{callback:v=>Math.round(v*100)+' %'}}}}});
+}
+
+function pubKMRender(typ,rows){
+  const {subs,excl}=pubKMSubjects(typ,rows);
+  const km=computeKM(subs);
+  pubEl('pub-km-title').textContent=LT(typ==='evk'?'kmEvk':typ==='cas'?'kmCas':'kmPevar');
+  pubEl('pub-km-note').textContent=LT(typ==='evk'?'kmDefEvk':typ==='cas'?'kmDefCas':'kmDefPevar')+' '+LT('kmNote')(km.total,km.events,excl);
+  drawKMChart(km);
+  // Number at risk (0/3/6/12/24 mesiacov)
+  const marks=[0,3,6,12,24].filter(m=>m===0||m*30.44<=km.maxT+15);
+  pubRenderTable('pub-km-risk','kmrisk',[
+    [LT('kmMonths'),...marks.map(m=>''+m)],
+    [LT('kmAtRisk'),...marks.map(m=>''+km.atRisk(m*30.44))]
+  ]);
+  // KM súhrnná tabuľka
+  const kt=[[LT('kmTime'),LT('kmAtRisk'),LT('kmEvents'),LT('kmEst')]];
+  km.steps.forEach(s=>kt.push([
+    fnum(s.t/30.44,1),''+s.n,''+s.d,
+    fnum(s.S*100,1)+(s.lo!=null?` (${fnum(s.lo*100,1)}–${fnum(s.hi*100,1)})`:'')
+  ]));
+  pubRenderTable('pub-km-tbl','km',kt);
+}
+
+// --- Metódy ---
+function pubMethods(typ){
+  const e=LT(typ==='evk'?'endpEvk':typ==='cas'?'endpCas':'endpPevar');
+  pubEl('pub-methods').textContent=LT('methods')(e);
+}
+
+// --- Statické popisky + jazyk ---
+function pubStaticLabels(){
+  pubEl('pub-lbl-typ').textContent=LT('typ');
+  pubEl('pub-lbl-od').textContent=LT('od');
+  pubEl('pub-lbl-do').textContent=LT('do');
+  pubEl('pub-lbl-riec').textContent=LT('riec');
+  const rs=pubEl('pub-riecisko');if(rs.options.length)rs.options[0].textContent=LT('all');
+  pubEl('pub-methods-title').textContent=LT('methodsTitle');
+  pubEl('pub-t1-title').textContent=LT('t1');
+  pubEl('pub-t2-title').textContent=LT('t2');
+  pubEl('pub-t3-title').textContent=LT('t3');
+  pubEl('pub-km-copy').textContent=LT('kmCopy');
+  document.querySelectorAll('.pub-copy-lbl').forEach(s=>s.textContent=LT('copy'));
+}
+function setPubLang(l){
+  PUB.lang=l;
+  const nat=pubEl('pub-lang-sk');if(nat)nat.classList.toggle('active',l!=='en');
+  const en=pubEl('pub-lang-en');if(en)en.classList.toggle('active',l==='en');
+  renderPub();
+}
+
+// --- Otvorenie a render tabu ---
+async function openPub(){
+  if(PUB.fetching)return;
+  if(!PUB.fetched){
+    PUB.fetching=true;
+    const st=pubEl('pub-status');st.style.display='block';st.textContent=LT('loading');
+    try{await (window._pubDataP||Promise.resolve());}catch(e){}
+    const [e,c,p]=await Promise.all([
+      fetchAll(PUB_FU_TBL.evk).catch(()=>[]),
+      fetchAll(PUB_FU_TBL.cas).catch(()=>[]),
+      fetchAll(PUB_FU_TBL.pevar).catch(()=>[])
+    ]);
+    PUB.fu={evk:e||[],cas:c||[],pevar:p||[]};
+    PUB.fetched=true;PUB.fetching=false;
+    st.style.display='none';
+    const sel=pubEl('pub-riecisko');
+    const vals=[...new Set((RAW.evk||[]).map(r=>(r.riecisko==null?'':''+r.riecisko).trim()).filter(Boolean))].sort();
+    sel.innerHTML='<option value="">'+escHtml(LT('all'))+'</option>'+vals.map(v=>`<option>${escHtml(v)}</option>`).join('');
+  }
+  renderPub();
+}
+function renderPub(){
+  if(!PUB.fetched)return;
+  const typ=pubEl('pub-typ').value;
+  pubEl('pub-riecisko-wrap').style.display=typ==='evk'?'':'none';
+  pubStaticLabels();
+  const rows=pubCohort();
+  const dates=rows.map(r=>pubDateOf(r,typ)).filter(Boolean).sort();
+  pubEl('pub-cohort').textContent=rows.length?LT('cohort')(rows.length,dates[0]||'–',dates[dates.length-1]||'–'):LT('cohort0');
+  pubMethods(typ);
+  pubT1(typ,rows);
+  pubT2(typ,rows);
+  pubT3(typ,rows);
+  pubKMRender(typ,rows);
+}
+/* ==================== koniec 📄 PUBLIKÁCIE ==================== */
 
 loadAll();
 </script>
