@@ -61,6 +61,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <body>
 <script src="/cz/tools/auth.js"></script>
 <script>checkAuth();</script>
+<script src="/tools/anamneza-parser.js"></script>
 <nav class="tabnav">
   <button class="tnb active" id="tnb-nalez" onclick="showFuTab('nalez')">🫀 PEVAR / Aortální stentgrafty</button>
   <button class="tnb" id="tnb-fu" onclick="showFuTab('fu')">📅 Follow-up</button>
@@ -262,7 +263,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     <label class="ck"><input type="radio" name="ind_typ" id="ind_urgentny" value="urgentnímu" onchange="gen()"><span>Urgentní</span></label>
   </div>
 </div>
-<details class="komor-details"><summary><span class="komor-arr">▶</span> 🏥 Komorbidity <span style="font-weight:400;color:#9ca3af;font-size:11px">(doplnit později)</span></summary>
+<details class="komor-details"><summary><span class="komor-arr">▶</span> 🏥 Komorbidity <span style="font-weight:400;color:#9ca3af;font-size:11px">(doplnit později)</span> <button type="button" onclick="event.preventDefault();event.stopPropagation();AnamnezaParser.open()" style="margin-left:8px;font-size:11px;padding:2px 8px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;border-radius:6px;cursor:pointer;font-weight:600">📋 Z textu zprávy</button></summary>
 <div class="f"><div class="lbl">Komorbidity</div>
   <div id="komordiv" autocomplete="off">
     <div class="kom-item">
