@@ -35,6 +35,7 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
 .st-done{color:#16a34a;font-weight:700;}
 .st-wait{color:#b45309;font-weight:700;}
 .st-late{color:#dc2626;font-weight:700;}
+.st-exitus{color:#6b7280;font-weight:700;}
 .empty{text-align:center;padding:30px;color:#9ca3af;font-size:14px;}
 .err-row{text-align:center;padding:14px;background:#fef2f2;color:#dc2626;font-weight:700;}
 .dim{color:#9ca3af;}
@@ -95,9 +96,9 @@ const VYKONY=[
 const TYP_LABEL={evk:'EVK',cas:'CAS',pevar:'PEVAR',aorta:'Aorta'};
 const BODY={'1M':1,'6M':6,'12M':12};            // očakávané kontroly po výkone
 const EXPECTED=['1M','6M','12M'];
-const STAV_LABEL={done:'✅ splnená',wait:'🟡 čaká',late:'🔴 mešká'};
-const STAV_CLS={done:'st-done',wait:'st-wait',late:'st-late'};
-const STAV_ORD={late:0,wait:1,done:2};
+const STAV_LABEL={done:'✅ splnená',wait:'🟡 čaká',late:'🔴 mešká',exitus:'✝ exitus'};
+const STAV_CLS={done:'st-done',wait:'st-wait',late:'st-late',exitus:'st-exitus'};
+const STAV_ORD={late:0,wait:1,done:2,exitus:2}; // exitus radíme spolu so splnenými
 
 let ROWS=[];        // {typ,pacient,vykon_datum,bod,termin,stav}
 let LOAD_ERR=false;
@@ -134,16 +135,19 @@ async function loadAll(){
   for(const t of VYKONY){
     let vyk=[],fus=[];
     try{
-      [vyk,fus]=await Promise.all([
-        sbGet(t.table+'?order=created_at.desc&limit=1000'),
-        sbGet(t.fu+'?select=vykon_id,casovy_bod,datum_kontroly&limit=2000'),
-      ]);
+      vyk=await sbGet(t.table+'?order=created_at.desc&limit=1000');
+      try{fus=await sbGet(t.fu+'?select=vykon_id,casovy_bod,datum_kontroly,exitus,exitus_datum&limit=2000');}
+      catch(e2){fus=await sbGet(t.fu+'?select=vykon_id,casovy_bod,datum_kontroly&limit=2000');} // stĺpce exitus ešte nemusia existovať
     }catch(e){LOAD_ERR=true;continue;}
     if(vyk.length)anyVykon=true;
 
     // mapa splnených follow-upov: vykon_id|casovy_bod → datum_kontroly
-    const fuMap={};
-    fus.forEach(f=>{if(f.vykon_id&&f.casovy_bod)fuMap[f.vykon_id+'|'+f.casovy_bod]=f.datum_kontroly||'';});
+    // + mapa zosnulých: vykon_id → dátum exitu (exitus_datum, fallback datum_kontroly)
+    const fuMap={},exitusMap={};
+    fus.forEach(f=>{
+      if(f.vykon_id&&f.casovy_bod)fuMap[f.vykon_id+'|'+f.casovy_bod]=f.datum_kontroly||'';
+      if(f.vykon_id&&f.exitus===true&&!(f.vykon_id in exitusMap))exitusMap[f.vykon_id]=f.exitus_datum||f.datum_kontroly||'';
+    });
 
     const vykDatum={};
     vyk.forEach(v=>{
@@ -152,6 +156,7 @@ async function loadAll(){
       vykDatum[v.vykon_id]=datum;
       const demo=[v.vek?v.vek+' r.':null,v.pohlavie||null].filter(Boolean).join(', ');
       const pacient=v.vykon_id+(demo?' ('+demo+')':'');
+      const deceased=v.vykon_id in exitusMap;
       EXPECTED.forEach(bod=>{
         const due=addMonths(datum,BODY[bod]);
         const key=v.vykon_id+'|'+bod;
@@ -160,11 +165,16 @@ async function loadAll(){
           delete fuMap[key];
           return;
         }
+        if(deceased)return;                     // ✝ zosnulý – očakávané kontroly nevykazuj ako 🔴/🟡
         const dd=daysDiff(today,due);           // + budúcnosť, − minulosť
         if(dd>30)return;                        // ešte ďaleko
         if(dd>=-14){ROWS.push({typ:t.typ,pacient,vykon_datum:datum,bod,termin:due,stav:'wait'});return;}
         if(due>=backLimit)ROWS.push({typ:t.typ,pacient,vykon_datum:datum,bod,termin:due,stav:'late'});
       });
+      if(deceased){
+        const ed=exitusMap[v.vykon_id];
+        ROWS.push({typ:t.typ,pacient,vykon_datum:datum,bod:'✝ exitus'+(isDate(ed)?' '+fmtD(ed):''),termin:ed,stav:'exitus'});
+      }
     });
 
     // mimoriadne splnené kontroly (3M, 24M…) – zobraz ako splnené
