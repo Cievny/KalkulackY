@@ -53,6 +53,10 @@ ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS punkcia_technika_sin      T
 ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS zabezpecenie_technika_sin TEXT;
 ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS sheath_velkost_sin        TEXT;
 
+-- 3b) Denný program – dve sály (Sála OIRA A / Sála OIRA B).
+--     Staré záznamy = 'A'; UI sekcie sa objavia, až keď má B pacientov.
+ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS sala TEXT DEFAULT 'A';
+
 -- 4) Oznamy – komentáre + prihlasovanie (workshopy / akcie)
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_komentare     BOOLEAN DEFAULT false;
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;

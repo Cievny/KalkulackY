@@ -92,6 +92,17 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
 .addrow input:focus{border-color:#3b82f6;}
 .btn-add{padding:7px 14px;background:#1e40af;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
 .empty{padding:24px;text-align:center;color:#9ca3af;font-size:13.5px;}
+/* Dve sály OIRA A/B */
+.sala-hdr{font-size:13px;font-weight:800;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;padding-bottom:4px;border-bottom:2px solid #bfdbfe;}
+.sala-hdr:first-child{margin-top:0;}
+#sala_filter .bmini.sala-on{background:#1e40af;color:#fff;border-color:#1e40af;}
+.sala-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+body.tv .sala-hdr{font-size:20px;color:#93c5fd;border-bottom-color:#334a77;}
+body.tv .sala-grid .prow{grid-template-columns:44px 1.2fr 76px 1fr .95fr .8fr 150px;font-size:14.5px;padding:9px 10px;}
+body.tv .sala-grid .prow input{font-size:14px;}
+body.tv .sala-grid .pnum{font-size:19px;}
+body.tv .sala-grid .stav-chip{font-size:12.5px;padding:5px 8px;}
+@media(max-width:1100px){.sala-grid{grid-template-columns:1fr;}}
 /* Užšie okno / tablet: karta pacienta sa preskladá do riadkov, nech sa polia neorezávajú */
 @media(max-width:1000px){
   .hdr{display:none;}
@@ -167,6 +178,11 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
 </div>
 
 <div class="list">
+  <div id="sala_filter" style="display:none;margin-bottom:8px">
+    <button class="bmini sala-on" data-v="all" onclick="setSalaFilter('all')">Všetky</button>
+    <button class="bmini" data-v="A" onclick="setSalaFilter('A')">🅰 Sála A</button>
+    <button class="bmini" data-v="B" onclick="setSalaFilter('B')">🅱 Sála B</button>
+  </div>
   <div class="hdr"><span>#</span><span>Meno pacienta</span><span>Ročník</span><span>Diagnóza</span><span>Výkon</span><span>Kde leží</span><span></span></div>
   <div id="rows"></div>
   <div class="addrow">
@@ -176,7 +192,10 @@ body.tv .stav-chip{font-size:15px;padding:6px 12px;pointer-events:none;}
     <input id="n_diagnoza" placeholder="Diagnóza" onkeydown="if(event.key==='Enter')addRow()">
     <input id="n_vykon" placeholder="Výkon" list="dl_vykon" onkeydown="if(event.key==='Enter')addRow()">
     <input id="n_lozko" placeholder="odd. / izba" onkeydown="if(event.key==='Enter')addRow()">
-    <button class="btn-add" onclick="addRow()">+ Pridať</button>
+    <span style="display:flex;gap:6px;align-items:center">
+      <select id="n_sala" style="display:none;padding:7px 6px;border:1.5px solid #bfdbfe;border-radius:6px;font-size:13px;background:#fff" title="sála"><option value="A">🅰</option><option value="B">🅱</option></select>
+      <button class="btn-add" onclick="addRow()" style="flex:1">+ Pridať</button>
+    </span>
     <div class="psub">
       <input id="n_poloha" placeholder="poloha" list="dl_poloha" onkeydown="if(event.key==='Enter')addRow()">
       <input id="n_punkcia" placeholder="miesto punkcie" list="dl_punkcia" onkeydown="if(event.key==='Enter')addRow()">
@@ -273,6 +292,10 @@ let MODE='day';      // day | week
 let NEW_POZID=null;  // prepojenie novej položky na kartu v Požiadavkách
 let NEW_POZ_ROCNIK=null; // ročník pacienta z návrhu (poistka proti zámene)
 const TV=new URLSearchParams(location.search).get('tv')==='1';
+// Dve sály: ?sala=A alebo ?sala=B na TV zobrazí len jednu sálu (TV pri sále)
+const TVSALA=(new URLSearchParams(location.search).get('sala')||'').toUpperCase();
+const salaOf=r=>r&&r.sala==='B'?'B':'A'; // NULL/undefined/staré záznamy = A
+let SALA_FILTER='all';
 const STAVY={na_oddeleni:'🛏 na oddelení',poslat:'🚑 poslať pre pacienta',caka:'⏳ čaká pred sálou',na_sale:'💉 na sále',hotovy:'✅ hotový'};
 function g(id){return (document.getElementById(id)||{}).value||'';}
 function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -394,11 +417,49 @@ async function uzavriPoziadavku(pid){
 
 function render(){
   const box=document.getElementById('rows');box.innerHTML='';
-  if(!ROWS.length){box.innerHTML='<div class="empty">Zatiaľ prázdny program – pridajte pacientov nižšie.</div>';return;}
-  let cislo=0;
-  ROWS.forEach((row,idx)=>{
+  // TV pri konkrétnej sále (?sala=A/B) vidí len svoju sálu
+  let list=(TV&&(TVSALA==='A'||TVSALA==='B'))?ROWS.filter(r=>salaOf(r)===TVSALA):ROWS;
+  const anyB=ROWS.some(r=>salaOf(r)==='B');
+  updateSalaUI(anyB);
+  if(!TV&&anyB&&SALA_FILTER!=='all')list=list.filter(r=>salaOf(r)===SALA_FILTER);
+  if(!list.length){box.innerHTML='<div class="empty">Zatiaľ prázdny program – pridajte pacientov nižšie.</div>';return;}
+  // dve sekcie len keď má B pacientov a nefiltrujeme na jednu sálu
+  const split=anyB&&!(TV&&TVSALA)&&(TV||SALA_FILTER==='all');
+  if(!split){
+    if(TV&&TVSALA)box.appendChild(salaHdr(TVSALA));
+    let c=0;
+    list.forEach(row=>{if(row.stav!=='vyradeny')c++;box.appendChild(makeRow(row,ROWS.indexOf(row),(anyB?salaOf(row):'')+c+'.'));});
+    return;
+  }
+  const wrap=document.createElement('div');
+  if(TV)wrap.className='sala-grid';
+  ['A','B'].forEach(s=>{
+    const sect=document.createElement('div');
+    sect.appendChild(salaHdr(s));
+    let c=0;
+    list.filter(r=>salaOf(r)===s).forEach(row=>{if(row.stav!=='vyradeny')c++;sect.appendChild(makeRow(row,ROWS.indexOf(row),s+c+'.'));});
+    if(!c&&!list.filter(r=>salaOf(r)===s).length)sect.appendChild(Object.assign(document.createElement('div'),{className:'empty',textContent:'– bez pacientov –'}));
+    wrap.appendChild(sect);
+  });
+  box.appendChild(wrap);
+}
+function salaHdr(s){
+  const h=document.createElement('div');h.className='sala-hdr';
+  h.textContent=(s==='A'?'🅰':'🅱')+' Sála OIRA '+s;
+  return h;
+}
+function updateSalaUI(anyB){
+  const f=document.getElementById('sala_filter');if(f)f.style.display=(anyB&&!TV)?'':'none';
+  const sel=document.getElementById('n_sala');if(sel)sel.style.display=(anyB&&!TV)?'':'none';
+  if(!anyB)SALA_FILTER='all';
+}
+function setSalaFilter(v){
+  SALA_FILTER=v;
+  document.querySelectorAll('#sala_filter button').forEach(b=>b.classList.toggle('sala-on',b.dataset.v===v));
+  render();
+}
+function makeRow(row,idx,numLabel){
     const vyr=row.stav==='vyradeny';
-    if(!vyr)cislo++;
     const sv=STAVY[row.stav_vykonu]?row.stav_vykonu:'na_oddeleni';
     const div=document.createElement('div');
     div.className='prow'+(vyr?' vyradeny':(sv!=='na_oddeleni'?' st-'+sv:''));
@@ -407,7 +468,7 @@ function render(){
     div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
     div.addEventListener('drop',e=>{e.preventDefault();div.classList.remove('drag-over');if(DRAGP!==null&&DRAGP!==idx)reorderTo(DRAGP,idx);DRAGP=null;});
     div.innerHTML=`
-      <div class="pnum" draggable="true" title="ťahaním zmeníte poradie">${vyr?'⛔':cislo+'.'}</div>
+      <div class="pnum" draggable="true" title="ťahaním zmeníte poradie">${vyr?'⛔':numLabel}</div>
       <input value="${escHtml(row.meno||'')}" onchange="patchRow('${row.id}','meno',this.value)" placeholder="Meno">
       <input type="number" value="${row.rocnik??''}" onchange="patchRow('${row.id}','rocnik',this.value?parseInt(this.value):null)" placeholder="ročník">
       <input value="${escHtml(row.diagnoza||'')}" onchange="patchRow('${row.id}','diagnoza',this.value)" placeholder="diagnóza">
@@ -418,7 +479,8 @@ function render(){
         <button class="bmini" title="posunúť vyššie" onclick="moveRow(${idx},-1)">▲</button>
         <button class="bmini" title="posunúť nižšie" onclick="moveRow(${idx},1)">▼</button>
         ${vyr?`<button class="bmini" onclick="patchRow('${row.id}','stav','planovany');patchRow('${row.id}','vyradeny_dovod',null)">↩ Vrátiť</button>`
-             :`<button class="bmini bmini-out" onclick="vyradit('${row.id}')">⛔ Vyradiť</button>
+             :`<button class="bmini" title="presunúť na sálu ${salaOf(row)==='A'?'B':'A'}" onclick="toggleSala('${row.id}')">🏥 ${salaOf(row)}</button>
+        <button class="bmini bmini-out" onclick="vyradit('${row.id}')">⛔ Vyradiť</button>
         <button class="bmini" title="presunúť na iný deň" onclick="presunDen('${row.id}')">📆 Iný deň</button>
         <button class="bmini" title="odložiť do zásobníka (bez termínu)" onclick="doZasobnika('${row.id}')">📦</button>`}
         <button class="bmini bmini-del" title="zmazať úplne" onclick="delRow('${row.id}')">🗑</button>
@@ -433,8 +495,21 @@ function render(){
     const handle=div.querySelector('.pnum');
     handle.addEventListener('dragstart',e=>{DRAGP=idx;div.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
     handle.addEventListener('dragend',()=>{div.classList.remove('dragging');DRAGP=null;});
-    box.appendChild(div);
-  });
+    return div;
+}
+
+// Prepnutie pacienta medzi sálami A/B. Kým v DB nie je stĺpec sala,
+// zobrazí návod na SQL namiesto nezrozumiteľnej chyby 400.
+async function toggleSala(id){
+  const row=ROWS.find(r=>r.id===id);if(!row)return;
+  const nova=salaOf(row)==='A'?'B':'A';
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'PATCH',headers:{...H(),'Prefer':'return=minimal'},
+      body:JSON.stringify({sala:nova,updated_at:new Date().toISOString()})});
+    if(r.ok){row.sala=nova;render();msg('✓ Presunutý na sálu '+nova,'#1d6f42');}
+    else if(r.status===400)msg('⚠️ Najprv spustite SQL pre sály: ALTER TABLE denny_program ADD COLUMN sala TEXT DEFAULT \'A\';','#b45309');
+    else msg('❌ Chyba: '+r.status,'#dc2626');
+  }catch(e){msg('❌ Chyba siete','#dc2626');}
 }
 
 // preusporiadanie ťahaním: presunie riadok na pozíciu cieľa a prečísluje celý deň
@@ -472,6 +547,8 @@ async function addRow(pre,doZasobnika){
   data.poradie=doZasobnika?0:(ROWS.length?Math.max(...ROWS.map(r=>r.poradie||0))+1:1);
   data.stav='planovany';
   data.stav_vykonu='na_oddeleni';
+  // sála: posiela sa LEN pri 'B' (kým DB nemá stĺpec sala, 'A' funguje ako default bez chyby 400)
+  if(!pre&&!doZasobnika&&g('n_sala')==='B')data.sala='B';
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
     if(r.ok){
@@ -493,11 +570,14 @@ async function patchRow(id,field,value){
 }
 
 async function moveRow(idx,dir){
-  const j=idx+dir;
+  // posúvame v rámci tej istej sály – preskoč riadky druhej sály
+  const s=salaOf(ROWS[idx]);
+  let j=idx+dir;
+  while(j>=0&&j<ROWS.length&&salaOf(ROWS[j])!==s)j+=dir;
   if(j<0||j>=ROWS.length)return;
   // prehoď v poli a prečísluj postupne – odolné aj voči duplicitným hodnotám poradia
   const arr=ROWS.slice();
-  const [it]=arr.splice(idx,1);arr.splice(j,0,it);
+  const [it]=arr.splice(idx,1);arr.splice(j<idx?j:j,0,it);
   await Promise.all(arr.map((r,i)=>r.poradie!==i+1?patchRow(r.id,'poradie',i+1):null).filter(Boolean));
   await loadRows();
 }
@@ -673,7 +753,8 @@ async function renderMonth(){
     const rows=all.filter(x=>x.datum===dk&&x.stav!=='vyradeny');
     const cell=document.createElement('div');
     cell.className='mday'+(inMonth?'':' other')+(dk===todayISO(0)?' today-col':'');
-    cell.innerHTML=`<div class="mnum">${cur.getDate()} ${rows.length?'<span class="mcnt">'+rows.length+'</span>':''}</div>`
+    const mB=rows.filter(x=>salaOf(x)==='B').length;
+    cell.innerHTML=`<div class="mnum">${cur.getDate()} ${rows.length?'<span class="mcnt" title="'+(mB?'sála A + sála B':'')+'">'+(mB?(rows.length-mB)+'+'+mB:rows.length)+'</span>':''}</div>`
       +rows.slice(0,3).map(x=>`<div class="mpac">${escHtml(x.meno||'?')}${x.vykon?' – '+escHtml(x.vykon):''}</div>`).join('')
       +(rows.length>3?`<div class="mpac" style="color:#9ca3af">+ ${rows.length-3} ďalší</div>`:'');
     if(inMonth){
@@ -711,7 +792,10 @@ async function renderWeek(){
     const col=document.createElement('div');
     col.className='wday'+(dk===todayISO(0)?' today-col':'');
     const title=dk==='zasobnik'?'📦 Zásobník':dni[di]+' '+fmtD(dk);
-    col.innerHTML=`<h3 title="${dk==='zasobnik'?'':'kliknutím otvoríte deň'}"><span>${title}</span><span style="color:#6b7280">${rows.filter(x=>x.stav!=='vyradeny').length}</span></h3>`;
+    const akt=rows.filter(x=>x.stav!=='vyradeny');
+    const nB=akt.filter(x=>salaOf(x)==='B').length;
+    const cnt=nB?`${akt.length-nB}+${nB}`:String(akt.length);
+    col.innerHTML=`<h3 title="${dk==='zasobnik'?'':'kliknutím otvoríte deň'}"><span>${title}</span><span style="color:#6b7280" title="${nB?'sála A + sála B':''}">${cnt}</span></h3>`;
     if(dk!=='zasobnik'){
       col.style.cursor='pointer';
       col.addEventListener('click',()=>{
@@ -753,12 +837,21 @@ function buildProgram(){
   L.push('DENNÝ PROGRAM – ENDOVASKULÁRNE / CIEVNE VÝKONY');
   L.push('Dátum: '+fmtD(g('datum')));
   L.push('-'.repeat(46));
+  const riadok=(r,label)=>label+'. '+(r.meno||'?')+(r.rocnik?' ('+r.rocnik+')':'')+(r.diagnoza?' – '+r.diagnoza:'')+(r.vykon?' – '+r.vykon:'')+(r.lozko?' – '+r.lozko:'')
+      +(r.poloha?' – poloha: '+r.poloha:'')+(r.miesto_punkcie?' – punkcia: '+r.miesto_punkcie:'')+(r.operator?' – operatér: '+r.operator:'')+((r.stav_vykonu==='hotovy'&&r.vykon_start&&r.vykon_koniec)?' – trvanie '+fmtTrvanie(Math.max(0,Math.round((new Date(r.vykon_koniec)-new Date(r.vykon_start))/60000))):'')+(r.poznamka?' – pozn.: '+r.poznamka:'');
+  const akt=ROWS.filter(r=>r.stav!=='vyradeny');
+  const anyB=akt.some(r=>salaOf(r)==='B');
   let c=0;
-  ROWS.filter(r=>r.stav!=='vyradeny').forEach(r=>{
-    c++;
-    L.push(c+'. '+(r.meno||'?')+(r.rocnik?' ('+r.rocnik+')':'')+(r.diagnoza?' – '+r.diagnoza:'')+(r.vykon?' – '+r.vykon:'')+(r.lozko?' – '+r.lozko:'')
-      +(r.poloha?' – poloha: '+r.poloha:'')+(r.miesto_punkcie?' – punkcia: '+r.miesto_punkcie:'')+(r.operator?' – operatér: '+r.operator:'')+((r.stav_vykonu==='hotovy'&&r.vykon_start&&r.vykon_koniec)?' – trvanie '+Math.max(0,Math.round((new Date(r.vykon_koniec)-new Date(r.vykon_start))/60000))+' min':'')+(r.poznamka?' – pozn.: '+r.poznamka:''));
-  });
+  if(anyB){
+    ['A','B'].forEach(s=>{
+      const sekcia=akt.filter(r=>salaOf(r)===s);
+      L.push('');L.push('SÁLA OIRA '+s+':');
+      let n=0;sekcia.forEach(r=>{n++;c++;L.push(riadok(r,s+n));});
+      if(!n)L.push('(bez pacientov)');
+    });
+  }else{
+    akt.forEach(r=>{c++;L.push(riadok(r,String(c)));});
+  }
   if(!c)L.push('(program je prázdny)');
   const vyr=ROWS.filter(r=>r.stav==='vyradeny');
   if(vyr.length){
