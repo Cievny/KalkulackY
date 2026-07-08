@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>PEVAR – Generátor zpráv</title>
+<title>PEVAR / Aortální stentgrafty – Generátor zpráv</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13.5px;background:#f0f2f5;color:#1a1a2e}
@@ -59,7 +59,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <script src="/cz/tools/auth.js"></script>
 <script>checkAuth();</script>
 <nav class="tabnav">
-  <button class="tnb active" id="tnb-nalez" onclick="showFuTab('nalez')">🫀 PEVAR</button>
+  <button class="tnb active" id="tnb-nalez" onclick="showFuTab('nalez')">🫀 PEVAR / Aortální stentgrafty</button>
   <button class="tnb" id="tnb-fu" onclick="showFuTab('fu')">📅 Follow-up</button>
 </nav>
 
@@ -83,6 +83,20 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
       <div class="f"><label class="ck"><input type="checkbox" id="fu_el"> Endoleak</label><select id="fu_el_typ"><option value="">– typ –</option><option>Ia</option><option>Ib</option><option>II</option><option>III</option><option>IV</option><option>V (endotenzia)</option></select></div>
       <div class="f"><label class="ck"><input type="checkbox" id="fu_reint"> Reintervence</label><input type="text" id="fu_reint_detail" placeholder="jaká…"></div>
     </div>
+    <details class="komor-details" id="fu_vetvy_details"><summary><span class="komor-arr">▶</span> 🌿 Větve/fenestrace při kontrole <span style="font-weight:400;color:#9ca3af;font-size:11px">(FEVAR/BEVAR/TEVAR…)</span></summary>
+      <div style="padding:8px 2px 2px">
+        <div id="fu_vetvy_list"></div>
+        <button type="button" class="add-btn" onclick="addFuVetva()">＋ Přidat větev</button>
+        <div class="f" style="margin-top:8px"><label>Trombóza falešného lumen (disekce)</label>
+          <select id="fu_fl_tromboza">
+            <option value="">–</option>
+            <option value="kompletna">kompletní</option>
+            <option value="parcialna">parciální</option>
+            <option value="ziadna">žádná</option>
+          </select>
+        </div>
+      </div>
+    </details>
     <div class="f"><label>Poznámka</label><textarea id="fu_pozn" rows="3"></textarea></div>
     <div class="f" style="margin-top:6px">
       <label class="ck"><input type="checkbox" id="fu_exitus" onchange="fuExitusToggle()"><span>✝ Exitus</span></label>
@@ -123,6 +137,72 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     </select>
   </div>
   <div class="f"><label>Datum</label><input type="date" id="datum_zaznamu" oninput="updatePevarIdPrefix();gen()"></div>
+</div>
+</div>
+
+<!-- Typ výkonu / segment aorty -->
+<div class="card">
+<div class="st">Typ výkonu</div>
+<div class="row r2">
+  <div class="f"><label>Typ výkonu</label>
+    <select id="typ_vykonu" onchange="typVykonuChanged()">
+      <option value="EVAR" selected>EVAR (infrarenální)</option>
+      <option value="FEVAR">FEVAR (fenestrovaný)</option>
+      <option value="BEVAR">BEVAR (branchovaný)</option>
+      <option value="TEVAR">TEVAR (torakální)</option>
+      <option value="ChEVAR">ChEVAR (chimney)</option>
+      <option value="HYBRID">Hybridní</option>
+    </select>
+  </div>
+  <div class="f"><label>Segment aorty</label>
+    <select id="segment_aorty" onchange="updateTypVisibility();gen()">
+      <option value="abdominalna" selected>abdominální</option>
+      <option value="torakalna">torakální</option>
+      <option value="torakoabdominalna">torakoabdominální</option>
+    </select>
+  </div>
+</div>
+<!-- TEVAR / torakální blok -->
+<div id="tevar_blok" style="display:none">
+  <div class="row r3">
+    <div class="f"><label>Etiologie</label>
+      <select id="etiologia" onchange="gen()">
+        <option value="">–</option>
+        <option value="aneuryzma">aneuryzma</option>
+        <option value="disekcia_B">disekce typu B</option>
+        <option value="IMH">IMH</option>
+        <option value="PAU">PAU</option>
+        <option value="trauma">trauma</option>
+        <option value="ine">jiné</option>
+      </select>
+    </div>
+    <div class="f"><label>Proximální landing zóna</label>
+      <select id="zona_prox" onchange="gen()">
+        <option value="">–</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+      </select>
+      <small style="display:block;color:#6b7280;font-size:10px;margin-top:2px">Ishimaru</small>
+    </div>
+    <div class="f"><label>Distální zóna</label>
+      <select id="zona_dist" onchange="gen()">
+        <option value="">–</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option>
+      </select>
+      <small style="display:block;color:#6b7280;font-size:10px;margin-top:2px">Ishimaru</small>
+    </div>
+  </div>
+  <div class="row r2">
+    <div class="f"><label>Management levé a. subclavia</label>
+      <select id="lsa_manazment" onchange="gen()">
+        <option value="">–</option>
+        <option value="neprekryta">nepřekrytá</option>
+        <option value="prekryta">překrytá bez revaskularizace</option>
+        <option value="revask_bypass">karotido-subklaviální bypass</option>
+        <option value="revask_transpozicia">transpozice</option>
+        <option value="chimney">chimney</option>
+        <option value="islf">in-situ laserová fenestrace</option>
+      </select>
+    </div>
+    <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="spinalna_drenaz" onchange="gen()"> Spinální drenáž</label></div>
+  </div>
 </div>
 </div>
 
@@ -431,7 +511,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   </select>
 </div>
 
-<div class="f"><label>Typ SG tela</label>
+<div class="f" id="sgtyp_f"><label>Typ SG tela</label>
   <div class="checks">
     <label class="ck"><input type="radio" name="sg_typ" id="sg_bifurkacny" value="bifurkačního" checked onchange="gen()"><span>Bifurkační</span></label>
     <label class="ck"><input type="radio" name="sg_typ" id="sg_unilateralny" value="unilaterálního" onchange="gen()"><span>Unilaterální</span></label>
@@ -462,6 +542,12 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     <div id="extenzie_list"></div>
     <button type="button" class="add-btn" onclick="addExtenzia()">＋ Přidat extenzi</button>
   </div>
+</div>
+
+<!-- Větve / fenestrace (FEVAR/BEVAR/ChEVAR/HYBRID) -->
+<div id="vetvy_sekcia" style="margin-bottom:9px">
+  <div id="vetvy_list"></div>
+  <button type="button" class="add-btn" onclick="addVetva()">＋ Přidat větev/fenestraci</button>
 </div>
 
 <div class="f"><label>Další postup / Komplikace</label>
@@ -741,6 +827,91 @@ function withMM(str){
   return /mm\b/i.test(str)?str:str+' mm';
 }
 
+// ── Typ výkonu / segment aorty ──────────────────────────────
+const TYP_SEGMENT={EVAR:'abdominalna',FEVAR:'abdominalna',BEVAR:'abdominalna',ChEVAR:'abdominalna',TEVAR:'torakalna'};
+const TYP_LABEL={EVAR:'PEVAR',FEVAR:'FEVAR',BEVAR:'BEVAR',TEVAR:'TEVAR',ChEVAR:'ChEVAR',HYBRID:'hybridnímu výkonu'};
+const TYP_HDR={EVAR:'PEVAR',FEVAR:'FEVAR',BEVAR:'BEVAR',TEVAR:'TEVAR',ChEVAR:'ChEVAR',HYBRID:'HYBRIDNÍ VÝKON'};
+function typVykonu(){return g('typ_vykonu')||'EVAR';}
+function tevarBlokVisible(){const t=typVykonu(),s=g('segment_aorty');return t==='TEVAR'||s==='torakalna'||s==='torakoabdominalna';}
+function updateTypVisibility(){
+  const t=typVykonu();
+  const tb=document.getElementById('tevar_blok');if(tb)tb.style.display=tevarBlokVisible()?'':'none';
+  const sgf=document.getElementById('sgtyp_f');if(sgf)sgf.style.display=t==='TEVAR'?'none':'';
+}
+function typVykonuChanged(){
+  const t=typVykonu();
+  if(TYP_SEGMENT[t]){const s=document.getElementById('segment_aorty');if(s)s.value=TYP_SEGMENT[t];}
+  // Závěr – automatický text jen pokud jej uživatel neupravil
+  const z=document.getElementById('zaver_vykonu');
+  if(z&&/^(PEVAR AAA|FEVAR|BEVAR|TEVAR|ChEVAR|Hybridní výkon) s dobrým efektem\.$/.test(z.value)){
+    z.value=(t==='EVAR'?'PEVAR AAA':(t==='HYBRID'?'Hybridní výkon':t))+' s dobrým efektem.';
+  }
+  updateTypVisibility();gen();
+}
+
+// ── Větve / fenestrace ──────────────────────────────────────
+let vetvaCnt=0;
+const CIEVA_OPTS=[['LSA','levá a. subclavia'],['ACC_sin','levá ACC'],['TC','truncus coeliacus'],['AMS','AMS'],['RA_dx','pravá renální'],['RA_sin','levá renální'],['AII_dx','pravá AII'],['AII_sin','levá AII'],['ine','jiná…']];
+const VTYP_OPTS=[['fenestracia','výrobní fenestrace'],['vetva','směrovaná větev'],['chimney','chimney'],['periscope','periscope'],['islf','in-situ laserová fenestrace (ISLF)'],['debranching','debranching bypass']];
+const cievaOptsHtml=()=>CIEVA_OPTS.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('');
+function addVetva(){
+  const idx=vetvaCnt++;
+  const id='vetva_'+idx;
+  const cont=document.getElementById('vetvy_list');
+  const div=document.createElement('div');div.className='dyn-row vetva-row';div.dataset.idx=idx;
+  div.innerHTML=`<button type="button" class="del-btn-x" onclick="delVetva(${idx})">✕</button>
+    <div class="row r2" style="margin-bottom:0">
+      <div class="f"><label>Céva</label><select id="${id}_cieva" onchange="vetvaCievaIne(${idx});gen()">${cievaOptsHtml()}</select><input type="text" id="${id}_cieva_ine" placeholder="jiná céva…" style="display:none;margin-top:4px" oninput="gen()"></div>
+      <div class="f"><label>Typ zajištění</label><select id="${id}_typ" onchange="gen()">${VTYP_OPTS.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('')}</select></div>
+    </div>
+    <div class="row r3" style="margin-top:6px;margin-bottom:0">
+      <div class="f"><label>Bridging stentgraft</label><input type="text" id="${id}_bridging" placeholder="BeGraft, Viabahn…" oninput="gen()"></div>
+      <div class="f"><label>Rozměr</label><input type="text" id="${id}_rozmer" placeholder="7×22" oninput="gen()"></div>
+      <div class="f"><label>Kanylace</label><select id="${id}_kanylacia" onchange="gen()"><option value="">–</option><option value="uspesna">úspěšná</option><option value="neuspesna">neúspěšná</option></select></div>
+    </div>
+    <div class="f" style="margin-top:6px;margin-bottom:0"><label>Poznámka</label><input type="text" id="${id}_pozn" oninput="gen()"></div>`;
+  cont.appendChild(div);gen();
+}
+function delVetva(idx){const r=document.querySelector('#vetvy_list [data-idx="'+idx+'"]');if(r)r.remove();gen();}
+function vetvaCievaIne(idx){const s=document.getElementById('vetva_'+idx+'_cieva'),c=document.getElementById('vetva_'+idx+'_cieva_ine');if(s&&c)c.style.display=s.value==='ine'?'':'none';}
+function getVetvy(){
+  const rows=[];
+  document.querySelectorAll('#vetvy_list .vetva-row').forEach(row=>{
+    const id='vetva_'+row.dataset.idx;
+    rows.push({cieva:g(id+'_cieva'),cieva_ine:g(id+'_cieva_ine'),typ:g(id+'_typ'),bridging:g(id+'_bridging'),rozmer:g(id+'_rozmer'),kanylacia:g(id+'_kanylacia'),pozn:g(id+'_pozn')});
+  });
+  return rows;
+}
+
+// ── Texty pro narativ (TEVAR / větve) ───────────────────────
+const CIEVA_AKUZ={LSA:'levou a. subclavia',ACC_sin:'levou a. carotis communis',TC:'truncus coeliacus',AMS:'AMS',RA_dx:'pravou renální tepnu',RA_sin:'levou renální tepnu',AII_dx:'pravou a. iliaca interna',AII_sin:'levou a. iliaca interna'};
+function cievaText(v){return v.cieva==='ine'?(v.cieva_ine||'jinou cévu'):(CIEVA_AKUZ[v.cieva]||v.cieva);}
+const LSA_TEXT={
+  neprekryta:'Levá a. subclavia není překryta stentgraftem.',
+  prekryta:'Levá a. subclavia překryta stentgraftem bez revaskularizace.',
+  revask_bypass:'Levá a. subclavia revaskularizována karotido-subklaviálním bypassem.',
+  revask_transpozicia:'Levá a. subclavia revaskularizována transpozicí.',
+  chimney:'Levá a. subclavia zajištěna chimney technikou.',
+  islf:'Levá a. subclavia zajištěna in-situ laserovou fenestrací.'
+};
+const ETIO_TEXT={aneuryzma:'aneuryzma',disekcia_B:'disekce typu B',IMH:'intramurální hematom (IMH)',PAU:'penetrující aortální vřed (PAU)',trauma:'trauma',ine:'jiná etiologie'};
+function vetaVetvy(v){
+  const c=cievaText(v);
+  const impl=(v.bridging||v.rozmer)?' a implantujeme bridging stentgraft '+[v.bridging,v.rozmer?withMM(v.rozmer):''].filter(Boolean).join(' '):'';
+  let s;
+  if(v.typ==='fenestracia')s='Výrobní fenestrací kanylujeme '+c+impl;
+  else if(v.typ==='vetva')s='Směrovanou větví kanylujeme '+c+impl;
+  else if(v.typ==='chimney')s='Chimney technikou zajišťujeme '+c+impl;
+  else if(v.typ==='periscope')s='Periscope technikou zajišťujeme '+c+impl;
+  else if(v.typ==='islf')s='In-situ laserovou fenestrací perforujeme graft pro '+c+impl;
+  else s='Debranching bypassem zajišťujeme '+c;
+  if(v.kanylacia==='uspesna')s+=' – kanylace úspěšná';
+  else if(v.kanylacia==='neuspesna')s+=' – kanylace neúspěšná';
+  s+='.';
+  if(v.pozn)s+=' '+v.pozn+(/[.!?]$/.test(v.pozn)?'':'.');
+  return s;
+}
+
 function gen(){
   window._dirty=true;
   const vek=g('vek');
@@ -760,7 +931,14 @@ function gen(){
   const komor=getKomor();
   const indTyp=document.querySelector('input[name="ind_typ"]:checked')?.value||'elektivnímu';
   const pacientLine=[vekText,char,pacientText].filter(Boolean).join(' ');
-  const indikaciaLine=(diagnoza?'s '+diagnoza+', ':'')+indikaciaText+' k '+indTyp+' PEVAR.';
+  const typV=typVykonu();
+  const isTevar=typV==='TEVAR';
+  const torakBlok=tevarBlokVisible();
+  const vetvy=getVetvy();
+  const etio=torakBlok?g('etiologia'):'';
+  let dgText=diagnoza;
+  if(etio&&ETIO_TEXT[etio])dgText=diagnoza?diagnoza+' ('+ETIO_TEXT[etio]+')':ETIO_TEXT[etio];
+  const indikaciaLine=(dgText?'s '+dgText+', ':'')+indikaciaText+' k '+indTyp+' '+(TYP_LABEL[typV]||'PEVAR')+'.';
 
   const anestezia=g('anestezia_typ');
   const pristupVal=g('pristup_strana').split('|');
@@ -788,7 +966,7 @@ function gen(){
   }
 
   const sgTyp=document.querySelector('input[name="sg_typ"]:checked')?.value||'bifurkačního';
-  const isBifurk=sgTyp==='bifurkačního';
+  const isBifurk=!isTevar&&sgTyp==='bifurkačního';
   // show/hide contra section
   const contraSection=document.getElementById('contra_section');
   if(contraSection)contraSection.style.display=isBifurk?'':'none';
@@ -800,9 +978,18 @@ function gen(){
   const komentar=g('implantacia_komentar');
 
   const katLines=[
-    katAorty?(katAorty+', po kterém zavádíme '+vodic+'.'):('Zavádíme '+vodic+'.'),
-    'Zprava zavádíme hlavní tělo '+sgTyp+' stentgraftu '+sgNazov+' ('+withMM(sgRozmery)+'), pomocí DSA verifikujeme odstup renálních tepen a implantujeme tělo SG.'
+    katAorty?(katAorty+', po kterém zavádíme '+vodic+'.'):('Zavádíme '+vodic+'.')
   ];
+  if(isTevar){
+    let tv='Implantujeme torakální stentgraft '+sgNazov+' ('+withMM(sgRozmery)+')';
+    const zp=g('zona_prox'),zd=g('zona_dist');
+    if(zp!=='')tv+=', proximální landing zóna '+zp;
+    if(zd!=='')tv+=', distální zóna '+zd;
+    if(zp!==''||zd!=='')tv+=' (Ishimaru)';
+    katLines.push(tv+'.');
+  }else{
+    katLines.push('Zprava zavádíme hlavní tělo '+sgTyp+' stentgraftu '+sgNazov+' ('+withMM(sgRozmery)+'), pomocí DSA verifikujeme odstup renálních tepen a implantujeme tělo SG.');
+  }
   if(isBifurk){
     const contraKat=g('contra_kateter_typ');
     katLines.push(contraKat+' katétrem a několika vodiči katetrizujeme kontralaterální nožičku.');
@@ -814,6 +1001,14 @@ function gen(){
       const naz=gSel('ext_'+idx+'_nazov');const roz=g('ext_'+idx+'_rozmery');const str=g('ext_'+idx+'_strana');
       if(naz||roz)katLines.push((str?str+': ':'')+'Implantujeme extenziu '+naz+(roz?' ('+withMM(roz)+')':'')+'.');
     });
+  }
+  // Větve / fenestrace
+  vetvy.forEach(v=>{if(v.cieva)katLines.push(vetaVetvy(v));});
+  // Torakální blok – LSA + spinální drenáž
+  if(torakBlok){
+    const lsa=g('lsa_manazment');
+    if(lsa&&LSA_TEXT[lsa])katLines.push(LSA_TEXT[lsa]);
+    if(chk('spinalna_drenaz'))katLines.push('Spinální drenáž zavedena.');
   }
   if(komentar)katLines.push(komentar);
 
@@ -827,7 +1022,8 @@ function gen(){
   }
   const modText=modParts.length?'Kritická místa stentgraftu domodelovaná '+modParts.join(' a ')+'.':'';
 
-  const agParts=['Na závěrečné DSA se zobrazuje dobrý výsledek endovaskulární léčby AAA.'];
+  const segAo=g('segment_aorty')||'abdominalna';
+  const agParts=['Na závěrečné DSA se zobrazuje dobrý výsledek endovaskulární léčby '+(segAo==='torakalna'?'hrudní aorty':(segAo==='torakoabdominalna'?'torakoabdominální aorty':'AAA'))+'.'];
   if(chk('endoleak_check')){
     const typ=g('endoleak_typ');
     let v='Zobrazuje se endoleak '+typ+'. typu';
@@ -857,7 +1053,7 @@ function gen(){
 
   const L=[];
   // ── HLAVIČKA ──
-  L.push('ZPRÁVA Z ENDOVASKULÁRNÍHO VÝKONU (PEVAR)');
+  L.push('ZPRÁVA Z ENDOVASKULÁRNÍHO VÝKONU ('+(TYP_HDR[typV]||'PEVAR')+')');
   const datum=g('datum_zaznamu');if(datum){L.push('Datum: '+datum.split('-').reverse().join('.'));}
   const suf=g('id_suffix');if(suf)L.push('ID: PEVAR-'+pevarYear()+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
@@ -941,6 +1137,34 @@ function resetFuExitus(){
   const s=document.getElementById('fu_exitus_suvis');if(s)s.value='';
   const b=document.getElementById('fu_exitus_box');if(b)b.style.display='none';
 }
+// ── FU: větve/fenestrace při kontrole ──
+let fuVetvaCnt=0;
+function addFuVetva(){
+  const idx=fuVetvaCnt++;
+  const id='fu_vetva_'+idx;
+  const cont=document.getElementById('fu_vetvy_list');
+  const div=document.createElement('div');div.className='dyn-row fu-vetva-row';div.dataset.idx=idx;
+  div.innerHTML=`<button type="button" class="del-btn-x" onclick="delFuVetva(${idx})">✕</button>
+    <div class="row r2" style="margin-bottom:0">
+      <div class="f"><label>Céva</label><select id="${id}_cieva">${cievaOptsHtml()}</select></div>
+      <div class="f"><label>Stav</label><select id="${id}_stav"><option value="priechodna">průchodná</option><option value="stenoza">stenóza</option><option value="okluzia">okluze</option></select></div>
+    </div>`;
+  cont.appendChild(div);
+}
+function delFuVetva(idx){const r=document.querySelector('#fu_vetvy_list [data-idx="'+idx+'"]');if(r)r.remove();}
+function getFuVetvy(){
+  const rows=[];
+  document.querySelectorAll('#fu_vetvy_list .fu-vetva-row').forEach(row=>{
+    const id='fu_vetva_'+row.dataset.idx;
+    rows.push({cieva:g(id+'_cieva'),stav:g(id+'_stav')});
+  });
+  return rows;
+}
+function resetFuVetvy(){
+  const l=document.getElementById('fu_vetvy_list');if(l)l.innerHTML='';
+  const t=document.getElementById('fu_fl_tromboza');if(t)t.value='';
+  document.getElementById('fu_vetvy_details')?.removeAttribute('open');
+}
 async function saveFU(){
   if(!g('fu_id')){msgFu('⚠️ Vyplňte ID výkonu','#b45309');return;}
   const _exitus=chk('fu_exitus');
@@ -956,9 +1180,12 @@ async function saveFU(){
     exitus_datum:_exitus?(g('fu_exitus_datum')||isoLocal()):null,
     exitus_suvis:_exitus?(g('fu_exitus_suvis')||null):null
   };
+  const _fuV=getFuVetvy();
+  data.vetvy_fu=_fuV.length?JSON.stringify(_fuV):null;
+  data.fl_tromboza=g('fu_fl_tromboza')||null;
   try{
     const r=await fetch(SB_URL+'/rest/v1/cz_pevar_followup',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
-    if(r.ok){msgFu('✅ Follow-up uložen!','#1d6f42');['fu_sac','fu_pozn','fu_reint_detail'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});const ch=document.getElementById('fu_reint');if(ch)ch.checked=false;const el2=document.getElementById('fu_el');if(el2)el2.checked=false;resetFuExitus();}
+    if(r.ok){msgFu('✅ Follow-up uložen!','#1d6f42');['fu_sac','fu_pozn','fu_reint_detail'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});const ch=document.getElementById('fu_reint');if(ch)ch.checked=false;const el2=document.getElementById('fu_el');if(el2)el2.checked=false;resetFuExitus();resetFuVetvy();}
     else msgFu('❌ Chyba: '+r.status+(r.status===404?' (spusťte setup SQL)':''),'#dc2626');
   }catch(e){msgFu('❌ Chyba sítě','#dc2626');}
 }
@@ -1071,7 +1298,15 @@ async function saveToSupabase(){
     ext_brands:jn(extRows.map(e=>e.nazov)),
     ext_sizes:jn(extRows.map(e=>e.rozmery)),
     ext_strany:jn(extRows.map(e=>e.strana)),
-    extenzie_detail:JSON.stringify(extRows)
+    extenzie_detail:JSON.stringify(extRows),
+    typ_vykonu:typVykonu(),
+    segment_aorty:g('segment_aorty')||'abdominalna',
+    zona_prox:tevarBlokVisible()?g('zona_prox'):'',
+    zona_dist:tevarBlokVisible()?g('zona_dist'):'',
+    lsa_manazment:tevarBlokVisible()?g('lsa_manazment'):'',
+    spinalna_drenaz:tevarBlokVisible()?chk('spinalna_drenaz'):false,
+    etiologia:tevarBlokVisible()?g('etiologia'):'',
+    vetvy_detail:JSON.stringify(getVetvy().filter(v=>v.cieva))
   };
   // levostranný přístup ukládáme jen při oboustranném (aby jednostranné uložení fungovalo i bez SQL doplňku)
   if((pristupVal[0]||'')==='oboustranně'){
@@ -1223,6 +1458,32 @@ function loadEditRecord(){
         }
       }catch(e){}
     }
+    // typ výkonu / segment / torakální blok / větve
+    sv('typ_vykonu',record.typ_vykonu);
+    sv('segment_aorty',record.segment_aorty);
+    sv('zona_prox',record.zona_prox);
+    sv('zona_dist',record.zona_dist);
+    sv('lsa_manazment',record.lsa_manazment);
+    sc('spinalna_drenaz',record.spinalna_drenaz);
+    sv('etiologia',record.etiologia);
+    if(record.vetvy_detail){
+      try{
+        const vs=typeof record.vetvy_detail==='string'?JSON.parse(record.vetvy_detail):record.vetvy_detail;
+        if(Array.isArray(vs))vs.forEach(vd=>{
+          addVetva();
+          const vid='vetva_'+(vetvaCnt-1);
+          sv(vid+'_cieva',vd.cieva);
+          sv(vid+'_cieva_ine',vd.cieva_ine);
+          vetvaCievaIne(vetvaCnt-1);
+          sv(vid+'_typ',vd.typ);
+          sv(vid+'_bridging',vd.bridging);
+          sv(vid+'_rozmer',vd.rozmer);
+          sv(vid+'_kanylacia',vd.kanylacia);
+          sv(vid+'_pozn',vd.pozn);
+        });
+      }catch(e){}
+    }
+    updateTypVisibility();
     if(record.komorbidity){
       const ks=String(record.komorbidity);
       const on=id=>{const el=document.getElementById('k_'+id);if(el){el.checked=true;kSub(id);}};
@@ -1261,6 +1522,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('datum_zaznamu').value=isoLocal();
   loadEditRecord();
   updatePevarIdPrefix();
+  updateTypVisibility();
   gen();
   window._dirty=false;
 });
