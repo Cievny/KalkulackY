@@ -1282,7 +1282,11 @@ function collectFullData(){
   // eGFR numeric (silently) – len ak je CKD komorbidita zaškrtnutá a výpočet možný
   let egfrNum=null;
   if(document.getElementById('k_chri')?.checked){calcEGFR();if(typeof window._egfrVal==='number')egfrNum=window._egfrVal;}
+  // DRG kódy sa ukladajú so záznamom (regenerujú sa z aktuálneho stavu formulára)
+  let _drgKody=null;
+  try{_drgKody=JSON.stringify(collectDRG());}catch(e){_drgKody=null;}
   return{
+    drg_kody:_drgKody,
     vykon_id:'EVK-'+y+'-'+(g('id_suffix')||'???'),
     datum:g('datum'),
     operator:g('operator'),
@@ -1627,7 +1631,7 @@ function drgListSuffixes(pfx){
   });
   return out;
 }
-function genDRG(){
+function collectDRGSections(){
   const codes=[];
   function add(code,desc,warn){codes.push({code,desc,warn:warn||false});}
   const SL=DRG_SUFFIX_LABEL;
@@ -1806,6 +1810,17 @@ function genDRG(){
   if(hasFem){
     addD('32306.2','Artériografia dolnej končatiny');
   }
+  return {codes,supp,dsa};
+}
+// Fakturovateľné výkonové kódy pre uloženie so záznamom – bez warn/'?' placeholderov
+function collectDRG(){
+  const {codes,supp,dsa}=collectDRGSections();
+  return [...dsa,...codes,...supp]
+    .filter(r=>r.code&&!r.code.includes('?')&&!/^F51/.test(r.code))
+    .map(r=>({code:r.code,desc:r.desc}));
+}
+function genDRG(){
+  const {codes,supp,dsa}=collectDRGSections();
 
   // Render
   const out=document.getElementById('drg_output');

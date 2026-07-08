@@ -1266,21 +1266,17 @@ function drgAuto(extN){
     rows.push({code:'8r8q5.0',desc:'Perkutánna implantácia stentgraftu v iliackých tepnách, iliacký branchovaný stentgraft (IBD)'});
   return {rows,warns};
 }
-function genDRGPevar(){
-  const out=document.getElementById('drg_output');if(!out)return;
+function collectDRGPevarSections(){
   const v=g('drg_variant')||'auto';
   const seg=g('segment_aorty')||'abdominalna';
   const sgTyp=document.querySelector('input[name="sg_typ"]:checked')?.value||'bifurkačného';
   const sgNazov=gSel('sg_nazov');
   const extN=document.querySelectorAll('#extenzie_list .ext-row').length;
   const extOn=document.getElementById('c_extenzie')?.checked&&extN>0;
-  let html='<div class="drg-section-hdr">DSA – diagnostické kódy (angiografia)</div>';
-  html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
-  html+='<tr><td class="drg-code-cell" style="color:#059669">32302.3</td><td>Angiografia aorty (verifikácia odstupov renálnych tepien, kontrolná aortografia)</td></tr>';
-  html+='<tr><td class="drg-code-cell" style="color:#059669">32305</td><td>Artériografia panvových ciev</td></tr>';
-  html+='</tbody></table>';
-  html+='<div class="drg-section-hdr" style="margin-top:16px">Hlavné intervenčné kódy</div>';
-  html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
+  const dsa=[
+    {code:'32302.3',desc:'Angiografia aorty (verifikácia odstupov renálnych tepien, kontrolná aortografia)'},
+    {code:'32305',desc:'Artériografia panvových ciev'}
+  ];
   let mainRows,warns;
   if(v==='auto'){
     const a=drgAuto(extOn?extN:0);mainRows=a.rows;warns=a.warns;
@@ -1290,25 +1286,46 @@ function genDRGPevar(){
     mainRows=[{code:base+'.'+v,desc:D[v]||'ručne zvolený variant'}];warns=[];
   }
   const cfgTxt=(seg==='abdominalna'&&typVykonu()!=='TEVAR')?' ('+(sgTyp==='bifurkačného'?'bifurkačný':'unilaterálny')+')':'';
-  mainRows.forEach((r,i)=>{
-    html+=`<tr><td class="drg-code-cell">${r.code}</td><td>${r.desc}${i===0&&sgNazov?' – '+sgNazov:''}${i===0?cfgTxt:''}</td></tr>`;
-  });
+  const main=mainRows.map((r,i)=>({code:r.code,desc:r.desc+(i===0&&sgNazov?' – '+sgNazov:'')+(i===0?cfgTxt:'')}));
   if(extOn){
     const q5=DRG_Q5_CNT[extN]||'7';
     const lbl=extN===1?'1 stentgraft':extN>=6?'6 a viac stentgraftov':extN+' stentgrafty';
-    html+=`<tr><td class="drg-code-cell">8r8q5.${q5}</td><td>Perkutánna implantácia stentgraftu v iliackých tepnách, iliacký stentgraft, ${lbl} (extenzie)</td></tr>`;
+    main.push({code:'8r8q5.'+q5,desc:'Perkutánna implantácia stentgraftu v iliackých tepnách, iliacký stentgraft, '+lbl+' (extenzie)'});
   }
+  const supp=[];
+  const bal=[];
+  if(document.getElementById('modelovanie_telo')?.checked)bal.push('telo SG');
+  if(document.getElementById('modelovanie_extenzie')?.checked)bal.push('extenzie');
+  if(bal.length)supp.push({code:'8r8x0.'+(bal.length-1),desc:'Počet balónikových katétrov: '+bal.length+' (domodelovanie – '+bal.join(' + ')+')'});
+  return {dsa,main,supp,warns,seg};
+}
+// Fakturovateľné výkonové kódy pre uloženie so záznamom – bez warn/'?' riadkov a informatívnej F51 skupiny
+function collectDRG(){
+  const {dsa,main,supp}=collectDRGPevarSections();
+  return [...dsa,...main,...supp]
+    .filter(r=>r.code&&!r.code.includes('?')&&!/^F51/.test(r.code))
+    .map(r=>({code:r.code,desc:r.desc}));
+}
+function genDRGPevar(){
+  const out=document.getElementById('drg_output');if(!out)return;
+  const {dsa,main,supp,warns,seg}=collectDRGPevarSections();
+  let html='<div class="drg-section-hdr">DSA – diagnostické kódy (angiografia)</div>';
+  html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
+  dsa.forEach(r=>{html+=`<tr><td class="drg-code-cell" style="color:#059669">${r.code}</td><td>${r.desc}</td></tr>`;});
+  html+='</tbody></table>';
+  html+='<div class="drg-section-hdr" style="margin-top:16px">Hlavné intervenčné kódy</div>';
+  html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
+  main.forEach(r=>{
+    html+=`<tr><td class="drg-code-cell">${r.code}</td><td>${r.desc}</td></tr>`;
+  });
   warns.forEach(w=>{
     html+=`<tr><td class="drg-code-cell drg-warn">⚠</td><td class="drg-warn">${w}</td></tr>`;
   });
   html+='</tbody></table>';
-  const bal=[];
-  if(document.getElementById('modelovanie_telo')?.checked)bal.push('telo SG');
-  if(document.getElementById('modelovanie_extenzie')?.checked)bal.push('extenzie');
-  if(bal.length){
+  if(supp.length){
     html+='<div class="drg-section-hdr" style="margin-top:16px">Doplňujúce kódy 8r8x (počty zariadení)</div>';
     html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
-    html+=`<tr><td class="drg-code-cell">8r8x0.${bal.length-1}</td><td>Počet balónikových katétrov: ${bal.length} (domodelovanie – ${bal.join(' + ')})</td></tr>`;
+    supp.forEach(r=>{html+=`<tr><td class="drg-code-cell">${r.code}</td><td>${r.desc}</td></tr>`;});
     html+='</tbody></table>';
   }
   html+='<div class="drg-section-hdr" style="margin-top:16px">Informatívne</div>';
@@ -1514,6 +1531,8 @@ async function saveToSupabase(){
     etiologia:tevarBlokVisible()?g('etiologia'):'',
     vetvy_detail:JSON.stringify(getVetvy().filter(v=>v.cieva))
   };
+  // DRG kódy sa ukladajú so záznamom (regenerujú sa z aktuálneho stavu formulára)
+  try{payload.drg_kody=JSON.stringify(collectDRG());}catch(e){payload.drg_kody=null;}
   // ľavostranný prístup ukladáme len pri obojstrannom (aby jednostranné uloženie fungovalo aj bez SQL doplnku)
   if((pristupVal[0]||'')==='obojstranne'){
     payload.punkcia_arteria_sin=g('punkcia_arteria_sin');
@@ -1563,7 +1582,11 @@ function initProgramHandoff(tool,prefill){
     prefill(d);
     const b=document.createElement('div');
     b.style.cssText='position:sticky;top:0;z-index:60;background:#eff6ff;border-bottom:2px solid #93c5fd;color:#1e40af;font-size:13px;font-weight:600;padding:8px 14px;text-align:center';
-    b.textContent='📝 Pacient z programu: '+(d.meno||'?')+(d.rocnik?' ('+d.rocnik+')':'')+(d.vykon?' – '+d.vykon:'')+' — po uložení sa nález prepojí s programom.';
+    if(d.from==='aorta'){
+      b.textContent='📝 Pacient z Požiadaviek: '+(d.inicialy||'?')+(d.rocnik?' ('+d.rocnik+')':'')+(d.diagnoza?' – '+d.diagnoza:'')+' — po uložení sa nález prepojí s požiadavkou.';
+    }else{
+      b.textContent='📝 Pacient z programu: '+(d.meno||'?')+(d.rocnik?' ('+d.rocnik+')':'')+(d.vykon?' – '+d.vykon:'')+' — po uložení sa nález prepojí s programom.';
+    }
     document.body.insertBefore(b,document.body.firstChild);
   }catch(e){}
 }
@@ -1573,7 +1596,19 @@ function prefillSelect(id,val){
   if(hit)el.value=hit.value;
 }
 async function propojProgram(vid){
-  const d=window._programNalez;if(!d||!d.program_id)return;window._programNalez=null;
+  const d=window._programNalez;if(!d)return;
+  // Handoff z Požiadaviek (aorta_indikacie) → prepoj s požiadavkou namiesto denného programu
+  if(d.from==='aorta'&&d.poziadavka_id){
+    window._programNalez=null;
+    try{
+      const r=await fetch(SB_URL+'/rest/v1/aorta_indikacie?id=eq.'+encodeURIComponent(d.poziadavka_id),{method:'PATCH',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},
+        body:JSON.stringify({nalez_tool:'PEVAR',nalez_vykon_id:vid,updated_at:new Date().toISOString()})});
+      if(r.ok)msg('✅ Uložené a prepojené s požiadavkou','#1d6f42');
+      else if(r.status===400)msg('⚠️ Nález uložený; prepojenie vyžaduje SQL','#b45309');
+    }catch(e){}
+    return;
+  }
+  if(!d.program_id)return;window._programNalez=null;
   try{
     const r=await fetch(SB_URL+'/rest/v1/denny_program?id=eq.'+d.program_id,{method:'PATCH',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},
       body:JSON.stringify({nalez_tool:d.tool,nalez_vykon_id:vid,updated_at:new Date().toISOString()})});
@@ -1827,8 +1862,25 @@ document.addEventListener('DOMContentLoaded',()=>{
   loadEditRecord();
   initProgramHandoff('PEVAR',d=>{
     if(d.rocnik){const el=document.getElementById('vek');if(el&&!el.value)el.value=new Date().getFullYear()-d.rocnik;}
-    if(d.diagnoza){const el=document.getElementById('diagnoza');if(el&&!el.value)el.value=d.diagnoza;}
+    if(d.diagnoza){const el=document.getElementById('diagnoza');if(el)el.value=d.diagnoza;}
     prefillSelect('operator',d.operator);
+    // Rozšírený handoff z Požiadaviek (aorta_indikacie)
+    const sf=(id,val)=>{if(val==null||val==='')return;const el=document.getElementById(id);if(el&&!el.value)el.value=val;};
+    sf('rodne_cislo',d.rodne_cislo);
+    sf('sac_diameter_mm',d.priemer_mm);
+    sf('neck_length_mm',d.krcok_dlzka_mm);
+    sf('neck_diameter_mm',d.krcok_priemer_mm);
+    if(d.krcok_priemer_mm!=null){const c=document.getElementById('c_neck');if(c&&!c.checked){c.checked=true;const b=document.getElementById('b_neck');if(b)b.classList.add('on');}}
+    if(d.vykon_typ){
+      const map={PEVAR:'EVAR',EVAR:'EVAR',FEVAR:'FEVAR',BEVAR:'BEVAR',TEVAR:'TEVAR'};
+      const tv=map[String(d.vykon_typ).toUpperCase()]||'EVAR';
+      const el=document.getElementById('typ_vykonu');
+      if(el&&[...el.options].some(o=>o.value===tv)){el.value=tv;typVykonuChanged();}
+    }
+    if(d.material){
+      const el=document.getElementById('implantacia_komentar');
+      if(el)el.value=(el.value?el.value+' ':'')+'Plánovaný materiál (z požiadavky): '+d.material;
+    }
   });
   updatePevarIdPrefix();
   updateTypVisibility();

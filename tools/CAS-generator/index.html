@@ -967,30 +967,45 @@ function showFuTab(t){
 }
 
 // ── DRG kódy (ZV-DRG 2026) ──────────────
-function genDRGCas(){
-  const out=document.getElementById('drg_output');if(!out)return;
+function collectDRGCasSections(){
   const interv=g('postup_vykonu')==='intervencia';
   const lok='ACI '+g('lokalizacia');
   const acc=document.getElementById('drg_stent_acc')?.checked;
+  const dsa=[{code:'32301.2',desc:'Artériografia extrakraniálnych ciev a ciev krku (selektívna DSA karotíd)'}];
+  const codes=[],supp=[];
+  if(interv){
+    codes.push({code:acc?'8r880.05':'8r880.04',desc:'Perkutánna transluminálna implantácia stentu neuvoľňujúceho lieky, 1 stent do a. carotis interna extrakraniálne'+(acc?' s a. carotis communis':'')+' – '+(g('stent_znacka')||'stent')+' '+(g('stent_velkost')||'')+' ('+lok+')'});
+    if(g('emboloprotekcia'))codes.push({code:'8r870.0',desc:'Perkutánna transluminálna intervencia, použitie 1 emboloprotekčného systému ('+g('emboloprotekcia')+')'});
+    const bal=[];
+    if(document.getElementById('vykonat_predilataciu')?.checked)bal.push('predilatácia');
+    if(document.getElementById('vykonat_domodelovanie')?.checked)bal.push('domodelovanie');
+    if(bal.length)supp.push({code:'8r8x0.'+(bal.length-1),desc:'Počet balónikových katétrov: '+bal.length+' '+(bal.length===1?'balónikový katéter':'balónikové katétre')+' ('+bal.join(' + ')+')'});
+  }
+  return {interv,dsa,codes,supp};
+}
+// Fakturovateľné výkonové kódy pre uloženie so záznamom – bez warn/'?' placeholderov
+function collectDRG(){
+  const {dsa,codes,supp}=collectDRGCasSections();
+  return [...dsa,...codes,...supp]
+    .filter(r=>r.code&&!r.code.includes('?')&&!/^F51/.test(r.code))
+    .map(r=>({code:r.code,desc:r.desc}));
+}
+function genDRGCas(){
+  const out=document.getElementById('drg_output');if(!out)return;
+  const {interv,dsa,codes,supp}=collectDRGCasSections();
   let html='<div class="drg-section-hdr">DSA – diagnostický kód (angiografia)</div>';
   html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
-  html+='<tr><td class="drg-code-cell" style="color:#059669">32301.2</td><td>Artériografia extrakraniálnych ciev a ciev krku (selektívna DSA karotíd)</td></tr>';
+  dsa.forEach(r=>{html+='<tr><td class="drg-code-cell" style="color:#059669">'+r.code+'</td><td>'+r.desc+'</td></tr>';});
   html+='</tbody></table>';
   if(interv){
     html+='<div class="drg-section-hdr" style="margin-top:16px">Hlavné intervenčné kódy</div>';
     html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
-    const stCode=acc?'8r880.05':'8r880.04';
-    const stDesc='Perkutánna transluminálna implantácia stentu neuvoľňujúceho lieky, 1 stent do a. carotis interna extrakraniálne'+(acc?' s a. carotis communis':'')+' – '+(g('stent_znacka')||'stent')+' '+(g('stent_velkost')||'')+' ('+lok+')';
-    html+='<tr><td class="drg-code-cell">'+stCode+'</td><td>'+stDesc+'</td></tr>';
-    if(g('emboloprotekcia'))html+='<tr><td class="drg-code-cell">8r870.0</td><td>Perkutánna transluminálna intervencia, použitie 1 emboloprotekčného systému ('+g('emboloprotekcia')+')</td></tr>';
+    codes.forEach(r=>{html+='<tr><td class="drg-code-cell">'+r.code+'</td><td>'+r.desc+'</td></tr>';});
     html+='</tbody></table>';
-    const bal=[];
-    if(document.getElementById('vykonat_predilataciu')?.checked)bal.push('predilatácia');
-    if(document.getElementById('vykonat_domodelovanie')?.checked)bal.push('domodelovanie');
-    if(bal.length){
+    if(supp.length){
       html+='<div class="drg-section-hdr" style="margin-top:16px">Doplňujúce kódy 8r8x (počty zariadení)</div>';
       html+='<table class="drg-table"><thead><tr><th style="width:120px">Kód</th><th>Popis</th></tr></thead><tbody>';
-      html+='<tr><td class="drg-code-cell">8r8x0.'+(bal.length-1)+'</td><td>Počet balónikových katétrov: '+bal.length+' '+(bal.length===1?'balónikový katéter':'balónikové katétre')+' ('+bal.join(' + ')+')</td></tr>';
+      supp.forEach(r=>{html+='<tr><td class="drg-code-cell">'+r.code+'</td><td>'+r.desc+'</td></tr>';});
       html+='</tbody></table>';
     }
   }else{
@@ -1139,6 +1154,8 @@ async function saveData(){
     antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', '),
     cas_symptom_days:g('cas_symptom_days')?parseInt(g('cas_symptom_days')):null
   };
+  // DRG kódy sa ukladajú so záznamom (regenerujú sa z aktuálneho stavu formulára)
+  try{payload.drg_kody=JSON.stringify(collectDRG());}catch(e){payload.drg_kody=null;}
   msg('Ukladám...','#5a6a8a');
   try{
     const _isEdit=!!window._editRecordId;
