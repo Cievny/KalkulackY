@@ -1,0 +1,83 @@
+name: Pripomienka meškajúcich kontrol (pondelok ráno)
+
+on:
+  schedule:
+    - cron: '45 4 * * 1'   # pondelok ~6:45 SELČ
+  workflow_dispatch:
+
+jobs:
+  pripomienka:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Zisti meškajúce kontroly a zverejni oznam
+        env:
+          SB_URL: https://ncqtiicfqhaturjlfxcj.supabase.co
+          SB_ANON: sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k
+          SB_EMAIL: ${{ secrets.SUPABASE_BACKUP_EMAIL }}
+          SB_PASSWORD: ${{ secrets.SUPABASE_BACKUP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PYEOF'
+          import json,os,urllib.request,urllib.parse,datetime as dt
+
+          SB=os.environ['SB_URL'];ANON=os.environ['SB_ANON']
+          d=json.dumps({'email':os.environ['SB_EMAIL'],'password':os.environ['SB_PASSWORD']}).encode()
+          req=urllib.request.Request(SB+'/auth/v1/token?grant_type=password',data=d,
+              headers={'apikey':ANON,'Content-Type':'application/json'})
+          TOK=json.load(urllib.request.urlopen(req))['access_token']
+          H={'apikey':ANON,'Authorization':'Bearer '+TOK,'Content-Type':'application/json'}
+          def get(q):
+              try:return json.load(urllib.request.urlopen(urllib.request.Request(SB+'/rest/v1/'+q,headers=H)))
+              except Exception as e:print('::warning::'+q.split('?')[0]+': '+str(e));return []
+
+          today=dt.date.today()
+          def add_months(dstr,m):
+              y,mo,da=map(int,dstr[:10].split('-'))
+              mo+=m; y+=(mo-1)//12; mo=(mo-1)%12+1
+              # clamp koniec mesiaca
+              for dd in (da,30,29,28):
+                  try:return dt.date(y,mo,dd)
+                  except ValueError:continue
+
+          # rovnaká logika ako /tools/kontroly: 1M/6M/12M, mešká = >14 dní po termíne,
+          # max 18 mesiacov dozadu, zosnulí (exitus) sa nepripomínajú
+          meskajuce=[]
+          for tbl,dcol,label in [('evk_vykony','datum','EVK'),('cas_vykony','datum_zaznamu','CAS'),('pevar_vykony','datum_zaznamu','PEVAR')]:
+              vykony=get(f'{tbl}?select=vykon_id,{dcol}&limit=5000')
+              fus=get(tbl.replace('_vykony','_followup')+'?select=vykon_id,casovy_bod,exitus&limit=10000')
+              done={(f.get('vykon_id'),f.get('casovy_bod')) for f in fus}
+              dead={f.get('vykon_id') for f in fus if f.get('exitus')}
+              for v in vykony:
+                  vid=v.get('vykon_id');dat=(v.get(dcol) or '')[:10]
+                  if not vid or not dat or vid in dead or '???' in vid:continue
+                  for m,bod in [(1,'1M'),(6,'6M'),(12,'12M')]:
+                      due=add_months(dat,m)
+                      if not due:continue
+                      dni=(today-due).days
+                      if 14<dni<=548 and (vid,bod) not in done:
+                          meskajuce.append(f'{label} {vid} – kontrola {bod} (termín {due.strftime("%d.%m.%Y")}, mešká {dni} d)')
+          # aorta dispenzár: dalsia_kontrola v minulosti
+          for r in get('aorta_indikacie?select=inicialy,rocnik,dalsia_kontrola,status&limit=5000'):
+              dk=(r.get('dalsia_kontrola') or '')[:10]
+              if not dk or r.get('status')=='archiv':continue
+              try:dni=(today-dt.date.fromisoformat(dk)).days
+              except ValueError:continue
+              if 0<dni<=548:
+                  ident=(r.get('inicialy') or '?')+((' ('+str(r.get('rocnik'))+')') if r.get('rocnik') else '')
+                  meskajuce.append(f'Aorta {ident} – CT/USG kontrola (termín {dk}, mešká {dni} d)')
+
+          # zmaž predchádzajúci automatický oznam (nech sa nekopia)
+          urllib.request.urlopen(urllib.request.Request(
+              SB+'/rest/v1/oznamy?nadpis=like.'+urllib.parse.quote('🔔 Meškajúce kontroly*'),headers=H,method='DELETE'))
+
+          if not meskajuce:
+              print('✓ Žiadne meškajúce kontroly – oznam sa nevytvára.');raise SystemExit(0)
+          meskajuce=meskajuce[:40]
+          body={'nadpis':f'🔔 Meškajúce kontroly ({len(meskajuce)})',
+                'text':'Automatická týždenná kontrola dispenzára (detail v 🩺 Kontroly):\n\n'+'\n'.join('• '+m for m in meskajuce),
+                'dolezite':False,
+                'platne_do':(today+dt.timedelta(days=7)).isoformat()}
+          urllib.request.urlopen(urllib.request.Request(SB+'/rest/v1/oznamy',
+              data=json.dumps(body).encode(),headers={**H,'Prefer':'return=minimal'}))
+          print(f'✓ Oznam zverejnený: {len(meskajuce)} meškajúcich kontrol.')
+          PYEOF

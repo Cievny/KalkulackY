@@ -139,6 +139,16 @@ CREATE TABLE IF NOT EXISTS kalendar_udalosti (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 3g) DRG VÝKAZ + PREPOJENIE POŽIADAVIEK + SIZING
+-- vykázané DRG kódy sa ukladajú k výkonu (mesačný výkaz v Štatistikách)
+ALTER TABLE evk_vykony   ADD COLUMN IF NOT EXISTS drg_kody TEXT;
+ALTER TABLE cas_vykony   ADD COLUMN IF NOT EXISTS drg_kody TEXT;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS drg_kody TEXT;
+-- prepojenie karty v Požiadavkách na napísaný nález + sizing merania
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS nalez_tool     TEXT;
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS nalez_vykon_id TEXT;
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS sizing         TEXT;  -- JSON meraní z CT
+
 -- 4) Oznamy – komentáre + prihlasovanie (workshopy / akcie)
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_komentare     BOOLEAN DEFAULT false;
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;
