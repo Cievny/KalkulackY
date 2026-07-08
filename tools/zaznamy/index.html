@@ -52,6 +52,12 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
 .raw-btn:hover{background:#f3f4f6}
 
 .msg{font-size:13px;font-weight:600;align-self:center;margin-right:auto;}
+.chip-star{border:1.5px solid #facc15;border-radius:20px;background:#fefce8;color:#a16207;padding:6px 12px;}
+.star-card{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:10px;border-left:4px solid #facc15;}
+.star-note{background:#fefce8;border:1px solid #fde68a;border-radius:7px;padding:8px 10px;font-size:13.5px;font-weight:600;color:#713f12;margin-top:8px;white-space:pre-wrap;}
+.star-meta{font-size:12px;color:#6b7280;display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;}
+.star-btn{background:none;border:1px solid #d1d5db;border-radius:5px;padding:4px 9px;font-size:13px;cursor:pointer;color:#374151;}
+.star-btn:hover{background:#f3f4f6;}
 .sec-hdr{grid-column:1/-1;font-size:11px;font-weight:800;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;border-top:1px solid #eef1f6;padding-top:10px;}
 @media(max-width:700px){
 .wrap{padding:12px;}
@@ -80,10 +86,13 @@ table{min-width:560px;}
     </select>
     <input type="text" id="f_search" placeholder="Hľadať ID / operatéra..." oninput="render()">
     <label class="chk"><input type="checkbox" id="f_miss" onchange="render()"> Len nedoplnené komplikácie</label>
+    <label class="chk chip-star"><input type="checkbox" id="f_star" onchange="render()"> ⭐ Zaujímaví</label>
     <button class="btn btn-reload" onclick="loadAll()">↻ Načítať</button>
   </div>
 
-  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+  <div id="star_msg" style="display:none;background:#fef2f2;color:#b45309;font-weight:600;font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:10px"></div>
+  <div id="star_wrap" style="display:none"><div id="star_list"></div></div>
+  <div id="tbl_wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch">
   <table>
     <thead><tr><th>Nástroj</th><th>ID výkonu</th><th>Dátum</th><th>Operatér</th><th>Komplikácie</th><th>Akcie</th></tr></thead>
     <tbody id="tbody"><tr><td colspan="6" class="empty">Načítavam…</td></tr></tbody>
@@ -121,6 +130,9 @@ const COMPL_KEYS=['komplikacie','komplikacie_struct','clavien_dindo','konverzia'
 let ROWS=[];
 let LOAD_ERR=false; // aspoň jedna tabuľka sa nenačítala (výpadok ≠ prázdna DB)
 let CURRENT=null; // {tool, table, data}
+const STAR_TABLE='zaujimavi_pacienti';
+let STARS=[];      // ⭐ zaujímaví pacienti
+let STAR_ERR='';
 
 function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -134,6 +146,12 @@ async function loadAll(){
       else LOAD_ERR=true;
     }catch(e){LOAD_ERR=true;}
   }
+  STARS=[];STAR_ERR='';
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${STAR_TABLE}?order=created_at.desc&limit=1000`,{headers:SB_HEAD()});
+    if(r.ok)STARS=await r.json();
+    else STAR_ERR=(r.status===404||r.status===400)?'⚠️ Spustite SQL (tabuľka zaujimavi_pacienti)':'⚠️ Zaujímaví pacienti: chyba '+r.status;
+  }catch(e){STAR_ERR='⚠️ Zaujímaví pacienti: chyba siete';}
   // zoradiť spolu podľa created_at desc
   ROWS.sort((a,b)=>String(b.data.created_at||'').localeCompare(String(a.data.created_at||'')));
   render();
@@ -144,6 +162,12 @@ function hasCompl(d){
 }
 
 function render(){
+  starMsg(STAR_ERR);
+  const starMode=document.getElementById('f_star').checked;
+  document.getElementById('tbl_wrap').style.display=starMode?'none':'';
+  document.getElementById('star_wrap').style.display=starMode?'':'none';
+  if(starMode){renderStars();return;}
+  const starSet=new Set(STARS.map(s=>s.vykon_id));
   const ft=document.getElementById('f_tool').value;
   const fs=document.getElementById('f_search').value.trim().toLowerCase();
   const fm=document.getElementById('f_miss').checked;
@@ -169,7 +193,7 @@ function render(){
     const toolKey=r.tool.toUpperCase();
     tr.onclick=()=>openInForm(toolKey,d);
     tr.innerHTML=`<td><span class="tag tag-${r.tool}">${TOOL_LABEL[r.tool]}</span></td>
-      <td>${escHtml(d.vykon_id||'—')}</td>
+      <td>${starSet.has(d.vykon_id)?'<span title="⭐ zaujímavý pacient">⭐ </span>':''}${escHtml(d.vykon_id||'—')}</td>
       <td>${escHtml(datum)}</td>
       <td>${escHtml(d.operator||'—')}</td>
       <td>${ok?'<span class="st-ok">✅ doplnené</span>':'<span class="st-miss">⚠️ chýba</span>'}</td>
@@ -270,6 +294,59 @@ function openInForm(tool,record){
   sessionStorage.setItem('cievny_edit',JSON.stringify({tool,record}));
   const urls={EVK:'/tools/EVK/',CAS:'/tools/CAS-generator/',PEVAR:'/tools/PEVAR/'};
   window.location.href=urls[tool]||'/tools/EVK/';
+}
+
+// ── ⭐ Zaujímaví pacienti ─────────────────────────────────────────────────────
+function starMsg(t){const el=document.getElementById('star_msg');el.textContent=t||'';el.style.display=t?'':'none';}
+function renderStars(){
+  const ft=document.getElementById('f_tool').value;
+  const fs=document.getElementById('f_search').value.trim().toLowerCase();
+  const list=document.getElementById('star_list');
+  const items=STARS.filter(s=>{
+    if(ft&&String(s.tool||'').toLowerCase()!==ft)return false;
+    if(fs){const hay=((s.vykon_id||'')+' '+(s.popis||'')+' '+(s.poznamka||'')).toLowerCase();if(!hay.includes(fs))return false;}
+    return true;
+  });
+  list.innerHTML='';
+  if(!items.length){const e=document.createElement('div');e.className='empty';e.textContent=STAR_ERR?'':'Žiadni zaujímaví pacienti.';list.appendChild(e);return;}
+  items.forEach(s=>{
+    const rec=s.vykon_id?ROWS.find(r=>(r.data.vykon_id||'')===s.vykon_id):null;
+    const datum=rec?(rec.data.datum||rec.data.datum_zaznamu||(rec.data.created_at||'').slice(0,10)):(s.created_at||'').slice(0,10);
+    const toolLc=String(s.tool||'').toLowerCase();
+    const card=document.createElement('div');card.className='star-card';
+    card.innerHTML=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span class="tag tag-${escHtml(toolLc)}">${escHtml(s.tool||'?')}</span>
+      <strong>⭐ ${escHtml(s.vykon_id||'—')}</strong>
+      <span style="font-size:12px;color:#6b7280">${escHtml(datum)}</span>
+      <span style="flex:1"></span>
+      <button class="star-btn" data-act="edit" title="Upraviť poznámku">✏️</button>
+      <button class="star-btn" data-act="del" style="color:#dc2626;border-color:#fca5a5" title="Odstrániť ⭐">✕</button>
+    </div>`
+    +(s.popis?`<div style="font-size:12.5px;color:#374151;margin-top:6px">${escHtml(s.popis)}</div>`:'')
+    +`<div class="star-note">📝 ${escHtml(s.poznamka||'(bez poznámky)')}</div>
+    <div class="star-meta">${s.created_by?'<span>👤 '+escHtml(s.created_by)+'</span>':''}${rec?'':'<span style="color:#b45309">⚠️ výkon sa už nenachádza v databáze</span>'}</div>`;
+    card.querySelector('[data-act="edit"]').addEventListener('click',e=>{e.stopPropagation();editStar(s);});
+    card.querySelector('[data-act="del"]').addEventListener('click',e=>{e.stopPropagation();delStar(s);});
+    if(rec){card.style.cursor='pointer';card.addEventListener('click',e=>{if(e.target.closest('.star-btn'))return;openInForm(rec.tool.toUpperCase(),rec.data);});}
+    list.appendChild(card);
+  });
+}
+async function editStar(s){
+  const note=prompt('Poznámka – prečo je pacient zaujímavý:',s.poznamka||'');
+  if(note===null)return;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${STAR_TABLE}?id=eq.${s.id}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify({poznamka:note})});
+    if(r.ok){s.poznamka=note;render();}
+    else starMsg('⚠️ Chyba uloženia poznámky ('+r.status+')');
+  }catch(e){starMsg('⚠️ Chyba siete: '+e.message);}
+}
+async function delStar(s){
+  if(!confirm('Odstrániť označenie ⭐ pre '+(s.vykon_id||'')+'?'))return;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${STAR_TABLE}?id=eq.${s.id}`,{method:'DELETE',headers:SB_HEAD()});
+    if(r.ok){STARS=STARS.filter(x=>x.id!==s.id);render();}
+    else starMsg('⚠️ Chyba mazania ('+r.status+')');
+  }catch(e){starMsg('⚠️ Chyba siete: '+e.message);}
 }
 
 loadAll();

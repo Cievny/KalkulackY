@@ -45,6 +45,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .bp{background:#1e40af;color:#fff}.bp:hover{background:#1737a0}
 .bs{background:#7c3aed;color:#fff}.bs:hover{background:#6d28d9}
 .bw{background:#b45309;color:#fff}.bw:hover{background:#92400e}
+.bstar{background:#fff;color:#64748b;border:1.5px solid #cbd5e1;flex:0 0 auto}
+.bstar:hover{background:#f8fafc;color:#475569}
+.bstar.zp-on{background:#fefce8;color:#a16207;border-color:#facc15}
 #cmsg{font-size:11px;text-align:center;min-height:16px}
 .subsec{font-size:10.5px;font-weight:700;color:#7a8aaa;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid #eef0f5}
 .dyn-row{background:#f7f8fc;border:1.5px solid #eef0f5;border-radius:7px;padding:10px;margin-bottom:7px;position:relative}
@@ -606,10 +609,25 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="btns">
     <button class="btn bc" onclick="copyTxt()">📋 Kopírovať</button>
     <button class="btn bp" id="btn_save" onclick="saveToSheets()">💾 Uložiť</button>
+    <button class="btn bstar" id="zp_btn" onclick="zpClick()">⭐ Zaujímavý pacient</button>
     <button class="btn bw" onclick="window.print()">🖨️ Tlač</button>
     <button class="btn" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1" onclick="novyNalez()">🗒 Nový nález</button>
   </div>
   <div id="cmsg"></div>
+<!-- ⭐ Zaujímavý pacient -->
+<div id="zp_overlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:400;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:10px;padding:16px;max-width:430px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+    <div style="font-size:13.5px;font-weight:700;margin-bottom:8px;color:#1a2745">⭐ Prečo je pacient zaujímavý? (poznámka)</div>
+    <textarea id="zp_note" rows="4" placeholder="napr. atypická anatómia, vzácna komplikácia, edukačný prípad..." style="width:100%;padding:8px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+      <button type="button" id="zp_del" class="btn" style="background:#fff;color:#dc2626;border:1.5px solid #fca5a5;flex:0 0 auto;display:none" onclick="zpDelete()">✕ Odstrániť ⭐</button>
+      <span style="flex:1"></span>
+      <button type="button" class="btn" style="background:#f1f5f9;color:#334155;flex:0 0 auto" onclick="zpClose()">Zrušiť</button>
+      <button type="button" id="zp_save" class="btn" style="background:#b45309;color:#fff;flex:0 0 auto" onclick="zpSave()">Uložiť</button>
+    </div>
+    <div id="zp_msg" style="font-size:11px;text-align:center;min-height:14px;margin-top:6px"></div>
+  </div>
+</div>
 </div>
 </div>
 </div>
@@ -1354,6 +1372,7 @@ async function saveToSheets(){
       {const _ch=chybaStud();
       if(_ch.length)msg('cmsg',(window._editRecordId?'✅ Aktualizované':'✅ Uložené')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');
       else msg('cmsg',window._editRecordId?'✅ Záznam aktualizovaný!':'✅ Uložené do štatistík!','#1d6f42');}
+      propojProgram(fullData.vykon_id);
     }else{
       msg('cmsg','❌ Chyba uloženia ('+sb+') – skontrolujte Supabase tabuľky','#dc2626');
     }
@@ -1361,6 +1380,37 @@ async function saveToSheets(){
     if(btn)btn.disabled=false;
   }
 }
+// ── Prepojenie s denným programom (handoff z /tools/Program/) ──
+window._programNalez=null;
+function initProgramHandoff(tool,prefill){
+  try{
+    const raw=sessionStorage.getItem('cievny_novy_nalez');if(!raw)return;
+    const d=JSON.parse(raw);if(d.tool!==tool)return;
+    sessionStorage.removeItem('cievny_novy_nalez');
+    if(window._editRecordId)return; // editácia má prednosť
+    window._programNalez=d;
+    prefill(d);
+    const b=document.createElement('div');
+    b.style.cssText='position:sticky;top:0;z-index:60;background:#eff6ff;border-bottom:2px solid #93c5fd;color:#1e40af;font-size:13px;font-weight:600;padding:8px 14px;text-align:center';
+    b.textContent='📝 Pacient z programu: '+(d.meno||'?')+(d.rocnik?' ('+d.rocnik+')':'')+(d.vykon?' – '+d.vykon:'')+' — po uložení sa nález prepojí s programom.';
+    document.body.insertBefore(b,document.body.firstChild);
+  }catch(e){}
+}
+function prefillSelect(id,val){
+  if(!val)return;const el=document.getElementById(id);if(!el)return;
+  const hit=[...el.options].find(o=>o.value===val||o.text===val)||[...el.options].find(o=>o.value&&(val.includes(o.value)||o.value.includes(val)));
+  if(hit)el.value=hit.value;
+}
+async function propojProgram(vid){
+  const d=window._programNalez;if(!d||!d.program_id)return;window._programNalez=null;
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/denny_program?id=eq.${d.program_id}`,{method:'PATCH',headers:{...sbHeaders(),'Prefer':'return=minimal'},
+      body:JSON.stringify({nalez_tool:d.tool,nalez_vykon_id:vid,updated_at:new Date().toISOString()})});
+    if(r.ok)msg('cmsg','✅ Uložené a prepojené s programom','#1d6f42');
+    else if(r.status===400)msg('cmsg','⚠️ Nález uložený; prepojenie s programom vyžaduje SQL (stĺpce nalez_*)','#b45309');
+  }catch(e){}
+}
+
 async function saveFUToSheets(){
   const url=g('apps_script_url');
   if(!g('fu_id')){msg('fu_msg','⚠️ Vyplňte ID výkonu','#b45309');return;}
@@ -2074,6 +2124,82 @@ function restoreInterventionRows(record){
   }catch(e){console.error('restoreInterventionRows:',e);}
 }
 
+
+// ── ⭐ Zaujímavý pacient ──────────────────────────────────────────────────────
+const ZP_TABLE='zaujimavi_pacienti';
+const ZP_TOOL='EVK';
+let zpRow=null; // existujúci riadok pre aktuálne vykon_id
+function zpVykonId(){const s=(g('id_suffix')||'').trim();return s?'EVK-'+evkYear()+'-'+s:'';}
+function zpPopis(){
+  const terr=g('territory')==='fem'?'FP+predkolenie':g('territory')==='pelv'?'Panvové':'Panvové+FP';
+  const ck=id=>document.getElementById(id)?.checked;
+  const t=[];
+  if(ck('c_vprep'))t.push('Vessel prep');if(ck('c_pred'))t.push('Predilatácia');
+  if(ck('c_atek'))t.push('Aterektómia');if(ck('c_sw'))t.push('IVL');
+  if(ck('c_reentry'))t.push('Reentry');if(ck('c_trom'))t.push('Trombektómia');
+  if(ck('c_pta'))t.push('PTA');if(ck('c_deb'))t.push('DEB');
+  if(ck('c_stent'))t.push('Stenting');if(ck('c_sg'))t.push('Stentgraft');
+  if(ck('c_kiss'))t.push('Kissing stent');if(ck('c_cerab'))t.push('CERAB');
+  return [g('diag'),terr,t.join(', ')].filter(Boolean).join(' · ').slice(0,160);
+}
+function zpMsg(t,c){msg('cmsg',t,c);}
+function zpModalMsg(t,c){const el=document.getElementById('zp_msg');if(el){el.textContent=t;el.style.color=c;}}
+function zpTblErr(r){return (r&&(r.status===404||r.status===400))?'⚠️ Spustite SQL (tabuľka zaujimavi_pacienti)':'❌ Chyba zaujímavý pacient ('+(r?r.status:'?')+')';}
+function zpSetBtn(){const b=document.getElementById('zp_btn');if(!b)return;b.classList.toggle('zp-on',!!zpRow);b.textContent=zpRow?'⭐ Zaujímavý ✓':'⭐ Zaujímavý pacient';}
+async function zpCheck(){
+  const vid=zpVykonId();
+  let row=null;
+  if(vid){
+    try{
+      const r=await fetch(SB_URL+'/rest/v1/'+ZP_TABLE+'?tool=eq.'+ZP_TOOL+'&vykon_id=eq.'+encodeURIComponent(vid)+'&select=*',{headers:sbHeaders()});
+      if(r.ok){const rows=await r.json();row=(Array.isArray(rows)&&rows[0])||null;}
+      else zpMsg(zpTblErr(r),'#dc2626');
+    }catch(e){zpMsg('❌ Chyba siete (zaujímavý pacient)','#dc2626');}
+  }
+  zpRow=row;
+  zpSetBtn();
+}
+function zpClick(){
+  if(!zpVykonId()){zpMsg('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  document.getElementById('zp_note').value=zpRow?(zpRow.poznamka||''):'';
+  document.getElementById('zp_del').style.display=zpRow?'':'none';
+  zpModalMsg('','#5a6a8a');
+  document.getElementById('zp_overlay').style.display='flex';
+  document.getElementById('zp_note').focus();
+}
+function zpClose(){document.getElementById('zp_overlay').style.display='none';}
+async function zpSave(){
+  const vid=zpVykonId();
+  if(!vid){zpModalMsg('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  const note=document.getElementById('zp_note').value.trim();
+  zpModalMsg('⏳ Ukladám...','#3b82f6');
+  try{
+    const isEdit=!!(zpRow&&zpRow.id);
+    const url=SB_URL+'/rest/v1/'+ZP_TABLE+(isEdit?'?id=eq.'+zpRow.id:'');
+    const body=isEdit
+      ?{poznamka:note,popis:zpPopis()}
+      :{tool:ZP_TOOL,vykon_id:vid,rodne_cislo:(g('rodne_cislo')||'').trim()||null,popis:zpPopis(),poznamka:note};
+    const r=await fetch(url,{method:isEdit?'PATCH':'POST',headers:{...sbHeaders(),'Prefer':'return=representation'},body:JSON.stringify(body)});
+    if(r.ok){
+      let rows=null;try{rows=await r.json();}catch(e){}
+      if(Array.isArray(rows)&&rows[0]&&rows[0].id)zpRow=rows[0];else await zpCheck();
+      zpSetBtn();zpClose();zpMsg('⭐ Pacient označený ako zaujímavý','#b45309');
+    }else zpModalMsg(zpTblErr(r),'#dc2626');
+  }catch(e){zpModalMsg('❌ Chyba siete: '+e.message,'#dc2626');}
+}
+async function zpDelete(){
+  if(!(zpRow&&zpRow.id))return;
+  if(!confirm('Odstrániť označenie ⭐ zaujímavý pacient?'))return;
+  zpModalMsg('⏳ Odstraňujem...','#3b82f6');
+  try{
+    const r=await fetch(SB_URL+'/rest/v1/'+ZP_TABLE+'?id=eq.'+zpRow.id,{method:'DELETE',headers:sbHeaders()});
+    if(r.ok){zpRow=null;zpSetBtn();zpClose();zpMsg('Označenie ⭐ odstránené','#5a6a8a');}
+    else zpModalMsg(zpTblErr(r),'#dc2626');
+  }catch(e){zpModalMsg('❌ Chyba siete: '+e.message,'#dc2626');}
+}
+document.getElementById('zp_overlay').addEventListener('click',e=>{if(e.target.id==='zp_overlay')zpClose();});
+document.getElementById('id_suffix').addEventListener('change',zpCheck);
+
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('datum').value=isoLocal(new Date());
   document.getElementById('fu_datum').value=isoLocal(new Date());
@@ -2089,7 +2215,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   addItem('stent','stent',true);
   addItem('post','balon',true);
   if(window._editRecord){restoreInterventionRows(window._editRecord);window._editRecord=null;}
+  initProgramHandoff('EVK',d=>{
+    if(d.rocnik){const el=document.getElementById('vek');if(el&&!el.value)el.value=new Date().getFullYear()-d.rocnik;}
+    if(d.diagnoza){const el=document.getElementById('diag');if(el&&!el.value)el.value=d.diagnoza;}
+    prefillSelect('operator',d.operator);
+  });
   updateTerritory();gen();
+  zpCheck();
   window._dirty=false;
 });
 
