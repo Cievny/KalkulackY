@@ -108,10 +108,45 @@ function setMode(m){
 function render(){
   const src=embedSrc();
   const setup=document.getElementById('setup'), view=document.getElementById('calview');
-  if(!src){setup.style.display='';view.style.display='none';return;}
+  if(!src){setup.style.display='';view.style.display='none';nacitajUdalosti();return;}
   setup.style.display='none';view.style.display='';
   document.getElementById('tmp_hint').style.display=GCAL_EMBED?'none':'';
   setMode(MODE);
+}
+
+// NEVEREJNÝ kalendár: udalosti synchronizované GitHub Actions (tajná iCal
+// adresa v Secrets → tabuľka kalendar_udalosti). Ak existujú, zobrazia sa
+// natívne namiesto setup návodu – embed vôbec netreba.
+async function nacitajUdalosti(){
+  try{
+    const dnes=new Date(),p=n=>String(n).padStart(2,'0');
+    const od=dnes.getFullYear()+'-'+p(dnes.getMonth()+1)+'-'+p(dnes.getDate());
+    const r=await fetch('https://ncqtiicfqhaturjlfxcj.supabase.co/rest/v1/kalendar_udalosti?zaciatok=gte.'+od+'&order=zaciatok.asc&limit=200',{headers:sbHeaders()});
+    if(!r.ok)return;
+    const rows=await r.json();
+    if(!rows.length)return;
+    document.getElementById('setup').style.display='none';
+    const esc=t=>String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const MES=['január','február','marec','apríl','máj','jún','júl','august','september','október','november','december'];
+    const fmtD=s=>{const [y,m,d]=s.slice(0,10).split('-');return parseInt(d)+'. '+parseInt(m)+'.';};
+    let html='<div class="card"><h2 style="font-size:15px;font-weight:700;margin-bottom:4px">📆 Udalosti oddelenia</h2><p style="font-size:11.5px;color:#9ca3af;margin-bottom:10px">synchronizované z neverejného Google kalendára (~2 h interval)</p>';
+    let mesKey='';
+    rows.forEach(u=>{
+      const mk=u.zaciatok.slice(0,7);
+      if(mk!==mesKey){mesKey=mk;html+='<div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#6b7280;letter-spacing:.5px;margin:12px 0 4px">'+MES[parseInt(mk.slice(5,7))-1]+' '+mk.slice(0,4)+'</div>';}
+      const cas=u.cely_den?'':' '+(u.zaciatok.slice(11,16)||'');
+      let datum=fmtD(u.zaciatok)+cas;
+      if(u.cely_den&&u.koniec&&u.koniec.slice(0,10)>u.zaciatok.slice(0,10)){
+        const kon=new Date(u.koniec.slice(0,10));kon.setDate(kon.getDate()-1);
+        const ks=kon.getFullYear()+'-'+p(kon.getMonth()+1)+'-'+p(kon.getDate());
+        if(ks>u.zaciatok.slice(0,10))datum+=' – '+fmtD(ks);
+      }
+      html+='<div style="display:flex;gap:12px;padding:7px 0;border-bottom:1px solid #eef1f6;font-size:13.5px"><span style="min-width:120px;font-weight:700;color:#1e40af;white-space:nowrap">'+datum+'</span><span>'+esc(u.nazov||'')+(u.popis?'<div style="font-size:11.5px;color:#6b7280">'+esc(u.popis)+'</div>':'')+'</span></div>';
+    });
+    html+='</div>';
+    const box=document.createElement('div');box.innerHTML=html;
+    document.getElementById('setup').parentNode.insertBefore(box,document.getElementById('setup'));
+  }catch(e){}
 }
 
 function showTemp(){

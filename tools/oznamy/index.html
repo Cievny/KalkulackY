@@ -316,20 +316,50 @@ setInterval(()=>{
 
 </script>
 <script>
-// Zdieľaný Google kalendár (podujatia/dovolenky): adresa v /tools/gcal-config.js,
-// prípadne dočasná per-device adresa z /tools/kalendar/ (localStorage cievny_gcal).
+// Zdieľaný kalendár (podujatia/dovolenky). Dva režimy:
+//  1. verejný embed (adresa v /tools/gcal-config.js alebo dočasná per-device),
+//  2. NEVEREJNÝ kalendár: udalosti synchronizované GitHub Actions do tabuľky
+//     kalendar_udalosti (tajná iCal adresa v Secrets) – vykreslia sa natívne.
 (function(){
   let src=window.GCAL_EMBED||'';
   if(!src){try{src=localStorage.getItem('cievny_gcal')||'';}catch(e){}}
-  if(!/^https:\/\/calendar\.google\.com\/calendar\/embed\?/.test(src))return;
+  if(/^https:\/\/calendar\.google\.com\/calendar\/embed\?/.test(src)){
+    try{
+      const u=new URL(src);
+      u.searchParams.set('mode','AGENDA');
+      if(!u.searchParams.get('ctz'))u.searchParams.set('ctz','Europe/Bratislava');
+      document.getElementById('gcal_frame').src=u.toString();
+      document.getElementById('gcal_card').style.display='';
+      return;
+    }catch(e){}
+  }
+  nacitajUdalosti();
+})();
+async function nacitajUdalosti(){
   try{
-    const u=new URL(src);
-    u.searchParams.set('mode','AGENDA');
-    if(!u.searchParams.get('ctz'))u.searchParams.set('ctz','Europe/Bratislava');
-    document.getElementById('gcal_frame').src=u.toString();
+    const dnes=new Date(),p=n=>String(n).padStart(2,'0');
+    const od=dnes.getFullYear()+'-'+p(dnes.getMonth()+1)+'-'+p(dnes.getDate());
+    const r=await fetch(`${SB_URL}/rest/v1/kalendar_udalosti?zaciatok=gte.${od}&order=zaciatok.asc&limit=25`,{headers:H()});
+    if(!r.ok)return;
+    const rows=await r.json();
+    if(!rows.length)return;
+    const fmtD=s=>{const [y,m,d]=s.slice(0,10).split('-');return parseInt(d)+'. '+parseInt(m)+'.';};
+    const html=rows.map(u=>{
+      const cas=u.cely_den?'' :' '+(u.zaciatok.slice(11,16)||'');
+      let datum=fmtD(u.zaciatok)+cas;
+      if(u.cely_den&&u.koniec&&u.koniec.slice(0,10)>u.zaciatok.slice(0,10)){
+        const kon=new Date(u.koniec.slice(0,10));kon.setDate(kon.getDate()-1); // iCal DTEND je exkluzívny
+        const ks=kon.getFullYear()+'-'+p(kon.getMonth()+1)+'-'+p(kon.getDate());
+        if(ks>u.zaciatok.slice(0,10))datum+=' – '+fmtD(ks);
+      }
+      return `<div style="display:flex;gap:12px;padding:8px 16px;border-top:1px solid #f2f4f9;font-size:13px">
+        <span style="min-width:110px;font-weight:700;color:#1e40af;white-space:nowrap">${datum}</span>
+        <span style="color:#1a2745">${escHtml(u.nazov||'')}</span></div>`;
+    }).join('');
+    document.getElementById('gcal_frame').outerHTML=html+'<div style="padding:8px 16px;font-size:11px;color:#9ca3af">synchronizované z kalendára oddelenia (~2 h interval)</div>';
     document.getElementById('gcal_card').style.display='';
   }catch(e){}
-})();
+}
 </script>
 </body>
 </html>

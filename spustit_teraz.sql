@@ -127,6 +127,18 @@ CREATE TABLE IF NOT EXISTS zaujimavi_pacienti (
 );
 CREATE TABLE IF NOT EXISTS cz_zaujimavi_pacienti (LIKE zaujimavi_pacienti INCLUDING ALL);
 
+-- 3f) KALENDÁR ODDELENIA – udalosti synchronizované z NEVEREJNÉHO
+--     Google kalendára (tajná iCal adresa v GitHub Secrets, sync 2h)
+CREATE TABLE IF NOT EXISTS kalendar_udalosti (
+  id TEXT PRIMARY KEY,               -- UID udalosti + začiatok
+  nazov TEXT,
+  zaciatok TEXT NOT NULL,            -- YYYY-MM-DD alebo ISO datetime
+  koniec TEXT,
+  cely_den BOOLEAN DEFAULT true,
+  popis TEXT,
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- 4) Oznamy – komentáre + prihlasovanie (workshopy / akcie)
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_komentare     BOOLEAN DEFAULT false;
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;
@@ -179,7 +191,7 @@ BEGIN
     'evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
     'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy','oznam_reakcie','objednavky_dni','objednavky',
     'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup','cz_cas_followup','cz_ideas',
-    'zaujimavi_pacienti','cz_zaujimavi_pacienti'
+    'zaujimavi_pacienti','cz_zaujimavi_pacienti','kalendar_udalosti'
   ]) LOOP
     IF to_regclass('public.'||t) IS NOT NULL THEN
       EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);

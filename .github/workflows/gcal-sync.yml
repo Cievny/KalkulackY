@@ -1,0 +1,102 @@
+name: Sync Google kalendára (neverejný, tajná iCal adresa)
+
+on:
+  schedule:
+    - cron: '23 4-18/2 * * *'   # každé 2 hodiny cez deň (UTC)
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stiahni iCal a zapíš udalosti do Supabase
+        env:
+          SB_URL: https://ncqtiicfqhaturjlfxcj.supabase.co
+          SB_ANON: sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k
+          SB_EMAIL: ${{ secrets.SUPABASE_BACKUP_EMAIL }}
+          SB_PASSWORD: ${{ secrets.SUPABASE_BACKUP_PASSWORD }}
+          GCAL_ICS_URL: ${{ secrets.GCAL_ICS_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GCAL_ICS_URL:-}" ]; then
+            echo '::warning::Secret GCAL_ICS_URL nie je nastavený – synchronizácia kalendára preskočená.'
+            exit 0
+          fi
+          python3 - <<'PYEOF'
+          import json,os,re,sys,urllib.request,datetime as dt
+
+          SB_URL=os.environ['SB_URL'];SB_ANON=os.environ['SB_ANON']
+
+          # 1) prihlásenie (RLS – rovnaký účet ako zálohy)
+          d=json.dumps({'email':os.environ['SB_EMAIL'],'password':os.environ['SB_PASSWORD']}).encode()
+          req=urllib.request.Request(SB_URL+'/auth/v1/token?grant_type=password',data=d,
+              headers={'apikey':SB_ANON,'Content-Type':'application/json'})
+          TOKEN=json.load(urllib.request.urlopen(req))['access_token']
+          H={'apikey':SB_ANON,'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}
+
+          # 2) stiahni a rozbaľ iCal (unfold: pokračovacie riadky začínajú medzerou/tabom)
+          ics=urllib.request.urlopen(os.environ['GCAL_ICS_URL']).read().decode('utf-8','replace')
+          lines=[];
+          for ln in ics.replace('\r\n','\n').split('\n'):
+              if ln[:1] in (' ','\t') and lines: lines[-1]+=ln[1:]
+              else: lines.append(ln)
+
+          def unesc(s):
+              return s.replace('\\n','\n').replace('\\,',',').replace('\\;',';').replace('\\\\','\\')
+
+          def parse_dt(prop,val):
+              # VALUE=DATE → celý deň; inak datetime (Z=UTC, TZID/floating → berieme ako lokálny čas)
+              if 'VALUE=DATE' in prop or re.fullmatch(r'\d{8}',val):
+                  return val[:4]+'-'+val[4:6]+'-'+val[6:8], True
+              m=re.fullmatch(r'(\d{8})T(\d{6})(Z?)',val)
+              if not m: return None,None
+              d,t,z=m.groups()
+              iso=d[:4]+'-'+d[4:6]+'-'+d[6:8]+'T'+t[:2]+':'+t[2:4]+':'+t[4:6]+('Z' if z else '')
+              return iso,False
+
+          events=[];cur=None;skipped_rrule=0
+          for ln in lines:
+              if ln=='BEGIN:VEVENT': cur={}
+              elif ln=='END:VEVENT' and cur is not None:
+                  if cur.get('zaciatok'):
+                      if cur.pop('_rrule',False): skipped_rrule+=1
+                      events.append(cur)
+                  cur=None
+              elif cur is not None and ':' in ln:
+                  key,val=ln.split(':',1); prop=key.split(';')[0].upper()
+                  if prop=='UID': cur['_uid']=val.strip()
+                  elif prop=='SUMMARY': cur['nazov']=unesc(val)[:200]
+                  elif prop=='DESCRIPTION': cur['popis']=unesc(val)[:500]
+                  elif prop=='DTSTART':
+                      z,cd=parse_dt(key,val.strip())
+                      if z: cur['zaciatok']=z;cur['cely_den']=cd
+                  elif prop=='DTEND':
+                      k,_=parse_dt(key,val.strip())
+                      if k: cur['koniec']=k
+                  elif prop=='RRULE': cur['_rrule']=True
+          if skipped_rrule:
+              print(f'::warning::{skipped_rrule} opakovaných udalostí (RRULE) – zapísaný len prvý výskyt')
+
+          # 3) okno: -60 dní .. +400 dní (dovolenky, podujatia)
+          today=dt.date.today()
+          lo=(today-dt.timedelta(days=60)).isoformat();hi=(today+dt.timedelta(days=400)).isoformat()
+          rows=[]
+          for e in events:
+              z=e.get('zaciatok','')
+              if not (lo<=z[:10]<=hi): continue
+              rows.append({'id':(e.get('_uid','?')+'_'+z)[:200],'nazov':e.get('nazov','(bez názvu)'),
+                           'zaciatok':z,'koniec':e.get('koniec'),'cely_den':e.get('cely_den',True),
+                           'popis':e.get('popis'),'updated_at':dt.datetime.utcnow().isoformat()+'Z'})
+          # dedup id (opakované UID)
+          seen=set();rows=[r for r in rows if not (r['id'] in seen or seen.add(r['id']))]
+          print(f'→ {len(rows)} udalostí v okne {lo}..{hi}')
+
+          # 4) prepíš tabuľku: zmaž všetko, vlož nanovo (jednoduché a deterministické)
+          req=urllib.request.Request(SB_URL+'/rest/v1/kalendar_udalosti?id=neq.__nikdy__',headers=H,method='DELETE')
+          urllib.request.urlopen(req)
+          for i in range(0,len(rows),500):
+              req=urllib.request.Request(SB_URL+'/rest/v1/kalendar_udalosti',
+                  data=json.dumps(rows[i:i+500]).encode(),headers={**H,'Prefer':'return=minimal'})
+              urllib.request.urlopen(req)
+          print('✓ Kalendár synchronizovaný.')
+          PYEOF
