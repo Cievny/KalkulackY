@@ -6,6 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>Štatistiky výkonov</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="/tools/drg-ceny.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;padding:24px}
@@ -49,6 +50,17 @@ details summary:hover{color:#1737a0}
 .pub-f label{display:block;font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px}
 .pub-f select,.pub-f input{padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff}
 @media print{.tabs,.refresh-btn,.pub-btn,.shared-nav{display:none!important}}
+/* --- 💶 Výkazy (DRG) + 📽 M&M --- */
+.vyk-sum{margin-top:10px;font-size:14px;font-weight:700;color:#1e40af}
+.vyk-note{margin-top:6px;font-size:12px;color:#6b7280}
+@media print{
+ body.mm-print>*:not(#sec-vyk){display:none!important}
+ body.mm-print #sec-vyk{display:block!important}
+ body.mm-print #sec-vyk>.chart-card:not(#mm-card){display:none!important}
+ body.mm-print #mm-card{box-shadow:none;padding:0}
+ body.mm-print #mm-card .pub-f{display:none!important}
+ body.mm-print{padding:0}
+}
 </style>
 </head>
 <body>
@@ -66,6 +78,7 @@ details summary:hover{color:#1737a0}
   <button class="tab" onclick="showTab('poz',this)">📥 Požiadavky</button>
   <button class="tab" onclick="showTab('prog',this)">📅 Program</button>
   <button class="tab" onclick="showTab('pub',this)">📄 Publikácie</button>
+  <button class="tab" onclick="showTab('vyk',this)">💶 Výkazy (DRG)</button>
 </div>
 
 <div id="sec-evk" class="section active">
@@ -326,6 +339,44 @@ details summary:hover{color:#1737a0}
     <div class="chart-wrap" style="height:300px"><canvas id="ch-pub-km3"></canvas></div>
     <div class="tbl-wrap" id="pub-km3-risk" style="margin-top:8px"></div>
     <div class="tbl-wrap" id="pub-km3-tbl" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<div id="sec-vyk" class="section">
+  <div class="chart-card">
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">
+      <div class="pub-f"><label>Mesiac</label><input type="month" id="vyk-month" onchange="renderVyk()"></div>
+      <div class="pub-f"><label>Typ výkonu</label><select id="vyk-typ" onchange="renderVyk()"><option value="">Všetky</option><option value="evk">EVK</option><option value="cas">CAS</option><option value="pevar">PEVAR</option></select></div>
+    </div>
+    <div id="vyk-status" class="loading" style="display:none;padding:12px"></div>
+  </div>
+  <div class="chart-card">
+    <div class="pub-head"><h3>💶 Vykázané DRG kódy (ŠZM)</h3><div><button class="pub-btn" onclick="copyPubTable('drg',this)">📋 Kopírovať</button><button class="pub-btn" onclick="csvPubTable('drg','vykazy')">⬇ CSV</button></div></div>
+    <div class="tbl-wrap" id="vyk-drg-tbl"></div>
+    <div id="vyk-drg-empty" class="vyk-note" style="display:none"></div>
+    <div id="vyk-drg-noprice" class="vyk-note"></div>
+  </div>
+  <div class="chart-card">
+    <div class="pub-head"><h3>Výkony bez uložených DRG kódov v mesiaci</h3><div><button class="pub-btn" onclick="copyPubTable('drgmiss',this)">📋 Kopírovať</button><button class="pub-btn" onclick="csvPubTable('drgmiss','vykazy')">⬇ CSV</button></div></div>
+    <div class="tbl-wrap" id="vyk-miss-tbl"></div>
+    <div id="vyk-miss-empty" class="vyk-note" style="display:none"></div>
+    <div class="vyk-note">ℹ️ Staršie záznamy kódy nemajú – doplnia sa pri najbližšej editácii/uložení.</div>
+  </div>
+
+  <div class="chart-card" id="mm-card">
+    <div class="pub-head"><h3>📽 M&amp;M report – morbidita &amp; mortalita</h3><div><button class="pub-btn" onclick="printMM()">🖨 Tlač / PDF</button><button class="pub-btn" onclick="copyPubTable('mmk',this)">📋 Kopírovať</button></div></div>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">
+      <div class="pub-f"><label>Obdobie od</label><input type="date" id="mm-od" onchange="renderMM()"></div>
+      <div class="pub-f"><label>do</label><input type="date" id="mm-do" onchange="renderMM()"></div>
+      <div class="pub-f"><label>Typ výkonu</label><select id="mm-typ" onchange="renderMM()"><option value="">Všetky</option><option value="evk">EVK</option><option value="cas">CAS</option><option value="pevar">PEVAR</option></select></div>
+    </div>
+    <div id="mm-period" class="vyk-sum" style="margin:0 0 12px"></div>
+    <div class="grid" id="mm-summary"></div>
+    <div id="mm-clavien" class="vyk-note" style="margin:-12px 0 4px"></div>
+    <div id="mm-exitus" class="vyk-note" style="margin:0 0 14px"></div>
+    <h3 style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Kazuistiky na M&amp;M seminár (anonymizované)</h3>
+    <div class="tbl-wrap" id="mm-case-tbl"></div>
+    <div id="mm-empty" class="vyk-note" style="display:none"></div>
   </div>
 </div>
 
@@ -848,6 +899,7 @@ async function loadAll(){
   try{
     await p;
     if(PUB.fetched)renderPub(); // po Obnoviť prepočítaj aj publikačné tabuľky
+    if(VYK.opened){renderVyk();renderMM();} // po Obnoviť prepočítaj aj výkazy + M&M
   }
   catch(e){
     const eb=document.getElementById('err-box');
@@ -863,6 +915,7 @@ function showTab(name,btn){
   document.getElementById('sec-'+name).classList.add('active');
   btn.classList.add('active');
   if(name==='pub')openPub(); // lazy výpočet publikačných štatistík
+  if(name==='vyk')openVyk(); // lazy výpočet výkazov + M&M
 }
 
 /* ==================== 📄 PUBLIKÁCIE – publikačné štatistiky ==================== */
@@ -1169,13 +1222,13 @@ function pubClip(txt,btn){
 }
 function copyPubTable(key,btn){pubClip(pubTSV(key),btn);}
 function copyPubText(id,btn){pubClip((pubEl(id)||{}).textContent||'',btn);}
-function csvPubTable(key){
+function csvPubTable(key,prefix){
   const rows=PUB.tables[key]||[];if(!rows.length)return;
   const cols=Math.max(...rows.map(r=>r.length));
   const esc=v=>{v=(v==null?'':''+v).replace(/"/g,'""');return /[";\n]/.test(v)?`"${v}"`:v;};
   const csv=rows.map(r=>{const c=[...r];while(c.length<cols)c.push('');return c.map(esc).join(';');}).join('\n');
   const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='publikacia_'+key+'_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(prefix||'publikacia')+'_'+key+'_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
 
 // --- Kohorta ---
@@ -1726,19 +1779,27 @@ function setPubLang(l){
 }
 
 // --- Otvorenie a render tabu ---
+// zdieľané načítanie follow-up dát (Publikácie aj M&M report) – prebehne len raz
+async function ensureFU(){
+  if(PUB.fetched)return;
+  if(!PUB.fetching){
+    PUB.fetching=(async()=>{
+      try{await (window._pubDataP||Promise.resolve());}catch(e){}
+      const [e,c,p]=await Promise.all([
+        fetchAll(PUB_FU_TBL.evk).catch(()=>[]),
+        fetchAll(PUB_FU_TBL.cas).catch(()=>[]),
+        fetchAll(PUB_FU_TBL.pevar).catch(()=>[])
+      ]);
+      PUB.fu={evk:e||[],cas:c||[],pevar:p||[]};
+      PUB.fetched=true;
+    })();
+  }
+  await PUB.fetching;
+}
 async function openPub(){
-  if(PUB.fetching)return;
   if(!PUB.fetched){
-    PUB.fetching=true;
     const st=pubEl('pub-status');st.style.display='block';st.textContent=LT('loading');
-    try{await (window._pubDataP||Promise.resolve());}catch(e){}
-    const [e,c,p]=await Promise.all([
-      fetchAll(PUB_FU_TBL.evk).catch(()=>[]),
-      fetchAll(PUB_FU_TBL.cas).catch(()=>[]),
-      fetchAll(PUB_FU_TBL.pevar).catch(()=>[])
-    ]);
-    PUB.fu={evk:e||[],cas:c||[],pevar:p||[]};
-    PUB.fetched=true;PUB.fetching=false;
+    await ensureFU();
     st.style.display='none';
     const sel=pubEl('pub-riecisko');
     const vals=[...new Set((RAW.evk||[]).map(r=>(r.riecisko==null?'':''+r.riecisko).trim()).filter(Boolean))].sort();
@@ -1776,6 +1837,213 @@ function renderPub(){
   pubKMRenderOS(typ,rows);
 }
 /* ==================== koniec 📄 PUBLIKÁCIE ==================== */
+
+/* ==================== 💶 VÝKAZY (DRG) + 📽 M&M REPORT ==================== */
+const VYK={opened:false};
+const VYK_TYP_LBL={evk:'EVK',cas:'CAS',pevar:'PEVAR'};
+function vykEl(id){return document.getElementById(id);}
+// formát EUR: medzera ako oddeľovač tisícov, čiarka pred desatinami (deterministicky, bez locale)
+function fmtEur(x){if(x==null||!isFinite(x))return'–';const neg=x<0?'-':'';const p=Math.abs(x).toFixed(2).split('.');return neg+p[0].replace(/\B(?=(\d{3})+(?!\d))/g,' ')+','+p[1];}
+// drg_kody: TEXT stĺpec s JSON poľom [{code,desc}] – chránený parse; null = bez kódov / neplatný záznam
+function vykParseDRG(v){
+  if(v==null||v==='')return null;
+  if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){return null;}}
+  if(!Array.isArray(v))return null;
+  const out=v.filter(x=>x&&typeof x==='object'&&(x.code||x.kod))
+    .map(x=>({code:(''+(x.code||x.kod)).trim(),desc:(x.desc==null?'':''+x.desc).trim()}))
+    .filter(x=>x.code);
+  return out.length?out:null;
+}
+function vykDrgPrice(code){
+  const C=window.DRG_CENY||{};
+  if(code in C)return C[code];
+  const lc=(''+code).toLowerCase();
+  return (lc in C)?C[lc]:null;
+}
+function vykId(r){return (r.vykon_id==null?'':''+r.vykon_id).trim()||('#'+(r.id==null?'?':r.id));}
+
+// --- 💶 Výkazy DRG za mesiac ---
+function renderVyk(){
+  if(!VYK.opened)return;
+  const month=vykEl('vyk-month').value; // 'YYYY-MM'
+  const typFilter=vykEl('vyk-typ').value;
+  const typs=typFilter?[typFilter]:['evk','cas','pevar'];
+  const agg={};const missing=[];let nvyk=0;
+  typs.forEach(typ=>(RAW[typ]||[]).forEach(r=>{
+    const d=pubDateOf(r,typ); // datum resp. datum_zaznamu (fallback created_at)
+    if(!month||!d||d.slice(0,7)!==month)return;
+    nvyk++;
+    const codes=vykParseDRG(r.drg_kody);
+    if(!codes){missing.push([vykId(r),VYK_TYP_LBL[typ],d]);return;}
+    codes.forEach(c=>{const a=agg[c.code]=agg[c.code]||{desc:'',n:0};a.n++;if(!a.desc&&c.desc)a.desc=c.desc;});
+  }));
+  const ents=Object.entries(agg).sort((a,b)=>a[0].localeCompare(b[0]));
+  let sum=0,noPrice=0;
+  const tbl=[['Kód','Popis','Počet','Cena ŠZM/ks (EUR)','Spolu (EUR)']];
+  ents.forEach(([code,a])=>{
+    const p=vykDrgPrice(code);
+    if(p!=null)sum+=p*a.n;else noPrice++;
+    tbl.push([code,a.desc||'–',''+a.n,p!=null?fmtEur(p):'–',p!=null?fmtEur(p*a.n):'–']);
+  });
+  const empty=vykEl('vyk-drg-empty');
+  if(!ents.length){
+    pubRenderTable('vyk-drg-tbl','drg',[]);
+    empty.style.display='';
+    empty.textContent=!month?'Vyberte mesiac.':(nvyk?'Žiadny výkon vo zvolenom mesiaci nemá uložené DRG kódy.':'Žiadne výkony vo zvolenom mesiaci.');
+    vykEl('vyk-drg-noprice').textContent='';
+  }else{
+    empty.style.display='none';
+    tbl.push(['💶 Spolu vykázané PP (ŠZM)','','','',fmtEur(sum)+' EUR']);
+    pubRenderTable('vyk-drg-tbl','drg',tbl);
+    vykEl('vyk-drg-noprice').textContent=noPrice?('kódy bez PP ceny: '+noPrice+' druhov (do súčtu sa nepočítajú)'):'';
+  }
+  const missEmpty=vykEl('vyk-miss-empty');
+  if(missing.length){
+    missEmpty.style.display='none';
+    pubRenderTable('vyk-miss-tbl','drgmiss',[['Výkon ID','Typ','Dátum'],...missing]);
+  }else{
+    pubRenderTable('vyk-miss-tbl','drgmiss',[]);
+    missEmpty.style.display='';
+    missEmpty.textContent=nvyk?'✅ Všetky výkony v mesiaci majú uložené DRG kódy.':'Žiadne výkony vo zvolenom mesiaci.';
+  }
+}
+
+// --- 📽 M&M report ---
+function mmClavienGrade(v){v=(v==null?'':''+v).trim();const m=v.match(/^(V|IV|III|II|I)/);return m?m[1]:null;}
+function mmSuvis(v){
+  v=(v==null?'':''+v).trim().toLowerCase();
+  if(!v)return'neznáme';
+  if(/nesúvis|nesuvis/.test(v))return'nesúvisiace';
+  if(/súvis|suvis/.test(v))return'súvisiace';
+  return'neznáme';
+}
+function mmVykSummary(typ,r){
+  if(typ==='evk')return [ (r.riecisko==null?'':''+r.riecisko).trim(),(r.intervencie==null?'':''+r.intervencie).trim() ].filter(Boolean).join(' – ')||'–';
+  if(typ==='cas')return ['CAS',(r.lokalizacia==null?'':''+r.lokalizacia).trim()].filter(Boolean).join(' – ')||'–';
+  return [pubTypVykonu(r),(r.sg_nazov==null?'':''+r.sg_nazov).trim()].filter(Boolean).join(' – ')||'–';
+}
+function renderMM(){
+  if(!VYK.opened)return;
+  const od=vykEl('mm-od').value,doo=vykEl('mm-do').value;
+  const typFilter=vykEl('mm-typ').value;
+  const typs=typFilter?[typFilter]:['evk','cas','pevar'];
+  // follow-upy podľa vykon_id (join)
+  const fuBy={};
+  typs.forEach(typ=>{
+    const m={};
+    (PUB.fu[typ]||[]).forEach(f=>{const id=(f.vykon_id==null?'':''+f.vykon_id).trim();if(!id)return;(m[id]=m[id]||[]).push(f);});
+    fuBy[typ]=m;
+  });
+  let N=0,compl=0,cd3=0,convN=0,failN=0,reintN=0,exitN=0;
+  const cdDist={I:0,II:0,III:0,IV:0,V:0};
+  const suvis={'súvisiace':0,'nesúvisiace':0,'neznáme':0};
+  const cases=[];
+  typs.forEach(typ=>(RAW[typ]||[]).forEach(r=>{
+    const d=pubDateOf(r,typ);
+    if(!d)return;
+    if(od&&d<od)return;
+    if(doo&&d>doo)return;
+    N++;
+    const hasCompl=!!(r.komplikacie_struct==null?'':''+r.komplikacie_struct).trim();if(hasCompl)compl++;
+    const grade=mmClavienGrade(r.clavien_dindo);if(grade)cdDist[grade]++;
+    const sev=grade==='III'||grade==='IV'||grade==='V';if(sev)cd3++;
+    const conv=r.konverzia===true;if(conv)convN++;
+    const fail=/neúspech|neuspech/i.test((r.tech_uspech==null?'':''+r.tech_uspech));if(fail)failN++;
+    const fus=(fuBy[typ]||{})[(r.vykon_id==null?'':''+r.vykon_id).trim()]||[];
+    const reints=fus.filter(f=>f.reintervencia===true);if(reints.length)reintN++;
+    const exits=fus.filter(f=>f.exitus===true);
+    if(exits.length){exitN++;suvis[mmSuvis(exits[0].exitus_suvis)]++;}
+    // kazuistika = Clavien ≥III / konverzia / tech. neúspech / FU reintervencia / exitus
+    if(!(sev||conv||fail||reints.length||exits.length))return;
+    const ev=[];
+    if(hasCompl)ev.push((''+r.komplikacie_struct).trim());
+    if(conv)ev.push('konverzia');
+    if(fail)ev.push('technický neúspech');
+    if(!ev.length&&reints.length)ev.push('reintervencia vo follow-up');
+    if(!ev.length&&exits.length)ev.push('exitus vo follow-up');
+    const outc=[];
+    reints.forEach(f=>{
+      const det=((f.reintervencia_detail||f.reintervencia_typ||f.reintervencia_popis||'')+'').trim();
+      const dk=f.datum_kontroly?(''+f.datum_kontroly).slice(0,10):'';
+      outc.push('reintervencia'+(det?': '+det:'')+(dk?' ('+dk+')':''));
+    });
+    exits.forEach(f=>{
+      const ed=f.exitus_datum?(''+f.exitus_datum).slice(0,10):'';
+      outc.push('exitus'+(ed?' '+ed:'')+' – '+mmSuvis(f.exitus_suvis)+' s výkonom');
+    });
+    cases.push([
+      vykId(r),
+      VYK_TYP_LBL[typ],
+      d,
+      ((r.vek!=null&&r.vek!=='')?r.vek+' r.':'?')+' / '+((r.pohlavie==null?'':''+r.pohlavie).trim()||'?'),
+      mmVykSummary(typ,r),
+      ev.join('; ')||'–',
+      (r.clavien_dindo==null?'':''+r.clavien_dindo).trim()||'–',
+      outc.join('; ')||'–'
+    ]);
+  }));
+  cases.sort((a,b)=>a[2].localeCompare(b[2])||a[0].localeCompare(b[0]));
+  vykEl('mm-period').textContent='Obdobie: '+(od||'…')+' – '+(doo||'…')+(typFilter?' | typ výkonu: '+VYK_TYP_LBL[typFilter]:' | všetky typy výkonov');
+  const pct=n=>N?(' ('+fnum(100*n/N,1)+' %)'):'';
+  vykEl('mm-summary').innerHTML=[
+    statCard('Výkonov spolu',N),
+    statCard('Komplikácie'+pct(compl),compl),
+    statCard('Clavien-Dindo ≥ III'+pct(cd3),cd3),
+    statCard('Konverzie',convN),
+    statCard('Technický neúspech',failN),
+    statCard('Reintervencie počas FU',reintN),
+    statCard('Exitusy vo follow-up',exitN),
+    statCard('Kazuistiky na M&M',cases.length)
+  ].join('');
+  vykEl('mm-clavien').textContent='Clavien-Dindo distribúcia: '+['I','II','III','IV','V'].map(g=>g+': '+cdDist[g]).join(' | ');
+  vykEl('mm-exitus').textContent=exitN
+    ?('Exitus – súvislosť s výkonom: súvisiace s výkonom: '+suvis['súvisiace']+' | nesúvisiace: '+suvis['nesúvisiace']+' | neznáme: '+suvis['neznáme'])
+    :'Exitusy vo follow-up: žiadne.';
+  const mmEmpty=vykEl('mm-empty');
+  if(cases.length){
+    mmEmpty.style.display='none';
+    pubRenderTable('mm-case-tbl','mmk',[['Výkon ID','Typ','Dátum','Vek / pohlavie','Výkon','Komplikácia / udalosť','Clavien-Dindo','Outcome'],...cases]);
+  }else{
+    pubRenderTable('mm-case-tbl','mmk',[]);
+    mmEmpty.style.display='';
+    mmEmpty.textContent=N?'✅ V zvolenom období nie sú žiadne kazuistiky pre M&M (žiadne Clavien ≥ III, konverzie, tech. neúspechy, reintervencie ani exitusy).':'V zvolenom období nie sú žiadne výkony.';
+  }
+}
+
+// 🖨 tlač: dočasne skryje všetko okrem M&M karty (print CSS body.mm-print)
+function printMM(){
+  document.body.classList.add('mm-print');
+  const done=()=>{document.body.classList.remove('mm-print');window.removeEventListener('afterprint',done);};
+  window.addEventListener('afterprint',done);
+  window.print();
+}
+
+async function openVyk(){
+  const st=vykEl('vyk-status');
+  if(!VYK.opened){
+    VYK.opened=true;
+    const z=n=>String(n).padStart(2,'0');
+    const t=new Date();
+    const iso=x=>x.getFullYear()+'-'+z(x.getMonth()+1)+'-'+z(x.getDate());
+    if(!vykEl('vyk-month').value)vykEl('vyk-month').value=t.getFullYear()+'-'+z(t.getMonth()+1); // aktuálny mesiac
+    if(!vykEl('mm-do').value){ // posledné 3 mesiace
+      vykEl('mm-do').value=iso(t);
+      const f=new Date(t);f.setMonth(f.getMonth()-3);
+      vykEl('mm-od').value=iso(f);
+    }
+  }
+  st.style.display='block';st.textContent='⏳ Načítavam dáta…';
+  try{
+    try{await (window._pubDataP||Promise.resolve());}catch(e){}
+    await ensureFU(); // follow-upy pre M&M (zdieľané s Publikáciami)
+    st.style.display='none';
+    renderVyk();
+    renderMM();
+  }catch(e){
+    st.textContent='❌ Chyba načítania dát: '+((e&&e.message)||e);
+  }
+}
+/* ==================== koniec 💶 VÝKAZY + 📽 M&M ==================== */
 
 loadAll();
 </script>
