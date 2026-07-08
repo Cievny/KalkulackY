@@ -93,6 +93,22 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     </div>
     <div class="f"><label class="ck"><input type="checkbox" id="fu_reint"> Reintervencia</label><input type="text" id="fu_reint_detail" placeholder="aká…"></div>
     <div class="f"><label>Poznámka</label><textarea id="fu_pozn" rows="3"></textarea></div>
+    <div class="f" style="margin-top:6px">
+      <label class="ck"><input type="checkbox" id="fu_exitus" onchange="fuExitusToggle()"><span>✝ Exitus</span></label>
+      <div id="fu_exitus_box" style="display:none;margin-top:6px;padding:8px 10px;background:#fef2f2;border-left:3px solid #dc2626;border-radius:0 6px 6px 0">
+        <div class="row r2" style="margin-bottom:0">
+          <div class="f"><label>Dátum úmrtia</label><input type="date" id="fu_exitus_datum"></div>
+          <div class="f"><label>Súvis s výkonom</label>
+            <select id="fu_exitus_suvis">
+              <option value="">–</option>
+              <option value="vykon">súvisiace s výkonom</option>
+              <option value="nesuvisiaci">nesúvisiace s výkonom</option>
+              <option value="nezname">neznáme</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <button class="btn" style="width:100%;padding:12px;background:#1d6f42;color:#fff" onclick="saveFU()">📊 Uložiť follow-up</button>
   <div id="fu_msg" style="font-size:12px;text-align:center;margin-top:8px;min-height:18px"></div>
@@ -123,13 +139,16 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <!-- Pacient -->
 <div class="card">
 <div class="st">Pacient a Indikácia</div>
-<div class="row r2">
+<div class="row r3">
   <div class="f"><label>Vek</label><input type="number" id="vek" placeholder="70" min="18" max="110" oninput="gen()"></div>
   <div class="f"><label>Pohlavie</label>
     <select id="pohlavie" onchange="gen()">
       <option value="Muž">Muž</option>
       <option value="Žena">Žena</option>
     </select>
+  </div>
+  <div class="f"><label>Rodné číslo</label><input type="text" id="rodne_cislo" autocomplete="off" inputmode="numeric" placeholder="123456/7890">
+    <small style="display:block;color:#6b7280;font-size:10px;margin-top:2px">len na interné počítanie unikátnych pacientov</small>
   </div>
 </div>
 <div class="row r2">
@@ -784,17 +803,22 @@ function getKomor(){
   document.querySelectorAll('#komordiv input[type=checkbox]:not([id^="k_"]):checked').forEach(e=>list.push(e.value));
   return list;
 }
-function calcEGFR(){
+// Numerická hodnota eGFR (CKD-EPI 2021) – null, ak chýba kreatinín/vek/pohlavie
+function egfrNum(){
   const kreaRaw=parseFloat(document.getElementById('chri_krea')?.value);
-  const krea=kreaRaw/88.42;
   const vek=parseInt(g('vek'));
   const pohlavie=g('pohlavie');
-  const el=document.getElementById('chri_egfr_result');
-  if(!kreaRaw||!vek||!pohlavie){if(el)el.textContent='';return'';}
+  if(!kreaRaw||!vek||!pohlavie)return null;
+  const krea=kreaRaw/88.42;
   const female=pohlavie==='Žena';
   const A=female?0.7:0.9,S=female?1.012:1.0;
   let B;if(female)B=krea<=0.7?-0.241:-1.200;else B=krea<=0.9?-0.302:-1.200;
-  const val=Math.round(142*Math.pow(krea/A,B)*Math.pow(0.9938,vek)*S*10)/10;
+  return Math.round(142*Math.pow(krea/A,B)*Math.pow(0.9938,vek)*S*10)/10;
+}
+function calcEGFR(){
+  const el=document.getElementById('chri_egfr_result');
+  const val=egfrNum();
+  if(val==null){if(el)el.textContent='';return'';}
   let stage;
   if(val>=90)stage='G1 (≥90)';else if(val>=60)stage='G2 (60–89)';else if(val>=45)stage='G3a (45–59)';
   else if(val>=30)stage='G3b (30–44)';else if(val>=15)stage='G4 (15–29)';else stage='G5 (<15)';
@@ -966,18 +990,34 @@ function copyDRG(){
   });
 }
 function msgFu(t,c){const el=document.getElementById('fu_msg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',4000);}
+// Exitus blok vo Follow-up: zobrazenie detailov + predvyplnenie dnešného dátumu
+function fuExitusToggle(){
+  const on=chk('fu_exitus');
+  const b=document.getElementById('fu_exitus_box');if(b)b.style.display=on?'':'none';
+  const d=document.getElementById('fu_exitus_datum');if(on&&d&&!d.value)d.value=isoLocal();
+}
+function resetFuExitus(){
+  const c=document.getElementById('fu_exitus');if(c)c.checked=false;
+  const d=document.getElementById('fu_exitus_datum');if(d)d.value='';
+  const s=document.getElementById('fu_exitus_suvis');if(s)s.value='';
+  const b=document.getElementById('fu_exitus_box');if(b)b.style.display='none';
+}
 async function saveFU(){
   if(!g('fu_id')){msgFu('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  const _exitus=chk('fu_exitus');
   const data={
     vykon_id:g('fu_id'),datum_kontroly:g('fu_datum'),casovy_bod:g('fu_bod'),zobrazenie:g('fu_zobr'),
     restenoza:g('fu_rest')||null,neuro:g('fu_neuro')||null,
     reintervencia:document.getElementById('fu_reint').checked,
     reintervencia_detail:g('fu_reint_detail')||null,
-    poznamka:g('fu_pozn')||null
+    poznamka:g('fu_pozn')||null,
+    exitus:_exitus,
+    exitus_datum:_exitus?(g('fu_exitus_datum')||isoLocal()):null,
+    exitus_suvis:_exitus?(g('fu_exitus_suvis')||null):null
   };
   try{
     const r=await fetch(SB_URL+'/rest/v1/cas_followup',{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
-    if(r.ok){msgFu('✅ Follow-up uložený!','#1d6f42');['fu_rest','fu_neuro','fu_pozn','fu_reint_detail'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});const ch=document.getElementById('fu_reint');if(ch)ch.checked=false;}
+    if(r.ok){msgFu('✅ Follow-up uložený!','#1d6f42');['fu_rest','fu_neuro','fu_pozn','fu_reint_detail'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});const ch=document.getElementById('fu_reint');if(ch)ch.checked=false;resetFuExitus();}
     else msgFu('❌ Chyba: '+r.status+(r.status===404?' (spustite setup SQL)':''),'#dc2626');
   }catch(e){msgFu('❌ Chyba siete','#dc2626');}
 }
@@ -1017,6 +1057,8 @@ async function saveData(){
     datum_zaznamu:g('datum_zaznamu')||isoLocal(),
     vek:parseInt(g('vek'))||null,
     pohlavie:g('pohlavie'),
+    rodne_cislo:g('rodne_cislo').trim()||null,
+    egfr:chk('k_chri')?egfrNum():null,
     lokalizacia:g('lokalizacia'),
     typ_platu:document.getElementById('plat').options[document.getElementById('plat').selectedIndex].text,
     klinicky_stav:g('klinicky_stav'),
@@ -1116,6 +1158,7 @@ function loadEditRecord(){
     sv('operator',record.operator);
     sv('vek',record.vek);
     sv('pohlavie',record.pohlavie);
+    sv('rodne_cislo',record.rodne_cislo);
     sv('lokalizacia',record.lokalizacia);
     sv('klinicky_stav',record.klinicky_stav);
     sv('cas_symptom_days',record.cas_symptom_days);
