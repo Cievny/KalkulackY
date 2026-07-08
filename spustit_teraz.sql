@@ -85,6 +85,32 @@ BEGIN
   END LOOP;
 END $do$;
 
+-- 3d) AORTÁLNY MODUL – FEVAR / BEVAR / TEVAR / ChEVAR / ISLF / hybrid
+--     (typ výkonu, segment, Ishimaru zóny, LSA, drenáž, etiológia,
+--     vetvy/fenestrácie ako JSON; follow-up: per-vetva stav + FL trombóza)
+DO $do$
+DECLARE t text;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY['pevar_vykony','cz_pevar_vykony']) LOOP
+    IF to_regclass('public.'||t) IS NOT NULL THEN
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS typ_vykonu TEXT DEFAULT ''EVAR''', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS segment_aorty TEXT', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS zona_prox TEXT', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS zona_dist TEXT', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS lsa_manazment TEXT', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS spinalna_drenaz BOOLEAN', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS etiologia TEXT', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS vetvy_detail TEXT', t);
+    END IF;
+  END LOOP;
+  FOR t IN SELECT unnest(ARRAY['pevar_followup','cz_pevar_followup']) LOOP
+    IF to_regclass('public.'||t) IS NOT NULL THEN
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS vetvy_fu TEXT', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS fl_tromboza TEXT', t);
+    END IF;
+  END LOOP;
+END $do$;
+
 -- 4) Oznamy – komentáre + prihlasovanie (workshopy / akcie)
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_komentare     BOOLEAN DEFAULT false;
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;
