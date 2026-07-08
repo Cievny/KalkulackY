@@ -57,6 +57,34 @@ ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS sheath_velkost_sin        T
 --     Staré záznamy = 'A'; UI sekcie sa objavia, až keď má B pacientov.
 ALTER TABLE denny_program ADD COLUMN IF NOT EXISTS sala TEXT DEFAULT 'A';
 
+-- 3c) VÝSKUMNÝ ZBER – polia pre publikácie:
+--     rodné číslo (unikátni pacienti), eGFR, baseline ABI (EVK)
+--     a exitus vo follow-upoch (celkové prežívanie, MAE).
+DO $do$
+DECLARE t text;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY['evk_vykony','cas_vykony','pevar_vykony',
+                               'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony']) LOOP
+    IF to_regclass('public.'||t) IS NOT NULL THEN
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS rodne_cislo TEXT', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS egfr NUMERIC', t);
+    END IF;
+  END LOOP;
+  FOR t IN SELECT unnest(ARRAY['evk_vykony','cz_evk_vykony']) LOOP
+    IF to_regclass('public.'||t) IS NOT NULL THEN
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS abi_pred TEXT', t);
+    END IF;
+  END LOOP;
+  FOR t IN SELECT unnest(ARRAY['evk_followup','cas_followup','pevar_followup',
+                               'cz_evk_followup','cz_cas_followup','cz_pevar_followup']) LOOP
+    IF to_regclass('public.'||t) IS NOT NULL THEN
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS exitus BOOLEAN DEFAULT false', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS exitus_datum TEXT', t);
+      EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS exitus_suvis TEXT', t);
+    END IF;
+  END LOOP;
+END $do$;
+
 -- 4) Oznamy – komentáre + prihlasovanie (workshopy / akcie)
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_komentare     BOOLEAN DEFAULT false;
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;
