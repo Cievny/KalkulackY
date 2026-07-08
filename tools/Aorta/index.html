@@ -66,6 +66,15 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .btn-copy:hover{background:#175c37;}
 .btn-close{padding:9px 16px;background:#fff;color:#374151;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
 .m-msg{font-size:12.5px;font-weight:600;align-self:center;}
+/* sizing / IFU */
+.ifu-chip{display:inline-block;font-size:12px;font-weight:700;padding:5px 10px;border-radius:8px;line-height:1.4;}
+.ifu-ok{background:#dcfce7;color:#15803d;}
+.ifu-warn{background:#fef3c7;color:#b45309;}
+.ifu-info{background:#f0f2f7;color:#6b7280;font-weight:600;}
+.btn-nalez{padding:9px 16px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-nalez:hover{background:#6d28d9;}
+.btn-nalez-done{display:inline-block;padding:9px 16px;background:#dcfce7;color:#15803d;border:1.5px solid #86efac;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;}
+.card-nalez{color:#15803d;font-weight:700;text-decoration:none;}
 /* archív */
 .arch-wrap{padding:0 20px 30px;}
 .arch-wrap details{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;}
@@ -189,6 +198,33 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
     </div>
     </div>
 
+    <div id="sec_sizing">
+    <div class="m-sec" data-t="📐 Sizing (CT merania)">5. 📐 Sizing (CT merania)</div>
+    <details id="sizing_det">
+      <summary style="font-size:12px;font-weight:600;color:#1e40af;cursor:pointer;margin-bottom:8px">Rozbaliť merania (priemery, dĺžky, prístup, IFU kontrola)</summary>
+      <p class="page-sub" style="padding:0 0 8px">Priemer krčka, dĺžka a angulácia sa preberajú zo sekcie Anatómia; max. priemer aorty zo sekcie Indikácia (neduplikujú sa).</p>
+      <div class="m-grid">
+        <div class="fld"><label>Aorta suprarenálne (mm)</label><input id="sz_aorta_suprarenal_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Aorta juxtarenálne (mm)</label><input id="sz_aorta_juxtarenal_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Bifurkácia (mm)</label><input id="sz_bifurkacia_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>AIC dx (mm)</label><input id="sz_AIC_dx_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>AIC sin (mm)</label><input id="sz_AIC_sin_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>AIE dx (mm)</label><input id="sz_AIE_dx_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>AIE sin (mm)</label><input id="sz_AIE_sin_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Dĺžka renálky → bifurkácia (mm)</label><input id="sz_dlzka_renalka_bifurkacia_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Dĺžka AIC dx (mm)</label><input id="sz_dlzka_AIC_dx_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Dĺžka AIC sin (mm)</label><input id="sz_dlzka_AIC_sin_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Najužší prístup (mm)</label><input id="sz_pristup_min_mm" type="number" step="0.1"></div>
+      </div>
+      <div class="m-grid" style="margin-top:10px">
+        <div class="fld"><label>Plánovaný graft (IFU)</label><select id="sz_graft">
+          <option value="">–</option><option>Endurant II</option><option>Excluder</option><option>Zenith Alpha</option><option>Treo</option><option>E-vita</option><option>vlastný</option>
+        </select></div>
+        <div id="ifu_verdikt" style="grid-column:span 2;align-self:end"></div>
+      </div>
+    </details>
+    </div>
+
     <div id="sec_fit">
     <div class="m-sec" data-t="Fitness &amp; riziko">5. Fitness &amp; riziko</div>
     <div class="m-grid">
@@ -251,6 +287,8 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
     <div class="m-btns">
       <button class="btn-save" onclick="saveCard()">💾 Uložiť</button>
       <button class="btn-copy" onclick="copyZapis()">📋 Kopírovať zápis do NIS</button>
+      <button class="btn-nalez" id="btn_nalez" style="display:none" onclick="napisatNalez()">📝 Napísať nález</button>
+      <a class="btn-nalez-done" id="btn_nalez_done" style="display:none" href="/tools/zaznamy/" title="nález napísaný">📝</a>
       <button class="btn-close" onclick="closeModal()">Zavrieť</button>
       <span class="m-msg" id="m_msg"></span>
     </div>
@@ -466,6 +504,7 @@ function toggleKategoria(){
   document.getElementById('fld_priemer').style.display=ine?'none':'';
   document.getElementById('fld_rast').style.display=ine?'none':'';
   document.getElementById('sec_anat').style.display=ine?'none':'';
+  document.getElementById('sec_sizing').style.display=ine?'none':'';
   document.getElementById('sec_fit').style.display=ine?'none':'';
   document.getElementById('sec_zaver_sem').style.display=ine?'':'none';
   document.getElementById('lbl_ct').textContent=ine?'Dátum CT / MR vyšetrenia':'Dátum CT angio';
@@ -475,10 +514,11 @@ function toggleKategoria(){
   document.getElementById('fld_indik_pozn').style.display=ine?'none':'';
   toggleVykon();
   toggleEndoleak();
+  updateNalezBtn();
   // prečíslovanie viditeľných sekcií
   let n=0;
   document.querySelectorAll('.modal .m-sec').forEach(el=>{
-    const wrap=el.closest('#sec_anat,#sec_fit,#sec_zaver_sem,#sec_hist');
+    const wrap=el.closest('#sec_anat,#sec_sizing,#sec_fit,#sec_zaver_sem,#sec_hist');
     if(wrap&&wrap.style.display==='none')return;
     n++;el.innerHTML=n+'. '+el.dataset.t;
   });
@@ -582,6 +622,7 @@ function cardEl(it){
     ${it.ziadatel?'<div class="card-line">👤 '+escHtml(it.ziadatel)+'</div>':''}
     ${(it.indikoval1||it.indikoval2)?'<div class="card-line">⚕️ indikoval: '+escHtml([it.indikoval1,it.indikoval2].filter(Boolean).join(' + '))+'</div>':''}
     ${it.vykon_typ?'<div class="card-line">🛠 plán: '+escHtml(it.vykon_typ+(it.vykon_cieva?' – '+it.vykon_cieva:''))+'</div>':''}
+    ${it.nalez_vykon_id?'<div class="card-line"><a class="card-nalez" href="/tools/zaznamy/" title="nález napísaný" draggable="false" onclick="event.stopPropagation()">📝 '+escHtml(it.nalez_vykon_id)+'</a></div>':''}
     ${matHtml}
     <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stave':''}${dTotal!==null?' • od požiadavky <b>'+dTotal+' d</b>':''}${it.created_by?' • pridal <b>'+escHtml(shortMail(it.created_by))+'</b>':''}</div>
     <div class="card-actions">
@@ -630,11 +671,13 @@ function formToObj(){
     else if(['rocnik','priemer','rast','krcok_dlzka','krcok_priemer'].includes(f))o[col]=v===''?null:parseFloat(v);
     else o[col]=v||null;
   });
+  const sz=sizingToObj();
+  o.sizing=Object.keys(sz).length?JSON.stringify(sz):null;
   if(o.kategoria==='ine'){
     o.diagnoza=document.getElementById('af_diagnoza_ine').value.trim()||null;
-    // skryté sekcie (morfológia, anatómia, fitness, aortálny výkon) sa pri INÉ neukladajú
+    // skryté sekcie (morfológia, anatómia, fitness, sizing, aortálny výkon) sa pri INÉ neukladajú
     ['priemer_mm','rast_mm_rok','krcok_dlzka_mm','krcok_priemer_mm','krcok_angulacia','iliaky',
-     'kardio','renalne','pulmo','frailty','dozitie','medikacia','vykon_typ','vykon_cieva','indikacia_poznamka','endoleak_typ'].forEach(k=>o[k]=null);
+     'kardio','renalne','pulmo','frailty','dozitie','medikacia','vykon_typ','vykon_cieva','indikacia_poznamka','endoleak_typ','sizing'].forEach(k=>o[k]=null);
   }else{
     o.zaver_seminara=null; // záver seminára je len pre INÉ
   }
@@ -651,9 +694,109 @@ function objToForm(it){
     if(el.tagName==='SELECT'&&el.selectedIndex===-1)el.selectedIndex=0;
   });
   document.getElementById('af_diagnoza_ine').value=(it&&kat(it)==='ine')?(it.diagnoza||''):'';
+  sizingToForm(it);
   if(it)document.getElementById('af_kategoria').value=kat(it);
   toggleKategoria();
   if(!it)document.getElementById('af_datum_poziadavky').value=today();
+}
+
+// ── 📐 Sizing (CT merania) – JSON stĺpec `sizing` ────────────
+const SIZING_FIELDS=['aorta_suprarenal_mm','aorta_juxtarenal_mm','bifurkacia_mm','AIC_dx_mm','AIC_sin_mm',
+  'AIE_dx_mm','AIE_sin_mm','dlzka_renalka_bifurkacia_mm','dlzka_AIC_dx_mm','dlzka_AIC_sin_mm','pristup_min_mm'];
+function sizingToObj(){
+  const s={};
+  SIZING_FIELDS.forEach(k=>{
+    const v=document.getElementById('sz_'+k).value.trim();
+    if(v!==''&&!isNaN(parseFloat(v)))s[k]=parseFloat(v);
+  });
+  const g=document.getElementById('sz_graft').value;
+  if(g)s.graft=g;
+  return s;
+}
+function sizingToForm(it){
+  let s={};
+  try{
+    const raw=it?it.sizing:null;
+    s=typeof raw==='string'?(JSON.parse(raw)||{}):(raw||{});
+  }catch{s={};}
+  if(typeof s!=='object'||Array.isArray(s))s={};
+  SIZING_FIELDS.forEach(k=>{document.getElementById('sz_'+k).value=s[k]??'';});
+  const g=document.getElementById('sz_graft');
+  g.value=s.graft||'';
+  if(g.selectedIndex===-1)g.selectedIndex=0;
+  document.getElementById('sizing_det').open=Object.keys(s).length>0;
+  ifuEval();
+}
+
+// IFU limity (typické infrarenálne IFU – informatívne, neblokuje)
+const IFU={
+  'Endurant II':{krcok_dlzka_min:10,krcok_priemer:[19,32],angulacia_max:60,angulacia_ext:{max:75,dlzka_min:15},aic:[8,25]},
+  'Excluder':   {krcok_dlzka_min:15,krcok_priemer:[19,32],angulacia_max:60,aic:[8,25]},
+  'Zenith Alpha':{krcok_dlzka_min:15,krcok_priemer:[18,32],angulacia_max:60,aic:[8,20]},
+  'Treo':       {krcok_dlzka_min:15,krcok_priemer:[17,32],angulacia_max:60,angulacia_ext:{max:75,dlzka_min:15},aic:[8,20]},
+  'E-vita':     {krcok_dlzka_min:15,krcok_priemer:[18,32],angulacia_max:60,aic:[8,25]}
+};
+function ifuEval(){
+  const box=document.getElementById('ifu_verdikt');
+  const g=document.getElementById('sz_graft').value;
+  if(!g){box.innerHTML='';return;}
+  const lim=IFU[g];
+  if(!lim){box.innerHTML='<span class="ifu-chip ifu-info">ℹ️ vlastný graft – IFU kontrola nedostupná</span>';return;}
+  const V=[];
+  const dl=parseFloat(document.getElementById('af_krcok_dlzka').value);
+  const pr=parseFloat(document.getElementById('af_krcok_priemer').value);
+  const ang=document.getElementById('af_krcok_angulacia').value;
+  if(!isNaN(dl)&&dl<lim.krcok_dlzka_min)V.push('krčok '+dl+' mm (<'+lim.krcok_dlzka_min+')');
+  if(!isNaN(pr)&&(pr<lim.krcok_priemer[0]||pr>lim.krcok_priemer[1]))V.push('priemer krčka '+pr+' mm (mimo '+lim.krcok_priemer[0]+'–'+lim.krcok_priemer[1]+')');
+  if(ang==='>60'){
+    // presný uhol nad 60° nevieme z formulára overiť – varujeme aj pri graftoch s limitom do 75°
+    let t='angulácia >60° (limit ≤'+lim.angulacia_max+'°)';
+    if(lim.angulacia_ext&&!isNaN(dl)&&dl>=lim.angulacia_ext.dlzka_min)t='angulácia >60° (graft do '+lim.angulacia_ext.max+'° pri krčku ≥'+lim.angulacia_ext.dlzka_min+' mm – overiť presný uhol)';
+    V.push(t);
+  }
+  [['AIC_dx_mm','AIC dx'],['AIC_sin_mm','AIC sin']].forEach(([k,lbl])=>{
+    const v=parseFloat(document.getElementById('sz_'+k).value);
+    if(!isNaN(v)&&(v<lim.aic[0]||v>lim.aic[1]))V.push(lbl+' '+v+' mm (mimo '+lim.aic[0]+'–'+lim.aic[1]+')');
+  });
+  box.innerHTML=V.length
+    ?'<span class="ifu-chip ifu-warn">⚠️ mimo IFU: '+escHtml(V.join(' · '))+'</span>'
+    :'<span class="ifu-chip ifu-ok">✅ v rámci IFU</span>';
+}
+SIZING_FIELDS.forEach(k=>{const el=document.getElementById('sz_'+k);el.addEventListener('input',ifuEval);el.addEventListener('change',ifuEval);});
+document.getElementById('sz_graft').addEventListener('change',ifuEval);
+['af_krcok_dlzka','af_krcok_priemer','af_krcok_angulacia'].forEach(id=>{const el=document.getElementById(id);el.addEventListener('input',ifuEval);el.addEventListener('change',ifuEval);});
+
+// ── 📝 Napísať nález (handoff do PEVAR) ──────────────────────
+function updateNalezBtn(){
+  const it=editId?ITEMS.find(i=>i.id===editId):null;
+  const isAorta=document.getElementById('af_kategoria').value!=='ine';
+  const done=!!(it&&it.nalez_vykon_id);
+  document.getElementById('btn_nalez').style.display=(isAorta&&!done)?'':'none';
+  const bd=document.getElementById('btn_nalez_done');
+  bd.style.display=(isAorta&&done)?'':'none';
+  if(done)bd.textContent='📝 '+it.nalez_vykon_id;
+}
+function napisatNalez(){
+  if(!editId){msg('m_msg','⚠️ Najprv požiadavku uložte (💾), potom napíšte nález','#b45309');return;}
+  const o=formToObj();
+  const payload={
+    tool:'PEVAR',
+    from:'aorta',
+    poziadavka_id:editId,
+    inicialy:o.inicialy,
+    rocnik:o.rocnik,
+    rodne_cislo:o.rodne_cislo,
+    diagnoza:o.diagnoza,
+    priemer_mm:o.priemer_mm,
+    krcok_dlzka_mm:o.krcok_dlzka_mm,
+    krcok_priemer_mm:o.krcok_priemer_mm,
+    krcok_angulacia:o.krcok_angulacia,
+    material:o.material,
+    vykon_typ:o.vykon_typ,
+    sizing:sizingToObj()
+  };
+  sessionStorage.setItem('cievny_novy_nalez',JSON.stringify(payload));
+  location.href='/tools/PEVAR/';
 }
 
 function openModal(id){
@@ -778,7 +921,7 @@ async function saveCard(){
           if(fresh)objToForm(fresh);
           return;
         }
-        msg('m_msg','✓ Uložené','#1d6f42');await loadItems();
+        msg('m_msg','✓ Uložené','#1d6f42');await loadItems();updateNalezBtn();
       }
       else msg('m_msg','❌ Chyba pri ukladaní: '+r.status,'#dc2626');
     }else{
@@ -789,7 +932,7 @@ async function saveCard(){
         const rows=await r.json();
         editId=rows[0]?rows[0].id:null;  // ostávame v modáli – dajú sa hneď pridať prílohy
         msg('m_msg','✓ Uložené – teraz môžete pridať prílohy','#1d6f42');
-        await loadItems();
+        await loadItems();updateNalezBtn();
         if(editId){
           document.getElementById('pril_hint').style.display='none';
           document.getElementById('pril_box').style.display='';
