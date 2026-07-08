@@ -75,7 +75,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .arch-table td{padding:7px 8px;border-bottom:1px solid #f0f2f7;color:#1a2745;}
 .btn-mini{font-size:11px;font-weight:600;padding:2px 8px;border:1.5px solid #dde1ea;border-radius:5px;background:#fff;cursor:pointer;color:#374151;}
 .btn-mini-del{border-color:#fca5a5;color:#dc2626;}
-@media(max-width:700px){.m-grid,.m-grid2{grid-template-columns:1fr;}}
+@media(max-width:700px){.m-grid,.m-grid2{grid-template-columns:1fr;}.m-grid .fld{grid-column:auto !important;}}
 @media(max-width:700px),(pointer:coarse){
 .card-actions{gap:8px;}
 .btn-edit,.btn-arch,.btn-mini{min-height:36px;min-width:36px;padding:8px 12px;font-size:12px;}
@@ -136,7 +136,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
     <div class="m-grid">
       <div class="fld"><label>Kategória</label><select id="af_kategoria" onchange="toggleKategoria()"><option value="aorta">🫀 Aorta</option><option value="ine">📋 Iné</option></select></div>
       <div class="fld"><label>Rodné číslo * <span style="font-weight:400;color:#9ca3af">(povinné)</span></label><input id="af_rodne_cislo" maxlength="11" placeholder="511224/1234" autocomplete="off"><div id="rc_warn" style="font-size:11.5px;color:#b45309;margin-top:3px"></div></div>
-      <div class="fld"><label>Iniciály (napr. J.K.)</label><input id="af_inicialy" maxlength="10" autocomplete="off"></div>
+      <div class="fld" style="grid-column:span 2"><label>Iniciály (napr. J.K.)</label><input id="af_inicialy" maxlength="14" autocomplete="off"></div>
       <div class="fld"><label>Ročník narodenia</label><input id="af_rocnik" type="number" min="1900" max="2030" placeholder="doplní sa z r.č."></div>
       <div class="fld"><label>Pohlavie</label><select id="af_pohlavie"><option value="M">Muž</option><option value="Ž">Žena</option></select></div>
       <div class="fld"><label>Žiadateľ / oddelenie</label><input id="af_ziadatel" placeholder="napr. interné odd., MUDr. …"></div>

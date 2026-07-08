@@ -353,6 +353,27 @@ function renderPanel(){
 
 function pmsg(t,c){const m=document.getElementById('pmsg');m.textContent=t;m.style.color=c||'#16a34a';}
 
+// Odkaz „Pridať do Google kalendára" – zámerne BEZ údajov pacienta (žiadne meno
+// ani r.č. – Google kalendár je mimo nemocničného prostredia), len typ a čas.
+function gcalUrl(dk,cas,sloty,sm){
+  const title=(TYP==='ct'?'CT':'CEUS')+' vyšetrenie – OIRA';
+  const p=dk.split('-').map(Number);
+  let dates;
+  if(cas){
+    const hm=normHM(cas).split(':').map(Number);
+    const st=new Date(p[0],p[1]-1,p[2],hm[0],hm[1]);
+    const en=new Date(st.getTime()+(sloty||1)*(sm||15)*60000);
+    const f=d=>d.toISOString().replace(/[-:]|\.\d{3}/g,''); // UTC YYYYMMDDTHHMMSSZ
+    dates=f(st)+'/'+f(en);
+  }else{
+    // deň bez časov (len kapacita) → celodenná udalosť YYYYMMDD/YYYYMMDD+1
+    const nx=new Date(p[0],p[1]-1,p[2]+1);
+    const z=n=>String(n).padStart(2,'0');
+    dates=dk.replace(/-/g,'')+'/'+nx.getFullYear()+z(nx.getMonth()+1)+z(nx.getDate());
+  }
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+dates;
+}
+
 async function pridajObj(){
   const dk=SEL;if(!dk||!DNI[dk])return;
   const g=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
@@ -390,7 +411,14 @@ async function pridajObj(){
     objednal:(window.sbUserEmail?sbUserEmail():'')||null,stav:'objednany'};
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${T_OBJ}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
-    if(r.ok){pmsg('✓ Objednané');await loadMonth();}
+    if(r.ok){
+      await loadMonth(); // najprv obnov (renderPanel čistí pmsg), až potom zobraz potvrdenie
+      const pm=document.getElementById('pmsg');
+      pm.style.color='#16a34a';
+      pm.innerHTML='✓ Objednané &nbsp;<a id="gcal_link" href="'+gcalUrl(dk,cas,sloty,sm)
+        +'" target="_blank" rel="noopener" style="color:#1e40af;font-weight:600">📆 Pridať do Google kalendára</a>'
+        +' <span style="color:#94a3b8;font-size:11.5px">(bez mena pacienta)</span>';
+    }
     else if(r.status===409){pmsg('Termín medzitým obsadili – obnovujem.','#b45309');await loadMonth();}
     else pmsg('❌ Chyba: '+r.status+(r.status===400?' (spustite objednavky.sql)':''),'#dc2626');
   }catch(e){pmsg('❌ Chyba siete','#dc2626');}
