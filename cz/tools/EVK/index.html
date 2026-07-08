@@ -125,6 +125,12 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="f"><label>Věk</label><input type="number" id="vek" placeholder="70" oninput="gen()"></div>
   <div class="f"><label>Pohlaví</label><select id="pohl" onchange="gen()"><option value="M">Muž</option><option value="Z">Žena</option></select></div>
 </div>
+<div class="row r2">
+  <div class="f"><label>Rodné číslo</label><input type="text" id="rodne_cislo" autocomplete="off" inputmode="numeric" placeholder="bez lomítka nebo s lomítkem" oninput="gen()">
+    <div style="font-size:10px;color:#6b7280;margin-top:2px">jen pro interní počítání unikátních pacientů</div>
+  </div>
+  <div class="f"><label>ABI před výkonem</label><input type="number" id="abi_pred" step="0.01" min="0" max="2" placeholder="0,55" oninput="gen()"></div>
+</div>
 <div class="row r3">
   <div class="f"><label>Rutherford</label>
     <select id="ruth" onchange="gen()"><option value="">–</option><option value="0/0 – Asymptomatický">0/0 – Asymptomatický</option><option value="I/1 – Lehká klaudikace">I/1 – Lehká klaudikace</option><option value="I/2 – Střední klaudikace">I/2 – Střední klaudikace</option><option value="I/3 – Těžká klaudikace">I/3 – Těžká klaudikace</option><option value="II/4 – Ischemická klidová bolest">II/4 – Ischemická klidová bolest</option><option value="II/5 – Menší tkáňová strata">II/5 – Menší tkáňová strata</option><option value="III/6 – Větší tkáňová strata">III/6 – Větší tkáňová strata</option></select>
@@ -618,6 +624,15 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
       <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="fu_reint"> Reintervencia</label></div>
       <div class="f"><label class="ck" style="margin-bottom:5px"><input type="checkbox" id="fu_amput"> Amputace</label><select id="fu_amput_typ"><option value="">– typ –</option><option>velká</option><option>malá</option></select></div>
     </div>
+    <div class="f">
+      <label class="ck" style="font-weight:700"><input type="checkbox" id="fu_exitus" onchange="toggleFuExitus()"> ✝ Exitus</label>
+      <div id="fu_exitus_box" style="display:none;margin-top:6px;padding:8px 10px;background:#fef2f2;border:1px solid #fecaca;border-radius:7px">
+        <div class="row r2" style="margin-bottom:0">
+          <div class="f" style="margin-bottom:0"><label>Datum úmrtí</label><input type="date" id="fu_exitus_datum"></div>
+          <div class="f" style="margin-bottom:0"><label>Souvislost s výkonem</label><select id="fu_exitus_suvis"><option value="">–</option><option value="vykon">související s výkonem</option><option value="nesuvisiaci">nesouvisející s výkonem</option><option value="nezname">neznámé</option></select></div>
+        </div>
+      </div>
+    </div>
     <div class="f"><label>Poznámka</label><textarea id="fu_pozn" rows="3" placeholder="Volný text..."></textarea></div>
   </div>
   <button class="btn bw" style="width:100%;padding:12px" onclick="saveFUToSheets()">📊 Uložit follow-up</button>
@@ -724,7 +739,7 @@ function calcEGFR(){
   const vek=parseInt(g('vek'));
   const pohlavie=g('pohl');
   const el=document.getElementById('chri_egfr_result');
-  if(!kreaRaw||!vek||!pohlavie){if(el)el.textContent='';return'';}
+  if(!kreaRaw||!vek||!pohlavie){if(el)el.textContent='';window._egfrVal=null;return'';}
   const female=pohlavie==='Z';
   const A=female?0.7:0.9;
   const S=female?1.012:1.0;
@@ -734,6 +749,7 @@ function calcEGFR(){
   else        B=krea<=0.9?-0.302:-1.200;
   const egfr=142*Math.pow(ratio,B)*Math.pow(0.9938,vek)*S;
   const val=Math.round(egfr*10)/10;
+  window._egfrVal=val;
   let stage;
   if(val>=90)      stage='G1 (≥90)';
   else if(val>=60) stage='G2 (60–89)';
@@ -874,14 +890,15 @@ function addItem(pfx,kind,silent){
   const cont=document.getElementById(pfx+'_list');
   const div=document.createElement('div');div.className='dyn-row';div.dataset.idx=idx;
   const tpRow=`<div class="row r2" style="margin-bottom:6px"><div class="f"><label>Tepna</label><select id="${id}_tp" onchange="gen()">${vsel()}</select></div><div class="f"><label>Segment</label><select id="${id}_sg" onchange="gen()">${sgsel()}</select></div></div>`;
+  const lezRow=`<div class="row r3" style="margin-top:6px;margin-bottom:0"><div class="f" style="margin-bottom:0"><label style="font-size:10px">Délka léze (mm)</label><input type="number" id="${id}_lmm" placeholder="120" oninput="gen()" style="padding:3px 7px;font-size:11.5px"></div><div class="f" style="margin-bottom:0"><label style="font-size:10px">Kalcifikace</label><select id="${id}_lkalc" onchange="gen()" style="padding:3px 7px;font-size:11.5px"><option value="">–</option><option>žádná</option><option>střední</option><option>těžká</option></select></div><div class="f" style="margin-bottom:0;display:flex;align-items:flex-end"><label class="ck" style="font-size:11px;color:#5a6a8a"><input type="checkbox" id="${id}_lcto" onchange="gen()"> CTO (chronický uzávěr)</label></div></div>`;
   if(kind==='stent'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
       <div class="row r2" style="margin-bottom:6px"><div class="f"><label>Typ</label><select id="${id}_t" onchange="gen()"><option value="">–</option>${STENT_TYP.map(o=>`<option>${o}</option>`).join('')}</select></div><div class="f"><label>Název</label><select id="${id}_n" onchange="chkVl('${id}_n');gen()">${selOpts(OPTS.stent)}</select><input type="text" id="${id}_n_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px"></div></div>
-      <div class="row r2"><div class="f"><label>Průměr (mm)</label><input type="number" id="${id}_p" placeholder="7" oninput="gen()"></div><div class="f"><label>Délka (mm)</label><input type="number" id="${id}_d" placeholder="100" oninput="gen()"></div></div>`;
+      <div class="row r2"><div class="f"><label>Průměr (mm)</label><input type="number" id="${id}_p" placeholder="7" oninput="gen()"></div><div class="f"><label>Délka (mm)</label><input type="number" id="${id}_d" placeholder="100" oninput="gen()"></div></div>${lezRow}`;
   } else if(kind==='balon_ivl'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
       <div class="row r2" style="margin-bottom:6px"><div class="f"><label>Katétr</label><select id="${id}_s" onchange="chkVl('${id}_s');gen()">${selOpts(OPTS.balon_ivl)}</select><input type="text" id="${id}_s_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Počet pulzů</label><input type="number" id="${id}_u" placeholder="60" oninput="gen()"></div></div>
-      <div class="row r2"><div class="f"><label>Průměr × Délka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="60" oninput="gen()"></div></div><div class="f"></div></div>`;
+      <div class="row r2"><div class="f"><label>Průměr × Délka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="60" oninput="gen()"></div></div><div class="f"></div></div>${lezRow}`;
   } else if(kind==='reentry'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>
       <div class="row r2" style="margin-bottom:6px">
@@ -901,7 +918,7 @@ function addItem(pfx,kind,silent){
     const lbl=kind==='balon_vprep'?'Device':'Balón';
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
       <div class="row r2" style="margin-bottom:6px"><div class="f"><label>${lbl}</label><select id="${id}_s" onchange="chkVl('${id}_s');gen()">${selOpts(opts)}</select><input type="text" id="${id}_s_c" placeholder="Vlastní..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Průměr × Délka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="80" oninput="gen()"></div></div></div>
-      <div class="row r2"><div class="f"><label>Inflace (min)</label><input type="number" id="${id}_i" step="0.5" placeholder="3" oninput="gen()"></div><div class="f"><label>Tlak (ATM)</label><input type="number" id="${id}_a" placeholder="8" oninput="gen()"></div></div>
+      <div class="row r2"><div class="f"><label>Inflace (min)</label><input type="number" id="${id}_i" step="0.5" placeholder="3" oninput="gen()"></div><div class="f"><label>Tlak (ATM)</label><input type="number" id="${id}_a" placeholder="8" oninput="gen()"></div></div>${lezRow}
       <div id="${id}_locs"></div>
       <button type="button" onclick="addLoc('${id}')" style="margin-top:6px;font-size:11px;padding:3px 9px;border:1px dashed #93c5fd;border-radius:6px;background:#eff6ff;color:#1e40af;cursor:pointer">＋ stejný balon v další lokalitě</button>`;
   }
@@ -1122,6 +1139,9 @@ function collectFullData(){
         const el=extraLocs(id).map(l=>({tepna:l.tp,segment:l.sg}));
         if(el.length)item.extra_locs=el;
       }
+      item.lezia_mm=g(id+'_lmm');
+      item.kalcif=g(id+'_lkalc');
+      item.cto=!!document.getElementById(id+'_lcto')?.checked;
       interventionDetail.push(item);
     });
   }
@@ -1232,12 +1252,18 @@ function collectFullData(){
   const artVal=g('access_art');
   const art=artVal==='vlastny'?(g('access_art_c')||''):artVal;
   const y=evkYear();
+  // eGFR numeric (tiše) – jen když je CKD komorbidita zaškrtnutá a výpočet možný
+  let egfrNum=null;
+  if(document.getElementById('k_chri')?.checked){calcEGFR();if(typeof window._egfrVal==='number')egfrNum=window._egfrVal;}
   return{
     vykon_id:'EVK-'+y+'-'+(g('id_suffix')||'???'),
     datum:g('datum'),
     operator:g('operator'),
     vek:g('vek')?parseInt(g('vek')):null,
     pohlavie:g('pohl')==='M'?'Muž':'Žena',
+    rodne_cislo:g('rodne_cislo').trim()||null,
+    egfr:egfrNum,
+    abi_pred:g('abi_pred')||null,
     rutherford:g('ruth'),
     diag:g('diag'),
     komorbidity:getKomor().join(', '),
@@ -1332,6 +1358,7 @@ async function saveFUToSheets(){
   if(!g('fu_id')){msg('fu_msg','⚠️ Vyplňte ID výkonu','#b45309');return;}
   msg('fu_msg','⏳ Ukládám...','#3b82f6');
   const amput=document.getElementById('fu_amput').checked?(g('fu_amput_typ')||'áno'):'nie';
+  const exitusOn=document.getElementById('fu_exitus').checked;
   const fuData={
     vykon_id:g('fu_id'),
     datum_kontroly:g('fu_datum'),
@@ -1341,7 +1368,10 @@ async function saveFUToSheets(){
     patencia:g('fu_pat'),
     reintervencia:document.getElementById('fu_reint').checked,
     amputacia:amput,
-    poznamka:g('fu_pozn')
+    poznamka:g('fu_pozn'),
+    exitus:exitusOn,
+    exitus_datum:exitusOn?(g('fu_exitus_datum')||isoLocal(new Date())):null,
+    exitus_suvis:exitusOn?(g('fu_exitus_suvis')||null):null
   };
   const tasks=[];
   tasks.push(saveToSupabase('cz_evk_followup',fuData).then(r=>r.ok?'sb_ok':'sb_err').catch(()=>'sb_err'));
@@ -1350,9 +1380,19 @@ async function saveFUToSheets(){
     tasks.push(fetch(url,{method:'POST',body:JSON.stringify(data)}).then(r=>r.json()).then(j=>j.status==='ok'?'gs_ok':'gs_err').catch(()=>'gs_err'));
   }
   const results=await Promise.all(tasks);
-  if(results[0]==='sb_ok')msg('fu_msg','✅ Follow-up uložen!','#1d6f42');
+  if(results[0]==='sb_ok'){msg('fu_msg','✅ Follow-up uložen!','#1d6f42');resetFuExitus();}
   else if(results.includes('gs_ok'))msg('fu_msg','⚠️ Uloženo jen do Sheets – zápis do databáze selhal','#b45309');
   else msg('fu_msg','❌ Chyba uložení','#dc2626');
+}
+function toggleFuExitus(){
+  const b=document.getElementById('fu_exitus_box');
+  if(b)b.style.display=document.getElementById('fu_exitus').checked?'block':'none';
+}
+function resetFuExitus(){
+  const c=document.getElementById('fu_exitus');if(c)c.checked=false;
+  const d=document.getElementById('fu_exitus_datum');if(d)d.value='';
+  const s=document.getElementById('fu_exitus_suvis');if(s)s.value='';
+  toggleFuExitus();
 }
 
 function gen(){
@@ -1772,6 +1812,8 @@ function loadEditRecord(){
     sv('operator',record.operator);
     sv('vek',record.vek);
     if(record.pohlavie){const el=document.getElementById('pohl');if(el)el.value=record.pohlavie==='Muž'?'M':'Z';}
+    sv('rodne_cislo',record.rodne_cislo);
+    sv('abi_pred',record.abi_pred);
     sv('ruth',record.rutherford);
     sv('diag',record.diag||record.diagnoza);
 
@@ -2005,6 +2047,9 @@ function restoreInterventionRows(record){
       addItem(pfx,kind,true);
       const id=pfx+'_'+(cnts[pfx]-1);
       sv(id+'_tp',it.tepna);sv(id+'_sg',it.segment);
+      // léze (mm / kalcifikace / CTO) – staré záznamy tyto klíče nemají
+      sv(id+'_lmm',it.lezia_mm);sv(id+'_lkalc',it.kalcif);
+      if(it.cto){const cc=document.getElementById(id+'_lcto');if(cc)cc.checked=true;}
       if(kind==='stent'){
         sv(id+'_t',it.stent_typ);setSel(id+'_n',it.stent_nazov);
         sv(id+'_p',dia(it));sv(id+'_d',it.dlzka);
