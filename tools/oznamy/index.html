@@ -56,12 +56,20 @@ details.exp-box summary{font-size:13px;font-weight:700;color:#6b7280;cursor:poin
 </head>
 <body>
 <script src="/tools/auth.js"></script>
+<script src="/tools/gcal-config.js"></script>
 <script>checkAuth();</script>
 
 <h1>📢 Oznamy oddelenia</h1>
 <p class="page-sub">Dôležité informácie pre celý tím — vidia ich všetci prihlásení.</p>
 
 <div class="wrap">
+  <!-- Zdieľaný Google kalendár oddelenia (podujatia, dovolenky) – adresa v /tools/gcal-config.js -->
+  <div id="gcal_card" style="display:none;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px;overflow:hidden">
+    <details open>
+      <summary style="padding:12px 16px;font-size:14px;font-weight:700;color:#1a2745;cursor:pointer;user-select:none">📆 Kalendár oddelenia — podujatia, dovolenky <a href="/tools/kalendar/" style="font-size:12px;font-weight:600;color:#1e40af;margin-left:8px" onclick="event.stopPropagation()">celý kalendár →</a></summary>
+      <iframe id="gcal_frame" style="width:100%;height:420px;border:0" loading="lazy"></iframe>
+    </details>
+  </div>
   <div class="add-card">
     <input type="text" id="n_nadpis" placeholder="Nadpis oznamu (napr. Zajtra seminár o 7:30)" maxlength="120">
     <textarea id="n_text" placeholder="Text oznamu…"></textarea>
@@ -305,6 +313,23 @@ setInterval(()=>{
   if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')&&a.value.trim())return;
   load();
 },60000);
+
+</script>
+<script>
+// Zdieľaný Google kalendár (podujatia/dovolenky): adresa v /tools/gcal-config.js,
+// prípadne dočasná per-device adresa z /tools/kalendar/ (localStorage cievny_gcal).
+(function(){
+  let src=window.GCAL_EMBED||'';
+  if(!src){try{src=localStorage.getItem('cievny_gcal')||'';}catch(e){}}
+  if(!/^https:\/\/calendar\.google\.com\/calendar\/embed\?/.test(src))return;
+  try{
+    const u=new URL(src);
+    u.searchParams.set('mode','AGENDA');
+    if(!u.searchParams.get('ctz'))u.searchParams.set('ctz','Europe/Bratislava');
+    document.getElementById('gcal_frame').src=u.toString();
+    document.getElementById('gcal_card').style.display='';
+  }catch(e){}
+})();
 </script>
 </body>
 </html>

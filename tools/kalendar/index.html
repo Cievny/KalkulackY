@@ -49,7 +49,7 @@ h1{font-size:18px;font-weight:700;margin-bottom:4px;}
       <li>Vľavo pri „Ďalšie kalendáre“ kliknite <b>＋ → Vytvoriť nový kalendár</b> (napr. „OIRA – oddelenie“) a uložte.</li>
       <li>V <b>Nastaveniach kalendára</b> → „Povolenia prístupu k udalostiam“ zapnite <b>Sprístupniť verejne</b> (alebo nazdieľajte konkrétnym kolegom).</li>
       <li>V tých istých nastaveniach otvorte sekciu <b>Integrovať kalendár</b> a v časti <b>Vložiť kód</b> skopírujte z iframe kódu adresu <code>src</code> – vyzerá takto:<br><code>https://calendar.google.com/calendar/embed?src=ABC%40group.calendar.google.com&amp;ctz=Europe%2FBratislava</code></li>
-      <li>Túto adresu vložte do súboru <code>tools/kalendar/index.html</code> do konštanty <code>GCAL_EMBED</code> (na začiatku skriptu). Po nahraní zmeny sa kalendár zobrazí tu – <b>všetkým</b>.</li>
+      <li>Túto adresu vložte do súboru <code>tools/gcal-config.js</code> do konštanty <code>GCAL_EMBED</code>. Po nahraní zmeny sa kalendár zobrazí tu – <b>všetkým</b>.</li>
     </ol>
     <p><b>Dočasné zobrazenie:</b> adresu môžete vložiť aj sem – kalendár sa zobrazí hneď, ale len na tomto zariadení (uloží sa v prehliadači).</p>
     <div class="inrow">
@@ -74,26 +74,11 @@ h1{font-size:18px;font-weight:700;margin-bottom:4px;}
   <div class="privacy">🔒 Do Google kalendára nevkladajte mená ani rodné čísla pacientov – kalendár je mimo nemocničného prostredia.</div>
 </div>
 
+<script src="/tools/gcal-config.js"></script>
 <script>
-// ─────────────────────────────────────────────────────────────────────────────
-// GCAL_EMBED – adresa vloženého (embed) Google kalendára oddelenia.
-//
-// Kde ju získať:
-//   Google Kalendár → ⚙ Nastavenia → (vľavo vyberte kalendár oddelenia)
-//   → sekcia „Integrovať kalendár" → pole „Vložiť kód" (iframe)
-//   → skopírujte HODNOTU atribútu src z iframe kódu, napr.:
-//   https://calendar.google.com/calendar/embed?src=ABC%40group.calendar.google.com&ctz=Europe%2FBratislava
-//
-// POZOR: nie „Verejná adresa vo formáte iCal" (.ics) – potrebná je embed
-// adresa začínajúca https://calendar.google.com/calendar/embed?src=…
-// Kalendár musí byť verejný (Nastavenia → Sprístupniť verejne), inak sa
-// vo vloženom rámci nezobrazí.
-//
-// Po vložení adresy medzi úvodzovky nižšie sa kalendár zobrazí VŠETKÝM.
-// Kým je konštanta prázdna, používa sa prípadná dočasná adresa uložená
-// v tomto prehliadači (localStorage 'cievny_gcal').
-// ─────────────────────────────────────────────────────────────────────────────
-const GCAL_EMBED='';
+// GCAL_EMBED sa nastavuje CENTRÁLNE v /tools/gcal-config.js (jedno miesto
+// pre Oznamy aj túto stránku). Návod na získanie adresy je v tom súbore.
+const GCAL_EMBED=window.GCAL_EMBED||'';
 
 const LS_KEY='cievny_gcal';
 let MODE='MONTH';
