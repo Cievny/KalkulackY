@@ -54,7 +54,7 @@ jobs:
                   'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup',
                   'cz_cas_followup','cz_ideas']
           # tabuľky bez stĺpca id majú vlastné triedenie
-          ORDER={'povoleni_pouzivatelia':'email.asc','pozvanky':'created_at.asc'}
+          ORDER={'povoleni_pouzivatelia':'email.asc','pozvanky':'created_at.asc','kalendar_udalosti':'zaciatok.asc,id.asc'}
           errors=[]
           import urllib.error
           for t in TABLES:

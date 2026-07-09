@@ -54,10 +54,12 @@ const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const TABLES=['evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup','ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy','oznam_reakcie','objednavky_dni','objednavky','povoleni_pouzivatelia','pozvanky','zaujimavi_pacienti','cz_zaujimavi_pacienti','kalendar_udalosti',
               'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup','cz_cas_followup','cz_ideas'];
 
+// tabuľky bez created_at majú vlastné triedenie
+const ORDER={povoleni_pouzivatelia:'email.asc',kalendar_udalosti:'zaciatok.asc'};
 async function fetchAll(table){
   const rows=[];let offset=0;
   while(true){
-    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.asc&limit=1000&offset=${offset}`,{headers:sbHeaders()});
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=${ORDER[table]||'created_at.asc'}&limit=1000&offset=${offset}`,{headers:sbHeaders()});
     if(!r.ok)throw new Error(table+': HTTP '+r.status);
     const arr=await r.json();
     rows.push(...arr);
