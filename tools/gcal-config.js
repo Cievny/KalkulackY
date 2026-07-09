@@ -11,4 +11,4 @@
 //      https://calendar.google.com/calendar/embed?src=abc123%40group.calendar.google.com
 //   4. Vložiť ju nižšie medzi úvodzovky.
 // ─────────────────────────────────────────────────────────────────
-window.GCAL_EMBED = '';
+window.GCAL_EMBED = 'https://calendar.google.com/calendar/embed?src=1f0s2ee0kt15o2co2enh9ecjv8%40group.calendar.google.com&ctz=Europe%2FPrague';
