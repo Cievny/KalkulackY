@@ -115,38 +115,105 @@ function render(){
 }
 
 // NEVEREJNÝ kalendár: udalosti synchronizované GitHub Actions (tajná iCal
-// adresa v Secrets → tabuľka kalendar_udalosti). Ak existujú, zobrazia sa
-// natívne namiesto setup návodu – embed vôbec netreba.
+// adresa v Secrets → tabuľka kalendar_udalosti). Ak existujú, zobrazí sa
+// natívny MESAČNÝ náhľad (mriežka) + prepínateľný zoznam.
+let EVENTS=null, NAT_VIEW='M', NAT_Y=0, NAT_M=0; // NAT_M: 0-11
+const P2=n=>String(n).padStart(2,'0');
+const ESC=t=>String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const MESIACE=['Január','Február','Marec','Apríl','Máj','Jún','Júl','August','September','Október','November','December'];
+
 async function nacitajUdalosti(){
   try{
-    const dnes=new Date(),p=n=>String(n).padStart(2,'0');
-    const od=dnes.getFullYear()+'-'+p(dnes.getMonth()+1)+'-'+p(dnes.getDate());
-    const r=await fetch('https://ncqtiicfqhaturjlfxcj.supabase.co/rest/v1/kalendar_udalosti?zaciatok=gte.'+od+'&order=zaciatok.asc&limit=200',{headers:sbHeaders()});
+    const r=await fetch('https://ncqtiicfqhaturjlfxcj.supabase.co/rest/v1/kalendar_udalosti?order=zaciatok.asc&limit=1000',{headers:sbHeaders()});
     if(!r.ok)return;
-    const rows=await r.json();
-    if(!rows.length)return;
+    EVENTS=await r.json();
+    if(!EVENTS.length)return;
     document.getElementById('setup').style.display='none';
-    const esc=t=>String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const MES=['január','február','marec','apríl','máj','jún','júl','august','september','október','november','december'];
-    const fmtD=s=>{const [y,m,d]=s.slice(0,10).split('-');return parseInt(d)+'. '+parseInt(m)+'.';};
-    let html='<div class="card"><h2 style="font-size:15px;font-weight:700;margin-bottom:4px">📆 Udalosti oddelenia</h2><p style="font-size:11.5px;color:#9ca3af;margin-bottom:10px">synchronizované z neverejného Google kalendára (~2 h interval)</p>';
-    let mesKey='';
-    rows.forEach(u=>{
-      const mk=u.zaciatok.slice(0,7);
-      if(mk!==mesKey){mesKey=mk;html+='<div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#6b7280;letter-spacing:.5px;margin:12px 0 4px">'+MES[parseInt(mk.slice(5,7))-1]+' '+mk.slice(0,4)+'</div>';}
-      const cas=u.cely_den?'':' '+(u.zaciatok.slice(11,16)||'');
-      let datum=fmtD(u.zaciatok)+cas;
-      if(u.cely_den&&u.koniec&&u.koniec.slice(0,10)>u.zaciatok.slice(0,10)){
-        const kon=new Date(u.koniec.slice(0,10));kon.setDate(kon.getDate()-1);
-        const ks=kon.getFullYear()+'-'+p(kon.getMonth()+1)+'-'+p(kon.getDate());
-        if(ks>u.zaciatok.slice(0,10))datum+=' – '+fmtD(ks);
-      }
-      html+='<div style="display:flex;gap:12px;padding:7px 0;border-bottom:1px solid #eef1f6;font-size:13.5px"><span style="min-width:120px;font-weight:700;color:#1e40af;white-space:nowrap">'+datum+'</span><span>'+esc(u.nazov||'')+(u.popis?'<div style="font-size:11.5px;color:#6b7280">'+esc(u.popis)+'</div>':'')+'</span></div>';
-    });
-    html+='</div>';
-    const box=document.createElement('div');box.innerHTML=html;
-    document.getElementById('setup').parentNode.insertBefore(box,document.getElementById('setup'));
+    const dnes=new Date();NAT_Y=dnes.getFullYear();NAT_M=dnes.getMonth();
+    let host=document.getElementById('nat_cal');
+    if(!host){host=document.createElement('div');host.id='nat_cal';
+      document.getElementById('setup').parentNode.insertBefore(host,document.getElementById('setup'));}
+    renderNat();
   }catch(e){}
+}
+
+// dni, ktoré udalosť pokrýva (celodenná viacdenná: DTEND je exkluzívny)
+function dniUdalosti(u){
+  const z=u.zaciatok.slice(0,10);
+  if(!u.cely_den||!u.koniec||u.koniec.slice(0,10)<=z)return [z];
+  const out=[];const d=new Date(z);const kon=new Date(u.koniec.slice(0,10));
+  while(d<kon){out.push(d.getFullYear()+'-'+P2(d.getMonth()+1)+'-'+P2(d.getDate()));d.setDate(d.getDate()+1);}
+  return out;
+}
+
+function posunMesiac(dir){NAT_M+=dir;if(NAT_M<0){NAT_M=11;NAT_Y--;}if(NAT_M>11){NAT_M=0;NAT_Y++;}renderNat();}
+function natDnes(){const d=new Date();NAT_Y=d.getFullYear();NAT_M=d.getMonth();renderNat();}
+function natView(v){NAT_VIEW=v;renderNat();}
+
+function renderNat(){
+  const host=document.getElementById('nat_cal');if(!host||!EVENTS)return;
+  let html='<div class="card">';
+  html+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
+  html+='<h2 style="font-size:15px;font-weight:700;flex:1;min-width:150px">📆 '+MESIACE[NAT_M]+' '+NAT_Y+'</h2>';
+  html+='<button class="btn btn-sec" onclick="posunMesiac(-1)">◂</button>';
+  html+='<button class="btn btn-sec" onclick="natDnes()">Dnes</button>';
+  html+='<button class="btn btn-sec" onclick="posunMesiac(1)">▸</button>';
+  html+='<span style="width:10px"></span>';
+  html+='<button class="btn '+(NAT_VIEW==='M'?'btn-primary':'btn-sec')+'" onclick="natView(\'M\')">Mesiac</button>';
+  html+='<button class="btn '+(NAT_VIEW==='Z'?'btn-primary':'btn-sec')+'" onclick="natView(\'Z\')">Zoznam</button>';
+  html+='</div>';
+  if(NAT_VIEW==='M')html+=natMesiac();else html+=natZoznam();
+  html+='<p style="font-size:11px;color:#9ca3af;margin-top:10px">synchronizované z neverejného Google kalendára (~2 h interval)</p></div>';
+  host.innerHTML=html;
+}
+
+function natMesiac(){
+  // mapa deň → udalosti
+  const mapa={};
+  EVENTS.forEach(u=>dniUdalosti(u).forEach(d=>{(mapa[d]=mapa[d]||[]).push(u);}));
+  const prvy=new Date(NAT_Y,NAT_M,1);
+  const start=new Date(prvy);start.setDate(1-((prvy.getDay()+6)%7)); // pondelok pred 1.
+  const dnesK=(()=>{const d=new Date();return d.getFullYear()+'-'+P2(d.getMonth()+1)+'-'+P2(d.getDate());})();
+  let html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">';
+  ['Po','Ut','St','Št','Pi','So','Ne'].forEach(d=>html+='<div style="font-size:10.5px;font-weight:800;text-transform:uppercase;color:#6b7280;padding:0 4px">'+d+'</div>');
+  const cur=new Date(start);
+  for(let i=0;i<42;i++){
+    const k=cur.getFullYear()+'-'+P2(cur.getMonth()+1)+'-'+P2(cur.getDate());
+    const inM=cur.getMonth()===NAT_M;
+    const evs=mapa[k]||[];
+    html+='<div style="background:'+(inM?'#fff':'transparent')+';border-radius:9px;min-height:86px;padding:6px 7px;'
+      +(inM?'box-shadow:0 1px 4px rgba(0,0,0,.06);':'opacity:.35;')
+      +(k===dnesK?'outline:2px solid #3b82f6;':'')+'">';
+    html+='<div style="font-size:12px;font-weight:800;color:#1a2745;margin-bottom:3px">'+cur.getDate()+'</div>';
+    evs.slice(0,3).forEach(u=>{
+      const cas=(!u.cely_den&&u.zaciatok.length>10)?u.zaciatok.slice(11,16)+' ':'';
+      html+='<div title="'+ESC(u.nazov||'')+(u.popis?' – '+ESC(u.popis):'')+'" style="font-size:10.5px;line-height:1.35;background:#eff6ff;color:#1e40af;border-radius:5px;padding:1px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cas+ESC(u.nazov||'')+'</div>';
+    });
+    if(evs.length>3)html+='<div style="font-size:10px;color:#9ca3af">+ '+(evs.length-3)+' ďalšie</div>';
+    html+='</div>';
+    cur.setDate(cur.getDate()+1);
+    if(i>=34&&cur.getMonth()!==NAT_M&&((cur.getDay()+6)%7)===0)break;
+  }
+  html+='</div>';
+  return html;
+}
+
+function natZoznam(){
+  const dnes=new Date();const odK=dnes.getFullYear()+'-'+P2(dnes.getMonth()+1)+'-'+P2(dnes.getDate());
+  const rows=EVENTS.filter(u=>{const dni=dniUdalosti(u);return dni[dni.length-1]>=odK;});
+  if(!rows.length)return '<div style="color:#9ca3af;font-size:13px;padding:14px 0;text-align:center">Žiadne nadchádzajúce udalosti.</div>';
+  const fmtD=s=>{const [y,m,d]=s.slice(0,10).split('-');return parseInt(d)+'. '+parseInt(m)+'.';};
+  let html='',mesKey='';
+  rows.forEach(u=>{
+    const mk=u.zaciatok.slice(0,7);
+    if(mk!==mesKey){mesKey=mk;html+='<div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#6b7280;letter-spacing:.5px;margin:12px 0 4px">'+MESIACE[parseInt(mk.slice(5,7))-1]+' '+mk.slice(0,4)+'</div>';}
+    const cas=u.cely_den?'':' '+(u.zaciatok.slice(11,16)||'');
+    let datum=fmtD(u.zaciatok)+cas;
+    const dni=dniUdalosti(u);
+    if(dni.length>1)datum+=' – '+fmtD(dni[dni.length-1]);
+    html+='<div style="display:flex;gap:12px;padding:7px 0;border-bottom:1px solid #eef1f6;font-size:13.5px"><span style="min-width:120px;font-weight:700;color:#1e40af;white-space:nowrap">'+datum+'</span><span>'+ESC(u.nazov||'')+(u.popis?'<div style="font-size:11.5px;color:#6b7280">'+ESC(u.popis)+'</div>':'')+'</span></div>';
+  });
+  return html;
 }
 
 function showTemp(){
