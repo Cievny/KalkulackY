@@ -35,7 +35,11 @@ jobs:
           H={'apikey':SB_ANON,'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}
 
           # 2) stiahni a rozbaľ iCal (unfold: pokračovacie riadky začínajú medzerou/tabom)
-          ics=urllib.request.urlopen(os.environ['GCAL_ICS_URL']).read().decode('utf-8','replace')
+          # tolerantné očistenie adresy: medzery/úvodzovky, webcal://, chýbajúce https://
+          ICS_URL=os.environ['GCAL_ICS_URL'].strip().strip('"\'')
+          if ICS_URL.startswith('webcal://'):ICS_URL='https://'+ICS_URL[9:]
+          if not ICS_URL.startswith('http'):ICS_URL='https://'+ICS_URL.lstrip('/')
+          ics=urllib.request.urlopen(ICS_URL).read().decode('utf-8','replace')
           lines=[];
           for ln in ics.replace('\r\n','\n').split('\n'):
               if ln[:1] in (' ','\t') and lines: lines[-1]+=ln[1:]
