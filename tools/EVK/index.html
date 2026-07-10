@@ -1379,7 +1379,13 @@ async function saveToSheets(){
       else msg('cmsg',window._editRecordId?'✅ Záznam aktualizovaný!':'✅ Uložené do štatistík!','#1d6f42');}
       propojProgram(fullData.vykon_id);
     }else{
-      msg('cmsg','❌ Chyba uloženia ('+sb+') – skontrolujte Supabase tabuľky','#dc2626');
+      if(sb==='sb_err:403'){
+        const _ue=(window.sbUserEmail&&sbUserEmail())||'';
+        msg('cmsg',_ue?'❌ Chyba uloženia (403) – účet '+_ue+' nemá povolenie na zápis. Admin ho musí pridať medzi povolených používateľov.'
+                      :'❌ Chyba uloženia (403) – relácia vypršala, odhláste sa a prihláste znova.','#dc2626');
+      }else{
+        msg('cmsg','❌ Chyba uloženia ('+sb+') – skontrolujte Supabase tabuľky','#dc2626');
+      }
     }
   }finally{
     if(btn)btn.disabled=false;

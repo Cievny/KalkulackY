@@ -1366,7 +1366,13 @@ async function saveToSheets(){
       if(_ch.length)msg('cmsg',(window._editRecordId?'✅ Aktualizováno':'✅ Uloženo')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');
       else msg('cmsg',window._editRecordId?'✅ Záznam aktualizován!':'✅ Uloženo do statistik!','#1d6f42');}
     }else{
-      msg('cmsg','❌ Chyba uložení ('+sb+') – zkontrolujte Supabase tabulky','#dc2626');
+      if(sb==='sb_err:403'){
+        const _ue=(window.sbUserEmail&&sbUserEmail())||'';
+        msg('cmsg',_ue?'❌ Chyba uložení (403) – účet '+_ue+' nemá povolení k zápisu. Admin ho musí přidat mezi povolené uživatele.'
+                      :'❌ Chyba uložení (403) – relace vypršela, odhlaste se a přihlaste znovu.','#dc2626');
+      }else{
+        msg('cmsg','❌ Chyba uložení ('+sb+') – zkontrolujte Supabase tabulky','#dc2626');
+      }
     }
   }finally{
     if(btn)btn.disabled=false;

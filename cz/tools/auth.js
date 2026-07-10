@@ -43,6 +43,39 @@
     }catch(e){return false;}
   }
 
+  window.sbRefresh=refreshToken;
+
+  // Globální samooprava (stejná jako v SK verzi): 401 po expiraci tokenu → obnovit
+  // token a zopakovat dotaz; mrtvá relace nebo anonymní 403 → přesměrovat na login.
+  (function(){
+    const _fetch=window.fetch.bind(window);
+    let refreshing=null;
+    function deadSession(){
+      sessionStorage.removeItem(KEY);sessionStorage.removeItem(TK);
+      sessionStorage.removeItem(RK);sessionStorage.removeItem(XK);
+      sessionStorage.setItem('cievny_return_cz',location.pathname+location.search);
+      location.replace('/cz/tools/login/');
+    }
+    window.fetch=async function(input,init){
+      const url=typeof input==='string'?input:(input&&input.url)||'';
+      const r=await _fetch(input,init);
+      if(url.indexOf(SB_URL+'/rest/')===0 && init && init.headers){
+        const auth=init.headers['Authorization']||init.headers.Authorization||'';
+        if(r.status===401 && auth.indexOf('Bearer ')===0 && auth!=='Bearer '+SB_ANON){
+          refreshing=refreshing||refreshToken();
+          const ok=await refreshing; refreshing=null;
+          if(ok)return _fetch(input,{...init,headers:{...init.headers,'Authorization':'Bearer '+window.sbToken()}});
+          deadSession(); // refresh selhal
+        }
+        if(r.status===403 && auth==='Bearer '+SB_ANON &&
+           sessionStorage.getItem(KEY)==='1' && !sessionStorage.getItem(TK)){
+          deadSession(); // relace bez tokenu – dotazy odcházejí anonymně
+        }
+      }
+      return r;
+    };
+  })();
+
   function scheduleRefresh(){
     setInterval(()=>{
       const exp=parseInt(sessionStorage.getItem(XK)||'0');
@@ -51,7 +84,10 @@
   }
 
   window.checkAuth=function(){
-    if(sessionStorage.getItem(KEY)!=='1'){
+    // relace bez Supabase tokenu (stará vlajka z doby před emailovým loginem) by četla
+    // jako anonym (prázdné seznamy) a každé uložení by padalo na RLS 403 → vyžaduj token
+    if(sessionStorage.getItem(KEY)!=='1'||!sessionStorage.getItem(TK)){
+      sessionStorage.removeItem(KEY);
       sessionStorage.setItem('cievny_return_cz',location.pathname+location.search);
       location.replace('/cz/tools/login/');
       return;

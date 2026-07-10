@@ -81,24 +81,33 @@
   (function(){
     const _fetch=window.fetch.bind(window);
     let refreshing=null;
+    function deadSession(){
+      // prihlásenie je mŕtve → pošli používateľa na login,
+      // nech nevidí mätúce chybové hlášky v každom nástroji
+      sessionStorage.removeItem(KEY);sessionStorage.removeItem(TK);
+      sessionStorage.removeItem(RK);sessionStorage.removeItem(XK);
+      if(localStorage.getItem('cievny_tv_kiosk')==='1'){location.replace('/tools/tv/');}
+      else{
+        sessionStorage.setItem('cievny_return',location.pathname+location.search);
+        location.replace('/tools/login/');
+      }
+    }
     window.fetch=async function(input,init){
       const url=typeof input==='string'?input:(input&&input.url)||'';
       const r=await _fetch(input,init);
-      if(r.status===401 && url.indexOf(SB_URL+'/rest/')===0 && init && init.headers){
+      if(url.indexOf(SB_URL+'/rest/')===0 && init && init.headers){
         const auth=init.headers['Authorization']||init.headers.Authorization||'';
-        if(auth.indexOf('Bearer ')===0 && auth!=='Bearer '+SB_ANON){
+        if(r.status===401 && auth.indexOf('Bearer ')===0 && auth!=='Bearer '+SB_ANON){
           refreshing=refreshing||refreshToken();
           const ok=await refreshing; refreshing=null;
           if(ok)return _fetch(input,{...init,headers:{...init.headers,'Authorization':'Bearer '+window.sbToken()}});
-          // prihlásenie je mŕtve (refresh zlyhal) → pošli používateľa na login,
-          // nech nevidí mätúce "401" hlášky v každom nástroji
-          sessionStorage.removeItem(KEY);sessionStorage.removeItem(TK);
-          sessionStorage.removeItem(RK);sessionStorage.removeItem(XK);
-          if(localStorage.getItem('cievny_tv_kiosk')==='1'){location.replace('/tools/tv/');}
-          else{
-            sessionStorage.setItem('cievny_return',location.pathname+location.search);
-            location.replace('/tools/login/');
-          }
+          deadSession(); // refresh zlyhal
+        }
+        // dotaz odišiel anonymne (relácia bez tokenu, napr. karta otvorená spred
+        // emailového loginu): RLS zamietne zápis s 403 – jediná náprava je nový login
+        if(r.status===403 && auth==='Bearer '+SB_ANON &&
+           sessionStorage.getItem(KEY)==='1' && !sessionStorage.getItem(TK)){
+          deadSession();
         }
       }
       return r;
@@ -113,7 +122,10 @@
   }
 
   window.checkAuth=function(){
-    if(sessionStorage.getItem(KEY)!=='1'){
+    // relácia bez Supabase tokenu (stará vlajka spred emailového loginu) by čítala ako
+    // anonym (prázdne zoznamy) a každé uloženie by padalo na RLS 403 → vyžaduj token
+    if(sessionStorage.getItem(KEY)!=='1'||!sessionStorage.getItem(TK)){
+      sessionStorage.removeItem(KEY);
       // TV kiosk (bez klávesnice) → obnov cez TV bránu s uloženým kódom, nie cez ľudský login
       const tvParam=new URLSearchParams(location.search).get('tv')==='1';
       if(localStorage.getItem('cievny_tv_kiosk')==='1'||tvParam){location.replace('/tools/tv/');return;}
