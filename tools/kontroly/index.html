@@ -94,7 +94,7 @@ const VYKONY=[
   {typ:'pevar',table:'pevar_vykony',fu:'pevar_followup'},
 ];
 const TYP_LABEL={evk:'EVK',cas:'CAS',pevar:'PEVAR',aorta:'Aorta'};
-const BODY={'1M':1,'6M':6,'12M':12};            // očakávané kontroly po výkone
+const BODY={'1M':1,'3M':3,'6M':6,'12M':12};     // očakávané kontroly po výkone
 const EXPECTED=['1M','6M','12M'];
 const STAV_LABEL={done:'✅ splnená',wait:'🟡 čaká',late:'🔴 mešká',exitus:'✝ exitus'};
 const STAV_CLS={done:'st-done',wait:'st-wait',late:'st-late',exitus:'st-exitus'};
@@ -157,7 +157,16 @@ async function loadAll(){
       const demo=[v.vek?v.vek+' r.':null,v.pohlavie||null].filter(Boolean).join(', ');
       const pacient=v.vykon_id+(demo?' ('+demo+')':'');
       const deceased=v.vykon_id in exitusMap;
-      EXPECTED.forEach(bod=>{
+      // konzervatívny CAS pacient nemá stent – očakáva sa len duplex USG kontrola
+      // podľa odporúčaného intervalu (konz_detail.duplex_mesiace), nie 1M/6M/12M
+      let expected=EXPECTED;
+      if(t.typ==='cas'&&v.postup==='konzervativny'){
+        let m=6,chce=true;
+        try{const kd=v.konz_detail?JSON.parse(v.konz_detail):null;
+            if(kd){chce=kd.duplex!==false;m=parseInt(kd.duplex_mesiace)||6;}}catch(e){}
+        expected=chce?[(m in {1:1,3:1,6:1,12:1})?m+'M':'6M']:[];
+      }
+      expected.forEach(bod=>{
         const due=addMonths(datum,BODY[bod]);
         const key=v.vykon_id+'|'+bod;
         if(key in fuMap){

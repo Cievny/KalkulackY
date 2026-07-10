@@ -149,6 +149,11 @@ ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS nalez_tool     TEXT;
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS nalez_vykon_id TEXT;
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS sizing         TEXT;  -- JSON meraní z CT
 
+-- 3h) CAS – konzervatívny postup (dôvod + odporúčania ako JSON:
+--     {dovod, bmt, duplex, duplex_mesiace, neuro, cea})
+ALTER TABLE cas_vykony    ADD COLUMN IF NOT EXISTS konz_detail TEXT;
+ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS konz_detail TEXT;
+
 -- 4) Oznamy – komentáre + prihlasovanie (workshopy / akcie)
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_komentare     BOOLEAN DEFAULT false;
 ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS povolit_prihlasovanie BOOLEAN DEFAULT false;
