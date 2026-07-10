@@ -134,6 +134,10 @@ details summary:hover{color:#1737a0}
       <div class="chart-card"><h3>Stent (značka)</h3><div class="chart-wrap"><canvas id="ch-cas-stent"></canvas></div></div>
       <div class="chart-card"><h3>Emboloprotekcia</h3><div class="chart-wrap"><canvas id="ch-cas-embolo"></canvas></div></div>
     </div>
+    <div class="row2" id="cas-konz-row" style="display:none">
+      <div class="chart-card"><h3>Konzervativní postup – důvod</h3><div class="chart-wrap"><canvas id="ch-cas-konz"></canvas></div></div>
+      <div class="chart-card"><h3>Konzervativní postup – doporučení</h3><div class="chart-wrap"><canvas id="ch-cas-konz-odp"></canvas></div></div>
+    </div>
     <div class="row2">
       <div class="chart-card"><h3>Pohlaví</h3><div class="chart-wrap"><canvas id="ch-cas-sex"></canvas></div></div>
       <div class="chart-card"><h3>Výsledek</h3><div class="chart-wrap"><canvas id="ch-cas-vysl"></canvas></div></div>
@@ -551,6 +555,24 @@ async function loadCAS(){
   // Emboloprotekcia
   const embolo=sortedFreq(intervRows,'emboloprotekcia');mkChart('ch-cas-embolo','doughnut',embolo.map(x=>x[0]),embolo.map(x=>x[1]));
 
+  // Konzervativní postup – důvody a doporučení (z konz_detail JSON)
+  const konzRows=rows.filter(r=>r.postup==='konzervativny');
+  const konzRow=document.getElementById('cas-konz-row');
+  if(konzRow)konzRow.style.display=konzRows.length?'':'none';
+  if(konzRows.length){
+    const dov={},odp={'BMT':0,'duplex kontrola':0,'neurolog':0,'CEA konzultace':0};
+    konzRows.forEach(r=>{
+      let kd=null;try{kd=r.konz_detail?JSON.parse(r.konz_detail):null;}catch(e){}
+      const d=(kd&&kd.dovod)?kd.dovod:'(bez uvedeného důvodu)';
+      dov[d]=(dov[d]||0)+1;
+      if(kd){if(kd.bmt)odp['BMT']++;if(kd.duplex)odp['duplex kontrola']++;if(kd.neuro)odp['neurolog']++;if(kd.cea)odp['CEA konzultace']++;}
+    });
+    const de=Object.entries(dov).sort((a,b)=>b[1]-a[1]);
+    mkChart('ch-cas-konz','doughnut',de.map(x=>x[0]),de.map(x=>x[1]));
+    const oe=Object.entries(odp).filter(x=>x[1]>0);
+    if(oe.length)mkChart('ch-cas-konz-odp','bar',oe.map(x=>x[0]),oe.map(x=>x[1]),false);
+  }
+
   const sx=sortedFreq(rows,'pohlavie');mkChart('ch-cas-sex','doughnut',sx.map(x=>x[0]),sx.map(x=>x[1]));
   const vy=sortedFreq(rows,'vysledok');mkChart('ch-cas-vysl','doughnut',vy.map(x=>x[0]),vy.map(x=>x[1]));
 
@@ -705,6 +727,7 @@ cs:{
  kmPevar:'Kaplan–Meier – přežívání bez reintervence (PEVAR)',
  kmCopy:'📋 Kopírovat KM tabulku',
  kmNote:(n,ev,ex)=>`Zahrnuto ${n} výkonů s follow-up (${ev} událostí); ${ex} výkonů bez follow-up bylo vyloučeno.`,
+ exclKonz:n=>` · ${n} diagnostických/konzervativních DSA vyloučeno z kohorty (bez stentu)`,
  kmDefEvk:'Událost: restenóza nebo okluze při kontrole, reintervence nebo amputace.',
  kmDefCas:'Událost: restenóza ≥50 % (50–70 %, >70 %, okluze stentu) nebo reintervence.',
  kmDefPevar:'Událost: reintervence nebo endoleak typu Ia/Ib/III.',
@@ -766,6 +789,7 @@ en:{
  kmPevar:'Kaplan–Meier – freedom from reintervention (PEVAR)',
  kmCopy:'📋 Copy KM table',
  kmNote:(n,ev,ex)=>`${n} procedures with follow-up included (${ev} events); ${ex} procedures without follow-up were excluded.`,
+ exclKonz:n=>` · ${n} diagnostic/conservative angiographies excluded from the cohort (no stent)`,
  kmDefEvk:'Event: restenosis or occlusion at follow-up, reintervention, or amputation.',
  kmDefCas:'Event: restenosis ≥50 % (50–70 %, >70 %, stent occlusion) or reintervention.',
  kmDefPevar:'Event: reintervention or type Ia/Ib/III endoleak.',
@@ -1010,8 +1034,15 @@ function pubCohort(){
     if(doo&&(!d||d>doo))return false;
     if(riec&&((r.riecisko||'').trim()!==riec))return false;
     if(tvyk&&pubTypVykonu(r)!==tvyk)return false;
+    // diagnostická DSA / konzervativní postup není CAS – bez stentu by zkreslovala
+    // device tabulky i Kaplan-Meier restenózy
+    if(typ==='cas'&&(r.postup==='konzervativny'||r.postup==='dsa'))return false;
     return true;
   });
+}
+// počet CAS záznamů vyloučených z kohorty pro konzervativní/diagnostický postup
+function pubCasKonzCount(){
+  return (RAW.cas||[]).filter(r=>r.postup==='konzervativny'||r.postup==='dsa').length;
 }
 
 // --- Tabulka 1: základní charakteristiky ---
@@ -1578,6 +1609,7 @@ function renderPub(){
   let cohortTxt=rows.length?LT('cohort')(rows.length,pc.count,dates[0]||'–',dates[dates.length-1]||'–'):LT('cohort0');
   const tvykSel=typ==='pevar'?((pubEl('pub-tvyk')||{}).value||''):'';
   if(tvykSel)cohortTxt+=LT('cohortTyp')(tvykSel==='HYBRID'?LT('tvykHYBRID'):tvykSel); // kohortní řádek uvádí aktivní filtr typu výkonu
+  if(typ==='cas'){const nk=pubCasKonzCount();if(nk)cohortTxt+=LT('exclKonz')(nk);}
   pubEl('pub-cohort').textContent=cohortTxt;
   const cn=pubEl('pub-cohort-note');if(cn)cn.textContent=(rows.length&&pc.missing>0)?LT('rcNote')(pc.missing):'';
   pubMethods(typ,rows);

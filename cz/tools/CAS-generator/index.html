@@ -70,7 +70,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   </div>
   <div class="card"><div class="st">Nález</div>
     <div class="row r2">
-      <div class="f"><label>Restenóza (USG/CTA)</label><select id="fu_rest"><option value="">–</option><option>bez restenózy</option><option>&lt;50 %</option><option>50–70 %</option><option>&gt;70 %</option><option>okluze stentu</option></select></div>
+      <div class="f"><label id="fu_rest_lbl">Restenóza (USG/CTA)</label><select id="fu_rest"><option value="">–</option><option>bez restenózy</option><option>&lt;50 %</option><option>50–70 %</option><option>&gt;70 %</option><option>okluze stentu</option><option>progrese – indikace k revaskularizaci</option></select></div>
       <div class="f"><label>Neurologická příhoda</label><select id="fu_neuro"><option value="">–</option><option>bez příhody</option><option>TIA</option><option>minor CMP</option><option>major CMP</option></select></div>
     </div>
     <div class="f"><label class="ck"><input type="checkbox" id="fu_reint"> Reintervence</label><input type="text" id="fu_reint_detail" placeholder="jaká…"></div>
@@ -391,8 +391,10 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   </div>
   <div class="f"><label>ACI l.dx. – typ stenózy</label>
     <select id="dsa_aci_dx_typ" onchange="gen()">
-      <option value="kritická stenóza ústí">kritická stenóza ústí</option>
+      <option value="bez významné stenózy">bez významné stenózy (&lt;50 %)</option>
+      <option value="hraniční stenóza (50–69 %)">hraniční stenóza (50–69 %)</option>
       <option value="významná stenóza">významná stenóza</option>
+      <option value="kritická stenóza ústí" selected>kritická stenóza ústí</option>
       <option value="subokluze">subokluze</option>
       <option value="okluze">okluze</option>
     </select>
@@ -412,7 +414,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   </div>
   <div class="row r2" style="margin-top:4px">
     <div class="f"><label>Stupeň NASCET l.dx.</label>
-      <select id="nascet_stenoza_dx" onchange="gen()">
+      <select id="nascet_stenoza_dx" onchange="syncAciTyp('dx');gen()">
         <option value="">– nevyplněné –</option>
         <option value="<50%">&lt;50 % (bez závažné stenózy)</option>
         <option value="50-59%">50–59 %</option><option value="60-69%">60–69 %</option>
@@ -456,8 +458,10 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   </div>
   <div class="f"><label>ACI l.sin. – typ stenózy</label>
     <select id="dsa_aci_sin_typ" onchange="gen()">
-      <option value="kritická stenóza ústí">kritická stenóza ústí</option>
+      <option value="bez významné stenózy">bez významné stenózy (&lt;50 %)</option>
+      <option value="hraniční stenóza (50–69 %)">hraniční stenóza (50–69 %)</option>
       <option value="významná stenóza">významná stenóza</option>
+      <option value="kritická stenóza ústí" selected>kritická stenóza ústí</option>
       <option value="subokluze">subokluze</option>
       <option value="okluze">okluze</option>
     </select>
@@ -477,7 +481,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   </div>
   <div class="row r2" style="margin-top:4px">
     <div class="f"><label>Stupeň NASCET l.sin.</label>
-      <select id="nascet_stenoza_sin" onchange="gen()">
+      <select id="nascet_stenoza_sin" onchange="syncAciTyp('sin');gen()">
         <option value="">– nevyplněné –</option>
         <option value="<50%">&lt;50 % (bez závažné stenózy)</option>
         <option value="50-59%">50–59 %</option><option value="60-69%">60–69 %</option>
@@ -515,10 +519,37 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <div class="card">
 <div class="st">Postup</div>
 <div class="f">
-  <select id="postup_vykonu" onchange="tShow('intervencia_container',this.value==='intervencia');gen()">
+  <select id="postup_vykonu" onchange="postupZmena()">
     <option value="intervencia">Přistupujeme k intervenci</option>
     <option value="konzervativny">Konzervativní postup</option>
   </select>
+</div>
+<div id="postup_hint" style="display:none;background:#fefce8;border:1.5px solid #fde047;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;color:#854d0e"></div>
+
+<div id="konzerva_container" style="display:none">
+  <div class="f"><label>Důvod konzervativního postupu</label>
+    <select id="konz_dovod" onchange="gen()">
+      <option value="nevýznamná stenóza (&lt;50 %)">nevýznamná stenóza (&lt;50 %)</option>
+      <option value="hraniční asymptomatická stenóza – BMT postačuje">hraniční asymptomatická stenóza – BMT postačuje</option>
+      <option value="anatomie nevhodná pro endovaskulární řešení – zvážení CEA">anatomie nevhodná pro endovaskulární řešení – zvážení CEA</option>
+      <option value="vysoké periprocedurální riziko">vysoké periprocedurální riziko</option>
+      <option value="pacient odmítá intervenci">pacient odmítá intervenci</option>
+      <option value="vlastny">vlastní důvod…</option>
+    </select>
+    <input type="text" id="konz_dovod_c" placeholder="Vlastní důvod..." oninput="gen()" style="display:none;margin-top:5px">
+  </div>
+  <div class="f"><div class="lbl">Doporučení</div>
+    <div class="checks" style="flex-direction:column;align-items:flex-start;gap:6px">
+      <label class="ck"><input type="checkbox" id="konz_bmt" checked onchange="gen()"><span>Optimální medikamentózní léčba (BMT) – antiagregace, vysoce intenzivní statin, management rizikových faktorů</span></label>
+      <label class="ck" style="flex-wrap:wrap"><input type="checkbox" id="konz_duplex" checked onchange="gen()"><span>Duplexní USG kontrola karotid za</span>
+        <select id="konz_duplex_int" onchange="gen()" style="width:auto;padding:2px 6px;margin-left:4px">
+          <option value="3">3 měsíce</option><option value="6" selected>6 měsíců</option><option value="12">12 měsíců</option>
+        </select>
+      </label>
+      <label class="ck"><input type="checkbox" id="konz_neuro" onchange="gen()"><span>Neurologické sledování</span></label>
+      <label class="ck"><input type="checkbox" id="konz_cea" onchange="gen()"><span>Konzultace cévní chirurgie – zvážení CEA</span></label>
+    </div>
+  </div>
 </div>
 
 <div id="intervencia_container">
@@ -634,7 +665,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     <label class="ck"><input type="radio" name="tech_uspech" value="Technický neúspěch" onchange="gen()"> ❌ Technický neúspěch</label>
   </div>
 </div>
-<div class="f"><label>Závěr</label><input type="text" id="zaver_vykonu" value="CAS ACI l.dx. s dobrým efektem, bez komplikaci." oninput="gen()"></div>
+<div class="f"><label>Závěr <span style="font-size:10px;color:#6b7280;font-weight:400">(doplňuje se automaticky podle postupu, dokud jej nepřepíšete)</span></label><input type="text" id="zaver_vykonu" value="CAS ACI l.dx. s dobrým efektem, bez komplikaci." oninput="window._zaverManual=true;gen()"></div>
 </div>
 
 <div class="card">
@@ -750,7 +781,20 @@ function calcNASCET(s){
   if(pct>=90)band='90-99%';else if(pct>=80)band='80-89%';else if(pct>=70)band='70-79%';
   else if(pct>=60)band='60-69%';else if(pct>=50)band='50-59%';else band='<50%';
   if(el)el.textContent=pct+' % NASCET'+(band?' → předvyplněné':'');
-  if(sel){sel.value=band;gen();}
+  if(sel){sel.value=band;syncAciTyp(s);gen();}
+}
+// Stupeň NASCET → typ stenózy ACI (aby nález <50 % nezůstal označen jako "kritický")
+function syncAciTyp(s){
+  const band=g('nascet_stenoza_'+s);
+  const typEl=document.getElementById('dsa_aci_'+s+'_typ');
+  if(!band||!typEl)return;
+  let typ;
+  if(band==='<50%')typ='bez významné stenózy';
+  else if(band==='50-59%'||band==='60-69%')typ='hraniční stenóza (50–69 %)';
+  else if(band==='70-79%'||band==='80-89%')typ='významná stenóza';
+  else if(band==='90-99%')typ='kritická stenóza ústí';
+  else typ=band; // subokluze / okluze
+  typEl.value=typ;
 }
 function kSub(id){const s=document.getElementById('ksub_'+id),c=document.getElementById('k_'+id);if(s)s.classList.toggle('on',c.checked);}
 function getKomor(){
@@ -841,6 +885,29 @@ function withMM(str){
   return /mm\b/i.test(str)?str:str+' mm';
 }
 
+// Konzervativní postup – důvod a doporučení
+function konzDovod(){
+  const v=g('konz_dovod');
+  return v==='vlastny'?(g('konz_dovod_c')||''):v;
+}
+function konzDuplexTxt(){const m=g('konz_duplex_int');return m==='3'?'3 měsíce':m+' měsíců';}
+function konzOdporucania(){
+  const o=[];
+  if(chk('konz_bmt'))o.push('optimální medikamentózní léčba (BMT) – antiagregace, vysoce intenzivní statin, management rizikových faktorů (TK, DM, kouření)');
+  if(chk('konz_duplex'))o.push('duplexní USG kontrola karotid za '+konzDuplexTxt());
+  if(chk('konz_neuro'))o.push('neurologické sledování');
+  if(chk('konz_cea'))o.push('konzultace cévní chirurgie – zvážení CEA');
+  return o;
+}
+function postupZmena(){
+  const konz=g('postup_vykonu')==='konzervativny';
+  tShow('intervencia_container',!konz);
+  tShow('konzerva_container',konz);
+  gen();
+}
+// Typ stenózy v instrumentálu pro větu INDIKACE
+const ACI_INSTR={'hraniční stenóza (50–69 %)':'hraniční stenózou (50–69 %)','významná stenóza':'významnou stenózou','kritická stenóza ústí':'kritickou stenózou ústí','subokluze':'subokluzí','okluze':'okluzí'};
+
 function gen(){
   const vek=g('vek');
   const pohlavie=g('pohlavie');
@@ -858,10 +925,30 @@ function gen(){
   const sh=g('sheath'),shd=g('sheathdlz');
   const shText=sh?(sh+(shd?' '+shd:'')):'';
   const komor=getKomor();
+  const postup=g('postup_vykonu');
+  const konz=postup==='konzervativny';
+  const typAci=g('dsa_aci_'+(strana==='l.dx.'?'dx':'sin')+'_typ');
+  const klin=g('klinicky_stav');
+  const symp=klin!=='asymptomatický';
+  const sympDays=g('cas_symptom_days');
+  // pomocné vstupy s "vlastní..." textem
+  const artC=document.getElementById('access_art_c');if(artC)artC.style.display=artVal==='vlastny'?'':'none';
+  const kdC=document.getElementById('konz_dovod_c');if(kdC)kdC.style.display=g('konz_dovod')==='vlastny'?'':'none';
+  // hint: intervence zvolená při nevýznamném nálezu na cílové tepně
+  const hintEl=document.getElementById('postup_hint');
+  if(hintEl){
+    const mierny=typAci==='bez významné stenózy'||typAci==='hraniční stenóza (50–69 %)';
+    if(!konz&&mierny){
+      hintEl.innerHTML='💡 Nález na cílové '+aci+' je <b>'+typAci+'</b> – zvažte konzervativní postup. '
+        +'<button type="button" onclick="document.getElementById(\'postup_vykonu\').value=\'konzervativny\';postupZmena()" '
+        +'style="margin-left:6px;font-size:12px;padding:3px 10px;border:1px solid #ca8a04;background:#fef9c3;color:#854d0e;border-radius:6px;cursor:pointer;font-weight:600">Přepnout na konzervativní</button>';
+      hintEl.style.display='';
+    }else hintEl.style.display='none';
+  }
   const L=[];
 
   // ── HLAVIČKA ──
-  L.push('ZPRÁVA Z KAROTICKÉ INTERVENCE (CAS)');
+  L.push(konz?'ZPRÁVA Z DIAGNOSTICKÉ KAROTICKÉ ANGIOGRAFIE (DSA KAROTID)':'ZPRÁVA Z KAROTICKÉ INTERVENCE (CAS)');
   const datum=g('datum_zaznamu');if(datum){L.push('Datum: '+datum.split('-').reverse().join('.'));}
   const suf=g('id_suffix');if(suf)L.push('ID: CAS-'+casYear()+'-'+suf);
   if(g('operator'))L.push('Operatér: '+g('operator'));
@@ -871,7 +958,14 @@ function gen(){
   // ── PACIENT ──
   L.push('PACIENT: '+[vekText,noun].filter(Boolean).join(' '));
   if(komor.length)L.push('Komorbidity: '+komor.join(', '));
-  L.push('INDIKACE: se symptomatickou kritickou stenózou '+aci+(plat?' s '+plat:'')+', '+indText+' k endovaskulární léčbě (EVL).');
+  if(konz){
+    L.push('INDIKACE: '+(symp?'stav po '+klin+(sympDays?' před '+sympDays+' dny':''):'asymptomatický nález')
+      +', '+indText+' k diagnostické DSA karotid (suspektní stenóza '+aci+').');
+  }else{
+    L.push('INDIKACE: '+(symp?'se symptomatickou ':'s asymptomatickou ')+(ACI_INSTR[typAci]||'stenózou')+' '+aci
+      +(symp?' ('+klin+(sympDays?' před '+sympDays+' dny':'')+')':'')
+      +(plat?' s '+plat:'')+', '+indText+' k endovaskulární léčbě (EVL).');
+  }
 
   // ── PŘÍSTUP ──
   const pristupParts=[art+' '+g('strana'),g('smer'),g('tech'),g('spos'),'v '+g('anes'),'pod '+g('nav')+' navigací'].filter(Boolean);
@@ -885,7 +979,6 @@ function gen(){
   L.push(getCasDsa());
 
   // ── INTERVENCE ──
-  const postup=g('postup_vykonu');
   if(postup==='intervencia'){
     L.push('INTERVENCE:');
     const shInterv=`${g('sheath_intervencny_fr')} ${g('sheath_intervencny_dlzka')} (${g('sheath_intervencny_znacka')})`;
@@ -906,7 +999,8 @@ function gen(){
     L.push(intervParts.join(', ')+'.');
     if(g('vysledok'))L.push('Výsledný angiografický obraz '+g('vysledok')+'.');
   } else {
-    L.push('INTERVENCE: Vzhledem k nálezu volíme konzervativní postup.');
+    const dovod=konzDovod();
+    L.push('POSTUP: Vzhledem k nálezu'+(dovod?' ('+dovod+')':'')+' intervenci neindikujeme – volíme konzervativní postup.');
   }
 
   // ── UZÁVĚR ──
@@ -920,8 +1014,21 @@ function gen(){
   L.push(uzaverText);
 
   // ── ZÁVĚR ──
+  // automatický závěr podle postupu – dokud jej lékař ručně nepřepíše
+  const zaverEl=document.getElementById('zaver_vykonu');
+  if(zaverEl&&!window._zaverManual){
+    zaverEl.value=konz
+      ?'DSA karotid – '+aci+' '+typAci+', volíme konzervativní postup'+(chk('konz_duplex')?', duplexní USG kontrola za '+konzDuplexTxt():'')+'.'
+      :'CAS '+aci+' s dobrým efektem, bez komplikaci.';
+  }
   L.push('ZÁVĚR:');
   const zav=g('zaver_vykonu');if(zav)L.push(zav);
+
+  // ── DOPORUČENÍ (konzervativní postup) ──
+  if(konz){
+    const odp=konzOdporucania();
+    if(odp.length){L.push('DOPORUČENÍ:');odp.forEach(o=>L.push('• '+o));}
+  }
 
   document.getElementById('out').value=L.filter(x=>x!=='').join('\n');
   window._dirty=true;
@@ -937,6 +1044,9 @@ function showFuTab(t){
   if(t==='fu'){
     if(!g('fu_datum'))document.getElementById('fu_datum').value=isoLocal();
     if(!g('fu_id')&&g('id_suffix'))document.getElementById('fu_id').value='CAS-'+casYear()+'-'+g('id_suffix');
+    // konzervativní pacient nemá stent – sleduje se progrese stenózy, ne restenóza
+    const rl=document.getElementById('fu_rest_lbl');
+    if(rl)rl.textContent=g('postup_vykonu')==='konzervativny'?'Progrese stenózy (USG/CTA)':'Restenóza (USG/CTA)';
   }
 }
 function msgFu(t,c){const el=document.getElementById('fu_msg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',4000);}
@@ -1026,6 +1136,7 @@ async function saveData(){
     uvodny_sheath:g('sheath')+(g('sheathdlz')?' '+g('sheathdlz'):''),
     diag_kateter:g('kateter_diag'),
     postup:g('postup_vykonu'),
+    konz_detail:g('postup_vykonu')==='konzervativny'?JSON.stringify({dovod:konzDovod(),bmt:chk('konz_bmt'),duplex:chk('konz_duplex'),duplex_mesiace:chk('konz_duplex')?parseInt(g('konz_duplex_int')):null,neuro:chk('konz_neuro'),cea:chk('konz_cea')}):null,
     interv_sheath:isInterv?`${g('sheath_intervencny_fr')} ${g('sheath_intervencny_dlzka')} (${g('sheath_intervencny_znacka')})`:'',
     interv_sheath_fr:isInterv?g('sheath_intervencny_fr'):'',
     interv_sheath_dlzka:isInterv?g('sheath_intervencny_dlzka'):'',
@@ -1080,11 +1191,17 @@ async function saveData(){
       if(_dup.ok&&(await _dup.json()).length){msg('⚠️ ID '+payload.vykon_id+' už existuje – zvolte jiné číslo','#b45309');return;}
     }
     const _url=SB_URL+'/rest/v1/cz_cas_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
-    const r=await fetch(_url,{
+    const _send=()=>fetch(_url,{
       method:_isEdit?'PATCH':'POST',
       headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},
       body:JSON.stringify(payload)
     });
+    let r=await _send();
+    // sloupec konz_detail ještě nemusí existovat (setup SQL) – ulož alespoň zbytek záznamu
+    if(!r.ok&&r.status===400&&'konz_detail' in payload){
+      const _etxt=await r.clone().text();
+      if(_etxt.includes('konz_detail')){delete payload.konz_detail;r=await _send();}
+    }
     if(r.ok){window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizováno ✓':'Uloženo ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizován ✓':'Uloženo ✓','#1d6f42');}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba sítě: '+e.message,'#dc2626');}
@@ -1148,8 +1265,26 @@ function loadEditRecord(){
     sv('nav',record.navadzanie);
     sv('kateter_diag',record.diag_kateter);
     if(record.uvodny_sheath){const um=record.uvodny_sheath.match(/^(\d+ Fr)(?:\s+(.+))?$/);if(um){sv('sheath',um[1]);if(um[2])sv('sheathdlz',um[2]);}}
-    // Postup + intervence
-    if(record.postup){sv('postup_vykonu',record.postup);tShow('intervencia_container',record.postup==='intervencia');}
+    // Postup + intervence / konzervativa
+    if(record.postup){
+      sv('postup_vykonu',record.postup);
+      tShow('intervencia_container',record.postup==='intervencia');
+      tShow('konzerva_container',record.postup==='konzervativny');
+    }
+    if(record.konz_detail){
+      try{
+        const kd=JSON.parse(record.konz_detail);
+        const dovodSel=document.getElementById('konz_dovod');
+        if(kd.dovod){
+          if([...dovodSel.options].some(o=>o.value===kd.dovod))dovodSel.value=kd.dovod;
+          else{dovodSel.value='vlastny';const c=document.getElementById('konz_dovod_c');if(c){c.value=kd.dovod;c.style.display='';}}
+        }
+        const setCk=(id,v)=>{const el=document.getElementById(id);if(el)el.checked=!!v;};
+        setCk('konz_bmt',kd.bmt);setCk('konz_duplex',kd.duplex);setCk('konz_neuro',kd.neuro);setCk('konz_cea',kd.cea);
+        if(kd.duplex_mesiace)sv('konz_duplex_int',String(kd.duplex_mesiace));
+      }catch(e){}
+    }
+    window._zaverManual=!!record.zaver; // uložený závěr nepřepisovat automatikou
     sv('sheath_intervencny_fr',record.interv_sheath_fr);
     sv('sheath_intervencny_dlzka',record.interv_sheath_dlzka);
     sv('sheath_intervencny_znacka',record.interv_sheath_znacka);
