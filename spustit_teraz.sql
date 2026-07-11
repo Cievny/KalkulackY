@@ -32,6 +32,11 @@ INSERT INTO povoleni_pouzivatelia(email,meno,admin) VALUES
   ('vincze.lukas@gmail.com','Dr. Vincze',true),
   ('oira@cievny.sk','OIRA',true)
 ON CONFLICT (email) DO UPDATE SET admin = true;
+-- veľín (tablet pri sestrách): konto so zápisom, ale BEZ admin práv
+-- (heslo konta = "kód sály"; vytvorte usera sala@cievny.sk v Supabase → Authentication)
+INSERT INTO povoleni_pouzivatelia(email,meno,admin) VALUES
+  ('sala@cievny.sk','Veľín – tablet sály',false)
+ON CONFLICT (email) DO NOTHING;
 
 -- 1) EVK – IVL katétre (Shockwave/Shockfast/vlastný) do štatistík
 ALTER TABLE evk_vykony ADD COLUMN IF NOT EXISTS ivl_brands TEXT;

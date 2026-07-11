@@ -1,0 +1,375 @@
+<!doctype html><html lang="sk"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Veľín – riadiace centrum sály</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#eef1f6;color:#1a2745}
+.shared-nav{display:none!important}
+/* ── brána (kód sály) ── */
+#gate_wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f1e3d;color:#fff;padding:20px}
+.gbox{background:#16264a;border:1px solid #2a3f66;border-radius:18px;padding:34px 30px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.gbox .logo{font-size:34px;margin-bottom:6px}
+.gbox h1{font-size:20px;margin:0 0 4px}
+.gbox .sub{font-size:13px;color:#8fa3c8;margin-bottom:22px;line-height:1.5}
+.gbox input[type=password]{width:100%;padding:15px;border:1.5px solid #2a3f66;border-radius:11px;background:#0f1e3d;color:#fff;font-size:22px;text-align:center;letter-spacing:3px;font-family:inherit;outline:none;margin-bottom:14px}
+.gbox input[type=password]:focus{border-color:#3b82f6}
+.gbox button{width:100%;padding:15px;border:none;border-radius:11px;background:#2563eb;color:#fff;font-size:17px;font-weight:700;cursor:pointer}
+.gbox button:disabled{background:#3a4a6a;cursor:default}
+.gbox .rem{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:#8fa3c8;margin-bottom:16px}
+.gbox .msg{min-height:20px;font-size:14px;margin-top:14px}
+.gbox .spin{font-size:15px;color:#8fa3c8}
+/* ── board ── */
+#board{display:none;padding:14px 16px 30px;max-width:1400px;margin:0 auto}
+.topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.topbar h1{font-size:24px;margin:0;font-weight:800}
+.topbar .dat{font-size:18px;font-weight:700;color:#3b5488}
+.topbar .clock{font-size:22px;font-weight:800;color:#1e40af;font-variant-numeric:tabular-nums}
+.counts{display:flex;gap:8px;font-size:14px;font-weight:700}
+.counts span{padding:5px 12px;border-radius:999px}
+.cnt-caka{background:#e0e7ff;color:#3730a3}
+.cnt-sala{background:#dbeafe;color:#1e40af}
+.cnt-hot{background:#dcfce7;color:#166534}
+.spacer{flex:1}
+.tb-btn{padding:9px 14px;border:1.5px solid #cbd5e1;border-radius:10px;background:#fff;font-size:14px;font-weight:700;color:#3b5488;cursor:pointer;font-family:inherit}
+.tb-btn.on{background:#1e40af;border-color:#1e40af;color:#fff}
+.live{font-size:12px;color:#6b7280}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1a2745;color:#fff;padding:12px 22px;border-radius:12px;font-size:15px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .25s;z-index:300;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+.sala-hdr{font-size:16px;font-weight:800;color:#3b5488;margin:16px 0 8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:12px}
+@media(max-width:520px){.cards{grid-template-columns:1fr}}
+.card{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(15,30,61,.08);border-left:10px solid #9ca3af;padding:14px 14px 12px 16px;display:flex;gap:12px;min-height:118px}
+.card.dim{opacity:.62}
+.cinfo{flex:1;min-width:0}
+.cname{font-size:21px;font-weight:800;line-height:1.2}
+.cname .rocnik{font-weight:600;color:#6b7280;font-size:17px}
+.cvykon{font-size:16px;font-weight:700;color:#1e40af;margin-top:2px}
+.csub{font-size:14px;color:#5a6a8a;margin-top:5px;line-height:1.45}
+.cpozn{font-size:14px;color:#92400e;background:#fef3c7;border-radius:8px;padding:4px 8px;margin-top:6px;display:inline-block}
+.cstav{font-size:14px;font-weight:800;margin-top:8px;display:inline-block;padding:4px 12px;border-radius:999px}
+.cright{display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;gap:8px;flex-shrink:0}
+.bignext{min-width:190px;min-height:64px;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit;padding:10px 16px;color:#fff;box-shadow:0 3px 8px rgba(15,30,61,.18);touch-action:manipulation}
+.bignext:active{transform:scale(.97)}
+.bignext.done{background:#e5e7eb;color:#6b7280;box-shadow:none;cursor:default}
+.dots{display:flex;gap:6px}
+.dot{width:38px;height:38px;border-radius:10px;border:2px solid transparent;font-size:16px;cursor:pointer;background:#f0f2f7;font-family:inherit;padding:0;touch-action:manipulation}
+.dot.on{border-color:#1e40af;background:#dbeafe}
+.notebtn{width:38px;height:38px;border-radius:10px;border:2px solid #e5e7eb;background:#fff;font-size:16px;cursor:pointer;padding:0}
+.empty{color:#6b7280;font-size:16px;padding:30px;text-align:center}
+/* overlay poznámky */
+#note_ov{position:fixed;inset:0;background:rgba(15,30,61,.55);display:none;align-items:center;justify-content:center;z-index:200;padding:18px}
+#note_ov.show{display:flex}
+.nbox{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:520px}
+.nbox h2{font-size:18px;margin:0 0 10px}
+.nbox textarea{width:100%;min-height:110px;font-size:17px;padding:12px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:inherit;outline:none;resize:vertical}
+.nbox .nbtns{display:flex;gap:10px;margin-top:12px}
+.nbox button{flex:1;padding:14px;border:none;border-radius:11px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit}
+.nb-save{background:#1e40af;color:#fff}
+.nb-cancel{background:#e5e7eb;color:#374151}
+</style>
+</head>
+<body>
+
+<!-- ── BRÁNA ─────────────────────────────────────────────── -->
+<div id="gate_wrap">
+  <div class="gbox">
+    <div class="logo">🎛</div>
+    <h1>Veľín – riadiace centrum sály</h1>
+    <div class="sub">Zadajte kód sály. Zobrazí sa dnešný program s veľkými tlačidlami na prepínanie stavu pacienta (tablet pri sestrách).</div>
+    <div id="gate">
+      <input id="code" type="password" inputmode="numeric" placeholder="Kód sály" autocomplete="off"
+        onkeydown="if(event.key==='Enter')prihlas()">
+      <label class="rem"><input type="checkbox" id="rem" checked style="width:auto;margin:0;letter-spacing:normal"> Zapamätať na tomto zariadení (tablet)</label>
+      <button id="btn" onclick="prihlas()">Spustiť veľín</button>
+      <div class="msg" id="gmsg"></div>
+    </div>
+    <div id="loading" class="spin" style="display:none">Prihlasujem…</div>
+  </div>
+</div>
+
+<!-- ── BOARD ─────────────────────────────────────────────── -->
+<div id="board">
+  <div class="topbar">
+    <h1>🎛 Veľín</h1>
+    <span class="dat" id="b_datum"></span>
+    <span class="clock" id="b_clock"></span>
+    <div class="counts">
+      <span class="cnt-caka" id="c_caka">⏳ 0</span>
+      <span class="cnt-sala" id="c_sala">💉 0</span>
+      <span class="cnt-hot" id="c_hot">✅ 0</span>
+    </div>
+    <div class="spacer"></div>
+    <span id="sala_btns" style="display:none">
+      <button class="tb-btn on" data-v="all" onclick="setSala('all')">Všetky</button>
+      <button class="tb-btn" data-v="A" onclick="setSala('A')">🅰 A</button>
+      <button class="tb-btn" data-v="B" onclick="setSala('B')">🅱 B</button>
+    </span>
+    <button class="tb-btn" onclick="fullscreenToggle()" title="celá obrazovka">⛶</button>
+    <button class="tb-btn" onclick="odhlasitVelin()" title="odhlásiť tablet">✕</button>
+  </div>
+  <div style="margin-bottom:6px"><span class="live">⟳ obnovuje sa automaticky každých 10 s • ťuknutím na veľké tlačidlo posuniete pacienta na ďalší krok</span></div>
+  <div id="b_rows"></div>
+</div>
+
+<div id="note_ov">
+  <div class="nbox">
+    <h2>✏️ Poznámka – <span id="note_meno"></span></h2>
+    <textarea id="note_text" placeholder="napr. čaká na výsledky, potrebuje premedikáciu…"></textarea>
+    <div class="nbtns">
+      <button class="nb-cancel" onclick="zavriPoznamku()">Zrušiť</button>
+      <button class="nb-save" onclick="ulozPoznamku()">Uložiť</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/tools/auth.js"></script>
+<script>
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
+const SALA_EMAIL='sala@cievny.sk';        // vyhradené konto tabletu (vytvorte v Supabase, kód sály = jeho heslo)
+const KEY='cievny_auth', TK=KEY+'_at', RK=KEY+'_rt', XK=KEY+'_exp', EK=KEY+'_email';
+const CODE_LS='cievny_sala_code';         // uložený kód (len na tomto zariadení)
+const URLQ=new URLSearchParams(location.search);
+const TVSALA=(URLQ.get('sala')||'').toUpperCase();   // ?sala=A|B → tablet jednej sály
+const salaOf=r=>r&&r.sala==='B'?'B':'A';
+let SALA=TVSALA==='A'||TVSALA==='B'?TVSALA:'all';
+let ROWS=[];
+let PATCHING=false;
+
+const ORD=['na_oddeleni','poslat','caka','na_sale','hotovy'];
+const ST={
+  na_oddeleni:{lbl:'🛏 Na oddelení', akcia:'🚑 Poslať pre pacienta', bg:'#f0f2f7', fg:'#6b7280', bar:'#9ca3af', btn:'#f59e0b'},
+  poslat:     {lbl:'🚑 Poslali sme', akcia:'⏳ Čaká pred sálou',     bg:'#fef3c7', fg:'#b45309', bar:'#f59e0b', btn:'#6366f1'},
+  caka:       {lbl:'⏳ Čaká pred sálou', akcia:'💉 Na sálu',         bg:'#e0e7ff', fg:'#3730a3', bar:'#6366f1', btn:'#3b82f6'},
+  na_sale:    {lbl:'💉 Na sále', akcia:'✅ Hotový',                  bg:'#dbeafe', fg:'#1e40af', bar:'#3b82f6', btn:'#22c55e'},
+  hotovy:     {lbl:'✅ Hotový', akcia:'', bg:'#dcfce7', fg:'#166534', bar:'#22c55e', btn:''}
+};
+const DOT_ICON={na_oddeleni:'🛏',poslat:'🚑',caka:'⏳',na_sale:'💉',hotovy:'✅'};
+
+function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
+function fmtTrvanie(m){if(m<60)return m+' min';const h=Math.floor(m/60),mm=m%60;return mm?h+' h '+mm+' min':h+' h';}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),3500);}
+
+/* ── brána ─────────────────────────────────────────────── */
+function storeSession(d){
+  sessionStorage.setItem(KEY,'1');
+  sessionStorage.setItem(TK,d.access_token||'');
+  sessionStorage.setItem(RK,d.refresh_token||'');
+  sessionStorage.setItem(XK,String(Date.now()+((d.expires_in||3600)*1000)));
+  if(d.user&&d.user.email)sessionStorage.setItem(EK,d.user.email);
+  localStorage.setItem('cievny_velin','1');       // self-healing: mŕtva relácia sa vracia sem
+  localStorage.removeItem('cievny_tv_kiosk');     // zariadenie je veľín, nie TV
+}
+async function login(code){
+  const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
+    method:'POST',headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
+    body:JSON.stringify({email:SALA_EMAIL,password:code})});
+  if(!r.ok)return false;
+  storeSession(await r.json());
+  return true;
+}
+window.prihlas=async function(){
+  const code=document.getElementById('code').value.trim();
+  const m=document.getElementById('gmsg');
+  if(!code){m.textContent='Zadajte kód sály.';m.style.color='#fca5a5';return;}
+  const btn=document.getElementById('btn');btn.disabled=true;
+  m.textContent='Prihlasujem…';m.style.color='#8fa3c8';
+  try{
+    if(await login(code)){
+      if(document.getElementById('rem').checked)localStorage.setItem(CODE_LS,code);
+      else localStorage.removeItem(CODE_LS);
+      startBoard();return;
+    }
+    m.textContent='Nesprávny kód sály.';m.style.color='#fca5a5';
+  }catch(e){m.textContent='Chyba siete – skúste znova.';m.style.color='#fca5a5';}
+  btn.disabled=false;
+};
+function odhlasitVelin(){
+  if(!confirm('Odhlásiť tablet z veľína? (zabudne sa aj uložený kód sály)'))return;
+  localStorage.removeItem(CODE_LS);localStorage.removeItem('cievny_velin');
+  [KEY,TK,RK,XK,EK].forEach(k=>sessionStorage.removeItem(k));
+  location.replace('/tools/velin/'+(TVSALA?'?sala='+TVSALA:''));
+}
+
+/* ── board ─────────────────────────────────────────────── */
+function startBoard(){
+  document.getElementById('gate_wrap').style.display='none';
+  document.getElementById('board').style.display='block';
+  document.getElementById('b_datum').textContent=new Date().toLocaleDateString('sk-SK',{weekday:'long',day:'numeric',month:'numeric'});
+  if(!TVSALA)document.getElementById('sala_btns').style.display='';
+  tikajHodiny();
+  load();
+  wakeLock();
+  setInterval(()=>{ // polling – nie počas editácie poznámky ani rozbehnutého PATCHu
+    if(document.visibilityState!=='visible')return;
+    if(document.getElementById('note_ov').classList.contains('show')||PATCHING)return;
+    load();
+  },10000);
+  setInterval(render,30000);      // prepočet stopiek na kartách
+  setTimeout(()=>{location.replace('/tools/velin/?_='+Date.now()+(TVSALA?'&sala='+TVSALA:''));},30*60000); // tvrdý reload ~30 min
+}
+function tikajHodiny(){
+  const f=()=>{const d=new Date();document.getElementById('b_clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+  f();setInterval(f,15000);
+}
+async function load(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/denny_program?datum=eq.${isoLocal(new Date())}&order=poradie.asc&limit=200`,{headers:sbHeaders()});
+    if(!r.ok)return;
+    ROWS=(await r.json()).filter(x=>x.stav!=='vyradeny');
+    render();
+  }catch(e){}
+}
+function stavKey(r){return ORD.includes(r.stav_vykonu)?r.stav_vykonu:'na_oddeleni';}
+function stavText(r){
+  const sv=stavKey(r);
+  if(sv==='na_sale'&&r.vykon_start){
+    const m=Math.max(0,Math.round((Date.now()-new Date(r.vykon_start))/60000));
+    return ST.na_sale.lbl+' • '+fmtTrvanie(m);
+  }
+  if(sv==='hotovy'&&r.vykon_start&&r.vykon_koniec){
+    const m=Math.max(0,Math.round((new Date(r.vykon_koniec)-new Date(r.vykon_start))/60000));
+    return ST.hotovy.lbl+' • '+fmtTrvanie(m);
+  }
+  return ST[sv].lbl;
+}
+function makeCard(r){
+  const sv=stavKey(r);
+  const c=ST[sv];
+  const next=sv==='hotovy'?null:ORD[ORD.indexOf(sv)+1];
+  const dots=ORD.map(s=>`<button class="dot${s===sv?' on':''}" title="${ST[s].lbl}" onclick="setStav('${r.id}','${s}')">${DOT_ICON[s]}</button>`).join('');
+  return `<div class="card${sv==='hotovy'?' dim':''}" style="border-left-color:${c.bar}">
+    <div class="cinfo">
+      <div class="cname">${escHtml(r.meno||'?')} <span class="rocnik">${r.rocnik?'('+r.rocnik+')':''}</span></div>
+      <div class="cvykon">${escHtml(r.vykon||'')}</div>
+      <div class="csub">${[r.operator,r.lozko?'🛏 '+r.lozko:'',r.diagnoza].filter(Boolean).map(escHtml).join(' • ')}</div>
+      ${r.poznamka?`<div class="cpozn">📝 ${escHtml(r.poznamka)}</div>`:''}
+      <div><span class="cstav" style="background:${c.bg};color:${c.fg}" id="stav_${r.id}">${stavText(r)}</span></div>
+    </div>
+    <div class="cright">
+      ${next?`<button class="bignext" style="background:${c.btn}" onclick="setStav('${r.id}','${next}')">${ST[sv].akcia}</button>`
+            :`<button class="bignext done" disabled>✅ Hotový</button>`}
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="notebtn" title="poznámka" onclick="otvorPoznamku('${r.id}')">✏️</button>
+        <span class="dots">${dots}</span>
+      </div>
+    </div>
+  </div>`;
+}
+function render(){
+  const box=document.getElementById('b_rows');
+  let rows=ROWS.slice();
+  if(SALA!=='all')rows=rows.filter(r=>salaOf(r)===SALA);
+  // hotoví na koniec, inak podľa poradia
+  const act=rows.filter(r=>stavKey(r)!=='hotovy');
+  const done=rows.filter(r=>stavKey(r)==='hotovy');
+  const anyB=ROWS.some(r=>salaOf(r)==='B');
+  document.getElementById('c_caka').textContent='⏳ '+rows.filter(r=>['poslat','caka'].includes(stavKey(r))).length;
+  document.getElementById('c_sala').textContent='💉 '+rows.filter(r=>stavKey(r)==='na_sale').length;
+  document.getElementById('c_hot').textContent='✅ '+done.length;
+  if(!rows.length){box.innerHTML='<div class="empty">Na dnes nie je naplánovaný žiadny pacient'+(SALA!=='all'?' (sála '+SALA+')':'')+'.</div>';return;}
+  const list=[...act,...done];
+  if(SALA==='all'&&anyB&&!TVSALA){
+    const A=list.filter(r=>salaOf(r)==='A'),B=list.filter(r=>salaOf(r)==='B');
+    box.innerHTML=(A.length?'<div class="sala-hdr">🅰 Sála OIRA A</div><div class="cards">'+A.map(makeCard).join('')+'</div>':'')
+                 +(B.length?'<div class="sala-hdr">🅱 Sála OIRA B</div><div class="cards">'+B.map(makeCard).join('')+'</div>':'');
+  }else{
+    box.innerHTML='<div class="cards">'+list.map(makeCard).join('')+'</div>';
+  }
+}
+function setSala(v){
+  SALA=v;
+  document.querySelectorAll('#sala_btns .tb-btn').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  render();
+}
+
+/* ── zmena stavu (podmienený PATCH – bráni prepísaniu iným tabletom/lekárom) ── */
+async function condPatch(row,body){
+  const cond=row.updated_at?`&updated_at=eq.${encodeURIComponent(row.updated_at)}`:'';
+  const r=await fetch(`${SB_URL}/rest/v1/denny_program?id=eq.${row.id}${cond}`,{
+    method:'PATCH',headers:{...sbHeaders(),'Prefer':'return=representation'},body:JSON.stringify(body)});
+  if(!r.ok)return {ok:false,conflict:false,status:r.status};
+  const res=await r.json();
+  if(!res.length)return {ok:false,conflict:true};
+  return {ok:true,row:res[0]};
+}
+async function setStav(id,next){
+  const row=ROWS.find(r=>r.id===id);if(!row||PATCHING)return;
+  const cur=stavKey(row);
+  if(cur===next)return;
+  if(cur==='hotovy'&&row.vykon_start&&row.vykon_koniec){
+    if(!confirm('Pacient je označený ako hotový. Naozaj zmeniť stav? (vymaže sa nameraný čas výkonu)'))return;
+  }
+  const now=new Date().toISOString();
+  const body={stav_vykonu:next,updated_at:now};
+  if(next==='na_sale'){body.vykon_start=now;body.vykon_koniec=null;}            // štart stopiek
+  else if(next==='hotovy'){body.vykon_koniec=now;}                              // stop stopiek
+  else{body.vykon_start=null;body.vykon_koniec=null;}                           // pred sálou – stopky nebežia
+  PATCHING=true;
+  try{
+    const res=await condPatch(row,body);
+    if(res.ok){Object.assign(row,res.row);render();}
+    else if(res.conflict){toast('⟳ Program medzitým niekto zmenil – obnovené, ťuknite znova.');await load();}
+    else toast('❌ Chyba ukladania ('+(res.status||'?')+')');
+  }catch(e){toast('❌ Chyba siete');}
+  finally{PATCHING=false;}
+}
+
+/* ── poznámka ── */
+let NOTE_ID=null;
+function otvorPoznamku(id){
+  const row=ROWS.find(r=>r.id===id);if(!row)return;
+  NOTE_ID=id;
+  document.getElementById('note_meno').textContent=row.meno||'?';
+  document.getElementById('note_text').value=row.poznamka||'';
+  document.getElementById('note_ov').classList.add('show');
+  document.getElementById('note_text').focus();
+}
+function zavriPoznamku(){document.getElementById('note_ov').classList.remove('show');NOTE_ID=null;}
+async function ulozPoznamku(){
+  const row=ROWS.find(r=>r.id===NOTE_ID);if(!row){zavriPoznamku();return;}
+  const body={poznamka:document.getElementById('note_text').value.trim(),updated_at:new Date().toISOString()};
+  try{
+    const res=await condPatch(row,body);
+    if(res.ok){Object.assign(row,res.row);render();zavriPoznamku();}
+    else if(res.conflict){toast('⟳ Záznam medzitým niekto zmenil – obnovené, uložte poznámku znova.');await load();}
+    else toast('❌ Chyba ukladania');
+  }catch(e){toast('❌ Chyba siete');}
+}
+
+/* ── kiosk: wake lock + fullscreen ── */
+let WL=null;
+async function wakeLock(){
+  try{
+    if(!('wakeLock' in navigator))return;
+    WL=await navigator.wakeLock.request('screen');
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){wakeLock();load();}});
+function fullscreenToggle(){
+  try{
+    if(document.fullscreenElement)document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  }catch(e){}
+}
+
+/* ── štart: platná relácia → rovno board; uložený kód → auto-login; inak brána ── */
+(async function(){
+  if(sessionStorage.getItem(KEY)==='1'&&sessionStorage.getItem(TK)){startBoard();return;}
+  const saved=localStorage.getItem(CODE_LS);
+  if(!saved)return;
+  document.getElementById('gate').style.display='none';
+  document.getElementById('loading').style.display='';
+  try{ if(await login(saved)){startBoard();return;} }catch(e){}
+  document.getElementById('loading').style.display='none';
+  document.getElementById('gate').style.display='';
+  document.getElementById('gmsg').textContent='Uložený kód sály už neplatí – zadajte ho znova.';
+  document.getElementById('gmsg').style.color='#fca5a5';
+})();
+</script>
+</body></html>

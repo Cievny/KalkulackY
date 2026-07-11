@@ -87,6 +87,8 @@
       sessionStorage.removeItem(KEY);sessionStorage.removeItem(TK);
       sessionStorage.removeItem(RK);sessionStorage.removeItem(XK);
       if(localStorage.getItem('cievny_tv_kiosk')==='1'){location.replace('/tools/tv/');}
+      // veľín (tablet pri sestrách) sa vie prihlásiť sám uloženým kódom sály
+      else if(localStorage.getItem('cievny_velin')==='1'&&location.pathname.indexOf('/tools/velin')===0){location.replace('/tools/velin/'+location.search);}
       else{
         sessionStorage.setItem('cievny_return',location.pathname+location.search);
         location.replace('/tools/login/');

@@ -86,6 +86,14 @@ for(const [name,path] of [['Program','/tools/Program/'],['Objednávky','/tools/o
   await ctx.close();
 }
 
+// Veľín (tablet) – s platnou reláciou preskočí bránu a ukáže board bez JS chýb
+{
+  const {page, ctx, errs} = await openPage('/tools/velin/');
+  const boardVisible = await page.isVisible('#board').catch(()=>false);
+  check('Veľín board bez JS chýb', errs.length===0 && boardVisible);
+  await ctx.close();
+}
+
 await browser.close();
 srv.close();
 console.log(failed ? `\n${failed} testov ZLYHALO` : '\nVšetky smoke testy prešli.');
