@@ -43,10 +43,14 @@ body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Seg
 .card{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(15,30,61,.08);border-left:10px solid #9ca3af;padding:14px 14px 12px 16px;display:flex;gap:12px;min-height:118px}
 .card.dim{opacity:.62}
 .cinfo{flex:1;min-width:0}
+.cnum{display:inline-block;min-width:34px;padding:2px 7px;margin-right:7px;background:#eef1f6;border-radius:8px;font-size:15px;font-weight:800;color:#3b5488;text-align:center;vertical-align:3px}
 .cname{font-size:21px;font-weight:800;line-height:1.2}
 .cname .rocnik{font-weight:600;color:#6b7280;font-size:17px}
 .cvykon{font-size:16px;font-weight:700;color:#1e40af;margin-top:2px}
 .csub{font-size:14px;color:#5a6a8a;margin-top:5px;line-height:1.45}
+.csub2{font-size:14px;color:#3b5488;margin-top:3px;line-height:1.45;font-weight:600}
+.sala-cols{display:grid;gap:4px 18px}
+@media(min-width:1100px){.sala-cols{grid-template-columns:1fr 1fr;align-items:start}}
 .cpozn{font-size:14px;color:#92400e;background:#fef3c7;border-radius:8px;padding:4px 8px;margin-top:6px;display:inline-block}
 .cstav{font-size:14px;font-weight:800;margin-top:8px;display:inline-block;padding:4px 12px;border-radius:999px}
 .cright{display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;gap:8px;flex-shrink:0}
@@ -238,16 +242,20 @@ function stavText(r){
   }
   return ST[sv].lbl;
 }
+let NUMS={};   // id → poradové číslo v rámci sály ("A1." / "1.")
 function makeCard(r){
   const sv=stavKey(r);
   const c=ST[sv];
   const next=sv==='hotovy'?null:ORD[ORD.indexOf(sv)+1];
   const dots=ORD.map(s=>`<button class="dot${s===sv?' on':''}" title="${ST[s].lbl}" onclick="setStav('${r.id}','${s}')">${DOT_ICON[s]}</button>`).join('');
+  const sub=[r.diagnoza,r.operator,r.lozko?'🛏 '+r.lozko:''].filter(Boolean).map(escHtml).join(' • ');
+  const sub2=[r.poloha?'🧭 '+r.poloha:'',r.miesto_punkcie?'💉 '+r.miesto_punkcie:'',r.cas_okno?'🕐 '+r.cas_okno:''].filter(Boolean).map(escHtml).join(' • ');
   return `<div class="card${sv==='hotovy'?' dim':''}" style="border-left-color:${c.bar}">
     <div class="cinfo">
-      <div class="cname">${escHtml(r.meno||'?')} <span class="rocnik">${r.rocnik?'('+r.rocnik+')':''}</span></div>
+      <div class="cname">${NUMS[r.id]?`<span class="cnum">${NUMS[r.id]}</span>`:''}${escHtml(r.meno||'?')} <span class="rocnik">${r.rocnik?'('+r.rocnik+')':''}</span></div>
       <div class="cvykon">${escHtml(r.vykon||'')}</div>
-      <div class="csub">${[r.operator,r.lozko?'🛏 '+r.lozko:'',r.diagnoza].filter(Boolean).map(escHtml).join(' • ')}</div>
+      ${sub?`<div class="csub">${sub}</div>`:''}
+      ${sub2?`<div class="csub2">${sub2}</div>`:''}
       ${r.poznamka?`<div class="cpozn">📝 ${escHtml(r.poznamka)}</div>`:''}
       <div><span class="cstav" style="background:${c.bg};color:${c.fg}" id="stav_${r.id}">${stavText(r)}</span></div>
     </div>
@@ -263,21 +271,28 @@ function makeCard(r){
 }
 function render(){
   const box=document.getElementById('b_rows');
+  const anyB=ROWS.some(r=>salaOf(r)==='B');
+  // poradové čísla v rámci sály – z pôvodného poradia (pred presunom hotových na koniec)
+  NUMS={};
+  const cnt={A:0,B:0};
+  ROWS.forEach(r=>{const s=salaOf(r);cnt[s]++;NUMS[r.id]=(anyB?s:'')+cnt[s]+'.';});
   let rows=ROWS.slice();
   if(SALA!=='all')rows=rows.filter(r=>salaOf(r)===SALA);
   // hotoví na koniec, inak podľa poradia
   const act=rows.filter(r=>stavKey(r)!=='hotovy');
   const done=rows.filter(r=>stavKey(r)==='hotovy');
-  const anyB=ROWS.some(r=>salaOf(r)==='B');
   document.getElementById('c_caka').textContent='⏳ '+rows.filter(r=>['poslat','caka'].includes(stavKey(r))).length;
   document.getElementById('c_sala').textContent='💉 '+rows.filter(r=>stavKey(r)==='na_sale').length;
   document.getElementById('c_hot').textContent='✅ '+done.length;
   if(!rows.length){box.innerHTML='<div class="empty">Na dnes nie je naplánovaný žiadny pacient'+(SALA!=='all'?' (sála '+SALA+')':'')+'.</div>';return;}
   const list=[...act,...done];
   if(SALA==='all'&&anyB&&!TVSALA){
+    // obe sály naraz – na širokom tablete dva stĺpce vedľa seba, jeden veľín riadi obe
     const A=list.filter(r=>salaOf(r)==='A'),B=list.filter(r=>salaOf(r)==='B');
-    box.innerHTML=(A.length?'<div class="sala-hdr">🅰 Sála OIRA A</div><div class="cards">'+A.map(makeCard).join('')+'</div>':'')
-                 +(B.length?'<div class="sala-hdr">🅱 Sála OIRA B</div><div class="cards">'+B.map(makeCard).join('')+'</div>':'');
+    box.innerHTML='<div class="sala-cols">'
+      +'<div><div class="sala-hdr">🅰 Sála OIRA A</div><div class="cards" style="grid-template-columns:1fr">'+(A.length?A.map(makeCard).join(''):'<div class="empty">–</div>')+'</div></div>'
+      +'<div><div class="sala-hdr">🅱 Sála OIRA B</div><div class="cards" style="grid-template-columns:1fr">'+(B.length?B.map(makeCard).join(''):'<div class="empty">–</div>')+'</div></div>'
+      +'</div>';
   }else{
     box.innerHTML='<div class="cards">'+list.map(makeCard).join('')+'</div>';
   }
