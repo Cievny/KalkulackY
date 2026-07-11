@@ -37,7 +37,9 @@ PORADIE = [
     'cz_evk_followup', 'cz_cas_followup', 'cz_pevar_followup', 'cz_ideas',
 ]
 # primárny kľúč pre on_conflict (preskočenie už existujúcich riadkov)
-PK = {'povoleni_pouzivatelia': 'email'}
+# – tabuľky bez stĺpca id: povoleni_pouzivatelia (PK email), pozvanky (PK token);
+#   ostatné (vrátane kalendar_udalosti s TEXT id) majú PK id
+PK = {'povoleni_pouzivatelia': 'email', 'pozvanky': 'token'}
 
 def login(email, heslo):
     d = json.dumps({'email': email, 'password': heslo}).encode()
@@ -69,6 +71,7 @@ def main():
     token = login(args.email, getpass.getpass('Heslo: '))
     print(('OSTRÝ ZÁPIS' if args.naozaj else 'NASUCHO (pridajte --naozaj pre zápis)') + '\n')
 
+    preskocene = []  # (tabuľka, identifikátor riadku, dôvod) – súhrn na konci
     for t in tabulky:
         rows = json.load(open(subory[t], encoding='utf-8'))
         if not rows:
@@ -79,22 +82,42 @@ def main():
             continue
         ok = chyby = 0
         pk = PK.get(t, 'id')
-        for i in range(0, len(rows), 500):
-            chunk = rows[i:i + 500]
+
+        def vloz(riadky):
             req = urllib.request.Request(
                 f'{SB_URL}/rest/v1/{t}?on_conflict={pk}',
-                data=json.dumps(chunk).encode(),
+                data=json.dumps(riadky).encode(),
                 headers={'apikey': SB_ANON, 'Authorization': 'Bearer ' + token,
                          'Content-Type': 'application/json',
                          'Prefer': 'resolution=ignore-duplicates,return=minimal'})
+            urllib.request.urlopen(req)
+
+        for i in range(0, len(rows), 500):
+            chunk = rows[i:i + 500]
             try:
-                urllib.request.urlopen(req)
+                vloz(chunk)
                 ok += len(chunk)
             except urllib.error.HTTPError as e:
-                chyby += len(chunk)
-                print(f'    ! {t} dávka {i//500 + 1}: HTTP {e.code} – {e.read()[:200]!r}')
-        print(f'  {t}: obnovených {ok}, chybných {chyby}')
+                # zlyhala celá dávka (napr. konflikt parciálneho UNIQUE indexu vykon_id)
+                # → fallback po jednom riadku: chybné preskoč a zaloguj, ostatné obnov
+                print(f'    ! {t} dávka {i//500 + 1}: HTTP {e.code} – {e.read()[:200]!r} '
+                      f'→ skúšam po jednom riadku')
+                for r in chunk:
+                    ident = str(r.get('vykon_id') or r.get(pk) or '?')
+                    try:
+                        vloz([r])
+                        ok += 1
+                    except urllib.error.HTTPError as e2:
+                        dovod = f'HTTP {e2.code} – {e2.read()[:200]!r}'
+                        chyby += 1
+                        preskocene.append((t, ident, dovod))
+                        print(f'      × {ident}: {dovod}')
+        print(f'  {t}: obnovených {ok}, preskočených {chyby}')
 
+    if preskocene:
+        print(f'\n⚠ SÚHRN: preskočených {len(preskocene)} riadkov:')
+        for t, ident, dovod in preskocene:
+            print(f'  – {t} {ident}: {dovod}')
     print('\nHotovo. Prílohy (priečinky *-subory) nahrajte ručne cez Supabase Studio → Storage.')
 
 if __name__ == '__main__':

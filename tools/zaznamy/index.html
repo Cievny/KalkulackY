@@ -136,14 +136,28 @@ let STAR_ERR='';
 
 function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
+// stránkovanie: načítaj VŠETKY riadky po 1000 (url bez limit/offset)
+async function fetchAllRows(url){
+  let all=[],offset=0;
+  const sep=url.includes('?')?'&':'?';
+  while(true){
+    const r=await fetch(url+sep+'limit=1000&offset='+offset,{headers:SB_HEAD()});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const chunk=await r.json();
+    all=all.concat(chunk);
+    if(chunk.length<1000)break;
+    offset+=1000;
+  }
+  return all;
+}
+
 async function loadAll(){
   document.getElementById('tbody').innerHTML='<tr><td colspan="6" class="empty">Načítavam…</td></tr>';
   ROWS=[];LOAD_ERR=false;
   for(const [tool,table] of Object.entries(TABLES)){
     try{
-      const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.desc&limit=1000`,{headers:SB_HEAD()});
-      if(r.ok){const arr=await r.json();arr.forEach(d=>ROWS.push({tool,table,data:d}));}
-      else LOAD_ERR=true;
+      const arr=await fetchAllRows(`${SB_URL}/rest/v1/${table}?order=created_at.desc`);
+      arr.forEach(d=>ROWS.push({tool,table,data:d}));
     }catch(e){LOAD_ERR=true;}
   }
   STARS=[];STAR_ERR='';
@@ -348,6 +362,12 @@ async function delStar(s){
     else starMsg('⚠️ Chyba mazania ('+r.status+')');
   }catch(e){starMsg('⚠️ Chyba siete: '+e.message);}
 }
+
+// deep-link ?q= (napr. z /tools/kontroly/) – predvyplní vyhľadávanie, render() ho aplikuje
+(function(){
+  const q=new URLSearchParams(location.search).get('q');
+  if(q)document.getElementById('f_search').value=q;
+})();
 
 loadAll();
 </script>

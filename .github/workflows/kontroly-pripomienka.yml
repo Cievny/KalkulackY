@@ -28,7 +28,18 @@ jobs:
           H={'apikey':ANON,'Authorization':'Bearer '+TOK,'Content-Type':'application/json'}
           def get(q):
               try:return json.load(urllib.request.urlopen(urllib.request.Request(SB+'/rest/v1/'+q,headers=H)))
-              except Exception as e:print('::warning::'+q.split('?')[0]+': '+str(e));return []
+              except Exception as e:print('::warning::'+q.split('?')[0]+': '+str(e));return None
+          def fetch_all(q,order='created_at.asc,id.asc'):
+              # stránkovanie po 1000 (bez pevného stropu 5000/10000 – nad limit by
+              # vznikali falošné „meškajúce"); pri chybe vráti None, nie čiastočné dáta
+              out=[];off=0
+              while True:
+                  chunk=get(f'{q}&order={order}&limit=1000&offset={off}')
+                  if chunk is None:return None
+                  out+=chunk
+                  if len(chunk)<1000:break
+                  off+=1000
+              return out
 
           today=dt.date.today()
           def add_months(dstr,m):
@@ -43,8 +54,10 @@ jobs:
           # max 18 mesiacov dozadu, zosnulí (exitus) sa nepripomínajú
           meskajuce=[]
           for tbl,dcol,label in [('evk_vykony','datum','EVK'),('cas_vykony','datum_zaznamu','CAS'),('pevar_vykony','datum_zaznamu','PEVAR')]:
-              vykony=get(f'{tbl}?select=vykon_id,{dcol}&limit=5000')
-              fus=get(tbl.replace('_vykony','_followup')+'?select=vykon_id,casovy_bod,exitus&limit=10000')
+              vykony=fetch_all(f'{tbl}?select=vykon_id,{dcol}')
+              fus=fetch_all(tbl.replace('_vykony','_followup')+'?select=vykon_id,casovy_bod,exitus')
+              if vykony is None or fus is None:
+                  print(f'::warning::{tbl}: dáta sa nepodarilo načítať celé – tabuľka preskočená');continue
               done={(f.get('vykon_id'),f.get('casovy_bod')) for f in fus}
               dead={f.get('vykon_id') for f in fus if f.get('exitus')}
               for v in vykony:
@@ -57,7 +70,7 @@ jobs:
                       if 14<dni<=548 and (vid,bod) not in done:
                           meskajuce.append(f'{label} {vid} – kontrola {bod} (termín {due.strftime("%d.%m.%Y")}, mešká {dni} d)')
           # aorta dispenzár: dalsia_kontrola v minulosti
-          for r in get('aorta_indikacie?select=inicialy,rocnik,dalsia_kontrola,status&limit=5000'):
+          for r in (fetch_all('aorta_indikacie?select=inicialy,rocnik,dalsia_kontrola,status') or []):
               dk=(r.get('dalsia_kontrola') or '')[:10]
               if not dk or r.get('status')=='archiv':continue
               try:dni=(today-dt.date.fromisoformat(dk)).days

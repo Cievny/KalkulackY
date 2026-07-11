@@ -68,8 +68,11 @@
     lmwh:    /fraxiparin|clexane|enoxaparin|nadroparin|\blmwh\b|nizkomolekul/,
     // RČ s lomkou: RRMMDD/XXX(X)
     rcSlash: /\b(\d{2})(\d{2})(\d{2})\s*\/\s*(\d{3,4})\b/,
-    // RČ bez lomky: 9–10 číslic vcelku (validuje sa mesiac/deň nižšie)
-    rcPlain: /\b(\d{2})(\d{2})(\d{2})(\d{3,4})\b/
+    // RČ bez lomky: 9–10 číslic vcelku (prísna validácia v rcPlainOk –
+    // inak by matcher chytal telefónne čísla, napr. 0905123456)
+    rcPlain: /\b(\d{2})(\d{2})(\d{2})(\d{3,4})\b/,
+    // kontext „RČ / r.č. / rodné číslo“ (na normalizovanom texte bez diakritiky)
+    rcCtx: /\br\.?\s?c\b|rodn/
   };
 
   var LABELS = {
@@ -98,6 +101,32 @@
     return { rc: yy + mm + dd + '/' + suf, pohlavie: pohlavie === 'Z' ? 'Ž' : 'M', vek: vek };
   }
 
+  // Existuje daný kalendárny dátum? (odchytí napr. 31.2., 30.2. …)
+  function realDate(y, m, d) {
+    var t = new Date(y, m - 1, d);
+    return t.getFullYear() === y && t.getMonth() === m - 1 && t.getDate() === d;
+  }
+
+  // Smie sa zhoda 9–10 číslic VCELKU (bez lomky) považovať za RČ?
+  //  (i) kontext „RČ / rodné číslo“ do ~20 znakov pred zhodou, ALEBO
+  //  (ii) 10 číslic + deliteľnosť 11 (kontrolná číslica) + validný mesiac
+  //       (1–12 / 51–62) + validný deň (1–31) + reálny dátum narodenia
+  //       + prefix nie je mobilná predvoľba 09xx.
+  // Telefóny tak neprejdú: 0905123456 padne na 09-prefixe, pevné linky
+  // spravidla na mesiaci/dni/deliteľnosti 11. 9-miestne RČ len s kontextom.
+  function rcPlainOk(m, nt) {
+    if (RX.rcCtx.test(nt.slice(Math.max(0, m.index - 20), m.index))) return true;
+    var digits = m[1] + m[2] + m[3] + m[4];
+    if (digits.length !== 10) return false;              // 9 číslic len s kontextom
+    if (digits.slice(0, 2) === '09') return false;       // zjavná predvoľba mobilu
+    if (parseInt(digits, 10) % 11 !== 0) return false;   // modulo-11 kontrola
+    var yy = parseInt(m[1], 10), mm = parseInt(m[2], 10), dd = parseInt(m[3], 10);
+    if (mm > 50) mm -= 50;                               // ženy: mesiac +50
+    if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return false;
+    var nowYY = new Date().getFullYear() % 100;
+    return realDate(yy > nowYY ? 1900 + yy : 2000 + yy, mm, dd);
+  }
+
   /* ---------- hlavný parser ---------- */
   function parse(text, lang) {
     lang = lang === 'cz' ? 'cz' : 'sk';
@@ -115,7 +144,9 @@
     // DM + typ + liečba
     if (P(RX.dm)) {
       var typ = RX.dm1.test(nt) && !RX.dm2.test(nt) ? 'DM1' : (RX.dm2.test(nt) ? 'DM2' : null);
-      var liecba = P(RX.inzulin) ? 'inzulín' : (P(RX.oad) ? 'OAD' : (P(RX.dieta) ? 'diéta' : null));
+      var maInz = !!P(RX.inzulin), maOad = !!P(RX.oad);
+      var liecba = (maInz && maOad) ? 'OAD+inzulín'
+        : (maInz ? 'inzulín' : (maOad ? 'OAD' : (P(RX.dieta) ? 'diéta' : null)));
       data.dm = { typ: typ, liecba: liecba };
       found.push({ kod: 'dm', label: (typ || 'DM') + (liecba ? ' (' + liecba + ')' : ''), detail: liecba });
     }
@@ -176,14 +207,24 @@
     if (a.warfarin) found.push({ kod: 'atb', label: L.warf, detail: null });
     if (a.lmwh) found.push({ kod: 'atb', label: 'LMWH', detail: null });
 
-    // Rodné číslo (s lomkou, príp. 9–10 číslic vcelku ak validuje)
-    var rcM = RX.rcSlash.exec(nt) || RX.rcPlain.exec(nt);
-    if (rcM) {
-      var rc = rcParse(rcM[1], rcM[2], rcM[3], rcM[4], new Date());
-      if (rc) {
-        data.rodne_cislo = rc.rc; data.pohlavie = rc.pohlavie; data.vek = rc.vek;
-        found.push({ kod: 'rc', label: 'RČ ' + rc.rc + ' (' + rc.pohlavie + ', ' + rc.vek + ' r.)', detail: null });
+    // Rodné číslo: formát s lomkou platí bez kontextu; 9–10 číslic vcelku
+    // len ak prejde rcPlainOk (kontext alebo prísna validácia – viď vyššie)
+    var now = new Date();
+    var rc = null;
+    var rcM = RX.rcSlash.exec(nt);
+    if (rcM) rc = rcParse(rcM[1], rcM[2], rcM[3], rcM[4], now);
+    if (!rc) {
+      var gP = new RegExp(RX.rcPlain.source, 'g');
+      var pm;
+      while ((pm = gP.exec(nt))) {
+        if (!rcPlainOk(pm, nt)) continue;
+        rc = rcParse(pm[1], pm[2], pm[3], pm[4], now);
+        if (rc) break;
       }
+    }
+    if (rc) {
+      data.rodne_cislo = rc.rc; data.pohlavie = rc.pohlavie; data.vek = rc.vek;
+      found.push({ kod: 'rc', label: 'RČ ' + rc.rc + ' (' + rc.pohlavie + ', ' + rc.vek + ' r.)', detail: null });
     }
 
     return { found: found, data: data };
@@ -240,7 +281,10 @@
     if (d.dm) {
       tickCheckbox(document.getElementById('k_dm'));
       if (d.dm.typ) setRadio('dm_typ', function (v) { return v === norm(d.dm.typ); });
-      if (d.dm.liecba === 'inzulín') setRadio('dm_liecba', function (v) { return v.indexOf('inzulin') === 0; });
+      // kombinácia OAD+inzulín má vlastné radio („kombináciou OAD a inzulínu“ /
+      // „kombinací OAD a inzulinu“) – nesmie skončiť len ako inzulín
+      if (d.dm.liecba === 'OAD+inzulín') setRadio('dm_liecba', function (v) { return v.indexOf('kombin') === 0; });
+      else if (d.dm.liecba === 'inzulín') setRadio('dm_liecba', function (v) { return v.indexOf('inzulin') === 0; });
       else if (d.dm.liecba === 'OAD') setRadio('dm_liecba', function (v) { return v === 'oad'; });
       else if (d.dm.liecba === 'diéta') setRadio('dm_liecba', function (v) { return v.indexOf('diet') === 0; });
     }
@@ -268,11 +312,22 @@
     }
     if (d.chochp) tickCheckbox(document.getElementById('k_chochp'));
 
-    // Antitrombotiká – podľa hodnôt checkboxov .atb v danom súbore
+    // Antitrombotiká – podľa hodnôt checkboxov .atb v danom súbore.
+    // Pri DAPT sa zaškrtne LEN checkbox DAPT (nie navyše samostatné ASA
+    // a klopidogrel – dvojice by sa vo výslednom texte duplikovali).
     var a = d.atb;
-    if (a.dapt) tickCheckbox(atbBox(function (v) { return v.indexOf('dapt') === 0; }));
-    if (a.asa) tickCheckbox(atbBox(function (v) { return v === 'asa'; }));
-    if (a.klopidogrel) tickCheckbox(atbBox(function (v) { return v === 'klopidogrel'; }));
+    if (a.dapt) {
+      var daptEl = atbBox(function (v) { return v.indexOf('dapt') === 0; });
+      if (daptEl) tickCheckbox(daptEl);
+      else {
+        // formulár bez DAPT checkboxu – fallback na dvojicu ASA + klopidogrel
+        tickCheckbox(atbBox(function (v) { return v === 'asa'; }));
+        tickCheckbox(atbBox(function (v) { return v === 'klopidogrel'; }));
+      }
+    } else {
+      if (a.asa) tickCheckbox(atbBox(function (v) { return v === 'asa'; }));
+      if (a.klopidogrel) tickCheckbox(atbBox(function (v) { return v === 'klopidogrel'; }));
+    }
     if (a.noak) tickCheckbox(atbBox(function (v) { return v === 'doac' || v === 'noak'; }));
     if (a.warfarin) tickCheckbox(atbBox(function (v) { return v.indexOf('warfar') === 0; }));
     if (a.lmwh) tickCheckbox(atbBox(function (v) { return v === 'lmwh'; }));

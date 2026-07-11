@@ -122,6 +122,18 @@ const P2=n=>String(n).padStart(2,'0');
 const ESC=t=>String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const MESIACE=['Január','Február','Marec','Apríl','Máj','Jún','Júl','August','September','Október','November','December'];
 
+// čas udalosti pre zobrazenie: string s časovou zónou (Z / +HH:MM) preveď na lokálny
+// čas, „floating" čas bez zóny nechaj tak, ako je zapísaný
+function fmtCas(s){
+  s=String(s||'');
+  if(s.length<=10)return'';
+  if(/(Z|[+\-]\d{2}:?\d{2})$/.test(s)){
+    const d=new Date(s);
+    if(!isNaN(d))return P2(d.getHours())+':'+P2(d.getMinutes());
+  }
+  return s.slice(11,16);
+}
+
 async function nacitajUdalosti(){
   try{
     const r=await fetch('https://ncqtiicfqhaturjlfxcj.supabase.co/rest/v1/kalendar_udalosti?order=zaciatok.asc&limit=1000',{headers:sbHeaders()});
@@ -174,19 +186,19 @@ function natMesiac(){
   const prvy=new Date(NAT_Y,NAT_M,1);
   const start=new Date(prvy);start.setDate(1-((prvy.getDay()+6)%7)); // pondelok pred 1.
   const dnesK=(()=>{const d=new Date();return d.getFullYear()+'-'+P2(d.getMonth()+1)+'-'+P2(d.getDate());})();
-  let html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">';
-  ['Po','Ut','St','Št','Pi','So','Ne'].forEach(d=>html+='<div style="font-size:10.5px;font-weight:800;text-transform:uppercase;color:#6b7280;padding:0 4px">'+d+'</div>');
+  let html='<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px">';
+  ['Po','Ut','St','Št','Pi','So','Ne'].forEach(d=>html+='<div style="min-width:0;font-size:10.5px;font-weight:800;text-transform:uppercase;color:#6b7280;padding:0 4px">'+d+'</div>');
   const cur=new Date(start);
   for(let i=0;i<42;i++){
     const k=cur.getFullYear()+'-'+P2(cur.getMonth()+1)+'-'+P2(cur.getDate());
     const inM=cur.getMonth()===NAT_M;
     const evs=mapa[k]||[];
-    html+='<div style="background:'+(inM?'#fff':'transparent')+';border-radius:9px;min-height:86px;padding:6px 7px;'
+    html+='<div style="min-width:0;background:'+(inM?'#fff':'transparent')+';border-radius:9px;min-height:86px;padding:6px 7px;'
       +(inM?'box-shadow:0 1px 4px rgba(0,0,0,.06);':'opacity:.35;')
       +(k===dnesK?'outline:2px solid #3b82f6;':'')+'">';
     html+='<div style="font-size:12px;font-weight:800;color:#1a2745;margin-bottom:3px">'+cur.getDate()+'</div>';
     evs.slice(0,3).forEach(u=>{
-      const cas=(!u.cely_den&&u.zaciatok.length>10)?u.zaciatok.slice(11,16)+' ':'';
+      const cas=(!u.cely_den&&u.zaciatok.length>10)?fmtCas(u.zaciatok)+' ':'';
       html+='<div title="'+ESC(u.nazov||'')+(u.popis?' – '+ESC(u.popis):'')+'" style="font-size:10.5px;line-height:1.35;background:#eff6ff;color:#1e40af;border-radius:5px;padding:1px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cas+ESC(u.nazov||'')+'</div>';
     });
     if(evs.length>3)html+='<div style="font-size:10px;color:#9ca3af">+ '+(evs.length-3)+' ďalšie</div>';
@@ -207,7 +219,7 @@ function natZoznam(){
   rows.forEach(u=>{
     const mk=u.zaciatok.slice(0,7);
     if(mk!==mesKey){mesKey=mk;html+='<div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#6b7280;letter-spacing:.5px;margin:12px 0 4px">'+MESIACE[parseInt(mk.slice(5,7))-1]+' '+mk.slice(0,4)+'</div>';}
-    const cas=u.cely_den?'':' '+(u.zaciatok.slice(11,16)||'');
+    const cas=u.cely_den?'':' '+(fmtCas(u.zaciatok)||'');
     let datum=fmtD(u.zaciatok)+cas;
     const dni=dniUdalosti(u);
     if(dni.length>1)datum+=' – '+fmtD(dni[dni.length-1]);

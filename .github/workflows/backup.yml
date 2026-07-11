@@ -72,8 +72,9 @@ jobs:
                   print(f'::error::CHYBA pri tabuľke {t}: {e}');errors.append(t)
 
           # Storage: aorta-prilohy (podľa aorta_prilohy.storage_path) + oznamy-prilohy (podľa oznamy.priloha_path)
+          bucket_fails=[]   # (bucket, zlyhané, spolu) – súhrn na konci behu
           def backup_bucket(bucket,table,col,folder):
-              os.makedirs('backup/'+folder,exist_ok=True);n=0
+              os.makedirs('backup/'+folder,exist_ok=True);n=0;fail=0;total=0
               try:
                   rows=fetch_all(table, select=col)
               except Exception as e:
@@ -81,14 +82,20 @@ jobs:
               for row in rows:
                   p=row.get(col)
                   if not p:continue
+                  total+=1
                   try:
                       data=api('/storage/v1/object/'+bucket+'/'+urllib.parse.quote(p),raw=True)
                       open('backup/'+folder+'/'+p.replace('/','__'),'wb').write(data);n+=1
                   except Exception as e:
-                      print(f'::warning::súbor {p} z {bucket}: {e}')
+                      fail+=1;print(f'::warning::súbor {p} z {bucket}: {e}')
               print(f'→ storage {bucket}: {n} súborov')
+              if fail:bucket_fails.append((bucket,fail,total))
           backup_bucket('aorta-prilohy','aorta_prilohy','storage_path','aorta-prilohy-subory')
           backup_bucket('oznamy-prilohy','oznamy','priloha_path','oznamy-prilohy-subory')
+
+          # súhrn zlyhaných súborov zo storage (zámerne nezhadzuje celú zálohu)
+          for b,f,tot in bucket_fails:
+              print(f'::warning::bucket {b}: {f}/{tot} súborov zlyhalo')
 
           if errors:
               print('::error::Záloha neúplná – zlyhali: '+', '.join(errors));sys.exit(1)

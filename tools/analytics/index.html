@@ -12,7 +12,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;padding:24px}
 h1{font-size:22px;font-weight:700;color:#1a2745;margin-bottom:4px}
 .subtitle{font-size:13px;color:#6b7280;margin-bottom:24px}
-.tabs{display:flex;gap:4px;margin-bottom:20px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px}
 .tab{padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#e5e7eb;color:#374151;transition:.15s}
 .tab.active{background:#1e40af;color:#fff}
 .section{display:none}.section.active{display:block}
@@ -412,6 +412,8 @@ function statCard(label,value){
   return `<div class="stat-card"><div class="stat-val">${value}</div><div class="stat-lbl">${label}</div></div>`;
 }
 function monthKey(d){if(!d)return null;const p=(''+d).split(/[-T ]/);if(!p[1])return null;return p[0]+'-'+p[1];}
+// medián zoradeného poľa: pri párnom počte priemer dvoch stredných prvkov
+function medianSorted(a){if(!a||!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 function escHtml(v){return (v==null?'':''+v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 // --- Štúdijné helpery ---
@@ -495,7 +497,7 @@ function parseMultiField(rows,key){
 async function fetchAll(table){
   let all=[],offset=0;
   while(true){
-    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.asc&limit=1000&offset=${offset}`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.asc,id.asc&limit=1000&offset=${offset}`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
     if(!r.ok)throw new Error(await r.text());
     const chunk=await r.json();
     all=all.concat(chunk);
@@ -798,7 +800,7 @@ async function loadPOZ(){
       const d=(r.datum_poziadavky&&c)?days(r.datum_poziadavky,c):null;
       return (d!=null&&d>=0&&d<1000)?d:null;}catch(e){return null;}
   }).filter(x=>x!=null).sort((a,b)=>a-b);
-  const median=closedDays.length?closedDays[Math.floor(closedDays.length/2)]:null;
+  const median=medianSorted(closedDays);
   const dnesStr=(()=>{const z=n=>String(n).padStart(2,'0');return dnes.getFullYear()+'-'+z(dnes.getMonth()+1)+'-'+z(dnes.getDate());})();
   const poTermine=active.filter(r=>r.termin&&(''+r.termin).slice(0,10)<dnesStr).length; // porovnanie dátum-na-dátum, dnešok nie je „po termíne“
   document.getElementById('poz-stats').innerHTML=[
@@ -851,7 +853,7 @@ async function loadPROG(){
   const durRows=valid.map(r=>({r,m:durOf(r)})).filter(x=>x.m!=null);
   const durs=durRows.map(x=>x.m).sort((a,b)=>a-b);
   const avgDur=durs.length?Math.round(durs.reduce((a,b)=>a+b,0)/durs.length):null;
-  const medDur=durs.length?durs[Math.floor(durs.length/2)]:null;
+  const medDur=durs.length?Math.round(medianSorted(durs)):null;
 
   const tentoMesiac=(''+new Date().getFullYear()).padStart(4,'0')+'-'+(''+(new Date().getMonth()+1)).padStart(2,'0');
   document.getElementById('prog-stats').innerHTML=[
@@ -914,14 +916,18 @@ async function loadPROG(){
 
 async function loadAll(){
   document.getElementById('err-box').style.display='none';
+  // Obnoviť musí prenačítať aj follow-upy – resetni cache flagy, aby ensureFU refetchol
+  const wasPub=PUB.fetched||PUB.fuError, wasVyk=VYK.opened;
+  PUB.fetched=false;PUB.fetching=false;PUB.fuError=false;
   loadPOZ(); // nezávisle – nesmie zhodiť ostatné sekcie
   loadPROG(); // nezávisle – nesmie zhodiť ostatné sekcie
   const p=Promise.all([loadEVK(),loadCAS(),loadPEVAR()]);
   window._pubDataP=p.catch(()=>{}); // Publikácie počkajú na dáta (chyby rieši catch nižšie)
   try{
     await p;
-    if(PUB.fetched)renderPub(); // po Obnoviť prepočítaj aj publikačné tabuľky
-    if(VYK.opened){renderVyk();renderMM();} // po Obnoviť prepočítaj aj výkazy + M&M
+    if(wasPub||wasVyk)await ensureFU(); // refetch follow-up dát po Obnoviť
+    if(wasPub)renderPub(); // po Obnoviť prepočítaj aj publikačné tabuľky
+    if(wasVyk){renderVyk();renderMM();} // po Obnoviť prepočítaj aj výkazy + M&M
   }
   catch(e){
     const eb=document.getElementById('err-box');
@@ -941,7 +947,7 @@ function showTab(name,btn){
 }
 
 /* ==================== 📄 PUBLIKÁCIE – publikačné štatistiky ==================== */
-const PUB={lang:'sk',fetched:false,fetching:false,fu:{evk:[],cas:[],pevar:[]},tables:{}};
+const PUB={lang:'sk',fetched:false,fetching:false,fuError:false,fu:{evk:[],cas:[],pevar:[]},tables:{}};
 const PUB_FU_TBL={evk:'evk_followup',cas:'cas_followup',pevar:'pevar_followup'};
 
 // --- Popisky (SK/EN) ---
@@ -952,6 +958,7 @@ sk:{
  cohort0:'Kohorta: n = 0 výkonov',
  rcNote:z=>`* u ${z} výkonov chýba rodné číslo – počítané ako samostatní pacienti`,
  loading:'⏳ Načítavam follow-up dáta…',
+ fuErr:'⚠️ Follow-up dáta sa nepodarilo načítať – tabuľky/KM sú neúplné.',
  methodsTitle:'Metódy – text pre rukopis',
  t1:'Tabuľka 1 – Základné charakteristiky',
  t2:'Tabuľka 2 – Procedurálne charakteristiky',
@@ -962,8 +969,8 @@ sk:{
  kmCopy:'📋 Kopírovať KM tabuľku',
  kmNote:(n,ev,ex)=>`Zahrnutých ${n} výkonov s follow-up (${ev} udalostí); ${ex} výkonov bez follow-up bolo vylúčených.`,
  exclKonz:n=>` · ${n} diagnostických/konzervatívnych DSA vylúčených z kohorty (bez stentu)`,
- kmDefEvk:'Udalosť: restenóza alebo oklúzia pri kontrole, reintervencia alebo amputácia.',
- kmDefCas:'Udalosť: restenóza ≥50 % (50–70 %, >70 %, oklúzia stentu) alebo reintervencia.',
+ kmDefEvk:'Udalosť: restenóza alebo oklúzia pri kontrole, asistovaná alebo sekundárna patencia, reintervencia alebo amputácia.',
+ kmDefCas:'Udalosť: restenóza ≥50 % (50–70 %, >70 %, oklúzia stentu), progresia s indikáciou na revaskularizáciu alebo reintervencia.',
  kmDefPevar:'Udalosť: reintervencia alebo endoleak typu Ia/Ib/III.',
  kmTime:'Čas (mesiace)',kmAtRisk:'V riziku',kmEvents:'Udalosti',kmEst:'Odhad % (95 % IS)',kmMonths:'Mesiace',
  char:'Charakteristika',value:'Hodnota',indicator:'Ukazovateľ',
@@ -1014,6 +1021,7 @@ en:{
  cohort0:'Cohort: n = 0 procedures',
  rcNote:z=>`* Patient identifier (birth number) missing in ${z} procedures – each counted as a separate patient`,
  loading:'⏳ Loading follow-up data…',
+ fuErr:'⚠️ Follow-up data could not be loaded – tables/KM are incomplete.',
  methodsTitle:'Methods – manuscript paragraph',
  t1:'Table 1 – Baseline characteristics',
  t2:'Table 2 – Procedural characteristics',
@@ -1024,8 +1032,8 @@ en:{
  kmCopy:'📋 Copy KM table',
  kmNote:(n,ev,ex)=>`${n} procedures with follow-up included (${ev} events); ${ex} procedures without follow-up were excluded.`,
  exclKonz:n=>` · ${n} diagnostic/conservative angiographies excluded from the cohort (no stent)`,
- kmDefEvk:'Event: restenosis or occlusion at follow-up, reintervention, or amputation.',
- kmDefCas:'Event: restenosis ≥50 % (50–70 %, >70 %, stent occlusion) or reintervention.',
+ kmDefEvk:'Event: restenosis or occlusion at follow-up, assisted or secondary patency, reintervention, or amputation.',
+ kmDefCas:'Event: restenosis ≥50 % (50–70 %, >70 %, stent occlusion), progression indicated for revascularisation, or reintervention.',
  kmDefPevar:'Event: reintervention or type Ia/Ib/III endoleak.',
  kmTime:'Time (months)',kmAtRisk:'At risk',kmEvents:'Events',kmEst:'Estimate % (95% CI)',kmMonths:'Months',
  char:'Characteristic',value:'Value',indicator:'Outcome',
@@ -1284,7 +1292,7 @@ function pubT1(typ,rows){
   const IND=' '; // odsadenie podpoložiek
   const out=[[LT('char'),LT('value')]];
   out.push([LT('nProc'),''+N]);
-  const ages=pubNums(rows,'vek');
+  const ages=pubNums(rows,'vek').filter(v=>v>0); // vek=0 = neznámy, vylúč (zjednotené s dashboardom)
   out.push([LT('age')+(ages.length<N?` (N=${ages.length})`:'')]);
   out.push([IND+LT('meanSd'),fMeanSD(ages,1)]);
   out.push([IND+LT('medIqr'),fMedIQR(ages,1)]);
@@ -1606,9 +1614,9 @@ function computeKM(subs){
 window.computeKM=computeKM; // exportované pre testy
 
 const PUB_KM_EVENT={
-  evk:f=>{const p=(f.patencia==null?'':''+f.patencia).trim().toLowerCase();return p==='restenóza'||p.indexOf('okl')===0||f.reintervencia===true||pubIsAmput(f.amputacia);},
+  evk:f=>{const p=(f.patencia==null?'':''+f.patencia).trim().toLowerCase();return p==='restenóza'||p.indexOf('okl')===0||p.indexOf('asistovan')===0||p.indexOf('sekund')===0||f.reintervencia===true||pubIsAmput(f.amputacia);},
   pevar:f=>f.reintervencia===true||['Ia','Ib','III'].includes((f.endoleak_typ==null?'':''+f.endoleak_typ).trim()),
-  cas:f=>{const v=(f.restenoza==null?'':''+f.restenoza).replace(/\s+/g,'');return /^50[–-]70%$/.test(v)||/^>70%$/.test(v)||/^okl/i.test(v)||f.reintervencia===true;}
+  cas:f=>{const v=(f.restenoza==null?'':''+f.restenoza).replace(/\s+/g,'');return /^50[–-]70%$/.test(v)||/^>70%$/.test(v)||/^okl/i.test(v)||/^progres/i.test(v)||f.reintervencia===true;}
 };
 
 function pubKMSubjects(typ,rows){
@@ -1811,21 +1819,32 @@ function setPubLang(l){
 
 // --- Otvorenie a render tabu ---
 // zdieľané načítanie follow-up dát (Publikácie aj M&M report) – prebehne len raz
+// výrazný banner pri zlyhaní FU fetchu – v Publikáciách aj v M&M karte
+function showFUBanner(){
+  [['sec-pub','fu-banner-pub'],['mm-card','fu-banner-mm']].forEach(([host,bid])=>{
+    const h=document.getElementById(host);if(!h)return;
+    let b=document.getElementById(bid);
+    if(PUB.fuError){
+      if(!b){b=document.createElement('div');b.id=bid;b.className='err';h.insertBefore(b,h.firstChild);}
+      b.textContent=LT('fuErr');b.style.display='';
+    }else if(b){b.style.display='none';}
+  });
+}
 async function ensureFU(){
   if(PUB.fetched)return;
   if(!PUB.fetching){
     PUB.fetching=(async()=>{
       try{await (window._pubDataP||Promise.resolve());}catch(e){}
-      const [e,c,p]=await Promise.all([
-        fetchAll(PUB_FU_TBL.evk).catch(()=>[]),
-        fetchAll(PUB_FU_TBL.cas).catch(()=>[]),
-        fetchAll(PUB_FU_TBL.pevar).catch(()=>[])
-      ]);
+      let failed=false;
+      const grab=t=>fetchAll(t).catch(()=>{failed=true;return[];});
+      const [e,c,p]=await Promise.all([grab(PUB_FU_TBL.evk),grab(PUB_FU_TBL.cas),grab(PUB_FU_TBL.pevar)]);
       PUB.fu={evk:e||[],cas:c||[],pevar:p||[]};
-      PUB.fetched=true;
+      PUB.fuError=failed;
+      if(!failed)PUB.fetched=true; // pri zlyhaní neoznač ako načítané – ďalšie otvorenie tabu skúsi znova
     })();
   }
-  await PUB.fetching;
+  try{await PUB.fetching;}finally{PUB.fetching=false;}
+  showFUBanner();
 }
 async function openPub(){
   if(!PUB.fetched){
@@ -1839,6 +1858,7 @@ async function openPub(){
   renderPub();
 }
 function renderPub(){
+  showFUBanner();
   if(!PUB.fetched)return;
   const typ=pubEl('pub-typ').value;
   pubEl('pub-riecisko-wrap').style.display=typ==='evk'?'':'none';
@@ -1956,6 +1976,7 @@ function mmVykSummary(typ,r){
 }
 function renderMM(){
   if(!VYK.opened)return;
+  showFUBanner();
   const od=vykEl('mm-od').value,doo=vykEl('mm-do').value;
   const typFilter=vykEl('mm-typ').value;
   const typs=typFilter?[typFilter]:['evk','cas','pevar'];

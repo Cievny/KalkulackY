@@ -43,6 +43,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 #cmsg{font-size:11px;text-align:center;min-height:16px}
 .id-row{display:grid;grid-template-columns:auto 1fr;gap:5px;align-items:center}
 .id-prefix{font-weight:700;font-size:13px;color:#3b82f6;background:#f0f7ff;border:1.5px solid #3b82f6;border-radius:6px;padding:6px 10px;white-space:nowrap}
+@media(max-width:800px){
+.wrap{grid-template-columns:1fr;min-height:0}
+.left{overflow-y:visible;padding:14px 12px}
+.right{position:static;height:auto;border-left:none;border-top:1px solid #d8dce6}
+#out{min-height:280px}
+.tabnav{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tnb{padding:12px 14px;white-space:nowrap}
+.row.r2,.row.r3{grid-template-columns:1fr}
+.btns{flex-wrap:wrap}
+}
 @media print{.tabnav,.shared-nav{display:none}.left{display:none}.right{border:none;height:auto;position:static}.btns{display:none}#out{border:none;font-family:inherit;font-size:13px;background:#fff}}
 details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:11.5px;color:#5a6a8a;font-weight:600;cursor:pointer;user-select:none;padding:5px 8px;background:#f7f8fc;border-radius:6px;border:1.5px solid #eef0f5;list-style:none}details.komor-details>summary::-webkit-details-marker{display:none}details.komor-details[open]>summary .komor-arr{transform:rotate(90deg)}details.komor-details>summary .komor-arr{display:inline-block;transition:transform .2s;font-size:10px;color:#9ca3af}
 .drg-table{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -157,7 +167,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 </div>
 <div class="row r2">
   <div class="f"><label>Lokalizácia</label>
-    <select id="lokalizacia" onchange="gen()">
+    <select id="lokalizacia" onchange="syncLokDsaLat();gen()">
       <option value="l.dx.">ACI l.dx.</option>
       <option value="l.sin.">ACI l.sin.</option>
     </select>
@@ -778,6 +788,17 @@ function casDsaLat(){
   if(sinWrap)sinWrap.style.display=(lat==='sin'||lat==='bi')?'block':'none';
   if(dxWrap)dxWrap.style.display=(lat==='dx'||lat==='bi')?'block':'none';
 }
+// Lokalizácia výkonu ↔ DSA lateralita: pri zmene lokalizácie prepni DSA na zodpovedajúcu
+// stranu (bilaterálnu voľbu nechávame), aby INDIKÁCIA nečítala typ stenózy zo skrytého panelu
+function syncLokDsaLat(){
+  const lat=document.querySelector('input[name="dsa_lat"]:checked')?.value||'sin';
+  if(lat==='bi')return;
+  const want=(g('lokalizacia')||'').includes('dx')?'dx':'sin';
+  if(lat!==want){
+    const r=document.querySelector('input[name="dsa_lat"][value="'+want+'"]');
+    if(r){r.checked=true;casDsaLat();}
+  }
+}
 function getCasDsa(){
   const lat=document.querySelector('input[name="dsa_lat"]:checked')?.value||'sin';
   const sides=lat==='bi'?['sin','dx']:lat==='sin'?['sin']:['dx'];
@@ -832,7 +853,15 @@ function getKomor(){
     const liecba=document.querySelector('input[name="ah_liecba"]:checked')?.value||'monoterapia';
     list.push('AH – '+komp+', '+liecba);
   }
-  if(document.getElementById('k_chri')?.checked){const res=calcEGFR();list.push(res?'CKD – '+res:'CKD');}
+  if(document.getElementById('k_chri')?.checked){
+    const res=calcEGFR();
+    if(res)list.push('CKD – '+res);
+    else{
+      // edit režim bez obnoviteľného kreatinínu – zachovaj pôvodný CKD segment z uloženého záznamu
+      const orig=(window._origKomorbidity||'').match(/CKD – \S+ ml\/min\/1,73m² → G\S+ \([^)]+\)/);
+      list.push(orig?orig[0]:'CKD');
+    }
+  }
   if(document.getElementById('k_ichs')?.checked){
     const forma=document.querySelector('input[name="ichs_forma"]:checked')?.value||'stabilná';
     const revasc=document.querySelector('input[name="ichs_revasc"]:checked')?.value||'bez revaskularizácie';
@@ -941,8 +970,7 @@ function gen(){
   const lok=g('lokalizacia');
   const strana=lok.includes('dx.')?'l.dx.':'l.sin.';
   const aci='ACI '+strana,ace='ACE '+strana;
-  const platEl=document.getElementById('plat');
-  const plat=platEl?platEl.options[platEl.selectedIndex].text:'';
+  const plat=g('plat'); // VALUE je už inštrumentál ("mäkkým AS plátom…") – ukladá sa aj do DB
   const artVal=g('access_art'),art=artVal==='vlastny'?(g('access_art_c')||'vlastná artéria'):artVal;
   const katDiag=g('kateter_diag');
   const sh=g('sheath'),shd=g('sheathdlz');
@@ -950,7 +978,11 @@ function gen(){
   const komor=getKomor();
   const postup=g('postup_vykonu');
   const konz=postup==='konzervativny';
-  const typAci=g('dsa_aci_'+(strana==='l.dx.'?'dx':'sin')+'_typ');
+  // typ stenózy ACI – len z VIDITEĽNEJ strany DSA panelu; ak strana podľa lokalizácie
+  // nie je vyšetrená, ber viditeľnú stranu (skrytý panel obsahuje nevyplnené defaulty)
+  const _dsaLatGen=document.querySelector('input[name="dsa_lat"]:checked')?.value||'sin';
+  const _lokSide=strana==='l.dx.'?'dx':'sin';
+  const typAci=g('dsa_aci_'+((_dsaLatGen==='bi'||_dsaLatGen===_lokSide)?_lokSide:_dsaLatGen)+'_typ');
   const klin=g('klinicky_stav');
   const symp=klin!=='asymptomatický';
   const sympDays=g('cas_symptom_days');
@@ -1040,9 +1072,14 @@ function gen(){
   // automatický záver podľa postupu – kým ho lekár ručne neprepíše
   const zaverEl=document.getElementById('zaver_vykonu');
   if(zaverEl&&!window._zaverManual){
+    const _tu=(document.querySelector('input[name="tech_uspech"]:checked')||{}).value||'';
     zaverEl.value=konz
       ?'DSA karotíd – '+aci+' '+typAci+', volíme konzervatívny postup'+(chk('konz_duplex')?', duplex USG kontrola o '+konzDuplexTxt():'')+'.'
-      :'CAS '+aci+' s dobrým efektom, bez komplikácii.';
+      :(_tu==='Technický neúspech'
+        ?'CAS '+aci+' technicky neúspešný.'
+        :_tu==='Parciálny úspech'
+          ?'CAS '+aci+' s parciálnym efektom, bez komplikácii.'
+          :'CAS '+aci+' s dobrým efektom, bez komplikácii.');
   }
   L.push('ZÁVER:');
   const zav=g('zaver_vykonu');if(zav)L.push(zav);
@@ -1191,25 +1228,29 @@ async function saveData(){
   const isInterv=g('postup_vykonu')==='intervencia';
   // Rozdelenie veľkosti materiálu "8x20mm" → priemer / dĺžka (pre štatistiku)
   const dimMM=(id,i)=>{const n=(g(id)||'').split(/[^0-9.]+/).filter(Boolean).map(Number);return n[i]!=null?n[i]:null;};
+  // DSA polia nevyšetrenej (skrytej) strany neukladáme – inak by sa zapísali defaulty selectov
+  const _dsaLat=document.querySelector('input[name="dsa_lat"]:checked')?.value||'sin';
+  const _dsaSin=_dsaLat==='sin'||_dsaLat==='bi';
+  const _dsaDx=_dsaLat==='dx'||_dsaLat==='bi';
   const payload={
     vykon_id:window._editRecordId&&window._editVykonId?window._editVykonId:'CAS-'+casYear()+'-'+g('id_suffix'),
     operator:g('operator'),
     komorbidity:getKomor().join(', '),
     dsa_nalez:getCasDsa(),
-    dsa_acc_sin:g('dsa_acc_sin'),dsa_aci_sin:g('dsa_aci_sin_typ'),dsa_ace_sin:g('dsa_ace_sin'),dsa_av_sin:g('dsa_av_sin'),
-    dsa_acc_dx:g('dsa_acc_dx'),dsa_aci_dx:g('dsa_aci_dx_typ'),dsa_ace_dx:g('dsa_ace_dx'),dsa_av_dx:g('dsa_av_dx'),
+    dsa_acc_sin:_dsaSin?g('dsa_acc_sin'):null,dsa_aci_sin:_dsaSin?g('dsa_aci_sin_typ'):null,dsa_ace_sin:_dsaSin?g('dsa_ace_sin'):null,dsa_av_sin:_dsaSin?g('dsa_av_sin'):null,
+    dsa_acc_dx:_dsaDx?g('dsa_acc_dx'):null,dsa_aci_dx:_dsaDx?g('dsa_aci_dx_typ'):null,dsa_ace_dx:_dsaDx?g('dsa_ace_dx'):null,dsa_av_dx:_dsaDx?g('dsa_av_dx'):null,
     datum_zaznamu:g('datum_zaznamu')||isoLocal(),
     vek:parseInt(g('vek'))||null,
     pohlavie:g('pohlavie'),
     rodne_cislo:g('rodne_cislo').trim()||null,
     egfr:chk('k_chri')?egfrNum():null,
     lokalizacia:g('lokalizacia'),
-    typ_platu:document.getElementById('plat').options[document.getElementById('plat').selectedIndex].text,
+    typ_platu:g('plat'),
     klinicky_stav:g('klinicky_stav'),
-    nascet_stenoza_sin:g('nascet_stenoza_sin'),
-    nascet_metoda_sin:g('nascet_metoda_sin'),
-    nascet_stenoza_dx:g('nascet_stenoza_dx'),
-    nascet_metoda_dx:g('nascet_metoda_dx'),
+    nascet_stenoza_sin:_dsaSin?g('nascet_stenoza_sin'):null,
+    nascet_metoda_sin:_dsaSin?g('nascet_metoda_sin'):null,
+    nascet_stenoza_dx:_dsaDx?g('nascet_stenoza_dx'):null,
+    nascet_metoda_dx:_dsaDx?g('nascet_metoda_dx'):null,
     anestazia:g('anes'),
     pristupova_arteria:artVal==='vlastny'?g('access_art_c'):artVal,
     strana_pristupu:g('strana'),
@@ -1270,7 +1311,14 @@ async function saveData(){
   msg('Ukladám...','#5a6a8a');
   try{
     const _isEdit=!!window._editRecordId;
-    if(_isEdit){Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]==null)delete payload[k];});delete payload.vykon_id;}
+    if(_isEdit){
+      // maž len null/undefined – prázdny reťazec je legitímne "vyčistenie" poľa v DB;
+      // dsa polia skrytej strany sú null → nemenia sa (bod: nevymýšľať kontralaterálne nálezy)
+      Object.keys(payload).forEach(k=>{if(payload[k]==null)delete payload[k];});
+      // pri prepnutí na intervenciu vyčisti starý konzervatívny detail
+      if(g('postup_vykonu')==='intervencia')payload.konz_detail='';
+      delete payload.vykon_id;
+    }
     else{
       // Kontrola duplicitného ID pred INSERTom
       const _dup=await fetch(SB_URL+'/rest/v1/cas_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
@@ -1346,7 +1394,12 @@ function loadEditRecord(){
     sv('lokalizacia',record.lokalizacia);
     sv('klinicky_stav',record.klinicky_stav);
     sv('cas_symptom_days',record.cas_symptom_days);
-    sv('plat',record.typ_platu);
+    // typ_platu: nové záznamy ukladajú VALUE (inštrumentál), staré display TEXT – mapuj fallbackom
+    if(record.typ_platu){
+      const pEl=document.getElementById('plat');
+      const pHit=[...pEl.options].find(o=>o.value===record.typ_platu)||[...pEl.options].find(o=>o.text===record.typ_platu);
+      if(pHit)pEl.value=pHit.value;
+    }
     // DSA nález — individuálne uložené polia
     sv('dsa_acc_sin',record.dsa_acc_sin);
     sv('dsa_aci_sin_typ',record.dsa_aci_sin);
@@ -1438,20 +1491,51 @@ function loadEditRecord(){
     (record.antitrombotika||'').split(', ').filter(Boolean).forEach(v=>{const cb=[...document.querySelectorAll('.atb')].find(c=>c.value===v);if(cb)cb.checked=true;});
     // Komplikácie (štruktúrované) – obnovenie checkboxov podľa uloženého reťazca
     if(record.komplikacie_struct){const _ks=record.komplikacie_struct;document.querySelectorAll('.st_cmp').forEach(cb=>{if(_ks.includes(cb.value))cb.checked=true;});}
-    // Komorbidity – uložené ako čitateľný text, obnovujeme substring matchingom
+    // Komorbidity – uložené ako čitateľný text, obnovujeme checkboxy AJ detaily (sub-rádiá/čísla)
+    // regexami nad uloženým reťazcom, aby load → uloženie dalo identický reťazec komorbidít
     try{
       const ks=record.komorbidity||'';
+      window._origKomorbidity=ks; // CKD detail sa bez kreatinínu nedá zrekonštruovať – zachová sa pôvodný segment
       const ck=(id,sub)=>{const el=document.getElementById(id);if(el){el.checked=true;if(sub)kSub(sub);}};
-      if(/DM[12]/.test(ks))ck('k_dm','dm');
-      if(/AH – /.test(ks))ck('k_ah','ah');
+      const setR=(name,val)=>{if(!val)return;document.querySelectorAll('input[name="'+name+'"]').forEach(r=>{if(r.value===val)r.checked=true;});};
+      let m;
+      if(/DM[12]/.test(ks)){
+        ck('k_dm','dm');
+        if(m=ks.match(/(DM[12]), liečba (diétou|OAD|inzulínom|kombináciou OAD a inzulínu)/)){setR('dm_typ',m[1]);setR('dm_liecba',m[2]);}
+      }
+      if(/AH – /.test(ks)){
+        ck('k_ah','ah');
+        if(m=ks.match(/AH – (kompenzovaná|nekompenzovaná), (bez liečby|monoterapia|kombinovaná liečba)/)){setR('ah_komp',m[1]);setR('ah_liecba',m[2]);}
+      }
       if(/CKD/.test(ks))ck('k_chri','chri');
-      if(/ICHS/.test(ks))ck('k_ichs','ichs');
-      if(/St\.p\. ?IM/.test(ks))ck('k_im','im');
-      if(/St\.p\. ?CMP/.test(ks))ck('k_cmp','cmp');
-      if(/fajčiar|kuřák/i.test(ks))ck('k_faj','faj');
-      if(/Obezita/.test(ks))ck('k_obez','obez');
-      if(/Dyslipid/.test(ks))ck('k_dysl','dysl');
-      if(/CHOCHP/.test(ks))ck('k_chochp','chochp');
+      if(/ICHS/.test(ks)){
+        ck('k_ichs','ichs');
+        if(m=ks.match(/ICHS – (stabilná|nestabilná)(?:, (st\.p\. PCI\+CABG|st\.p\. PCI|st\.p\. CABG))?/)){setR('ichs_forma',m[1]);setR('ichs_revasc',m[2]||'bez revaskularizácie');}
+      }
+      if(/St\.p\. ?IM/.test(ks)){
+        ck('k_im','im');
+        if(m=ks.match(/St\.p\. ?IM – (nedávny \(<30 dní\)|starší), liečba (konzervatívne|PCI|CABG)/)){setR('im_obdobie',m[1]);setR('im_liecba',m[2]);}
+      }
+      if(/St\.p\. ?CMP/.test(ks)){
+        ck('k_cmp','cmp');
+        if(m=ks.match(/St\.p\. ?CMP – (ischemická|hemoragická), (akútna \(<30 dní\)|anamnestická)/)){setR('cmp_typ',m[1]);setR('cmp_obdobie',m[2]);}
+      }
+      if(/fajčiar|kuřák/i.test(ks)){
+        ck('k_faj','faj');
+        if(m=ks.match(/(aktívny fajčiar|ex-fajčiar)(?: \((\d+) pack-years\))?/)){setR('faj_stav',m[1]);if(m[2])sv('faj_py',m[2]);}
+      }
+      if(/Obezita/.test(ks)){
+        ck('k_obez','obez');
+        if(m=ks.match(/Obezita – BMI ([\d.]+)/)){sv('obez_bmi',m[1]);calcBMI();}
+      }
+      if(/Dyslipid/.test(ks)){
+        ck('k_dysl','dysl');
+        if(m=ks.match(/Dyslipidémia – (bez liečby|statín \+ ezetimib|statín|PCSK9 inhibítor)/))setR('dysl_liecba',m[1]);
+      }
+      if(/CHOCHP/.test(ks)){
+        ck('k_chochp','chochp');
+        if(m=ks.match(/CHOCHP – (GOLD IV|GOLD I{1,3}), (bronchodilatans|IKS\+LABA|trojkombinácia)/)){setR('chochp_gold',m[1]);setR('chochp_liecba',m[2]);}
+      }
       if(ks)document.querySelector('.komor-details')?.setAttribute('open','');
     }catch(e){}
     // Banner
@@ -1536,6 +1620,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   updateIdPrefix();
   casDsaLat();
   loadEditRecord();
+  if(!window._editRecordId)syncLokDsaLat(); // čerstvá stránka: lateralita DSA = lokalizácia výkonu
   initProgramHandoff('CAS',d=>{
     if(d.rocnik){const el=document.getElementById('vek');if(el&&!el.value)el.value=new Date().getFullYear()-d.rocnik;}
     prefillSelect('operator',d.operator);

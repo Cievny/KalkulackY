@@ -24,9 +24,11 @@
   // Prihlásenie cez Google (OAuth) – presmeruje na Supabase, ten na Google a späť
   window.doGoogle=function(){
     // náhodný „state" – návrat prijmeme len ak flow inicioval tento prehliadač (proti podvrhnutiu relácie)
-    try{sessionStorage.setItem('cievny_oauth_state',Math.random().toString(36).slice(2)+Date.now().toString(36));}catch(e){}
+    let st='';
+    try{st=Math.random().toString(36).slice(2)+Date.now().toString(36);sessionStorage.setItem('cievny_oauth_state',st);}catch(e){}
     const redirect=location.origin+'/tools/login/';
-    location.href=SB_URL+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(redirect);
+    location.href=SB_URL+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(redirect)
+      +(st?'&state='+encodeURIComponent(st):'');
   };
   // Spracovanie návratu z OAuth: tokeny prídu v URL fragmente (#access_token=…)
   async function handleOAuthCallback(){
@@ -36,14 +38,29 @@
     sessionStorage.removeItem('cievny_oauth_state');
     if(!started){history.replaceState(null,'',location.pathname+location.search);return false;}
     const p=new URLSearchParams(location.hash.slice(1));
+    // ak provider vrátil state, MUSÍ sedieť s uloženou hodnotou; ak ho nevrátil,
+    // ostáva aspoň kontrola existencie kľúča vyššie (nerozbiť login)
+    const respState=p.get('state');
+    if(respState&&respState!==started){history.replaceState(null,'',location.pathname+location.search);return false;}
     const at=p.get('access_token');if(!at)return false;
     const d={access_token:at,refresh_token:p.get('refresh_token')||'',expires_in:parseInt(p.get('expires_in')||'3600')};
+    let emailOk=false;
     try{
       const r=await fetch(SB_URL+'/auth/v1/user',{headers:{'apikey':SB_ANON,'Authorization':'Bearer '+at}});
-      if(r.ok){const u=await r.json();d.user={email:u.email};}
+      if(r.ok){const u=await r.json();if(u&&u.email){d.user={email:u.email};emailOk=true;}}
     }catch(e){}
-    storeSession(d);
     history.replaceState(null,'',location.pathname+location.search); // vyčisti tokeny z URL
+    if(!emailOk){
+      // bez overeného emailu reláciu neukladáme (email je potrebný pre allowlist)
+      const showErr=()=>{const m=document.getElementById('login-msg');if(m){m.textContent='Prihlásenie cez Google sa nepodarilo overiť – skúste znova.';m.style.color='#dc2626';}};
+      if(location.pathname.indexOf('/login')>=0){
+        if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showErr);else showErr();
+        return true; // ostaň na login stránke s hláškou
+      }
+      location.replace('/tools/login/');
+      return true;
+    }
+    storeSession(d);
     let ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
     sessionStorage.removeItem('cievny_return');
     if(!/^\/[^/]/.test(ret))ret='/tools/EVK/'; // len interné cesty (ochrana pred open-redirect)
@@ -185,6 +202,7 @@
 
   // Inject shared nav after DOM ready
   const NAV_LINKS=[
+    {href:'/tools/',label:'🏠'},
     {href:'/tools/Program/',label:'📅 Program'},
     {href:'/tools/Aorta/',label:'📥 Požiadavky'},
     {href:'/tools/objednavky/',label:'🩻 CEUS/CT'},
@@ -208,7 +226,7 @@
     if(existing)return;
     const nav=document.createElement('div');
     nav.className='shared-nav';
-    nav.style.cssText='background:#0f1e3d;display:flex;align-items:center;padding:0 16px;gap:2px;position:sticky;top:0;z-index:200;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;';
+    nav.style.cssText='background:#0f1e3d;display:flex;align-items:center;padding:0 16px;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;';
     const cur=location.pathname.replace(/\/$/,'');
     const linkCss=act=>'padding:9px 16px;font-size:13px;font-weight:600;color:'+(act?'#fff':'#8fa3c8')+';text-decoration:none;border-bottom:3px solid '+(act?'#3b82f6':'transparent')+';transition:.15s;white-space:nowrap;flex-shrink:0;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer;font-family:inherit;';
     NAV_LINKS.forEach(l=>{
@@ -268,7 +286,24 @@
     out.onmouseout=()=>out.style.color='#8fa3c8';
     out.onclick=doLogout;
     nav.appendChild(out);
-    document.body.insertBefore(nav,document.body.firstChild);
+    // obal: sticky pozíciu drží wrapper, aby fade (absolútny overlay) nescrolloval s obsahom
+    const wrap=document.createElement('div');
+    wrap.className='shared-nav-wrap';
+    wrap.style.cssText='position:sticky;top:0;z-index:200;';
+    wrap.appendChild(nav);
+    // fade na pravom okraji – signalizuje, že navigácia pokračuje (mobil)
+    const fade=document.createElement('div');
+    fade.className='shared-nav-fade';
+    fade.style.cssText='position:absolute;top:0;right:0;bottom:0;width:36px;background:linear-gradient(to left,#0f1e3d 20%,rgba(15,30,61,0));pointer-events:none;opacity:0;transition:opacity .2s;';
+    wrap.appendChild(fade);
+    function updFade(){
+      const max=nav.scrollWidth-nav.clientWidth;
+      fade.style.opacity=(max>4&&nav.scrollLeft<max-4)?'1':'0';
+    }
+    nav.addEventListener('scroll',updFade,{passive:true});
+    window.addEventListener('resize',updFade);
+    document.body.insertBefore(wrap,document.body.firstChild);
+    updFade();
   }
 
   // PWA: manifest + ikona pre "Pridať na plochu" (mobil)

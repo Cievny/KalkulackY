@@ -39,7 +39,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .bilat-lbl.pelv{background:#e8eaf6}
 .bilat-hdr{font-size:10px;color:#5a6a8a;font-weight:700;text-align:center;margin-bottom:3px;letter-spacing:.3px;text-transform:uppercase}
 #out{flex:1;width:100%;border:1.5px solid #dde1ea;border-radius:7px;padding:12px;font-size:12px;line-height:1.65;resize:none;font-family:'Courier New',monospace;color:#1a1a2e;background:#fafbfd}
-.btns{display:flex;gap:8px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
 .btn{padding:8px 14px;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;flex:1;justify-content:center}
 .bc{background:#1d6f42;color:#fff}.bc:hover{background:#155e38}
 .bp{background:#1e40af;color:#fff}.bp:hover{background:#1737a0}
@@ -72,18 +72,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .code-block{background:#1e293b;color:#e2e8f0;border-radius:8px;padding:14px;font-size:11.5px;font-family:'Courier New',monospace;white-space:pre;overflow-x:auto;margin:8px 0;line-height:1.5}
 .step{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
 .step-num{background:#3b82f6;color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+@media(max-width:800px){
+.wrap{grid-template-columns:1fr;min-height:0}
+.left{overflow-y:visible;padding:14px 12px}
+.right{position:static;height:auto;border-left:none;border-top:1px solid #d8dce6}
+#out{min-height:280px}
+.tabnav{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tnb{padding:12px 14px;white-space:nowrap}
+}
+/* injektovaný .shared-nav (cz auth.js) nemá overflow-x → na úzkom displeji by roztiahol stránku */
+.shared-nav{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.shared-nav a,.shared-nav button{white-space:nowrap;flex-shrink:0}
 @media print{.tabnav{display:none}#tab-nalez .left{display:none}.right{border:none;height:auto;position:static}.btns{display:none}#out{border:none;font-family:inherit;font-size:13px;background:#fff}}
-.drg-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
-.drg-table th{background:#1a2745;color:#fff;padding:7px 10px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.4px}
-.drg-table td{padding:7px 10px;border-bottom:1px solid #eef0f5;vertical-align:top}
-.drg-table tr:hover td{background:#f0f7ff}
-.drg-code-cell{font-family:'Courier New',monospace;font-weight:700;color:#1e40af;font-size:13px;white-space:nowrap}
-.drg-warn{color:#b45309;font-style:italic}
-.drg-empty{color:#8fa3c8;font-style:italic;font-size:12px;padding:12px 0;text-align:center}
-.drg-section-hdr{font-size:11px;font-weight:700;color:#5a6a8a;text-transform:uppercase;letter-spacing:.6px;margin:14px 0 6px;padding-bottom:4px;border-bottom:2px solid #eef0f5}
-.drg-info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:10px 12px;font-size:11.5px;color:#1e3a5f;margin-bottom:12px;line-height:1.55}
-.drg-copy-btn{padding:7px 16px;background:#1e40af;color:#fff;border:none;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;margin-top:10px;width:100%}
-.drg-copy-btn:hover{background:#1737a0}
 details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:11.5px;color:#5a6a8a;font-weight:600;cursor:pointer;user-select:none;padding:5px 8px;background:#f7f8fc;border-radius:6px;border:1.5px solid #eef0f5;list-style:none}details.komor-details>summary::-webkit-details-marker{display:none}details.komor-details[open]>summary .komor-arr{transform:rotate(90deg)}details.komor-details>summary .komor-arr{display:inline-block;transition:transform .2s;font-size:10px;color:#9ca3af}
 </style>
 </head>
@@ -93,7 +93,6 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <script src="/tools/anamneza-parser.js"></script>
 <nav class="tabnav">
   <button class="tnb active" id="tnb-nalez" onclick="showTab('nalez')">📋 Nález</button>
-  <button class="tnb" id="tnb-drg" onclick="showTab('drg')">📊 DRG kódy</button>
   <button class="tnb" id="tnb-fu" onclick="showTab('fu')">📅 Follow-up</button>
 </nav>
 
@@ -659,28 +658,14 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 </div>
 </div>
 
-<!-- DRG KÓDY TAB -->
-<div id="tab-drg" style="display:none">
-<div class="fullpage" style="max-width:860px">
-  <h2 style="font-size:16px;font-weight:700;color:#1a2745;margin-bottom:8px">📊 DRG kódy (MKCH-10-SK) – automatický výpočet</h2>
-  <div class="drg-info">
-    Kódy sú generované automaticky na základe vyplněného formulára v záložke <strong>Nález</strong>.<br>
-    <strong>Stenting:</strong> kód závisí od počtu stentů a tepny – správně vyplňte „Tepna" u každého stentu.<br>
-    Predilatace a postdilatace před/po stentingu se <em>nekódují</em> samostatně.
-  </div>
-  <div id="drg_output">
-    <div class="drg-empty">Vyplňte intervence v záložce Nález – kódy se zobrazí automaticky.</div>
-  </div>
-  <button class="drg-copy-btn" onclick="copyDRG()">📋 Kopírovat kódy</button>
-  <div id="drg_cmsg" style="font-size:11px;text-align:center;min-height:16px;margin-top:6px"></div>
-</div>
-</div>
-
 <script>
 const SO='<optgroup label="Stenózy a okluze"><option>bez závažné stenózy</option><option>stenóza do 50%</option><option>stenóza 50–70%</option><option>stenóza 70–90%</option><option>kritická stenóza >90%</option><option>okluze</option></optgroup>'+'<optgroup label="Stav po intervenci"><option>stav po PVI</option><option>stav po stentingu</option><option>in-stent restenóza</option><option>okluze stentu</option><option>stav po bypassu</option></optgroup>'+'<optgroup label="Jiné nálezy"><option>disekce</option><option>aneuryzmatické změny</option><option>hypoplastická/aplastická</option><option>vlastní popis</option></optgroup>';
 const SO_AFC=SO.replace('<option>stav po bypassu</option>','<option>stav po bypassu</option><option>stav po profundoplastice</option><option>stav po TEA</option>');
 const OPTS={balon:['Jade','Armada','Passeo','CrossTella','vlastní'],balon_deb:['MagicTouch','Elutax','Selution SLR','IN.PACT','vlastní'],balon_vprep:['Chocolate','Cutting balloon','AngioSculpt','Spur','Wolverine','vlastní'],balon_ivl:['Shockwave','Shockfast','vlastní'],stent:['AbsolutePro','Pulsar','Astron','BioMimics','Supera','Eluvia','Nitides','Dynetic','Isthmus','vlastní']};
 const STENT_TYP=['balónexpandibilní','samoexpandibilní','lékový (DES)'];
+// genitiv typu stentu do věty „implantace … stentu" (t+'ho' by dalo „lékový (DES)ho")
+const STENT_TYP_GEN={'balónexpandibilní':'balónexpandibilního','samoexpandibilní':'samoexpandibilního','lékový (DES)':'lékového (DES)'};
+const stGen=t=>STENT_TYP_GEN[t]||t;
 const VESSEL_OPTS=['– tepna –','AIC l.sin.','AIC l.dx.','AIE l.sin.','AIE l.dx.','AII l.sin.','AII l.dx.','AFC l.sin.','AFC l.dx.','APF l.sin.','APF l.dx.','AFS l.sin.','AFS l.dx.','P1 l.sin.','P1 l.dx.','P2 l.sin.','P2 l.dx.','P3 l.sin.','P3 l.dx.','ATA l.sin.','ATA l.dx.','ATP l.sin.','ATP l.dx.','AFib l.sin.','AFib l.dx.','TTF l.sin.','TTF l.dx.'];
 const SEG_OPTS=['–','proximální','střední','distální','celý'];
 const SEG_SEG=['proximální','střední','distální','celý','odstup'];
@@ -693,7 +678,7 @@ function vsel(){return VESSEL_OPTS.map(o=>`<option>${o}</option>`).join('');}
 function sgsel(){return SEG_OPTS.map(o=>`<option>${o}</option>`).join('');}
 
 
-function showTab(t){['nalez','drg','fu'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';document.getElementById('tnb-'+id).classList.toggle('active',id===t);});if(t==='drg')genDRG();}
+function showTab(t){['nalez','fu'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';document.getElementById('tnb-'+id).classList.toggle('active',id===t);});}
 function g(id){return(document.getElementById(id)||{}).value||'';}
 function chybaStud(){const M=[];if(!g('st_dur'))M.push('délka výkonu');if(!g('st_fluoro'))M.push('skiaskopie');if(!g('st_dap'))M.push('DAP');if(!g('st_contrast'))M.push('kontrast');return M;}
 const chk=cls=>[...document.querySelectorAll('.'+cls+':checked')].map(e=>e.value);
@@ -713,7 +698,8 @@ function getKomor(){
   }
   if(document.getElementById('k_chri')?.checked){
     const res=calcEGFR();
-    list.push(res?'CKD – '+res:'CKD');
+    // edit režim: bez zadaného kreatininu nelze eGFR přepočítat → použij původní CKD segment ze záznamu
+    list.push(res?'CKD – '+res:(window._origKomorCKD||'CKD'));
   }
   if(document.getElementById('k_chochp')?.checked){
     const gold=document.querySelector('input[name="chochp_gold"]:checked')?.value||'GOLD I';
@@ -758,7 +744,7 @@ function calcEGFR(){
   const vek=parseInt(g('vek'));
   const pohlavie=g('pohl');
   const el=document.getElementById('chri_egfr_result');
-  if(!kreaRaw||!vek||!pohlavie){if(el)el.textContent='';window._egfrVal=null;return'';}
+  if(!kreaRaw||!vek||!pohlavie){if(el)el.textContent=window._origEgfrNote||'';window._egfrVal=null;return'';}
   const female=pohlavie==='Z';
   const A=female?0.7:0.9;
   const S=female?1.012:1.0;
@@ -982,6 +968,11 @@ function collectInterventionItems(){
     const nm=sel.value==='vlastní'?(g(id+'_s_c')||'vlastní balón'):sel.value;
     allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:balloonDesc(id,'predilatace PTA balónem ',nm),short:'predilatace',order:2}));
   });}
+  if(document.getElementById('c_reentry').checked){rows('reentry').forEach(row=>{
+    const idx=row.dataset.idx,id='reentry_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
+    const dev=sel.value==='vlastní'?(g(id+'_s_c')||'reentry katétr'):sel.value;
+    items.push({tp:tp(id),sg:'',desc:'pro nemožnost intraluminální rekanalizace použit reentry katétr '+dev,short:'reentry katétr ('+dev+')',order:2.5});
+  });}
   if(document.getElementById('c_trom').checked){
     const rot=document.getElementById('trom_rotarex').checked,asp=document.getElementById('trom_aspir').checked;
     const typy=[];if(rot)typy.push('rotační (Rotarex '+g('rotarex_fr')+')');
@@ -1011,7 +1002,7 @@ function collectInterventionItems(){
       const idx=row.dataset.idx,id='stent_'+idx;const ns=document.getElementById(id+'_n');if(!ns)return;
       const nm=ns.value==='vlastní'?(g(id+'_n_c')||'vlastní stent'):ns.value;
       const t=g(id+'_t'),p=g(id+'_p'),d=g(id+'_d');
-      let s='implantace '+(t?t+'ho stentu ':' stentu ')+nm;if(p&&d)s+=' '+p+'×'+d+' mm';
+      let s='implantace '+(t?stGen(t)+' stentu ':'stentu ')+nm;if(p&&d)s+=' '+p+'×'+d+' mm';
       items.push({tp:tp(id),sg:sg(id),desc:s,short:'stent '+nm+(p&&d?' '+p+'×'+d:''),order:7});
     });
     if(document.getElementById('c_post').checked){rows('post').forEach(row=>{
@@ -1022,7 +1013,7 @@ function collectInterventionItems(){
   }
   if(document.getElementById('c_sg').checked){
     const t=g('sg_t'),n=vN('sg_n'),p=g('sg_p'),d=g('sg_d');
-    let s='stentgraft: implantace'+(t?' '+t+'ho':'')+' stentgraftu'+(n?' '+n:'')+(p&&d?' '+p+'×'+d+' mm':'');
+    let s='stentgraft: implantace'+(t?' '+stGen(t):'')+' stentgraftu'+(n?' '+n:'')+(p&&d?' '+p+'×'+d+' mm':'');
     items.push({tp:g('sg_tp'),sg:g('sg_sg')||'',desc:s,short:'stentgraft'+(n?' '+n:''),order:9});
   }
   return items;
@@ -1116,7 +1107,8 @@ const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 async function saveToSupabase(table,data){
   const isEdit=table==='cz_evk_vykony'&&!!window._editRecordId;
-  if(isEdit){data={...data};Object.keys(data).forEach(k=>{if(data[k]===''||data[k]==null)delete data[k];});delete data.vykon_id;}
+  // edit: maž jen null/undefined (neznámé hodnoty); prázdný string '' zůstává v PATCHi, aby šlo vyprázdněné pole vyčistit
+  if(isEdit){data={...data};Object.keys(data).forEach(k=>{if(data[k]==null)delete data[k];});delete data.vykon_id;}
   const url=`${SB_URL}/rest/v1/${table}`+(isEdit?`?id=eq.${window._editRecordId}`:'');
   return fetch(url,{method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
 }
@@ -1462,7 +1454,8 @@ function gen(){
     });
     if(pdx.length)L.push(pdx.join(', ')+'.');
     if(psin.length)L.push(psin.join(', ')+'.');
-    if(!pdx.length&&!psin.length&&!aoF.abn)L.push('Tepny pánevního řečiště bilat. bez závažné stenózy.');
+    const platLbl=platL==='sin'?'l.sin.':platL==='dx'?'l.dx.':'bilat.';
+    if(!pdx.length&&!psin.length&&!aoF.abn)L.push('Tepny pánevního řečiště '+platLbl+' bez závažné stenózy.');
     else if(pnorm>0)L.push('Ostatní tepny pánevního řečiště bez závažné stenózy.');
   }
   if(sf){
@@ -1504,7 +1497,7 @@ function gen(){
     if(document.getElementById('c_kiss').checked){
       const ts=g('kiss_ts'),ns=vN('kiss_ns'),ps=g('kiss_ps'),ds=g('kiss_ds');
       const td=g('kiss_td'),nd=vN('kiss_nd'),pd=g('kiss_pd'),dd=g('kiss_dd');
-      L.push('Kissing stent technika: simultánní implantace stentu '+(td?td+'ho ':'')+(nd||'–')+(pd&&dd?' '+pd+'×'+dd+' mm':'')+' l.dx. a stentu '+(ts?ts+'ho ':'')+(ns||'–')+(ps&&ds?' '+ps+'×'+ds+' mm':'')+' l.sin..');
+      L.push('Kissing stent technika: simultánní implantace stentu '+(td?stGen(td)+' ':'')+(nd||'–')+(pd&&dd?' '+pd+'×'+dd+' mm':'')+' l.dx. a stentu '+(ts?stGen(ts)+' ':'')+(ns||'–')+(ps&&ds?' '+ps+'×'+ds+' mm':'')+' l.sin..');
     }
     if(document.getElementById('c_cerab').checked){
       const aon=vN('cerab_ao_n'),aop=g('cerab_ao_p'),aod=g('cerab_ao_d');
@@ -1566,253 +1559,6 @@ function gen(){
   window._dirty=true;
 }
 
-// ── DRG mapping ──────────────────────────────────────────────────────────────
-const DRG_SUFFIX_LABEL={i:'jiné břišní a pánevní tepny',n:'femorální tepny',m:'cévy bérce',c:'aorta'};
-const ATEK_SUFFIX_LABEL={x:'iné břišní a pánevní tepny',n:'femorální tepny',m:'cévy bérce',c:'aorta'};
-function vesselSuffix(tp){
-  if(!tp||tp==='– tepna –')return null;
-  const t=tp.split(' ')[0];
-  if(['AIC','AIE','AII'].includes(t))return'i';
-  if(['AFC','APF','AFS','P1','P2','P3'].includes(t))return'n';
-  if(['ATA','ATP','AFib','TTF'].includes(t))return'm';
-  return null;
-}
-function vesselSuffixAtek(tp){
-  // Aterektomie používa .x pro pánevní (nie .i ako PTA)
-  const s=vesselSuffix(tp);
-  return s==='i'?'x':s;
-}
-function drgListSuffixes(pfx){
-  const out=[];
-  document.querySelectorAll('#'+pfx+'_list .dyn-row').forEach(row=>{
-    const id=pfx+'_'+row.dataset.idx;
-    const s=vesselSuffix(g(id+'_tp'));
-    if(s)out.push(s);
-    // stejný balón v dalších lokalitách → generuje DRG suffix za každou lokalitu
-    extraLocs(id).forEach(loc=>{const es=vesselSuffix(loc.tp);if(es)out.push(es);});
-  });
-  return out;
-}
-function genDRG(){
-  const codes=[];
-  function add(code,desc,warn){codes.push({code,desc,warn:warn||false});}
-  const SL=DRG_SUFFIX_LABEL;
-
-  // Predilatace → generuje 8r800 (plain PTA) pro každou tepnu
-  if(document.getElementById('c_pred').checked){
-    [...new Set(drgListSuffixes('pred'))].forEach(s=>add('8r800.'+s,'Balónová angioplastika – predilatace: '+SL[s]));
-  }
-  // PTA
-  if(document.getElementById('c_pta').checked){
-    [...new Set(drgListSuffixes('pta'))].forEach(s=>{
-      // nepridávaj duplicitu ak už predilatace vygenerovala rovnaký suffix
-      const alreadyAdded=codes.some(c=>c.code==='8r800.'+s&&c.desc.includes('predilatace'));
-      if(!alreadyAdded)add('8r800.'+s,'Balónová angioplastika (PTA): '+SL[s]);
-    });
-  }
-  // DEB PTA
-  if(document.getElementById('c_deb').checked){
-    [...new Set(drgListSuffixes('deb'))].forEach(s=>add('8r801.'+s,'DEB PTA (balón uvolňující lieky): '+SL[s]));
-  }
-  // Vessel prep → cutting/scoring alebo SPUR (aterektomie)
-  if(document.getElementById('c_vprep').checked){
-    const spurSuffixes=[], otherSuffixes=[];
-    document.querySelectorAll('#vprep_list .dyn-row').forEach(row=>{
-      const idx=row.dataset.idx,sel=document.getElementById('vprep_'+idx+'_s');
-      const nm=sel?sel.value:'';
-      const s=vesselSuffixAtek(g('vprep_'+idx+'_tp'));
-      if(nm==='Spur'||nm==='vlastní'&&(g('vprep_'+idx+'_s_c')||'').toLowerCase().includes('spur')){
-        if(s)spurSuffixes.push(s);
-      } else {
-        const ss=vesselSuffix(g('vprep_'+idx+'_tp'));
-        if(ss)otherSuffixes.push(ss);
-      }
-    });
-    [...new Set(otherSuffixes)].forEach(s=>add('8r802.'+s,'Vessel preparation (cutting/scoring balón): '+SL[s]));
-    [...new Set(spurSuffixes)].forEach(s=>add('8r810.'+s,'Perkutánní aterektomie (SPUR): '+(ATEK_SUFFIX_LABEL[s]||s)));
-  }
-  // IVL Shockwave
-  if(document.getElementById('c_sw').checked){
-    [...new Set(drgListSuffixes('sw'))].forEach(s=>add('8r804.'+s,'IVL (intravaskulární litotrypse rázovou vlnou): '+SL[s]));
-  }
-  // Aterektomie
-  if(document.getElementById('c_atek').checked){
-    const t=chk('atek_t'),s=vesselSuffixAtek(g('atek_tp'));
-    const sl=s?(ATEK_SUFFIX_LABEL[s]||s):'– doplňte tepnu';
-    const warn=!s;
-    if(t.includes('orbitálna'))add('8r810.'+(s||'?'),'Perkutánní aterektomie (Stealth 360 / orbitálna): '+sl,warn);
-    if(t.includes('laserová'))add('8r803.'+(s||'?'),'Laserová aterektomie (Turbo-Elite): '+sl,warn);
-    if(!t.length)add('8r810.'+(s||'?'),'Perkutánní aterektomie: '+sl,warn);
-  }
-  // Reentry katétry
-  if(document.getElementById('c_reentry').checked){
-    const rrows=document.querySelectorAll('#reentry_list .dyn-row');
-    const n=rrows.length||1;
-    const devNames=[];
-    rrows.forEach(row=>{
-      const idx=row.dataset.idx,sel=document.getElementById('reentry_'+idx+'_s');
-      const nm=sel?(sel.value==='vlastní'?(g('reentry_'+idx+'_s_c')||'reentry katétr'):sel.value):'reentry katétr';
-      devNames.push(nm);
-    });
-    const devStr=devNames.length?devNames.join(', '):'reentry katétr';
-    if(n>=2)add('8r8x4.1','Perkutánní rekanalizace, použití 2 a viac reentry katétrů ('+devStr+'): '+n+' ks');
-    else    add('8r8x4.0','Perkutánní rekanalizace, použití 1 reentry katétru ('+devStr+')');
-  }
-  // Trombektomie
-  if(document.getElementById('c_trom').checked){
-    const s=vesselSuffix(g('trom_tp'));
-    const sl=s?SL[s]:'– doplňte tepnu';
-    const warn=!s;
-    const rot=document.getElementById('trom_rotarex').checked;
-    const asp=document.getElementById('trom_aspir').checked;
-    if(rot)add('8r821.'+(s||'?'),'Rotační trombektomie a embolektomie (Rotarex): '+sl,warn);
-    if(asp)add('8r822.'+(s||'?'),'Aspirační trombektomie a embolektomie: '+sl,warn);
-    if(!rot&&!asp)add('8r820.'+(s||'?'),'Trombektomie a embolektomie: '+sl,warn);
-  }
-  // Stenting – group by suffix + DES
-  if(document.getElementById('c_stent').checked){
-    const buckets={};
-    document.querySelectorAll('#stent_list .dyn-row').forEach(row=>{
-      const idx=row.dataset.idx,s=vesselSuffix(g('stent_'+idx+'_tp'));
-      if(!s){codes.push({code:'8r880.?',desc:'Stenting – doplňte tepnu pro stent '+idx,warn:true});return;}
-      const des=g('stent_'+idx+'_t')==='lékový (DES)';
-      const key=s+(des?'_des':'_non');
-      if(!buckets[key])buckets[key]={s,des,n:0};
-      buckets[key].n++;
-    });
-    Object.values(buckets).forEach(({s,des,n})=>{
-      const base=des?'8r881.':'8r880.';
-      const nc=Math.min(n-1,5);
-      const nl=n>=6?'6 a viac':n;
-      const typ=des?'uvolňující lieky (DES)':'neuvolňující lieky';
-      add(base+nc+s,'Stenting ('+typ+'), '+nl+' stent'+(n>1?'ov':'')+': '+SL[s]);
-    });
-  }
-  // Stentgraft
-  if(document.getElementById('c_sg').checked){
-    const s=vesselSuffix(g('sg_tp'));
-    if(s)add('8r886.0'+s,'Stentgraft, 1 kus: '+SL[s]);
-    else add('8r886.0?','Stentgraft – doplňte tepnu',true);
-  }
-  // Kissing stent → 2 stenty do pánevních tepien (suffix i)
-  if(document.getElementById('c_kiss').checked){
-    const des=g('kiss_ts')==='lékový (DES)'||g('kiss_td')==='lékový (DES)';
-    const base=des?'8r881.':'8r880.';
-    add(base+'1i','Kissing stent AIC ('+( des?'DES':'non-DES')+'), 2 stenty: '+SL['i']);
-  }
-  // CERAB
-  if(document.getElementById('c_cerab').checked){
-    add('8r880.0c','CERAB – aortální cuff (stent do aorty)');
-    add('8r880.1i','CERAB – kissing stenty AIC, 2 stenty: '+SL['i']);
-  }
-
-  // ── Doplňující kódy 8r8x (počty zařízení) ──────────────────────────────
-  const supp=[];
-  function addS(code,desc){supp.push({code,desc,warn:false});}
-  function listCount(pfx){return document.querySelectorAll('#'+pfx+'_list .dyn-row').length;}
-  function suppCount(n,max){return Math.min(n-1,max);}
-
-  // 8r8x0 – celkový počet plain balónů (predilatace + PTA + postdilatace)
-  let plainBalloons=0;
-  if(document.getElementById('c_pred').checked) plainBalloons+=listCount('pred');
-  if(document.getElementById('c_pta').checked)  plainBalloons+=listCount('pta');
-  if(document.getElementById('c_stent').checked&&document.getElementById('c_post').checked) plainBalloons+=listCount('post');
-  if(plainBalloons>0){
-    const nc=suppCount(plainBalloons,4);
-    const nl=plainBalloons>=5?'5 a viac':plainBalloons;
-    addS('8r8x0.'+nc,'Počet plain balónů (PTA/pred/post): '+nl+' ks');
-  }
-
-  // 8r8x1 – počet DEB balónů (pre periferní tepny = prefix .0)
-  if(document.getElementById('c_deb').checked){
-    const n=listCount('deb');
-    if(n>0){
-      const nc=suppCount(n,4);
-      const nl=n>=5?'5 a viac':n;
-      addS('8r8x1.0'+nc,'Počet DEB balónů (periferní tepny): '+nl+' ks');
-    }
-  }
-
-  // 8r8x2 – počet cutting/scoring katétrů (vessel prep)
-  if(document.getElementById('c_vprep').checked){
-    const n=listCount('vprep');
-    if(n>0){
-      const nc=suppCount(n,4);
-      const nl=n>=5?'5 a viac':n;
-      addS('8r8x2.'+nc,'Počet cutting/scoring katétrů (vessel prep): '+nl+' ks');
-    }
-  }
-
-  // 8r8x3 – počet IVL balónů
-  if(document.getElementById('c_sw').checked){
-    const n=listCount('sw');
-    if(n>0){
-      const nc=suppCount(n,4);
-      const nl=n>=5?'5 a viac':n;
-      addS('8r8x3.'+nc,'Počet IVL balónů: '+nl+' ks');
-    }
-  }
-
-  // 8r8x6 – počet aspiračních katétrů
-  if(document.getElementById('c_trom').checked&&document.getElementById('trom_aspir').checked){
-    addS('8r8x6.0','Počet aspiračních katétrů: 1 ks');
-  }
-
-  // ── DSA diagnostické kódy (32xxx) ────────────────────────────────────────
-  const dsa=[];
-  function addD(code,desc){dsa.push({code,desc});}
-  const terr=g('territory');
-  const hasPelv=terr==='pelv'||terr==='both';
-  const hasFem=terr==='fem'||terr==='both';
-
-  if(hasPelv){
-    addD('32302.3','Angiografia aorty (aortografia)');
-    addD('32305',  'Arteriografie pánevních ciev');
-  }
-  if(hasFem){
-    addD('32306.2','Arteriografie dolnej končetiny');
-  }
-
-  // Render
-  const out=document.getElementById('drg_output');
-  if(!out)return;
-  if(!codes.length&&!supp.length&&!dsa.length){out.innerHTML='<div class="drg-empty">Žádné intervence – vyplňte záložku Nález.</div>';return;}
-  let html='';
-  if(dsa.length){
-    html+='<div class="drg-section-hdr">DSA – diagnostické kódy (angiografia)</div>';
-    html+='<table class="drg-table"><thead><tr><th style="width:145px">Kód</th><th>Popis</th></tr></thead><tbody>';
-    dsa.forEach(({code,desc})=>{
-      html+=`<tr><td class="drg-code-cell" style="color:#059669">${code}</td><td>${desc}</td></tr>`;
-    });
-    html+='</tbody></table>';
-  }
-  if(codes.length){
-    html+='<div class="drg-section-hdr" style="margin-top:16px">Hlavní intervenčné kódy (8r8xx)</div>';
-    html+='<table class="drg-table"><thead><tr><th style="width:145px">Kód MKCH</th><th>Popis</th></tr></thead><tbody>';
-    codes.forEach(({code,desc,warn})=>{
-      html+=`<tr><td class="drg-code-cell${warn?' drg-warn':''}">${code}</td><td${warn?' class="drg-warn"':''}>${desc}</td></tr>`;
-    });
-    html+='</tbody></table>';
-  }
-  if(supp.length){
-    html+='<div class="drg-section-hdr" style="margin-top:16px">Doplňující kódy 8r8x (počty zařízení)</div>';
-    html+='<table class="drg-table"><thead><tr><th style="width:145px">Kód MKCH</th><th>Popis</th></tr></thead><tbody>';
-    supp.forEach(({code,desc})=>{
-      html+=`<tr><td class="drg-code-cell">${code}</td><td>${desc}</td></tr>`;
-    });
-    html+='</tbody></table>';
-  }
-  out.innerHTML=html;
-}
-function copyDRG(){
-  const rows=[...document.querySelectorAll('.drg-table tbody tr')];
-  if(!rows.length)return;
-  const txt=rows.map(r=>r.cells[0].textContent.trim()+'\t'+r.cells[1].textContent.trim()).join('\n');
-  navigator.clipboard.writeText(txt).then(()=>msg('drg_cmsg','✓ Zkopírováno','#1d6f42')).catch(()=>{
-    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);msg('drg_cmsg','✓ Zkopírováno','#1d6f42');
-  });
-}
-// ─────────────────────────────────────────────────────────────────────────────
 
 function loadEditRecord(){
   try{
@@ -1914,20 +1660,37 @@ function loadEditRecord(){
     sv('zaver',record.zaver);
     if(record.zaver)zaverManual=true;
 
-    // Komorbidity — payload ukládá lidský řetězec getKomor().join(', ')
+    // Komorbidity — payload ukládá lidský řetězec getKomor().join(', '); obnov i sub-ovládače (typ/léčba/hodnoty),
+    // aby okamžité uložení v edit režimu vygenerovalo identický řetězec (žádné přepsání defaulty)
     try{
       const ks=String(record.komorbidity||'');
       const ck=(id,sub)=>{const el=document.getElementById(id);if(el){el.checked=true;if(sub)kSub(sub);}};
-      if(/DM1|DM2|[Dd]iabetes/.test(ks))ck('k_dm','dm');
-      if(/AH\b|[Hh]ypertenz/.test(ks))ck('k_ah','ah');
-      if(/CKD|CHRI/.test(ks))ck('k_chri','chri');
-      if(/ICHS/.test(ks))ck('k_ichs','ichs');
-      if(/St\.p\. ?IM/.test(ks))ck('k_im','im');
-      if(/St\.p\. ?CMP/.test(ks))ck('k_cmp','cmp');
-      if(/kuřák|fajč/i.test(ks))ck('k_faj','faj');
-      if(/[Oo]bezita/.test(ks))ck('k_obez','obez');
-      if(/[Dd]yslipid/.test(ks))ck('k_dysl','dysl');
-      if(/CHOCHP|CHOPN/.test(ks))ck('k_chochp','chochp');
+      const setRadio=(name,val)=>{if(!val)return;const r=[...document.querySelectorAll('input[name="'+name+'"]')].find(x=>x.value===val);if(r)r.checked=true;};
+      let m;
+      if(m=ks.match(/\b(DM[12])\b(?:, léčba (dietou|OAD|inzulinem|kombinací OAD a inzulinu))?/)){ck('k_dm','dm');setRadio('dm_typ',m[1]);setRadio('dm_liecba',m[2]);}
+      else if(/[Dd]iabetes/.test(ks))ck('k_dm','dm');
+      if(m=ks.match(/\bAH – (kompenzovaná|nekompenzovaná)(?:, (bez léčby|monoterapie|kombinovaná léčba))?/)){ck('k_ah','ah');setRadio('ah_komp',m[1]);setRadio('ah_liecba',m[2]);}
+      else if(/AH\b|[Hh]ypertenz/.test(ks))ck('k_ah','ah');
+      if(/CKD|CHRI/.test(ks)){
+        ck('k_chri','chri');
+        // kreatinin se neukládá a z eGFR se zpětně nedopočítá → zachovej původní CKD segment (použije ho getKomor při uložení)
+        if(m=ks.match(/\bCKD – (.+?)(?=, (?:CHOCHP|Dyslipidémia|Obezita|aktivní kuřák|ex-kuřák|St\.p\. CMP|St\.p\. IM|ICHS)\b|$)/))window._origKomorCKD='CKD – '+m[1];
+        else window._origKomorCKD='CKD';
+        if(window._origKomorCKD!=='CKD')window._origEgfrNote=window._origKomorCKD.slice(6)+' (z původního záznamu; pro přepočet zadejte kreatinin)';
+      }
+      if(m=ks.match(/\bICHS – (stabilní|nestabilní)(?:, (st\.p\. PCI\+CABG|st\.p\. PCI|st\.p\. CABG))?/)){ck('k_ichs','ichs');setRadio('ichs_forma',m[1]);setRadio('ichs_revasc',m[2]||'bez revaskularizace');}
+      else if(/ICHS/.test(ks))ck('k_ichs','ichs');
+      if(m=ks.match(/St\.p\. ?IM – (nedávný \(<30 dní\)|starší)(?:, léčba (konzervativní|PCI|CABG))?/)){ck('k_im','im');setRadio('im_obdobie',m[1]);setRadio('im_liecba',m[2]);}
+      else if(/St\.p\. ?IM/.test(ks))ck('k_im','im');
+      if(m=ks.match(/St\.p\. ?CMP – (ischemická|hemoragická)(?:, (akutní \(<30 dní\)|anamnestická))?/)){ck('k_cmp','cmp');setRadio('cmp_typ',m[1]);setRadio('cmp_obdobie',m[2]);}
+      else if(/St\.p\. ?CMP/.test(ks))ck('k_cmp','cmp');
+      if(m=ks.match(/(aktivní kuřák|ex-kuřák)(?: \((\d+(?:[.,]\d+)?) pack-years\))?/)){ck('k_faj','faj');setRadio('faj_stav',m[1]);if(m[2])sv('faj_py',m[2].replace(',','.'));}
+      else if(/kuřák|fajč/i.test(ks))ck('k_faj','faj');
+      if(/[Oo]bezita/.test(ks)){ck('k_obez','obez');if(m=ks.match(/Obezita – BMI (\d+(?:[.,]\d+)?)/)){sv('obez_bmi',m[1].replace(',','.'));calcBMI();}}
+      if(m=ks.match(/Dyslipidémia – (bez léčby|statin \+ ezetimib|statin|PCSK9 inhibítor)/)){ck('k_dysl','dysl');setRadio('dysl_liecba',m[1]);}
+      else if(/[Dd]yslipid/.test(ks))ck('k_dysl','dysl');
+      if(m=ks.match(/CHOCHP – (GOLD IV|GOLD I{1,3})(?:, (bronchodilatans|IKS\+LABA|trojkombinace))?/)){ck('k_chochp','chochp');setRadio('chochp_gold',m[1]);setRadio('chochp_liecba',m[2]);}
+      else if(/CHOCHP|CHOPN/.test(ks))ck('k_chochp','chochp');
       if(ks)document.querySelector('.komor-details')?.setAttribute('open','');
     }catch(e){}
     gen();
@@ -1961,9 +1724,10 @@ function applyDSAfromRecord(record){
       sv('pelv_lat',hasS&&hasD?'bilat':hasS?'sin':'dx');
       buildPelvDSA();
     }
-    Object.keys(dsa).forEach(k=>{if(k!=='_segs')sv(k,dsa[k]);});
+    // hodnota mimo options (uložený rozepsaný vlastní text) → select na 'vlastní popis' a text do příslušného _c inputu
+    const setSelSeg=(id,val)=>{const el=document.getElementById(id);if(!el||!val)return;if(!el.options){el.value=val;return;}if([...el.options].some(o=>o.value===val)){el.value=val;return;}const vl=[...el.options].find(o=>o.value==='vlastní popis');if(vl){el.value='vlastní popis';const c=document.getElementById(id+'_c');if(c){c.value=val;c.style.display='block';}}};
+    Object.keys(dsa).forEach(k=>{if(k!=='_segs')setSelSeg(k,dsa[k]);});
     // obnova segmentových nálezů (více segmentů v jedné tepně)
-    const setSelSeg=(id,val)=>{const el=document.getElementById(id);if(!el||!val)return;if([...el.options].some(o=>o.value===val)){el.value=val;return;}const vl=[...el.options].find(o=>o.value==='vlastní popis');if(vl){el.value='vlastní popis';const c=document.getElementById(id+'_c');if(c){c.value=val;c.style.display='block';}}};
     segSids.forEach(sid=>{(segMap[sid]||[]).forEach(e=>{addSeg(sid,true);const n=segCnt[sid]-1;sv(sid+'_g'+n+'_seg',e.seg);setSelSeg(sid+'_g'+n+'_val',e.val);});});
     // custom text fields
     Object.keys(dsa).forEach(k=>{

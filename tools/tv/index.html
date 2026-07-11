@@ -61,7 +61,11 @@ async function login(code){
   storeSession(await r.json());
   return true;
 }
-function goProgram(){location.replace('/tools/Program/?tv=1');}
+function goProgram(){
+  // TV pri sále: Program si uložil svoju sálu do localStorage – po reloade ju prilep späť do URL
+  const sala=(localStorage.getItem('cievny_tv_sala')||'').toUpperCase();
+  location.replace('/tools/Program/?tv=1'+(sala==='A'||sala==='B'?'&sala='+sala:''));
+}
 
 window.prihlas=async function(){
   const code=document.getElementById('code').value.trim();

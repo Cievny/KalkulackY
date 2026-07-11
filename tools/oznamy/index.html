@@ -129,6 +129,12 @@ async function load(){
   render();
 }
 
+// zmazať smie autor oznamu alebo admin; staré oznamy bez autora nechávame
+// zmazateľné (server aj tak vráti 0 riadkov, ak RLS zmazanie nedovolí)
+function mozeZmazatOznam(o){
+  return jeAdmin()||!o.created_by||o.created_by===myMail();
+}
+
 function oznamEl(o){
   const div=document.createElement('div');
   div.className='oznam'+(o.dolezite?' dolezity':'')+(jeExpirovany(o)?' expirovany':'');
@@ -138,7 +144,7 @@ function oznamEl(o){
       ${o.dolezite?'<span class="o-badge">📌 DÔLEŽITÉ</span>':''}
       ${jeExpirovany(o)?'<span class="o-badge o-badge-exp">neplatné</span>':''}
       <span class="o-nadpis">${escHtml(o.nadpis||'(bez nadpisu)')}</span>
-      <button class="o-del" onclick="delOznam('${o.id}')">🗑 Zmazať</button>
+      ${mozeZmazatOznam(o)?`<button class="o-del" onclick="delOznam('${o.id}')">🗑 Zmazať</button>`:''}
     </div>
     ${o.text?'<div class="o-text">'+escHtml(o.text)+'</div>':''}
     ${o.priloha_path?'<div style="margin-top:8px"><button class="bfile" onclick="openPriloha(\''+o.id+'\')">📎 '+escHtml(o.priloha_nazov||'príloha')+'</button></div>':''}
@@ -262,8 +268,11 @@ async function delOznam(id){
   try{
     const o=OZNAMY.find(x=>x.id===id);
     // najprv riadok, až potom prílohu – aby po zlyhaní neostal oznam bez prílohy
-    const r=await fetch(`${SB_URL}/rest/v1/oznamy?id=eq.${id}`,{method:'DELETE',headers:H()});
+    const r=await fetch(`${SB_URL}/rest/v1/oznamy?id=eq.${id}`,{method:'DELETE',headers:{...H(),'Prefer':'return=representation'}});
     if(!r.ok){msg('❌ Nepodarilo sa zmazať oznam: '+r.status,'#dc2626');return;}
+    // 200 s prázdnym výsledkom = RLS zmazanie nedovolilo (cudzí oznam)
+    let zmazane=[];try{zmazane=await r.json();}catch(e){}
+    if(!zmazane.length){msg('❌ Nemáte oprávnenie zmazať tento oznam','#dc2626');return;}
     if(o&&o.priloha_path){
       const rf=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${o.priloha_path}`,{method:'DELETE',headers:H()});
       if(!rf.ok)msg('⚠️ Oznam zmazaný, ale prílohu sa nepodarilo odstrániť ('+rf.status+')','#b45309');

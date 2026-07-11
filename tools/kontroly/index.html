@@ -39,6 +39,13 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
 .empty{text-align:center;padding:30px;color:#9ca3af;font-size:14px;}
 .err-row{text-align:center;padding:14px;background:#fef2f2;color:#dc2626;font-weight:700;}
 .dim{color:#9ca3af;}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;}
+@media(max-width:600px){
+  .wrap{padding:12px;}
+  th,td{padding:7px 6px;font-size:11.5px;}
+  th{font-size:10px;letter-spacing:.2px;}
+  .btn-reload{min-height:38px;}
+}
 </style>
 </head>
 <body>
@@ -72,6 +79,7 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
     <button class="btn btn-reload" onclick="loadAll()">↻ Načítať</button>
   </div>
 
+  <div class="tbl-wrap">
   <table>
     <thead><tr>
       <th onclick="setSort('typ')">Typ</th>
@@ -83,6 +91,7 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
     </tr></thead>
     <tbody id="tbody"><tr><td colspan="6" class="empty">Načítavam…</td></tr></tbody>
   </table>
+  </div>
 </div>
 
 <script>
@@ -125,6 +134,19 @@ async function sbGet(path){
   return r.json();
 }
 
+// stránkovanie: načítaj VŠETKY riadky po 1000 (path bez limit/offset)
+async function sbGetAll(path){
+  let all=[],offset=0;
+  const sep=path.includes('?')?'&':'?';
+  while(true){
+    const chunk=await sbGet(path+sep+'limit=1000&offset='+offset);
+    all=all.concat(chunk);
+    if(chunk.length<1000)break;
+    offset+=1000;
+  }
+  return all;
+}
+
 async function loadAll(){
   document.getElementById('tbody').innerHTML='<tr><td colspan="6" class="empty">Načítavam…</td></tr>';
   ROWS=[];LOAD_ERR=false;
@@ -135,9 +157,9 @@ async function loadAll(){
   for(const t of VYKONY){
     let vyk=[],fus=[];
     try{
-      vyk=await sbGet(t.table+'?order=created_at.desc&limit=1000');
-      try{fus=await sbGet(t.fu+'?select=vykon_id,casovy_bod,datum_kontroly,exitus,exitus_datum&limit=2000');}
-      catch(e2){fus=await sbGet(t.fu+'?select=vykon_id,casovy_bod,datum_kontroly&limit=2000');} // stĺpce exitus ešte nemusia existovať
+      vyk=await sbGetAll(t.table+'?order=created_at.desc');
+      try{fus=await sbGetAll(t.fu+'?select=vykon_id,casovy_bod,datum_kontroly,exitus,exitus_datum');}
+      catch(e2){fus=await sbGetAll(t.fu+'?select=vykon_id,casovy_bod,datum_kontroly');} // stĺpce exitus ešte nemusia existovať
     }catch(e){LOAD_ERR=true;continue;}
     if(vyk.length)anyVykon=true;
 
@@ -170,19 +192,19 @@ async function loadAll(){
         const due=addMonths(datum,BODY[bod]);
         const key=v.vykon_id+'|'+bod;
         if(key in fuMap){
-          ROWS.push({typ:t.typ,pacient,vykon_datum:datum,bod,termin:fuMap[key]||due,stav:'done'});
+          ROWS.push({typ:t.typ,pacient,vid:v.vykon_id,vykon_datum:datum,bod,termin:fuMap[key]||due,stav:'done'});
           delete fuMap[key];
           return;
         }
         if(deceased)return;                     // ✝ zosnulý – očakávané kontroly nevykazuj ako 🔴/🟡
         const dd=daysDiff(today,due);           // + budúcnosť, − minulosť
         if(dd>30)return;                        // ešte ďaleko
-        if(dd>=-14){ROWS.push({typ:t.typ,pacient,vykon_datum:datum,bod,termin:due,stav:'wait'});return;}
-        if(due>=backLimit)ROWS.push({typ:t.typ,pacient,vykon_datum:datum,bod,termin:due,stav:'late'});
+        if(dd>=-14){ROWS.push({typ:t.typ,pacient,vid:v.vykon_id,vykon_datum:datum,bod,termin:due,stav:'wait'});return;}
+        if(due>=backLimit)ROWS.push({typ:t.typ,pacient,vid:v.vykon_id,vykon_datum:datum,bod,termin:due,stav:'late'});
       });
       if(deceased){
         const ed=exitusMap[v.vykon_id];
-        ROWS.push({typ:t.typ,pacient,vykon_datum:datum,bod:'✝ exitus'+(isDate(ed)?' '+fmtD(ed):''),termin:ed,stav:'exitus'});
+        ROWS.push({typ:t.typ,pacient,vid:v.vykon_id,vykon_datum:datum,bod:'✝ exitus'+(isDate(ed)?' '+fmtD(ed):''),termin:ed,stav:'exitus'});
       }
     });
 
@@ -190,13 +212,13 @@ async function loadAll(){
     Object.keys(fuMap).forEach(key=>{
       const i=key.lastIndexOf('|');
       const vid=key.slice(0,i),bod=key.slice(i+1);
-      ROWS.push({typ:t.typ,pacient:vid,vykon_datum:vykDatum[vid]||'',bod,termin:fuMap[key]||'',stav:'done'});
+      ROWS.push({typ:t.typ,pacient:vid,vid,vykon_datum:vykDatum[vid]||'',bod,termin:fuMap[key]||'',stav:'done'});
     });
   }
 
   // Aorta dispenzár – dalsia_kontrola (CT/USG), bez archívu
   try{
-    const ind=await sbGet('aorta_indikacie?select=inicialy,rocnik,rodne_cislo,diagnoza,status,dalsia_kontrola&limit=1000');
+    const ind=await sbGetAll('aorta_indikacie?select=inicialy,rocnik,rodne_cislo,diagnoza,status,dalsia_kontrola');
     ind.filter(i=>i.status!=='archiv'&&isDate(i.dalsia_kontrola)).forEach(i=>{
       const dd=daysDiff(today,i.dalsia_kontrola);
       if(dd>30)return;
@@ -241,7 +263,7 @@ function render(){
   rows.forEach(r=>{
     const tr=document.createElement('tr');
     tr.className='row';
-    tr.onclick=()=>{window.location.href=r.typ==='aorta'?'/tools/Aorta/':'/tools/zaznamy/';};
+    tr.onclick=()=>{window.location.href=r.typ==='aorta'?'/tools/Aorta/':('/tools/zaznamy/'+(r.vid?'?q='+encodeURIComponent(r.vid):''));};
     tr.innerHTML=`<td><span class="tag tag-${r.typ}">${TYP_LABEL[r.typ]}</span></td>
       <td>${escHtml(r.pacient)}</td>
       <td>${r.vykon_datum?fmtD(r.vykon_datum):'<span class="dim">—</span>'}</td>

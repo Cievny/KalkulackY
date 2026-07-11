@@ -49,6 +49,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .add-btn:hover{background:#dbeafe}
 .id-row{display:grid;grid-template-columns:auto 1fr;gap:5px;align-items:center}
 .id-prefix{font-weight:700;font-size:13px;color:#3b82f6;background:#f0f7ff;border:1.5px solid #3b82f6;border-radius:6px;padding:6px 10px;white-space:nowrap}
+@media(max-width:800px){
+.wrap{grid-template-columns:1fr;min-height:0}
+.left{overflow-y:visible;padding:14px 12px}
+.right{position:static;height:auto;border-left:none;border-top:1px solid #d8dce6}
+#out{min-height:280px}
+.tabnav{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tnb{padding:12px 14px;white-space:nowrap}
+}
 @media print{.tabnav{display:none}.left{display:none}.right{border:none;height:auto;position:static}.btns{display:none}#out{border:none;font-family:inherit;font-size:13px;background:#fff}}
 details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:11.5px;color:#5a6a8a;font-weight:600;cursor:pointer;user-select:none;padding:5px 8px;background:#f7f8fc;border-radius:6px;border:1.5px solid #eef0f5;list-style:none}details.komor-details>summary::-webkit-details-marker{display:none}details.komor-details[open]>summary .komor-arr{transform:rotate(90deg)}details.komor-details>summary .komor-arr{display:inline-block;transition:transform .2s;font-size:10px;color:#9ca3af}
 .drg-table{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -655,6 +663,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <div class="card">
 <div class="st">Uzáver miesta vpichu</div>
 
+<div id="uzaver_dx_wrap">
 <div class="st" style="font-size:12px;margin:4px 0;color:#5a6a8a">Pravá strana (l.dx.)</div>
 <div class="row r2">
   <div class="f"><label>Kompresia DX (min)</label><input type="number" id="kompr_dx" min="0" placeholder="10" oninput="gen()"></div>
@@ -675,6 +684,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     </select>
   </div>
   <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="femostop_dx" onchange="gen()"> Nasadený Femostop DX</label></div>
+</div>
 </div>
 
 <div id="uzaver_sin_wrap">
@@ -816,7 +826,15 @@ function getKomor(){
     const liecba=document.querySelector('input[name="ah_liecba"]:checked')?.value||'monoterapia';
     list.push('AH – '+komp+', '+liecba);
   }
-  if(document.getElementById('k_chri')?.checked){const res=calcEGFR();list.push(res?'CKD – '+res:'CKD');}
+  if(document.getElementById('k_chri')?.checked){
+    const res=calcEGFR();
+    if(res)list.push('CKD – '+res);
+    else{
+      // edit režim bez kreatinínu: zachovaj pôvodný CKD segment z uloženého záznamu
+      const m=window._origKomor?String(window._origKomor).match(/CKD – [\d.,]+ ml\/min\/1,73m² → G\d[ab]? \([^)]+\)/):null;
+      list.push(m?m[0]:'CKD');
+    }
+  }
   if(document.getElementById('k_ichs')?.checked){
     const forma=document.querySelector('input[name="ichs_forma"]:checked')?.value||'stabilná';
     const revasc=document.querySelector('input[name="ichs_revasc"]:checked')?.value||'bez revaskularizácie';
@@ -1093,18 +1111,26 @@ function gen(){
   }
   if(chk('komponenty_ok'))agParts.push('Všetky komponenty dobre rozvinuté, bez stenózy.');
 
+  // Strany uzáveru odvodené od skutočnej strany prístupu (nie od typu stentgraftu):
+  // obojstranný prístup → obe strany, jednostranný → len punktovaná strana
+  const uzaverDx=pristupVal[0]!=='vľavo';
+  const uzaverSin=obojstr||pristupVal[0]==='vľavo';
+  const dxWrap=document.getElementById('uzaver_dx_wrap');
+  if(dxWrap)dxWrap.style.display=uzaverDx?'':'none';
   const sinWrap=document.getElementById('uzaver_sin_wrap');
-  if(sinWrap)sinWrap.style.display=isBifurk?'':'none';
+  if(sinWrap)sinWrap.style.display=uzaverSin?'':'none';
 
   const buildUzaver=(side,label)=>{
     const uz=g('uzaver_'+side+'_technika'),kompr=g('kompr_'+side),hemo=g('hemo_'+side);
-    let v='Miesto vpichu '+arteria+' '+label+' '+(uz?('uzatvárame '+uz):('manuálne komprimujeme'+(kompr?' '+kompr+' min':'')));
+    const art=(side==='sin'&&obojstr)?(g('punkcia_arteria_sin')||arteria):arteria;
+    let v='Miesto vpichu '+art+' '+label+' '+(uz?('uzatvárame '+uz):('manuálne komprimujeme'+(kompr?' '+kompr+' min':'')));
     if(hemo)v+=', hemostáza dosiahnutá '+hemo;
     if(chk('femostop_'+side))v+=', nasadený Femostop';
     return v+'.';
   };
-  const uzaverLines=[buildUzaver('dx','l.dx.')];
-  if(isBifurk)uzaverLines.push(buildUzaver('sin','l.sin.'));
+  const uzaverLines=[];
+  if(uzaverDx)uzaverLines.push(buildUzaver('dx','l.dx.'));
+  if(uzaverSin)uzaverLines.push(buildUzaver('sin','l.sin.'));
 
   const odp=g('odporucanie_cas');
   const zaver=g('zaver_vykonu');
@@ -1469,6 +1495,7 @@ async function saveToSupabase(){
     rtg_nav:chk('rtg_nav'),
     zabezpecenie_technika:g('zabezpecenie_technika'),
     sheath_velkost:g('sheath_velkost'),
+    katetrizacia_aorty:g('katetrizacia_aorty'),
     vodic_typ:g('vodic_typ'),
     sg_nazov:gSel('sg_nazov'),
     sg_rozmery:g('sg_rozmery'),
@@ -1484,8 +1511,8 @@ async function saveToSupabase(){
     endoleak_typ:chk('endoleak_check')?g('endoleak_typ'):'',
     endoleak_zdroj:chk('endoleak_check')?g('endoleak_typ2_zdroj'):'',
     komponenty_ok:chk('komponenty_ok'),
-    uzaver_dx_technika:g('uzaver_dx_technika')||'Manuálna kompresia',
-    uzaver_sin_technika:document.querySelector('input[name="sg_typ"]:checked')?.value==='bifurkačného'?(g('uzaver_sin_technika')||'Manuálna kompresia'):'',
+    uzaver_dx_technika:pristupVal[0]!=='vľavo'?(g('uzaver_dx_technika')||'Manuálna kompresia'):'',
+    uzaver_sin_technika:(pristupVal[0]==='obojstranne'||pristupVal[0]==='vľavo')?(g('uzaver_sin_technika')||'Manuálna kompresia'):'',
     kompresia_dx_min:g('kompr_dx')?parseInt(g('kompr_dx')):null,
     kompresia_sin_min:g('kompr_sin')?parseInt(g('kompr_sin')):null,
     hemostaza_dx:g('hemo_dx'),
@@ -1555,15 +1582,22 @@ async function saveToSupabase(){
       }
     }
     if(_isEdit){
-      Object.keys(payload).forEach(k=>{if(payload[k]===''||payload[k]==null)delete payload[k];});
+      // mažeme len null/undefined – prázdny reťazec '' ponechávame, aby sa dalo pole pri úprave vyčistiť
+      Object.keys(payload).forEach(k=>{if(payload[k]==null)delete payload[k];});
       delete payload.vykon_id;
     }
     const _url=SB_URL+'/rest/v1/pevar_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
-    const r=await fetch(_url,{
+    const _send=()=>fetch(_url,{
       method:_isEdit?'PATCH':'POST',
       headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},
       body:JSON.stringify(payload)
     });
+    let r=await _send();
+    // stĺpec katetrizacia_aorty ešte nemusí existovať (setup SQL 3i) – ulož aspoň zvyšok záznamu
+    if(!r.ok&&r.status===400&&'katetrizacia_aorty' in payload){
+      const _etxt=await r.clone().text();
+      if(_etxt.includes('katetrizacia_aorty')){delete payload.katetrizacia_aorty;r=await _send();}
+    }
     if(r.ok){window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(_vykonIdSaved);}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
@@ -1759,6 +1793,7 @@ function loadEditRecord(){
     updateTypVisibility();
     if(record.komorbidity){
       const ks=String(record.komorbidity);
+      window._origKomor=ks; // originál pre CKD segment (kreatinín sa neukladá)
       const on=id=>{const el=document.getElementById('k_'+id);if(el){el.checked=true;kSub(id);}};
       if(/DM[12]/.test(ks))on('dm');
       if(/\bAH\b/.test(ks))on('ah');
@@ -1770,6 +1805,36 @@ function loadEditRecord(){
       if(/Obezita/i.test(ks))on('obez');
       if(/Dyslipid/i.test(ks))on('dysl');
       if(/CHOCHP/.test(ks))on('chochp');
+      // obnov detaily komorbidít (sub-rádiá + čísla) z uloženého reťazca,
+      // aby load → uloženie dalo identický reťazec (nie defaulty)
+      const setR=(name,val)=>{const rb=document.querySelector('input[name="'+name+'"][value="'+val+'"]');if(rb)rb.checked=true;};
+      const pickR=(name,prefix)=>{ // vyber rádio, ktorého hodnota nasleduje za prefixom (najdlhšia zhoda: "statín + ezetimib" > "statín")
+        let best=null;
+        document.querySelectorAll('input[name="'+name+'"]').forEach(rb=>{if(ks.includes(prefix+rb.value)&&(!best||rb.value.length>best.value.length))best=rb;});
+        if(best)best.checked=true;
+      };
+      const mDm=ks.match(/DM[12]/);
+      if(mDm){setR('dm_typ',mDm[0]);pickR('dm_liecba',mDm[0]+', liečba ');}
+      const mAh=ks.match(/AH – (kompenzovaná|nekompenzovaná), /);
+      if(mAh){setR('ah_komp',mAh[1]);pickR('ah_liecba',mAh[0]);}
+      const mIchs=ks.match(/ICHS – (stabilná|nestabilná)/);
+      if(mIchs){setR('ichs_forma',mIchs[1]);pickR('ichs_revasc',mIchs[0]+', ');}
+      const mIm=ks.match(/St\.p\. ?IM – ([^,]+), liečba /);
+      if(mIm){setR('im_obdobie',mIm[1]);pickR('im_liecba',mIm[0]);}
+      const mCmp=ks.match(/St\.p\. ?CMP – (ischemická|hemoragická), /);
+      if(mCmp){setR('cmp_typ',mCmp[1]);pickR('cmp_obdobie',mCmp[0]);}
+      if(/fajčiar/i.test(ks)){
+        pickR('faj_stav','');
+        const mPy=ks.match(/\((\d+) pack-years\)/);if(mPy)sv('faj_py',mPy[1]);
+      }
+      const mBmi=ks.match(/Obezita – BMI ([\d.]+)/);
+      if(mBmi){sv('obez_bmi',mBmi[1]);calcBMI();}
+      pickR('dysl_liecba','Dyslipidémia – ');
+      if(/CHOCHP/.test(ks)){
+        pickR('chochp_gold','CHOCHP – ');
+        const gsel=document.querySelector('input[name="chochp_gold"]:checked')?.value;
+        if(gsel)pickR('chochp_liecba','CHOCHP – '+gsel+', ');
+      }
       document.querySelector('.komor-details')?.setAttribute('open','');
     }
     const banner=document.createElement('div');

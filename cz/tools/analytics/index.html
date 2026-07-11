@@ -11,7 +11,9 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;padding:24px}
 h1{font-size:22px;font-weight:700;color:#1a2745;margin-bottom:4px}
 .subtitle{font-size:13px;color:#6b7280;margin-bottom:24px}
-.tabs{display:flex;gap:4px;margin-bottom:20px}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:20px}
+/* zdieľaná navigácia (z auth.js) nesmie roztiahnuť stránku na mobile – scrollovanie interne */
+.shared-nav{overflow-x:auto;max-width:100%}
 .tab{padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#e5e7eb;color:#374151;transition:.15s}
 .tab.active{background:#1e40af;color:#fff}
 .section{display:none}.section.active{display:block}
@@ -395,7 +397,7 @@ function parseMultiField(rows,key){
 async function fetchAll(table){
   let all=[],offset=0;
   while(true){
-    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.asc&limit=1000&offset=${offset}`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.asc,id.asc&limit=1000&offset=${offset}`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
     if(!r.ok)throw new Error(await r.text());
     const chunk=await r.json();
     all=all.concat(chunk);
@@ -684,11 +686,14 @@ async function loadPEVAR(){
 
 async function loadAll(){
   document.getElementById('err-box').style.display='none';
+  // Obnovit musí přenačíst i follow-upy – resetni cache flagy, aby openPub refetchol
+  const wasPub=PUB.fetched||PUB.fuError;
+  PUB.fetched=false;PUB.fetching=false;PUB.fuError=false;
   const p=Promise.all([loadEVK(),loadCAS(),loadPEVAR()]);
   window._pubDataP=p.catch(()=>{}); // Publikace počkají na data (chyby řeší catch níže)
   try{
     await p;
-    if(PUB.fetched)renderPub(); // po Obnovit přepočítej i publikační tabulky
+    if(wasPub)await openPub(); // po Obnovit refetchni follow-upy + přepočítej publikační tabulky
   }
   catch(e){
     const eb=document.getElementById('err-box');
@@ -707,7 +712,7 @@ function showTab(name,btn){
 }
 
 /* ==================== 📄 PUBLIKACE – publikační statistiky ==================== */
-const PUB={lang:'cs',fetched:false,fetching:false,fu:{evk:[],cas:[],pevar:[]},tables:{}};
+const PUB={lang:'cs',fetched:false,fetching:false,fuError:false,fu:{evk:[],cas:[],pevar:[]},tables:{}};
 const PUB_FU_TBL={evk:'cz_evk_followup',cas:'cz_cas_followup',pevar:'cz_pevar_followup'};
 
 // --- Popisky (CZ/EN) ---
@@ -718,6 +723,7 @@ cs:{
  cohort0:'Kohorta: n = 0 výkonů',
  rcNote:z=>`* u ${z} výkonů chybí rodné číslo – počítány jako samostatní pacienti`,
  loading:'⏳ Načítám follow-up data…',
+ fuErr:'⚠️ Follow-up data se nepodařilo načíst – tabulky/KM jsou neúplné.',
  methodsTitle:'Metody – text pro rukopis',
  t1:'Tabulka 1 – Základní charakteristiky',
  t2:'Tabulka 2 – Procedurální charakteristiky',
@@ -728,8 +734,8 @@ cs:{
  kmCopy:'📋 Kopírovat KM tabulku',
  kmNote:(n,ev,ex)=>`Zahrnuto ${n} výkonů s follow-up (${ev} událostí); ${ex} výkonů bez follow-up bylo vyloučeno.`,
  exclKonz:n=>` · ${n} diagnostických/konzervativních DSA vyloučeno z kohorty (bez stentu)`,
- kmDefEvk:'Událost: restenóza nebo okluze při kontrole, reintervence nebo amputace.',
- kmDefCas:'Událost: restenóza ≥50 % (50–70 %, >70 %, okluze stentu) nebo reintervence.',
+ kmDefEvk:'Událost: restenóza nebo okluze při kontrole, asistovaná nebo sekundární patence, reintervence nebo amputace.',
+ kmDefCas:'Událost: restenóza ≥50 % (50–70 %, >70 %, okluze stentu), progrese s indikací k revaskularizaci nebo reintervence.',
  kmDefPevar:'Událost: reintervence nebo endoleak typu Ia/Ib/III.',
  kmTime:'Čas (měsíce)',kmAtRisk:'V riziku',kmEvents:'Události',kmEst:'Odhad % (95% IS)',kmMonths:'Měsíce',
  char:'Charakteristika',value:'Hodnota',indicator:'Ukazatel',
@@ -780,6 +786,7 @@ en:{
  cohort0:'Cohort: n = 0 procedures',
  rcNote:z=>`* Patient identifier (birth number) missing in ${z} procedures – each counted as a separate patient`,
  loading:'⏳ Loading follow-up data…',
+ fuErr:'⚠️ Follow-up data could not be loaded – tables/KM are incomplete.',
  methodsTitle:'Methods – manuscript paragraph',
  t1:'Table 1 – Baseline characteristics',
  t2:'Table 2 – Procedural characteristics',
@@ -790,8 +797,8 @@ en:{
  kmCopy:'📋 Copy KM table',
  kmNote:(n,ev,ex)=>`${n} procedures with follow-up included (${ev} events); ${ex} procedures without follow-up were excluded.`,
  exclKonz:n=>` · ${n} diagnostic/conservative angiographies excluded from the cohort (no stent)`,
- kmDefEvk:'Event: restenosis or occlusion at follow-up, reintervention, or amputation.',
- kmDefCas:'Event: restenosis ≥50 % (50–70 %, >70 %, stent occlusion) or reintervention.',
+ kmDefEvk:'Event: restenosis or occlusion at follow-up, assisted or secondary patency, reintervention, or amputation.',
+ kmDefCas:'Event: restenosis ≥50 % (50–70 %, >70 %, stent occlusion), progression indicated for revascularisation, or reintervention.',
  kmDefPevar:'Event: reintervention or type Ia/Ib/III endoleak.',
  kmTime:'Time (months)',kmAtRisk:'At risk',kmEvents:'Events',kmEst:'Estimate % (95% CI)',kmMonths:'Months',
  char:'Characteristic',value:'Value',indicator:'Outcome',
@@ -1051,7 +1058,7 @@ function pubT1(typ,rows){
   const IND=' '; // odsazení podpoložek
   const out=[[LT('char'),LT('value')]];
   out.push([LT('nProc'),''+N]);
-  const ages=pubNums(rows,'vek');
+  const ages=pubNums(rows,'vek').filter(v=>v>0); // vek=0 = neznámý, vylouč (sjednoceno s dashboardem)
   out.push([LT('age')+(ages.length<N?` (N=${ages.length})`:'')]);
   out.push([IND+LT('meanSd'),fMeanSD(ages,1)]);
   out.push([IND+LT('medIqr'),fMedIQR(ages,1)]);
@@ -1373,9 +1380,9 @@ function computeKM(subs){
 window.computeKM=computeKM; // exportováno pro testy
 
 const PUB_KM_EVENT={
-  evk:f=>{const p=(f.patencia==null?'':''+f.patencia).trim().toLowerCase();return p==='restenóza'||p.indexOf('okl')===0||f.reintervencia===true||pubIsAmput(f.amputacia);},
+  evk:f=>{const p=(f.patencia==null?'':''+f.patencia).trim().toLowerCase();return p==='restenóza'||p.indexOf('okl')===0||p.indexOf('asistovan')===0||p.indexOf('sekund')===0||f.reintervencia===true||pubIsAmput(f.amputacia);},
   pevar:f=>f.reintervencia===true||['Ia','Ib','III'].includes((f.endoleak_typ==null?'':''+f.endoleak_typ).trim()),
-  cas:f=>{const v=(f.restenoza==null?'':''+f.restenoza).replace(/\s+/g,'');return /^50[–-]70%$/.test(v)||/^>70%$/.test(v)||/^okl/i.test(v)||f.reintervencia===true;}
+  cas:f=>{const v=(f.restenoza==null?'':''+f.restenoza).replace(/\s+/g,'');return /^50[–-]70%$/.test(v)||/^>70%$/.test(v)||/^okl/i.test(v)||/^progres/i.test(v)||f.reintervencia===true;}
 };
 
 function pubKMSubjects(typ,rows){
@@ -1576,6 +1583,15 @@ function setPubLang(l){
   renderPub();
 }
 
+// výrazný banner při selhání FU fetche – v Publikacích
+function showFUBanner(){
+  const h=document.getElementById('sec-pub');if(!h)return;
+  let b=document.getElementById('fu-banner-pub');
+  if(PUB.fuError){
+    if(!b){b=document.createElement('div');b.id='fu-banner-pub';b.className='err';h.insertBefore(b,h.firstChild);}
+    b.textContent=LT('fuErr');b.style.display='';
+  }else if(b){b.style.display='none';}
+}
 // --- Otevření a render tabu ---
 async function openPub(){
   if(PUB.fetching)return;
@@ -1583,13 +1599,13 @@ async function openPub(){
     PUB.fetching=true;
     const st=pubEl('pub-status');st.style.display='block';st.textContent=LT('loading');
     try{await (window._pubDataP||Promise.resolve());}catch(e){}
-    const [e,c,p]=await Promise.all([
-      fetchAll(PUB_FU_TBL.evk).catch(()=>[]),
-      fetchAll(PUB_FU_TBL.cas).catch(()=>[]),
-      fetchAll(PUB_FU_TBL.pevar).catch(()=>[])
-    ]);
+    let failed=false;
+    const grab=t=>fetchAll(t).catch(()=>{failed=true;return[];});
+    const [e,c,p]=await Promise.all([grab(PUB_FU_TBL.evk),grab(PUB_FU_TBL.cas),grab(PUB_FU_TBL.pevar)]);
     PUB.fu={evk:e||[],cas:c||[],pevar:p||[]};
-    PUB.fetched=true;PUB.fetching=false;
+    PUB.fuError=failed;
+    if(!failed)PUB.fetched=true; // při selhání neoznač jako načtené – další otevření tabu zkusí znovu
+    PUB.fetching=false;
     st.style.display='none';
     const sel=pubEl('pub-riecisko');
     const vals=[...new Set((RAW.evk||[]).map(r=>(r.riecisko==null?'':''+r.riecisko).trim()).filter(Boolean))].sort();
@@ -1598,6 +1614,7 @@ async function openPub(){
   renderPub();
 }
 function renderPub(){
+  showFUBanner();
   if(!PUB.fetched)return;
   const typ=pubEl('pub-typ').value;
   pubEl('pub-riecisko-wrap').style.display=typ==='evk'?'':'none';

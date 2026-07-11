@@ -8,8 +8,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f7;min-height:100vh;}
-.board{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:16px 20px 20px;max-width:1200px;margin:0 auto;}
-.col{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:10px;}
+.board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:16px 20px 20px;max-width:1200px;margin:0 auto;}
+.col{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:10px;min-width:0;}
 .col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
 .col-title{font-size:14px;font-weight:700;letter-spacing:.3px;}
 .col-count{font-size:11px;font-weight:600;background:#f0f2f7;color:#6b7280;border-radius:10px;padding:2px 8px;}
@@ -62,7 +62,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;max-width:12
 .arch-wrap summary{font-size:13.5px;font-weight:700;color:#1a2745;cursor:pointer;user-select:none;}
 .arch-card{background:#f8faff;border:1.5px solid #e5e9f5;border-radius:8px;padding:8px 11px;margin-top:8px;font-size:12.5px;color:#4b5563;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .arch-card .atext{flex:1;min-width:180px;white-space:pre-wrap;word-break:break-word;}
-@media(max-width:700px){.board{grid-template-columns:1fr;}}
+@media(max-width:900px){.board{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -292,13 +292,14 @@ async function addCard(col){
   }
   const body={col,text,kategoria,author};
   if(anonym)body.created_by=null; // prepíše automatický email z databázy – anonymita platí naozaj
-  inp.disabled=true;
+  const btn=document.querySelector('#col-'+col+' .btn-add'); // blokuj dvojklik počas POSTu
+  inp.disabled=true;if(btn)btn.disabled=true;
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
     if(r.ok){inp.value='';await loadItems();}
     else alert('Chyba pri ukladaní: '+r.status);
   }catch(e){alert('Chyba siete: '+e.message);}
-  inp.disabled=false;inp.focus();
+  inp.disabled=false;if(btn)btn.disabled=false;inp.focus();
 }
 
 async function moveCard(id,newCol){

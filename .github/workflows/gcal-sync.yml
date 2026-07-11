@@ -23,9 +23,13 @@ jobs:
             exit 0
           fi
           python3 - <<'PYEOF'
-          import json,os,re,sys,urllib.request,datetime as dt
+          import json,os,re,sys,urllib.request,urllib.parse,datetime as dt
+          from zoneinfo import ZoneInfo
 
           SB_URL=os.environ['SB_URL'];SB_ANON=os.environ['SB_ANON']
+          TZ=ZoneInfo('Europe/Bratislava')
+          # jednotný timestamp celého behu – používa sa na upsert aj na zmazanie starých riadkov
+          RUN_STAMP=dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
           # 1) prihlásenie (RLS – rovnaký účet ako zálohy)
           d=json.dumps({'email':os.environ['SB_EMAIL'],'password':os.environ['SB_PASSWORD']}).encode()
@@ -49,14 +53,19 @@ jobs:
               return s.replace('\\n','\n').replace('\\,',',').replace('\\;',';').replace('\\\\','\\')
 
           def parse_dt(prop,val):
-              # VALUE=DATE → celý deň; inak datetime (Z=UTC, TZID/floating → berieme ako lokálny čas)
+              # VALUE=DATE → celý deň; datetime so Z (UTC) → prevod na Europe/Bratislava
+              # (klient zobrazuje časy naivne, preto ukladáme lokálny ISO bez 'Z');
+              # TZID/floating → berieme ako lokálny čas
               if 'VALUE=DATE' in prop or re.fullmatch(r'\d{8}',val):
                   return val[:4]+'-'+val[4:6]+'-'+val[6:8], True
               m=re.fullmatch(r'(\d{8})T(\d{6})(Z?)',val)
               if not m: return None,None
               d,t,z=m.groups()
-              iso=d[:4]+'-'+d[4:6]+'-'+d[6:8]+'T'+t[:2]+':'+t[2:4]+':'+t[4:6]+('Z' if z else '')
-              return iso,False
+              if z:
+                  loc=dt.datetime(int(d[:4]),int(d[4:6]),int(d[6:8]),int(t[:2]),int(t[2:4]),int(t[4:6]),
+                                  tzinfo=dt.timezone.utc).astimezone(TZ)
+                  return loc.strftime('%Y-%m-%dT%H:%M:%S'),False
+              return d[:4]+'-'+d[4:6]+'-'+d[6:8]+'T'+t[:2]+':'+t[2:4]+':'+t[4:6],False
 
           events=[];cur=None;skipped_rrule=0
           for ln in lines:
@@ -90,17 +99,22 @@ jobs:
               if not (lo<=z[:10]<=hi): continue
               rows.append({'id':(e.get('_uid','?')+'_'+z)[:200],'nazov':e.get('nazov','(bez názvu)'),
                            'zaciatok':z,'koniec':e.get('koniec'),'cely_den':e.get('cely_den',True),
-                           'popis':e.get('popis'),'updated_at':dt.datetime.utcnow().isoformat()+'Z'})
+                           'popis':e.get('popis'),'updated_at':RUN_STAMP})
           # dedup id (opakované UID)
           seen=set();rows=[r for r in rows if not (r['id'] in seen or seen.add(r['id']))]
           print(f'→ {len(rows)} udalostí v okne {lo}..{hi}')
 
-          # 4) prepíš tabuľku: zmaž všetko, vlož nanovo (jednoduché a deterministické)
-          req=urllib.request.Request(SB_URL+'/rest/v1/kalendar_udalosti?id=neq.__nikdy__',headers=H,method='DELETE')
-          urllib.request.urlopen(req)
+          # 4) bez okna „prázdneho kalendára": najprv UPSERT všetkých riadkov (PK id,
+          #    všetky s updated_at=RUN_STAMP), až po úspechu zmaž staré riadky
+          #    (updated_at < RUN_STAMP = zmiznuté/mimo okna). Ak upsert padne,
+          #    nič sa nezmazalo a ostáva predchádzajúci stav.
           for i in range(0,len(rows),500):
-              req=urllib.request.Request(SB_URL+'/rest/v1/kalendar_udalosti',
-                  data=json.dumps(rows[i:i+500]).encode(),headers={**H,'Prefer':'return=minimal'})
+              req=urllib.request.Request(SB_URL+'/rest/v1/kalendar_udalosti?on_conflict=id',
+                  data=json.dumps(rows[i:i+500]).encode(),
+                  headers={**H,'Prefer':'resolution=merge-duplicates,return=minimal'})
               urllib.request.urlopen(req)
+          req=urllib.request.Request(SB_URL+'/rest/v1/kalendar_udalosti?updated_at=lt.'+urllib.parse.quote(RUN_STAMP),
+              headers=H,method='DELETE')
+          urllib.request.urlopen(req)
           print('✓ Kalendár synchronizovaný.')
           PYEOF
