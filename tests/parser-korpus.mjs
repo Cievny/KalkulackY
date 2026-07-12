@@ -158,5 +158,40 @@ const byKod = (r, k) => r.found.find(f => f.kod === k);
   ok('09: vek 71 M („71- ročný pacient" s medzerou)', d.vek === 71 && d.pohlavie === 'M', JSON.stringify([d.vek, d.pohlavie]));
 }
 
+/* ── správa 10: ambulantné vyšetrenie (OA:/LA:/AA: formát, preklepy) ── */
+{
+  const r = P.parse(load('sprava10.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('10: AH istá (Art. hypertenzia 3. st. v OA)', d.ah === true);
+  ok('10: dyslipidémia (HLp) + statín (Atoris v LA)', d.dysl && d.dysl.statin === true, JSON.stringify(d.dysl));
+  ok('10: NOAK (Pradaxa v LA)', d.atb.noak === true);
+  ok('10: DM/ICHS/IM/CMP/CKD/obezita/fajčenie NEnájdené', !k.includes('dm') && !k.includes('ichs') && !k.includes('im') && !k.includes('cmp') && !k.includes('chri') && !k.includes('obez') && !k.includes('faj'), JSON.stringify(k));
+  ok('10: vek neznámy (v ambulantnom náleze nie je)', d.vek === null, JSON.stringify(d.vek));
+}
+
+/* ── správa 11: hospitalizácia PEVAR – ICHS I25.8, CKD N18.1+krea 130, FiA na NOAK ── */
+{
+  const r = P.parse(load('sprava11.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('11: AH istá (I10)', d.ah === true);
+  ok('11: ICHS istá (I25.8 + NYHA II text)', byKod(r, 'ichs') && byKod(r, 'ichs').certain);
+  ok('11: CKD isté (N18.1) + krea 130', byKod(r, 'chri') && byKod(r, 'chri').certain && d.chri.krea === 130, JSON.stringify(d.chri));
+  ok('11: dyslipidémia (HLP) + statín (Atoris)', d.dysl && d.dysl.statin === true);
+  ok('11: NOAK (dabigatran/Pradaxa) + LMWH (Fraxiparine)', d.atb.noak === true && d.atb.lmwh === true, JSON.stringify(d.atb));
+  ok('11: DM/IM/CMP/obezita/fajčenie NEnájdené (nefajčí; hypoperfúzia ≠ IM)', !k.includes('dm') && !k.includes('im') && !k.includes('cmp') && !k.includes('obez') && !k.includes('faj'), JSON.stringify(k));
+  ok('11: vek 80 M (nie 81letý z CZ výkonu nižšie)', d.vek === 80 && d.pohlavie === 'M', JSON.stringify([d.vek, d.pohlavie]));
+}
+
+/* ── správa 12: čistý CT popis – parser NESMIE nič vymyslieť ── */
+{
+  const r = P.parse(load('sprava12.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('12: žiadne komorbidity z CT popisu', !k.includes('dm') && !k.includes('ah') && !k.includes('ichs') && !k.includes('im') && !k.includes('cmp') && !k.includes('chri') && !k.includes('obez') && !k.includes('dysl') && !k.includes('faj') && !k.includes('chochp'), JSON.stringify(k));
+  ok('12: žiadne antitrombotiká', !r.found.some(f => f.kod === 'atb'), JSON.stringify(d.atb));
+}
+
 console.log(fail ? `\n${fail} korpusových testov ZLYHALO` : '\nVšetky korpusové testy prešli.');
 process.exit(fail ? 1 : 0);

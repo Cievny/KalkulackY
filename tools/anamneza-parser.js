@@ -38,10 +38,10 @@
     { id: 'dg',  re: /^\s*(dg\.?|dgn\.?)\s*[:\-]|^\s*(diagnoz|zakladne diagnoz|suhrn diagnoz|souhrn diagnoz)\s*[:\-]?/ },
     { id: 'oa',  re: /^\s*(oa|o\.a\.?)\s*[:\-]|^\s*osobn[aiy] anamn|^\s*anam[en]+za\s*[:]/ },
     { id: 'th',  re: /^\s*(th|tap|t\.?h\.?)\s*[:\-]|^\s*(lieky|leky|medikaci|medikáci|terapia|terapie|farmakoterapi|chronicka (medikacia|terapia|farmakoterapia)|trvala medikaci)\s*[:\-]?\s*$|^\s*(lieky|leky|liekova|lekova|medikaci|terapia|terapie|farmakoterapi)\s*[:\-]/ },
-    { id: 'th',  re: /^\s*v uzivani\s*[:]/ },
+    { id: 'th',  re: /^\s*v uzivani\s*[:]|^\s*(la|l\.a\.?)\s*[:]/ },
     { id: 'lab', re: /^\s*lab\.?\s*[:\-]|^\s*(laborator|odbery|biochemi)\s*[:\-]?/ },
     // ďalšie bežné hlavičky – vraciame sa nimi do všeobecného kontextu
-    { id: 'gen', re: /^\s*(ta|t\.a\.?|sa|s\.a\.?|aa|a\.a\.?|ga|g\.a\.?)\s*[:\-]|^\s*(terajsie ochoreni|nynejsi onemocnen|socialna|pracovna|doplnkova|epidemiologicka|abusus|abuzy|alergick|objektivn|status praesens|fyzikaln|ekg|usg|echo|rtg|subj|subjekt|vysetrenia|priebeh|zaver|vf)\s*[:\-]?|^\s*ct\b/ }
+    { id: 'gen', re: /^\s*(ta|t\.a\.?|sa|s\.a\.?|aa|a\.a\.?|ga|g\.a\.?|s|obj\.?)\s*[:\-]|^\s*(terajsie ochoreni|nynejsi onemocnen|socialna|pracovna|doplnkova|epidemiologicka|abusus|abuzy|alergick|objektivn|status praesens|fyzikaln|ekg|usg|echo|rtg|subj|subjekt|vysetrenia|priebeh|zaver|vf)\s*[:\-]?|^\s*ct\b/ }
   ];
 
   function sectionize(rawLines, normLines) {
@@ -372,7 +372,7 @@
     if (rc) add('rc', 'RČ ' + rc.rc + ' (' + rc.pohlavie + ', ' + rc.vek + ' r.)', 'rc', true,
                 { rodne_cislo: rc.rc, pohlavie: rc.pohlavie, vek: rc.vek }, '');
     if (!rc) {
-      var vp = findIn(S, /(\d{1,3})\s*[- ]?\s*rocn(y|a|eho|ej)\s+(pacient|muz|zena)(ka)?/);
+      var vp = findIn(S, /(\d{1,3})\s*[- ]?\s*rocn(y|a|eho|ej)\s+(?:[a-z]+\s+){0,2}(pacient|muz|zena)(ka)?/);
       if (vp) {
         var vv = parseInt(vp.m[1], 10);
         var poh = /rocn(a|ej)|pacientk|zen/.test(vp.m[0]) ? 'Ž' : 'M';
