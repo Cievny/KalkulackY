@@ -36,8 +36,9 @@
     // odporúčania / plán – IGNOROVAŤ (návrhy liečby nie sú anamnéza)
     { id: 'odp', re: /^\s*(odporucan|doporucen|odporucam|doporucuj|plan\s*[:\-]|zaver a odporucan)/ },
     { id: 'dg',  re: /^\s*(dg\.?|dgn\.?|diagnoz|diagnóz|zakladne diagnoz|suhrn diagnoz|souhrn diagnoz)\s*[:\-]?/ },
-    { id: 'oa',  re: /^\s*(oa|o\.a\.?)\s*[:\-]|^\s*osobn[aiy] anamn/ },
+    { id: 'oa',  re: /^\s*(oa|o\.a\.?)\s*[:\-]|^\s*osobn[aiy] anamn|^\s*anam[en]+za\s*[:]/ },
     { id: 'th',  re: /^\s*(th|tap|t\.?h\.?)\s*[:\-]|^\s*(lieky|leky|medikaci|medikáci|terapia|terapie|farmakoterapi|chronicka (medikacia|terapia|farmakoterapia)|trvala medikaci)\s*[:\-]?\s*$|^\s*(lieky|leky|medikaci|terapia|terapie|farmakoterapi)\s*[:\-]/ },
+    { id: 'th',  re: /^\s*v uzivani\s*[:]/ },
     { id: 'lab', re: /^\s*(lab\.?|laborator|odbery|biochemi)\s*[:\-]?/ },
     // ďalšie bežné hlavičky – vraciame sa nimi do všeobecného kontextu
     { id: 'gen', re: /^\s*(ta|t\.a\.?|terajsie ochoreni|nynejsi onemocnen|sa|s\.a\.?|socialna anamn|aa|a\.a\.?|alergick|ga|g\.a\.?|abusus|objektivn|status praesens|fyzikaln|ekg|usg|echo|ct\b|rtg)\s*[:\-]?/ }
@@ -51,7 +52,9 @@
       for (var s = 0; s < SECTION_HEADS.length; s++) {
         if (SECTION_HEADS[s].re.test(nl)) { cur = SECTION_HEADS[s].id; break; }
       }
-      out.push({ sec: cur, raw: rawLines[i], norm: nl });
+      // „Dobraté:" = vysadené lieky – riadok ignoruj, ale sekciu nemeň
+      var lineSec = /\bdobrat[ea]/.test(nl) ? 'odp' : cur;
+      out.push({ sec: lineSec, raw: rawLines[i], norm: nl });
     }
     return out;
   }
@@ -61,7 +64,7 @@
   /* ---------- klauzulová negácia ----------
      Riadok delíme na klauzuly (, ; .) – nález je negovaný, ak jeho klauzula
      obsahuje negačné slovo pred/okolo zhody, alebo riadok začína „neguje“. */
-  var NEG = /(neguje|negat|\bbez\b|\bnema\b|\bnemel\b|\bnemela\b|\bnemal\b|\bnemala\b|\bnemali\b|\bnie je\b|\bneni\b|\bnení\b|vylucen|vyloucen|v norme|\b0\s*:|nepritomn|neprítomn|neudava|neudává|nezistene|popiera|popira)/;
+  var NEG = /(neguje|negat|\bbez\b|\bnema\b|\bnemel\b|\bnemela\b|\bnemal\b|\bnemala\b|\bnemali\b|\bnie je\b|\bneni\b|\bnení\b|vylucen|vyloucen|v norme|\b0\s*:|nepritomn|neprítomn|neudava|neudává|nezistene|popiera|popira|nefajciar|nefajci|nekurak|nekouri)/;
 
   function clauseOf(line, idx) {
     var start = 0, end = line.length;
@@ -108,18 +111,19 @@
     dm1:     /\bdm\s*-?\s*1\b|\bdm\s*i\b(?!i)|\b1\.?\s*typu?\b|\btypu?\s*1\b|\bi\.\s*typu/,
     dm2:     /\bdm\s*-?\s*2\b|\bdm\s*ii\b|\b2\.?\s*typu?\b|\btypu?\s*2\b|\bii\.\s*typu/,
     inzulin: /inzulin|lantus|toujeo|tresiba|levemir|novorapid|humalog|apidra|abasaglar/,
-    oad:     /\bpad\b|\boad\b|metformin|siofor|glucophage|stadamet|gliklazid|diaprel|glimepirid|amaryl|gliptin|sitagliptin|januvia|linagliptin|trajenta|empagliflozin|jardiance|dapagliflozin|forxiga|gliflozin|glifozin|ozempic|semaglutid|trulicity|dulaglutid/,
+    oad:     /\bpad\b|\boad\b|metformin|siofor|glucophage|stadamet|gliklazid|gliclada|diaprel|glimepirid|amaryl|gliptin|sitagliptin|januvia|linagliptin|trajenta|empagliflozin|jardiance|dapagliflozin|forxiga|kanagliflozin|canagliflozin|invokana|gliflozin|glifozin|ozempic|semaglutid|trulicity|dulaglutid/,
     dieta:   /\bdiet(a|e|ou|u)\b/,
+    naPad:   /na\s+(pad|oad)\b|\bpad\b\s*(v|,|$)/,
     ah:      /arteriov[a-z]* hypertenz|arterialni hypertenz|hypertenz(ia|e)\b|\bah\b|esencialn[a-z]* ht\b|\bht\b.{0,3}na terapii/,
-    chri:    /\bckd\b|\bchri\b|renaln[a-z]* insuficienc|nefropati|ochorenie oblicok|ochorenie obliciek|onemocneni ledvin|nedostatocnost oblicok|selhani ledvin|dialyz|hemodialyz/,
-    krea:    /krea(?:tinin[a-z]*)?\s*[:.=]?\s*(\d{2,4})(?:[.,]\d+)?(\s*[uµ]mol)?/,
-    ichs:    /\bichs\b|ischemick[a-z]* choroba srd|\bcad\b|koronarn[a-z]* (chorob|nemoc)|st\.?\s*p\.?\s*(pci|cabg|aokoronarnom bypasse)|po pci\b|po cabg\b/,
+    chri:    /\bckd\b(?![\s-]*epi)|\bchri\b|renaln[a-z]* insuficienc|nefropati|ochorenie oblicok|ochorenie obliciek|onemocneni ledvin|nedostatocnost oblicok|selhani ledvin|dialyz|hemodialyz/,
+    krea:    /krea(?:tinin[a-z]*|t\b)?\s*[:.=]?\s*(\d{2,4})(?:[.,]\d+)?(\s*[uµ]mol)?/,
+    ichs:    /\bichs\b|\bchks\b|st\.?\s*p\.?\s*pki\b|po pki\b|ischemick[a-z]* choroba srd|\bcad\b|koronarn[a-z]* (chorob|nemoc)|st\.?\s*p\.?\s*(pci|cabg|aokoronarnom bypasse)|po pci\b|po cabg\b/,
     im:      /st\.?\s*p\.?\s*im\b|infarkt[a-z]* myokardu|\bn?stemi\b|\bpo im\b/,
-    cmp:     /st\.?\s*p\.?\s*n?cmp\b|\bn?cmp\b|cievna mozgova prihoda|cevni mozkova prihoda|\biktus|\bstroke\b|\btia\b/,
+    cmp:     /st\.?\s*p\.?\s*i?n?cmp\b|\bi?n?cmp\b|cievna mozgova prihoda|cevni mozkova prihoda|\biktus|\bstroke\b|\btia\b/,
     faj:     /fajciar|fajcen|nikotinizm|kurak|koureni|kuractvi/,
     fajEx:   /(ex|stop)\s*-?\s*(fajciar|kurak)|byval[a-z]* (fajciar|kurak)/,
     packy:   /(\d{1,3})\s*(?:pack[\s-]?years?|\bpy\b|balicko\s*-?\s*rok)/,
-    dysl:    /dyslipidemi|hyperlipoproteinemi|\bhlp\b|hypercholesterolemi|hyperlipidemi/,
+    dysl:    /dyslipidemi|\bdlp\b|hyperlipoproteinemi|\bhlp\b|hypercholesterolemi|hyperlipidemi/,
     statin:  /\bstatin|atorvastatin|rosuvastatin|simvastatin|fluvastatin|pravastatin|sortis|crestor|torvacard|rosucard|tulip|atoris|ezetimib/,
     obez:    /obezit|adipozit|obezn/,
     bmi:     /\bbmi\s*[:=]?\s*(\d{2}(?:[.,]\d)?)/,
@@ -257,7 +261,17 @@
       var typ = RX.dm1.test(nt) && !RX.dm2.test(nt) ? 'DM1' : (RX.dm2.test(nt) ? 'DM2' : null);
       add('dm', typ || 'DM', m.line.sec === 'dg' ? 'dg' : 'text', true, { dm: { typ: typ } }, quoteOf(m.line, m.m.index));
     }
-    if ((m = findIn(S, RX.ah)))     add('ah', 'AH', m.line.sec === 'dg' ? 'dg' : 'text', true, { ah: true }, quoteOf(m.line, m.m.index));
+    if ((m = findIn(S, RX.ah))) {
+      var ahP = { ah: true };
+      var ahLbl = 'AH';
+      var nk = findIn(S, /(\bah\b|hypertenz[a-z]*)[^,;\n]{0,25}nekompenzovan/);
+      var kk = nk ? null : findIn(S, /(\bah\b|hypertenz[a-z]*)[^,;\n]{0,25}kompenzovan/);
+      if (nk) { ahP.ah_komp = 'nekompenzovan'; ahLbl += ' nekompenzovan\u00e1'; }
+      else if (kk) { ahP.ah_komp = 'kompenzovan'; ahLbl += ' kompenzovan\u00e1'; }
+      if (findIn(S, /kombinovan[a-z]* liecb|kombinovan[a-z]* lecb|trojkombinaci|dvojkombinaci/)) { ahP.ah_liecba = 'kombinovan'; ahLbl += ', kombinovan\u00e1 lie\u010dba'; }
+      else if (findIn(S, /monoterapi/)) { ahP.ah_liecba = 'monoterapi'; ahLbl += ', monoterapia'; }
+      add('ah', ahLbl, m.line.sec === 'dg' ? 'dg' : 'text', true, ahP, quoteOf(m.line, m.m.index));
+    }
     if ((m = findIn(S, RX.chri)))   add('chri', 'CKD', m.line.sec === 'dg' ? 'dg' : 'text', true, { chri: {} }, quoteOf(m.line, m.m.index));
     if ((m = findIn(S, RX.ichs)))   add('ichs', 'ICHS', m.line.sec === 'dg' ? 'dg' : 'text', true, { ichs: true }, quoteOf(m.line, m.m.index));
     if ((m = findIn(S, RX.im)))     add('im', 'st.p. IM', m.line.sec === 'dg' ? 'dg' : 'text', true, { im: true }, quoteOf(m.line, m.m.index));
@@ -274,7 +288,9 @@
 
     /* 3) lieky – detail k DM / neisté návrhy / antitrombotiká */
     var inz = findIn(S, RX.inzulin), oad = findIn(S, RX.oad), dieta = findIn(S, RX.dieta);
+    var naPad = findIn(S, RX.naPad);
     var liecba = (inz && oad) ? 'OAD+inzulín' : (inz ? 'inzulín' : (oad ? 'OAD' : (dieta ? 'diéta' : null)));
+    if (naPad) liecba = 'OAD'; // explicitne „na PAD“ v texte má prednosť (nemocničný inzulín nie je chronická liečba)
     var dmF = null;
     for (var fi = 0; fi < found.length; fi++) if (found[fi].kod === 'dm') dmF = found[fi];
     if (dmF && liecba) {
@@ -369,7 +385,7 @@
       if (selectedIds && selectedIds.indexOf(f.id) < 0) return;
       var p = f.patch;
       if (p.dm) data.dm = Object.assign({ typ: null, liecba: null }, data.dm || {}, p.dm);
-      if (p.ah) data.ah = true;
+      if (p.ah) { data.ah = true; if (p.ah_komp) data.ah_komp = p.ah_komp; if (p.ah_liecba) data.ah_liecba = p.ah_liecba; }
       if (p.chri) data.chri = Object.assign({ krea: null }, data.chri || {}, p.chri);
       if (p.ichs) data.ichs = true;
       if (p.im) data.im = true;
@@ -432,7 +448,11 @@
       else if (d.dm.liecba === 'OAD') setRadio('dm_liecba', function (v) { return v === 'oad'; });
       else if (d.dm.liecba === 'diéta') setRadio('dm_liecba', function (v) { return v.indexOf('diet') === 0; });
     }
-    if (d.ah) tickCheckbox(document.getElementById('k_ah'));
+    if (d.ah) {
+      tickCheckbox(document.getElementById('k_ah'));
+      if (d.ah_komp) setRadio('ah_komp', function (v) { return v.indexOf(d.ah_komp) === 0; });
+      if (d.ah_liecba) setRadio('ah_liecba', function (v) { return v.indexOf(d.ah_liecba) === 0; });
+    }
     if (d.chri) {
       tickCheckbox(document.getElementById('k_chri'));
       var kreaEl = document.getElementById('chri_krea');

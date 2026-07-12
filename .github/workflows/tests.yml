@@ -20,3 +20,5 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Spusti smoke testy
         run: node tests/smoke.mjs
+      - name: Korpusove testy parsera anamnezy
+        run: node tests/parser-korpus.mjs
