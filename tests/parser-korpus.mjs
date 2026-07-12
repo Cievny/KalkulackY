@@ -193,5 +193,17 @@ const byKod = (r, k) => r.found.find(f => f.kod === k);
   ok('12: žiadne antitrombotiká', !r.found.some(f => f.kod === 'atb'), JSON.stringify(d.atb));
 }
 
+/* ── správa 13: 2. ambulantná kontrola po PEVAR (S:, Kreat. s dátumom, endoleak) ── */
+{
+  const r = P.parse(load('sprava13.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('13: AH + ICHS + dyslipidémia so statínom', d.ah === true && d.ichs === true && d.dysl && d.dysl.statin === true);
+  ok('13: NOAK (Pradaxa/dabigatran)', d.atb.noak === true && !d.atb.asa && !d.atb.dapt);
+  ok('13: „Kreat.: 11.2.2021: 112" nezmätie parser (žiadne CKD, žiadna krea=11)', !k.includes('chri'), JSON.stringify(d.chri));
+  ok('13: DM/IM/CMP/fajčenie/obezita NEnájdené', !k.includes('dm') && !k.includes('im') && !k.includes('cmp') && !k.includes('faj') && !k.includes('obez'), JSON.stringify(k));
+  ok('13: vek neznámy (v kontrole nie je)', d.vek === null);
+}
+
 console.log(fail ? `\n${fail} korpusových testov ZLYHALO` : '\nVšetky korpusové testy prešli.');
 process.exit(fail ? 1 : 0);
