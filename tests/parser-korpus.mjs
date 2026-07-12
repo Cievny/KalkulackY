@@ -40,5 +40,108 @@ const byKod = (r, k) => r.found.find(f => f.kod === k);
      r.found.filter(f => !f.quote && f.kod !== 'rc').map(f => f.kod).join());
 }
 
+/* ── správa 02: CLTI, DEB PTA, nefajčiar, DM na PAD a IT (inzulinoterapia) ── */
+{
+  const r = P.parse(load('sprava02.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('02: DM2 isté + liečba OAD+inzulín („na PAD a IT")', d.dm && d.dm.typ === 'DM2' && d.dm.liecba === 'OAD+inzulín', JSON.stringify(d.dm));
+  ok('02: AH isté', d.ah === true);
+  ok('02: dyslipidémia + statín (Rozor/Rosazimib)', d.dysl && d.dysl.statin === true);
+  ok('02: ICHS/IM/CMP NEnájdené', !k.includes('ichs') && !k.includes('im') && !k.includes('cmp'), JSON.stringify(k));
+  ok('02: nefajčiar → bez fajčenia', !k.includes('faj'));
+  ok('02: CKD/obezita NEnájdené (krea 84, BMI 22.7)', !k.includes('chri') && !k.includes('obez'));
+  ok('02: DAPT (Preventax/Anopyrin + Trombex)', d.atb.dapt === true);
+  ok('02: vek 79 M z textu', d.vek === 79 && d.pohlavie === 'M', JSON.stringify([d.vek, d.pohlavie]));
+}
+
+/* ── správa 03: fajčiar, hypertenzná urgencia; DM2+CKD LEN z vloženej OIRA správy ── */
+{
+  const r = P.parse(load('sprava03.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('03: AH istá + „zle kompenzovaná" detail', d.ah === true && d.ah_komp === 'nekompenzovan', JSON.stringify(d.ah_komp));
+  ok('03: fajčiar aktívny (T65.2 + text), nie ex', d.faj === true && !d.faj_ex);
+  ok('03: dyslipidémia + statín (Sorvasta)', d.dysl && d.dysl.statin === true);
+  ok('03: DAPT (Anopyrin + Trombex)', d.atb.dapt === true);
+  const dm3 = byKod(r, 'dm'), ch3 = byKod(r, 'chri');
+  ok('03: DM len z vloženej OIRA správy – citácia to ukáže', dm3 && /Komorbidity/.test(dm3.quote), dm3 && dm3.quote);
+  ok('03: CKD len z vloženej OIRA správy – citácia to ukáže', ch3 && /Komorbidity|monoterapia/.test(ch3.quote), ch3 && ch3.quote);
+  ok('03: ICHS/IM/CMP NEnájdené', !k.includes('ichs') && !k.includes('im') && !k.includes('cmp'), JSON.stringify(k));
+  ok('03: vek 73 M', d.vek === 73 && d.pohlavie === 'M');
+}
+
+/* ── správa 04: mladá pacientka, SMAS – takmer bez komorbidít ── */
+{
+  const r = P.parse(load('sprava04.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('04: žiadne falošné komorbidity', !k.includes('dm') && !k.includes('ah') && !k.includes('ichs') && !k.includes('im') && !k.includes('cmp') && !k.includes('chri') && !k.includes('obez') && !k.includes('dysl') && !k.includes('chochp'), JSON.stringify(k));
+  ok('04: fajčí do 20 denne → fajčiarka', d.faj === true && !d.faj_ex);
+  ok('04: DAPT (Stadapyrin + Trombex)', d.atb.dapt === true);
+  ok('04: vek 34 Ž z textu', d.vek === 34 && d.pohlavie === 'Ž', JSON.stringify([d.vek, d.pohlavie]));
+}
+
+/* ── správa 05: fajčiarka, pelvic PTA; CMP brata v RA sa NESMIE preniesť ── */
+{
+  const r = P.parse(load('sprava05.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('05: CMP NEnájdené (brat v RA!)', !k.includes('cmp'), JSON.stringify(k));
+  ok('05: AH istá (I10)', d.ah === true);
+  ok('05: dyslipidémia + statín (Torvacard)', d.dysl && d.dysl.statin === true);
+  ok('05: fajčiarka aktívna', d.faj === true && !d.faj_ex);
+  ok('05: DM/CKD/obezita/IM/ICHS NEnájdené', !k.includes('dm') && !k.includes('chri') && !k.includes('obez') && !k.includes('im') && !k.includes('ichs'));
+  ok('05: DAPT (Aspirin + Trombex)', d.atb.dapt === true);
+  ok('05: vek 65 Ž', d.vek === 65 && d.pohlavie === 'Ž', JSON.stringify([d.vek, d.pohlavie]));
+}
+
+/* ── správa 06: bez AH/DM – len dyslipidémia + fajčiar; „Dobraté" riadok ── */
+{
+  const r = P.parse(load('sprava06.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('06: AH NEnájdená (pacient ju nemá!)', !k.includes('ah'), JSON.stringify(k));
+  ok('06: DM/CMP/IM/ICHS/CKD/obezita NEnájdené', !k.includes('dm') && !k.includes('cmp') && !k.includes('im') && !k.includes('ichs') && !k.includes('chri') && !k.includes('obez'));
+  ok('06: dyslipidémia + statín (Sorvasta)', d.dysl && d.dysl.statin === true);
+  ok('06: fajčiar aktívny', d.faj === true && !d.faj_ex);
+  ok('06: DAPT (Anopyrin + Trombex vo V užívaní)', d.atb.dapt === true);
+  ok('06: vek 66 M', d.vek === 66 && d.pohlavie === 'M');
+}
+
+/* ── správa 07: TEVAR – CKD N18.3 + krea 199, obezita E66+BMI, exfajčiar, NOAK ── */
+{
+  const r = P.parse(load('sprava07.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('07: CKD isté (N18.3) + krea 199', byKod(r, 'chri') && byKod(r, 'chri').certain && d.chri.krea === 199, JSON.stringify(d.chri));
+  ok('07: obezita istá (E66 + BMI 39.33)', d.obez === true && d.obez_bmi > 39 && d.obez_bmi < 40, JSON.stringify(d.obez_bmi));
+  ok('07: ICHS (chronický koronárny sy./koronárna AS choroba)', d.ichs === true);
+  ok('07: st.p. IM (STEMI)', d.im === true);
+  ok('07: exfajčiar', d.faj === true && d.faj_ex === true);
+  ok('07: AH istá', d.ah === true);
+  ok('07: dyslipidémia', !!d.dysl);
+  ok('07: DM NEnájdené (len hyperglykémia nalačno)', !k.includes('dm'), JSON.stringify(byKod(r, 'dm')));
+  ok('07: CMP NEnájdené', !k.includes('cmp'));
+  ok('07: NOAK (Vixargio), bez ASA/klopidogrelu', d.atb.noak === true && !d.atb.asa && !d.atb.klopidogrel && !d.atb.dapt, JSON.stringify(d.atb));
+  ok('07: vek 68 M', d.vek === 68 && d.pohlavie === 'M', JSON.stringify([d.vek, d.pohlavie]));
+}
+
+/* ── správa 08: PEVAR – DM2 na diéte (metformín UKONČENÝ), NCMP, KACH, Xanirva ── */
+{
+  const r = P.parse(load('sprava08.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('08: DM2 isté + liečba diéta (ukončený metformín sa nepočíta)', d.dm && d.dm.typ === 'DM2' && d.dm.liecba === 'diéta', JSON.stringify(d.dm));
+  ok('08: st.p. CMP (NCMP v oblasti ponsu)', d.cmp === true);
+  ok('08: ICHS (KACH/koronárna choroba srdca)', d.ichs === true);
+  ok('08: IM NEnájdené', !k.includes('im'), JSON.stringify(k));
+  ok('08: exfajčiar', d.faj === true && d.faj_ex === true);
+  ok('08: AH + dyslipidémia (Zetovar/Atoritimb statín)', d.ah === true && d.dysl && d.dysl.statin === true);
+  ok('08: CKD NEnájdené (krea 76–90, CKD-EPI vzorec)', !k.includes('chri'));
+  ok('08: NOAK (Xanirva) + ASA, bez DAPT', d.atb.noak === true && d.atb.asa === true && !d.atb.klopidogrel && !d.atb.dapt, JSON.stringify(d.atb));
+  ok('08: vek 70 M', d.vek === 70 && d.pohlavie === 'M');
+}
+
 console.log(fail ? `\n${fail} korpusových testov ZLYHALO` : '\nVšetky korpusové testy prešli.');
 process.exit(fail ? 1 : 0);

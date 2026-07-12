@@ -32,16 +32,16 @@
      najbližšiu ďalšiu hlavičku. Text pred prvou hlavičkou = 'uvod'.       */
   var SECTION_HEADS = [
     // rodinná anamnéza – IGNOROVAŤ (choroby príbuzných, nie pacienta)
-    { id: 'ra',  re: /^\s*(ra|r\.a\.?)\s*[:\-]|^\s*rodinn[aá] anamn/ },
+    { id: 'ra',  re: /^\s*(ra|r\.a\.?)\s*[:\-]|^\s*rodinn[aá]?\s*(anamn[^:]*)?[:]/ },
     // odporúčania / plán – IGNOROVAŤ (návrhy liečby nie sú anamnéza)
     { id: 'odp', re: /^\s*(odporucan|doporucen|odporucam|doporucuj|plan\s*[:\-]|zaver a odporucan)/ },
-    { id: 'dg',  re: /^\s*(dg\.?|dgn\.?|diagnoz|diagnóz|zakladne diagnoz|suhrn diagnoz|souhrn diagnoz)\s*[:\-]?/ },
+    { id: 'dg',  re: /^\s*(dg\.?|dgn\.?)\s*[:\-]|^\s*(diagnoz|zakladne diagnoz|suhrn diagnoz|souhrn diagnoz)\s*[:\-]?/ },
     { id: 'oa',  re: /^\s*(oa|o\.a\.?)\s*[:\-]|^\s*osobn[aiy] anamn|^\s*anam[en]+za\s*[:]/ },
-    { id: 'th',  re: /^\s*(th|tap|t\.?h\.?)\s*[:\-]|^\s*(lieky|leky|medikaci|medikáci|terapia|terapie|farmakoterapi|chronicka (medikacia|terapia|farmakoterapia)|trvala medikaci)\s*[:\-]?\s*$|^\s*(lieky|leky|medikaci|terapia|terapie|farmakoterapi)\s*[:\-]/ },
+    { id: 'th',  re: /^\s*(th|tap|t\.?h\.?)\s*[:\-]|^\s*(lieky|leky|medikaci|medikáci|terapia|terapie|farmakoterapi|chronicka (medikacia|terapia|farmakoterapia)|trvala medikaci)\s*[:\-]?\s*$|^\s*(lieky|leky|liekova|lekova|medikaci|terapia|terapie|farmakoterapi)\s*[:\-]/ },
     { id: 'th',  re: /^\s*v uzivani\s*[:]/ },
-    { id: 'lab', re: /^\s*(lab\.?|laborator|odbery|biochemi)\s*[:\-]?/ },
+    { id: 'lab', re: /^\s*lab\.?\s*[:\-]|^\s*(laborator|odbery|biochemi)\s*[:\-]?/ },
     // ďalšie bežné hlavičky – vraciame sa nimi do všeobecného kontextu
-    { id: 'gen', re: /^\s*(ta|t\.a\.?|terajsie ochoreni|nynejsi onemocnen|sa|s\.a\.?|socialna anamn|aa|a\.a\.?|alergick|ga|g\.a\.?|abusus|objektivn|status praesens|fyzikaln|ekg|usg|echo|ct\b|rtg)\s*[:\-]?/ }
+    { id: 'gen', re: /^\s*(ta|t\.a\.?|sa|s\.a\.?|aa|a\.a\.?|ga|g\.a\.?)\s*[:\-]|^\s*(terajsie ochoreni|nynejsi onemocnen|socialna|pracovna|doplnkova|epidemiologicka|abusus|abuzy|alergick|objektivn|status praesens|fyzikaln|ekg|usg|echo|rtg|subj|subjekt|vysetrenia|priebeh|zaver|vf)\s*[:\-]?|^\s*ct\b/ }
   ];
 
   function sectionize(rawLines, normLines) {
@@ -64,7 +64,7 @@
   /* ---------- klauzulová negácia ----------
      Riadok delíme na klauzuly (, ; .) – nález je negovaný, ak jeho klauzula
      obsahuje negačné slovo pred/okolo zhody, alebo riadok začína „neguje“. */
-  var NEG = /(neguje|negat|\bbez\b|\bnema\b|\bnemel\b|\bnemela\b|\bnemal\b|\bnemala\b|\bnemali\b|\bnie je\b|\bneni\b|\bnení\b|vylucen|vyloucen|v norme|\b0\s*:|nepritomn|neprítomn|neudava|neudává|nezistene|popiera|popira|nefajciar|nefajci|nekurak|nekouri)/;
+  var NEG = /(neguje|negat|\bbez\b|\bnema\b|\bnemel\b|\bnemela\b|\bnemal\b|\bnemala\b|\bnemali\b|\bnie je\b|\bneni\b|\bnení\b|vylucen|vyloucen|v norme|\b0\s*:|nepritomn|neprítomn|neudava|neudává|nezistene|popiera|popira|nefajciar|nefajci|nekurak|nekouri|\bukoncen|\bvysaden|\bprerusen)/;
 
   function clauseOf(line, idx) {
     var start = 0, end = line.length;
@@ -113,26 +113,27 @@
     inzulin: /inzulin|lantus|toujeo|tresiba|levemir|novorapid|humalog|apidra|abasaglar/,
     oad:     /\bpad\b|\boad\b|metformin|siofor|glucophage|stadamet|gliklazid|gliclada|diaprel|glimepirid|amaryl|gliptin|sitagliptin|januvia|linagliptin|trajenta|empagliflozin|jardiance|dapagliflozin|forxiga|kanagliflozin|canagliflozin|invokana|gliflozin|glifozin|ozempic|semaglutid|trulicity|dulaglutid/,
     dieta:   /\bdiet(a|e|ou|u)\b/,
-    naPad:   /na\s+(pad|oad)\b|\bpad\b\s*(v|,|$)/,
+    naPad:   /na\s+(pad|oad)\b/,
+    naPadIt: /na\s+(pad|oad)\s+a\s+it\b|(pad|oad)\s*\+\s*it\b|inzulinoterapi/,
     ah:      /arteriov[a-z]* hypertenz|arterialni hypertenz|hypertenz(ia|e)\b|\bah\b|esencialn[a-z]* ht\b|\bht\b.{0,3}na terapii/,
     chri:    /\bckd\b(?![\s-]*epi)|\bchri\b|renaln[a-z]* insuficienc|nefropati|ochorenie oblicok|ochorenie obliciek|onemocneni ledvin|nedostatocnost oblicok|selhani ledvin|dialyz|hemodialyz/,
     krea:    /krea(?:tinin[a-z]*|t\b)?\s*[:.=]?\s*(\d{2,4})(?:[.,]\d+)?(\s*[uµ]mol)?/,
-    ichs:    /\bichs\b|\bchks\b|st\.?\s*p\.?\s*pki\b|po pki\b|ischemick[a-z]* choroba srd|\bcad\b|koronarn[a-z]* (chorob|nemoc)|st\.?\s*p\.?\s*(pci|cabg|aokoronarnom bypasse)|po pci\b|po cabg\b/,
+    ichs:    /\bichs\b|\bchks\b|st\.?\s*p\.?\s*pki\b|po pki\b|ischemick[a-z]* choroba srd|\bcad\b|\bkach\b|koronarn[a-z]*[^,;\n]{0,15}(chorob|syndrom|nemoc)|st\.?\s*p\.?\s*(pci|cabg|aokoronarnom bypasse)|po pci\b|po cabg\b/,
     im:      /st\.?\s*p\.?\s*im\b|infarkt[a-z]* myokardu|\bn?stemi\b|\bpo im\b/,
     cmp:     /st\.?\s*p\.?\s*i?n?cmp\b|\bi?n?cmp\b|cievna mozgova prihoda|cevni mozkova prihoda|\biktus|\bstroke\b|\btia\b/,
-    faj:     /fajciar|fajcen|nikotinizm|kurak|koureni|kuractvi/,
+    faj:     /fajciar|fajcen|\bfajci\b|\bfajcil|nikotinizm|kurak|kouri|koureni|kuractvi/,
     fajEx:   /(ex|stop)\s*-?\s*(fajciar|kurak)|byval[a-z]* (fajciar|kurak)/,
     packy:   /(\d{1,3})\s*(?:pack[\s-]?years?|\bpy\b|balicko\s*-?\s*rok)/,
     dysl:    /dyslipidemi|\bdlp\b|hyperlipoproteinemi|\bhlp\b|hypercholesterolemi|hyperlipidemi/,
-    statin:  /\bstatin|atorvastatin|rosuvastatin|simvastatin|fluvastatin|pravastatin|sortis|crestor|torvacard|rosucard|tulip|atoris|ezetimib/,
+    statin:  /\bstatin|atorvastatin|rosuvastatin|simvastatin|fluvastatin|pravastatin|sortis|crestor|torvacard|rosucard|tulip|atoris|ezetimib|sorvasta|\brozor\b|rosazimib|zetovar|atoritimb|cornusan/,
     obez:    /obezit|adipozit|obezn/,
     bmi:     /\bbmi\s*[:=]?\s*(\d{2}(?:[.,]\d)?)/,
     vyskaVaha: /(\d{3})\s*cm\b[^\d]{0,20}(\d{2,3})\s*kg\b|(\d{2,3})\s*kg\b[^\d]{0,20}(\d{3})\s*cm\b/,
     chochp:  /\bchochp\b|\bchopn\b|\bcopd\b/,
-    asa:     /anopyrin|acylpyrin|aspirin|\basa\b|kyselina acetylsalicylov|acetylsalicyl|godasal|stacyl/,
+    asa:     /anopyrin|acylpyrin|aspirin|\basa\b|kyselina acetylsalicylov|acetylsalicyl|godasal|stacyl|preventax|stadapyrin/,
     klopi:   /trombex|plavix|zyllt|[ck]lopidogrel/,
     dapt:    /\bdapt\b|dualn[a-z]* antiagregac|dualni antiagregac/,
-    noak:    /rivaroxaban|xarelto|apixaban|eliquis|dabigatran|pradaxa|edoxaban|lixiana|\bnoak\b|\bdoac\b/,
+    noak:    /rivaroxaban|xarelto|apixaban|eliquis|dabigatran|pradaxa|edoxaban|lixiana|vixargio|xanirva|\bnoak\b|\bdoac\b/,
     warf:    /warfarin|lawarin/,
     lmwh:    /fraxiparin|clexane|enoxaparin|nadroparin|\blmwh\b|nizkomolekul/,
     rcSlash: /\b(\d{2})(\d{2})(\d{2})\s*\/\s*(\d{3,4})\b/,
@@ -153,7 +154,7 @@
     { re: /\bj44(\.\d+)?\b/, kod: 'chochp', patch: { chochp: true }, label: 'CHOCHP' },
     { re: /\be78(\.\d+)?\b/, kod: 'dysl', patch: { dysl: {} }, label: 'dyslipidémia' },
     { re: /\be66(\.\d+)?\b/, kod: 'obez', patch: { obez: true }, label: 'obezita' },
-    { re: /\bf17(\.\d+)?\b|\bz72\.0\b/, kod: 'faj', patch: { faj: true }, label: 'fajčenie' }
+    { re: /\bf17(\.\d+)?\b|\bz72\.0\b|\bt65\.2\b/, kod: 'faj', patch: { faj: true }, label: 'fajčenie' }
   ];
   // Kód berieme len z Dg. sekcie alebo riadku, ktorý vyzerá ako zoznam diagnóz
   function icdLineOk(L) {
@@ -264,7 +265,7 @@
     if ((m = findIn(S, RX.ah))) {
       var ahP = { ah: true };
       var ahLbl = 'AH';
-      var nk = findIn(S, /(\bah\b|hypertenz[a-z]*)[^,;\n]{0,25}nekompenzovan/);
+      var nk = findIn(S, /(\bah\b|hypertenz[a-z]*)[^,;\n]{0,25}(nekompenzovan|zle kompenzovan)|(zle|nedostatocne)\s+kompenzovan/);
       var kk = nk ? null : findIn(S, /(\bah\b|hypertenz[a-z]*)[^,;\n]{0,25}kompenzovan/);
       if (nk) { ahP.ah_komp = 'nekompenzovan'; ahLbl += ' nekompenzovan\u00e1'; }
       else if (kk) { ahP.ah_komp = 'kompenzovan'; ahLbl += ' kompenzovan\u00e1'; }
@@ -288,9 +289,10 @@
 
     /* 3) lieky – detail k DM / neisté návrhy / antitrombotiká */
     var inz = findIn(S, RX.inzulin), oad = findIn(S, RX.oad), dieta = findIn(S, RX.dieta);
-    var naPad = findIn(S, RX.naPad);
+    var naPad = findIn(S, RX.naPad), naPadIt = findIn(S, RX.naPadIt);
     var liecba = (inz && oad) ? 'OAD+inzulín' : (inz ? 'inzulín' : (oad ? 'OAD' : (dieta ? 'diéta' : null)));
-    if (naPad) liecba = 'OAD'; // explicitne „na PAD“ v texte má prednosť (nemocničný inzulín nie je chronická liečba)
+    if (naPadIt) liecba = 'OAD+inzulín';
+    else if (naPad) liecba = 'OAD'; // explicitne „na PAD“ v texte má prednosť (nemocničný inzulín nie je chronická liečba)
     var dmF = null;
     for (var fi = 0; fi < found.length; fi++) if (found[fi].kod === 'dm') dmF = found[fi];
     if (dmF && liecba) {
@@ -369,6 +371,15 @@
     }
     if (rc) add('rc', 'RČ ' + rc.rc + ' (' + rc.pohlavie + ', ' + rc.vek + ' r.)', 'rc', true,
                 { rodne_cislo: rc.rc, pohlavie: rc.pohlavie, vek: rc.vek }, '');
+    if (!rc) {
+      var vp = findIn(S, /(\d{1,3})\s*[- ]?\s*rocn(y|a|eho|ej)\s+(pacient|muz|zena)(ka)?/);
+      if (vp) {
+        var vv = parseInt(vp.m[1], 10);
+        var poh = /rocn(a|ej)|pacientk|zen/.test(vp.m[0]) ? 'Ž' : 'M';
+        if (vv >= 15 && vv <= 110) add('rc', (lang === 'cz' ? 'věk ' : 'vek ') + vv + ' r. (' + poh + ')', 'rc', true,
+            { vek: vv, pohlavie: poh }, quoteOf(vp.line, vp.m.index));
+      }
+    }
 
     /* data = zlúčené patche všetkých nálezov (spätná kompatibilita) */
     var data = buildData(found, null);
@@ -397,6 +408,7 @@
       if (p.chochp) data.chochp = true;
       if (p.atb) for (var k in p.atb) if (p.atb[k]) data.atb[k] = true;
       if (p.rodne_cislo) { data.rodne_cislo = p.rodne_cislo; data.pohlavie = p.pohlavie; data.vek = p.vek; }
+      else if (p.vek != null) { data.vek = p.vek; if (p.pohlavie) data.pohlavie = p.pohlavie; }
     });
     if (data.atb.asa && data.atb.klopidogrel) data.atb.dapt = true;
     return data;
