@@ -1,0 +1,69 @@
+Prepúšťacia správa
+Dg.: I71.4 - Aneuryzma brušnej aorty, bez prejavov ruptúry
+N10 - Akútna tubulointersticiálna nefritída
+I10.00 - Benígna primárna artériová hypertenzia, bez hypertenznej krízy
+Z95.88 - Stav po implantácii iných srdcových alebo cievnych implantátov alebo transplantátov
+N18.4 - Chronická choroba obličiek, 4. štádium
+A41.8 - Iná sepsa, bližšie určená
+Z93.5 - Stav s predtým vytvorenou cystostómiou
+Z43.5 - Ošetrovanie cystostómie
+
+
+Anaméza:Aneuryzma infraren. abdominálnej aorty s max. diam. 69mm s cirkulárnym nástenným trombom bez šírenia na pelv. riečisko, asympt., implantácia bifurkačného brušného stentgraftu (PEVAR) a 6 Heli-FX kotviacich systémov (13.02.2020), ischémia pravej obličky s progresiou renálnej insuf. (13.2.2020), St.p. parciálnej resekcii pravej obličky pT1a, G2, st.p. akútnej pyelonefritíde vpravo 10/2019, Ca močového mechúra pT3a, pN0, G3, St.p. cystoprostatectomiam et ureterocutaneostomiam bilat., St.p. opak. laparotómiách , po opak. revízii DB, Art. hypertenzia 2.st. ESH/ESC s VVPKVR, St.p. OP gangrenóznej perfor. cholecystitídy s peritonitídou, CHVO CEAP C1, Diastáza priamych predných brušných svalov
+Rodinná: otec mal v.s. Ca prostaty, Pracovná: dôchodca, FF: stolica pravidelná, bez patol. prímesi, močenie - cez nefrostómie, vpravo odvádza len malé množstvo, Abúzy: stopfajčiar v min. Cestovateľská: negat
+Epidemiologická: chorý nie je, teplotu nemal, hrdlo nebolí, nekašle, nádchu nemá, nebol v kontakte s človek pracujúcim v zahraničí, ani s človekom v karanténe, event. ani s človekom pozit. na Covid-19
+Lieková: Bigital 5/5mg 1-0-0, Anopyrín 100mg 1-0-0, Furon 40mg 1-0-0, Milurit 300mg 1-0-0
+Terajšie ochorenie:66-ročný pacient s art. hypertenziou, Ca močového mechúra pT3a, pN0, G3, po cystoprostatektómii a ureterokutaneostómii bilat., po parciálnej resekcii pravej obličky pre TU pT1a, G2, s herniou prednej brušnej steny, po PEVARe pre asympt. infrarenálnu aneuryzmu s fixáciou SG Heli-FX šróbami s tangovaním odstupu a.renalis dx., s následným zhoršením ren. prametrov, afunkčnou pravou obličkou, bol prijatý za účelom infúznej prípravy pred kontrolným CTA vyšetrením.
+
+Subj: bez zmeny klin. stavu, bolesti na hrudníku nemáva, dýcha sa dobre, brucho nebolieva, teplotu nemal.
+Alergie a dôležité upozornenia:alergiu na lieky, potraviny a iné látky nemá
+Objektívny nález:Tlak: 139/89, Pulz: 74/min , Teplota: 36.6°C, Výška: 180.0 cm, Hmotnosť: 126.0 kg, BMI: 38.89, Povrch tela: 2.42200 m2, Krvná skupina: A RhD pozit
+
+Pri vedomí, orientovaný, spolupracuje, poloha aktívna, habitus hyperstenický, koža bez ikteru a cyanózy, orientačne neurol.v norme, eupnoe. Abdomen- obézne, v niveau hrudníka, priehmatné, palp.nebolestivé, početné jazvy po laparotómiách, hmatná hernia v pravom hypogastriu, laterálne bilat. prítomné nefrostómie, ľavá odvádza svetložltý moč, pravá len minim. množstvo, DK: mierne edémy predkolení bilat
+
+EKG: ap, rs, PF: 74/min, PZ:V4, ľavotyp, PQ: 0,18, QRS:0,1, QT:0,40, ST depresie do 0,05 mV v II, III, aVF, V5-6 s bifázickou vlnou T, T negat vo V4-6, Qr konfig. v III
+Terapia:Dobraté: CIPHIN PRO INFUSIONE 200MG/100 sol inf 100 ml/200 mg(do 100ml FR i.v. á 24h), Kaldyum cps pld 60x600 mg (fľ.skl.)(1-1-0), KETOSTERIL tbl flm 1x100(1-1-1)
+V užívaní: ANOPYRIN 100 mg tbl 20x100 mg(1-0-0), Bigital 5 mg/5 mg tbl 30x5 mg/5 mg (blis.OPA/Al/(1-0-0), CIPHIN 500 tbl flm 10x500 mg (blis.PVC/PV(1tbl á 24h hod (8:00h)), FURON 40 mg tbl 50x40 mg (blis.PVC/Al)(1-0-0), Milurit 300 mg tbl 100x300 mg (liek.skl.hnedá(1-0-0), PROBIO-FIX (0-0-1)
+Laboratórne vyšetrenia:Biochemické vyšetrenie:
+16.10.2020:CKD-EPI:0.39ml/s/1,73m; CRP:7.4mg/l; KREAT:241umol/l; UREA:12.7mmol/l;
+17.10.2020:CKD-EPI:0.42ml/s/1,73m; CRP:35.6mg/l; GLU:7.13mmol/l; KREAT:228umol/l; UREA:13.5mmol/l;
+18.10.2020:CKD-EPI:0.40ml/s/1,73m; CRP:89.1mg/l; KREAT:234umol/l; UREA:12.0mmol/l;
+19.10.2020:CKD-EPI:0.41ml/s/1,73m; CRP:49.1mg/l; KREAT:231umol/l; UREA:11.3mmol/l;
+
+Hematologické vyšetrenie:
+17.10.2020:WBC:11.01x10e9/l; RBC:3.93x10e12/l; HGB:124g/L; PLT:199.0x10e9/l; PT- INR:1.22INR; APTT - sek:26.2s; FBG:4.22g/l;
+Vyšetrenia:19.10.2020
+ONK - vyšetrenie ULTRA
+Abdominálna aorta
+Nález: Kontrola po PEVAR:
+Vak aneuryzmy vytrombotizovaný, bez endoleaku, max priemer 60x68 mm. Tok v ramenách SG lamin , bez stenózy. Vizualizovaná silná vetva v.s. AMI, bez endoleaku do vaku AAA.
+Dr. X., Dr.Fľak
+
+16.10.2020: COVID-19 Ag Rapid Test: Negat
+20.10.2020: COVID-19 Ag Rapid Test: Negat
+Priebeh:66-ročný pacient s art. hypertenziou, Ca močového mechúra pT3a, pN0, G3, po cystoprostatektómii a ureterokutaneostómii bilat., po parciálnej resekcii pravej obličky pre TU pT1a, G2, s herniou prednej brušnej steny, po PEVARe pre asympt. infrarenálnu aneuryzmu s fixáciou SG Heli-FX šróbami s tangovaním odstupu a.renalis dx., s následným zhoršením ren. prametrov, afunkčnou pravou obličkou, bol prijatý za účelom infúznej prípravy pred kontrolným CTA vyšetrením. Objektívne pri príjme KP kompenzovaný, laboratórne chronicky elevované renálne parametre. 1. deň hospitalizácie večer došlo k výstupu TT aj s triaškou - jednorázovo, postupne výstup CRP. Suponujeme infekciu močových ciest, do liečby sme empiricky pridali ATB i.v. s dobrým efektom. Počas hospitalizácie napriek perorálnej i parenterálnej hydratačnej liečbe nedošlo k zlepšeniu renálnych parametrov. USG vyšetrenie oblasti brušnej aorty s nálezom vytrombotizovaného vaku aneuryzmy s miernou redukciou priemeru vaku, bez endoleaku, bez stenózy ramien stentgraftu. Vzhľadom na dobrý USG nález, riziko zhoršenia renálnych funkcii pri kontrastnom vyšetrení sme CTAG vyšetrenie nerealizovali. Pacient poučený, v KP kompenzovanom stave, afebrilný, prepustený do ambulantnej starostlivosti.
+Záver:Aneuryzma infraren. abdominálnej aorty s max. diam. 69mm s cirkulárnym nástenným trombom, bez šírenia na pelv. riečisko, asympt.
+- st.p. implantácii bifurkačného brušného stentgraftu (PEVAR) a 6 Heli-FX kotviacich systémov (13.02.2020)
+- dobrý efekt endovaskulárnej liečby podľa USG (10/2020)
+- ischemická nefropatia pravej obličky, t.č. KDIGO G4
+St.p. parciálnej resekcii pravej obličky pT1a, G2
+- st.p. akútnej pyelonefritíde vpravo 10/2019
+- st.p. urosepse pri obštrukcii ľavej nefrostómie 5/2020
+Artériová hypertenzia 2.st. ESH/ESC s VVPKVR
+Ca močového mechúra pT3a, pN0, G3
+- st.p. cystoprostatektómii a ureterokutaneostómii bilat. v r. 2011?
+St.p. opak. laparotómiách, po opak. revízii DB
+St.p. OP gangrenóznej perfor. cholecystitídy s peritonitídou
+CHVO CEAP C1
+Diastáza priamych predných brušných svalov
+Uroinfekt na ATB liečbe
+Odporúčanie:Racionálna životospráva. Dostatočný prísun tekutín. Primeraná pohybová aktivita. Nezdvíhať ťažké predmety, vyhýbať sa činnostiam zvyšujúcich vnútrobrušný tlak.
+
+Z liekov: Bigital 5/5mg 1-0-0, Anopyrín 100mg 1-0-0, Furon 40mg 1-0-0, Milurit 300mg 1-0-0, Ciphin tbl 500 mg 1 tbl denne (8:00h) ešte 5 dní, Probiofix 2x1 počas ATB liečby (odstup od ATB aspoň 2 hodiny).
+
+Pravidelné kontroly TK, pulzu. Priebežné kontroly základných laboratórnych parametrov. Kontrola CRP cestou obvodného lekára.
+
+Kontrola na Angiologickej ambulancii č. 2 NÚSCH + kontrolné usg po PEVARe o 6 mesiacov (apríl 2021), na vyšetrenie sa pacient objedná telefonicky.
+
+Dispenzarizácia angiológom, internistom, urológom.
+Do 3 dní sa hlásiť u obvodného lekára, poučený. Lieky na 3 dni vydané.

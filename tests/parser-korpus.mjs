@@ -205,5 +205,47 @@ const byKod = (r, k) => r.found.find(f => f.kod === k);
   ok('13: vek neznámy (v kontrole nie je)', d.vek === null);
 }
 
+/* ── správa 14: PEVAR s ischémiou obličky – AKI (krea 99→255), prechodná ren. insuf. ── */
+{
+  const r = P.parse(load('sprava14.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  const ch = byKod(r, 'chri');
+  ok('14: renálna insuf. ako NEISTÝ návrh (prechodná ≠ chronická CKD)', ch && !ch.certain, JSON.stringify(ch && {c: ch.certain, l: ch.label}));
+  ok('14: kreatinín = MAXIMUM z celého textu (255, nie prvý 99)', d.chri && d.chri.krea === 255, JSON.stringify(d.chri));
+  ok('14: AH istá (I10 + 2.st text)', d.ah === true);
+  ok('14: obezita (BMI 38.89)', d.obez === true && d.obez_bmi > 38 && d.obez_bmi < 39);
+  ok('14: stopfajčiar → exfajčiar', d.faj === true && d.faj_ex === true);
+  ok('14: ASA (Anopyrin); Clexane v Dobratých sa ignoruje; Trombex len v odporúčaní', d.atb.asa === true && !d.atb.lmwh && !d.atb.klopidogrel && !d.atb.dapt, JSON.stringify(d.atb));
+  ok('14: DM/ICHS/IM/CMP/dyslipidémia NEnájdené', !k.includes('dm') && !k.includes('ichs') && !k.includes('im') && !k.includes('cmp') && !k.includes('dysl'), JSON.stringify(k));
+  ok('14: vek 66 M (SK text, nie 67letý z CZ protokolu)', d.vek === 66 && d.pohlavie === 'M');
+}
+
+/* ── správa 15: kontrolná hospitalizácia – CKD G4 (N18.4) už CHRONICKÁ, sepsa ── */
+{
+  const r = P.parse(load('sprava15.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  const ch = byKod(r, 'chri');
+  ok('15: CKD ISTÉ (kód N18.4 prebije prechodnú formuláciu)', ch && ch.certain, JSON.stringify(ch && ch.certain));
+  ok('15: kreatinín max 241', d.chri && d.chri.krea === 241, JSON.stringify(d.chri));
+  ok('15: AH + obezita + exfajčiar + ASA', d.ah === true && d.obez === true && d.faj_ex === true && d.atb.asa === true);
+  ok('15: DM/ICHS/IM/CMP/dyslipidémia NEnájdené', !k.includes('dm') && !k.includes('ichs') && !k.includes('im') && !k.includes('cmp') && !k.includes('dysl'), JSON.stringify(k));
+  ok('15: vek 66 M', d.vek === 66 && d.pohlavie === 'M');
+}
+
+/* ── správa 16: krátka amb kontrola (OA:/LA:/TO:/OBJ:), kreat 171 inline ── */
+{
+  const r = P.parse(load('sprava16.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  const ch = byKod(r, 'chri');
+  ok('16: AH istá (text v OA)', d.ah === true);
+  ok('16: kreat 171 → neistý CKD návrh', ch && !ch.certain && d.chri.krea === 171, JSON.stringify(d.chri));
+  ok('16: ASA (Anopyrín v LA)', d.atb.asa === true);
+  ok('16: DM/dyslipidémia/fajčenie/ICHS NEnájdené', !k.includes('dm') && !k.includes('dysl') && !k.includes('faj') && !k.includes('ichs'), JSON.stringify(k));
+  ok('16: vek neznámy', d.vek === null);
+}
+
 console.log(fail ? `\n${fail} korpusových testov ZLYHALO` : '\nVšetky korpusové testy prešli.');
 process.exit(fail ? 1 : 0);

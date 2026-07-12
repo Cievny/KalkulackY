@@ -41,8 +41,27 @@
     { id: 'th',  re: /^\s*v uzivani\s*[:]|^\s*(la|l\.a\.?)\s*[:]/ },
     { id: 'lab', re: /^\s*lab\.?\s*[:\-]|^\s*(laborator|odbery|biochemi)\s*[:\-]?/ },
     // ďalšie bežné hlavičky – vraciame sa nimi do všeobecného kontextu
-    { id: 'gen', re: /^\s*(ta|t\.a\.?|sa|s\.a\.?|aa|a\.a\.?|ga|g\.a\.?|s|obj\.?)\s*[:\-]|^\s*(terajsie ochoreni|nynejsi onemocnen|socialna|pracovna|doplnkova|epidemiologicka|abusus|abuzy|alergick|objektivn|status praesens|fyzikaln|ekg|usg|echo|rtg|subj|subjekt|vysetrenia|priebeh|zaver|vf)\s*[:\-]?|^\s*ct\b/ }
+    { id: 'gen', re: /^\s*(ta|t\.a\.?|sa|s\.a\.?|aa|a\.a\.?|ga|g\.a\.?|s|obj\.?)\s*[:\-]|^\s*(terajsie ochoreni|nynejsi onemocnen|socialna|pracovna|doplnkova|epidemiologicka|abusus|abuzy|alergick|objektivn|status praesens|fyzikaln|ekg|usg|echo|rtg|subj|subjekt|vysetrenia|priebeh|zaver|vf|ff)\s*[:\-]?|^\s*ct\b/ }
   ];
+
+  // Podsekcie anamnézy zlepené na jednom riadku (Rodinná:... Pracovná:... Abúzy:...)
+  // rozdelíme na samostatné virtuálne riadky – inak by RA vylúčila celý riadok.
+  var INLINE_SUB = /(Rodinn[áa]|Pracovn[áa]|Soci[áa]lna|Doplnkov[áa]|Ab[úu]zy|Liekov[áa]|Epidemiologick[áa]|Cestovate[ľl]sk[áa]|FF)\s*:/g;
+  function explodeLines(rawLines) {
+    var out = [];
+    for (var i = 0; i < rawLines.length; i++) {
+      var raw = rawLines[i];
+      var cuts = [];
+      INLINE_SUB.lastIndex = 0;
+      var m;
+      while ((m = INLINE_SUB.exec(raw))) { if (m.index > 0) cuts.push(m.index); }
+      if (!cuts.length) { out.push(raw); continue; }
+      var prev = 0;
+      cuts.forEach(function (c) { out.push(raw.slice(prev, c)); prev = c; });
+      out.push(raw.slice(prev));
+    }
+    return out;
+  }
 
   function sectionize(rawLines, normLines) {
     var out = []; // {sec, raw, norm}
@@ -116,7 +135,7 @@
     naPad:   /na\s+(pad|oad)\b/,
     naPadIt: /na\s+(pad|oad)\s+a\s+it\b|(pad|oad)\s*\+\s*it\b|inzulinoterapi/,
     ah:      /arteriov[a-z]* hypertenz|arterialni hypertenz|hypertenz(ia|e)\b|\bah\b|esencialn[a-z]* ht\b|\bht\b.{0,3}na terapii/,
-    chri:    /\bckd\b(?![\s-]*epi)|\bchri\b|renaln[a-z]* insuficienc|nefropati|ochorenie oblicok|ochorenie obliciek|onemocneni ledvin|nedostatocnost oblicok|selhani ledvin|dialyz|hemodialyz/,
+    chri:    /\bckd\b(?![\s-]*epi)|\bchri\b|renaln[a-z]* insuf|nefropati|ochorenie oblicok|ochorenie obliciek|onemocneni ledvin|nedostatocnost oblicok|selhani ledvin|dialyz|hemodialyz/,
     krea:    /krea(?:tinin[a-z]*|t\b)?\s*[:.=]?\s*(\d{2,4})(?:[.,]\d+)?(\s*[uµ]mol)?/,
     ichs:    /\bichs\b|\bchks\b|st\.?\s*p\.?\s*pki\b|po pki\b|ischemick[a-z]* choroba srd|\bcad\b|\bkach\b|koronarn[a-z]*[^,;\n]{0,15}(chorob|syndrom|nemoc)|st\.?\s*p\.?\s*(pci|cabg|aokoronarnom bypasse)|po pci\b|po cabg\b/,
     im:      /st\.?\s*p\.?\s*im\b|infarkt[a-z]* myokardu|\bn?stemi\b|\bpo im\b/,
@@ -217,7 +236,7 @@
   function parse(text, lang) {
     lang = lang === 'cz' ? 'cz' : 'sk';
     var t = T[lang];
-    var rawLines = String(text || '').split(/\r?\n/);
+    var rawLines = explodeLines(String(text || '').split(/\r?\n/));
     var normLines = rawLines.map(norm);
     var S = sectionize(rawLines, normLines);
     var nt = normLines.join('\n');
@@ -273,7 +292,11 @@
       else if (findIn(S, /monoterapi/)) { ahP.ah_liecba = 'monoterapi'; ahLbl += ', monoterapia'; }
       add('ah', ahLbl, m.line.sec === 'dg' ? 'dg' : 'text', true, ahP, quoteOf(m.line, m.m.index));
     }
-    if ((m = findIn(S, RX.chri)))   add('chri', 'CKD', m.line.sec === 'dg' ? 'dg' : 'text', true, { chri: {} }, quoteOf(m.line, m.m.index));
+    if ((m = findIn(S, RX.chri))) {
+      // „prechodná progresia renálnej insuf." / akútne zlyhanie ≠ chronická CKD
+      var chriTrans = /prechodn|akutn/.test(clauseOf(m.line.norm, m.m.index).text);
+      add('chri', chriTrans ? 'CKD? (prechodná ren. insuf.?)' : 'CKD', m.line.sec === 'dg' ? 'dg' : 'text', !chriTrans, { chri: {} }, quoteOf(m.line, m.m.index));
+    }
     if ((m = findIn(S, RX.ichs)))   add('ichs', 'ICHS', m.line.sec === 'dg' ? 'dg' : 'text', true, { ichs: true }, quoteOf(m.line, m.m.index));
     if ((m = findIn(S, RX.im)))     add('im', 'st.p. IM', m.line.sec === 'dg' ? 'dg' : 'text', true, { im: true }, quoteOf(m.line, m.m.index));
     if ((m = findIn(S, RX.cmp)))    add('cmp', 'st.p. CMP/TIA', m.line.sec === 'dg' ? 'dg' : 'text', true, { cmp: true }, quoteOf(m.line, m.m.index));
@@ -329,9 +352,21 @@
     if (lmwh) add('atb', 'LMWH', 'liek', true, { atb: { lmwh: true } }, quoteOf(lmwh.line, lmwh.m.index));
 
     /* 4) laboratórium: kreatinín, BMI / výška+váha */
-    var kreaM = findIn(S, RX.krea);
-    var krea = null;
-    if (kreaM) { var kv = parseInt(kreaM.m[1], 10); if (kv >= 40 && kv <= 1500) krea = kv; }
+    // kreatinín: najvyššia hodnota v celom texte (pri AKI/CKD dynamike je
+    // klinicky smerodajné maximum, nie prvý výskyt v labe)
+    var krea = null, kreaM = null;
+    (function () {
+      var g = new RegExp(RX.krea.source, 'g');
+      for (var i = 0; i < S.length; i++) {
+        if (!usable(S[i].sec)) continue;
+        g.lastIndex = 0;
+        var km;
+        while ((km = g.exec(S[i].norm))) {
+          var kv = parseInt(km[1], 10);
+          if (kv >= 40 && kv <= 1500 && (krea === null || kv > krea)) { krea = kv; kreaM = { m: km, line: S[i] }; }
+        }
+      }
+    })();
     var chriF = null;
     for (var fk = 0; fk < found.length; fk++) if (found[fk].kod === 'chri') chriF = found[fk];
     if (chriF && krea) { chriF.patch.chri.krea = krea; chriF.label += ' (krea ' + krea + ')'; }
