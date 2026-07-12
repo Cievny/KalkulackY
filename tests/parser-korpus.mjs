@@ -143,5 +143,20 @@ const byKod = (r, k) => r.found.find(f => f.kod === k);
   ok('08: vek 70 M', d.vek === 70 && d.pohlavie === 'M');
 }
 
+/* ── správa 09 (2016, starší formát): PEVAR – len dyslipidémia + obezita + DAPT ── */
+{
+  const r = P.parse(load('sprava09.txt'), 'sk');
+  const k = r.found.map(f => f.kod);
+  const d = r.data;
+  ok('09: dyslipidémia istá (E78) + statín (Atoris)', byKod(r, 'dysl') && byKod(r, 'dysl').certain && d.dysl.statin === true);
+  ok('09: obezita istá (E66 + BMI 31.13)', d.obez === true && d.obez_bmi >= 31 && d.obez_bmi < 32, JSON.stringify(d.obez_bmi));
+  ok('09: DM NEnájdené (matka v RA; GLU v labe sa neinferuje)', !k.includes('dm'), JSON.stringify(byKod(r, 'dm')));
+  ok('09: AH NEnájdená (pacient ju nemá)', !k.includes('ah'));
+  ok('09: fajčenie NEnájdené (nefajčiar)', !k.includes('faj'));
+  ok('09: ICHS/IM/CMP/CKD/CHOCHP NEnájdené', !k.includes('ichs') && !k.includes('im') && !k.includes('cmp') && !k.includes('chri') && !k.includes('chochp'), JSON.stringify(k));
+  ok('09: DAPT (Aspirin protect + Trombex; Zyllt v odporúčaní sa ignoruje)', d.atb.dapt === true, JSON.stringify(d.atb));
+  ok('09: vek 71 M („71- ročný pacient" s medzerou)', d.vek === 71 && d.pohlavie === 'M', JSON.stringify([d.vek, d.pohlavie]));
+}
+
 console.log(fail ? `\n${fail} korpusových testov ZLYHALO` : '\nVšetky korpusové testy prešli.');
 process.exit(fail ? 1 : 0);
