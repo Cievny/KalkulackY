@@ -661,7 +661,335 @@
     modal.querySelector('#anamneza_cancel').textContent = t.close;
   }
 
-  var API = { parse: parse, apply: apply, open: open, close: close, _norm: norm, _buildData: buildData };
+  /* ====================================================================
+     FOLLOW-UP parser – z textu kontrolnej správy (duplex USG / CT /
+     ambulantná kontrola) vyplní Follow-up tab: dátum, restenózu/patenciu,
+     ABI, endoleak + priemer vaku, reintervenciu, exitus. Rovnaký kontrolný
+     panel s citáciami ako pri anamnéze.
+     ==================================================================== */
+  var RXF = {
+    datum:    /\b(\d{1,2})\.\s?(\d{1,2})\.\s?(20\d{2})\b/,
+    datumISO: /\b(20\d{2})-(\d{2})-(\d{2})\b/,
+    restPct:  /restenoz[a-z]*[^,;\n]{0,20}?(\d{2})\s*[-–]?\s*\d{0,2}\s*%|(\d{2})\s*[-–]?\s*\d{0,2}\s*%[^,;\n]{0,12}restenoz/,
+    rest:     /restenoz/,
+    bezRest:  /bez restenoz|stent[^,;.\n]{0,35}(priechodn|pruchodn|trif|stihl)|priechodn[a-z]*[^,;.\n]{0,15}stent/,
+    okluzia:  /okluzi[a-z]*[^,;\n]{0,12}stent|stent[^,;\n]{0,15}okl(u|ú)dovan|uzaver[^,;\n]{0,12}stentu/,
+    abi:      /\b([rl]?abi)\b[^0-9\n]{0,18}(\d[.,]\d{1,2})/,
+    ruth:     /ruthe?r?for?d[a-z]*[^\d\n]{0,10}(i{1,3})?\/?\s*([0-6])\b/,
+    endoleak: /endoleak[a-z]*(?:[^,;\n]{0,20}?typu?\s*\.?\s*(ia|ib|iiib|iiia|iii|ii|iv|v)\b)?/,
+    sac:      /vak[a-z]*[^\n]{0,60}?(\d{2,3})(?:\s*x\s*(\d{2,3}))?\s*mm|max\.?\s*(?:priemer|diameter)[^\d\n]{0,15}(\d{2,3})(?:\s*x\s*(\d{2,3}))?\s*mm/,
+    regresia: /regresi/,
+    stacio:   /stacionarn|bez narastu|bez rastu|bez zvacsen/,
+    rast:     /(progresi|narast|\brast)[^\n]{0,20}(vaku|diametr|aneuryzm)|vak[^\n]{0,30}(progresi|narast)/,
+    reint:    /reintervenc|\bre-?pta\b|\bredo\b/,
+    exitus:   /\bexitus\b|zomrel[a]?\b|umrel[a]?\b|zemrel[a]?\b/,
+    tia:      /\btia\b/,
+    cmpFu:    /\bi?n?cmp\b|iktus|\bstroke\b/,
+    bezNeuro: /bez (neurologickej |neurol\. ?)?prihody|bez neurol[a-z.]* deficitu/,
+    zobrCta:  /\bcta\b|ct ?angiografi|ct ag\b/,
+    zobrUsg:  /duplex|cdus|\busg\b|sonografi|\bccds\b|\bcds\b/,
+    zobrMra:  /\bmra\b/
+  };
+  var TFU = {
+    sk: { btn: '📋 Z textu kontroly', title: '📋 Vyplniť follow-up z textu kontroly',
+          ph: 'Sem vložte text kontrolnej správy (duplex USG, CT, ambulantná kontrola)…',
+          note: '🔒 Text sa spracuje len vo vašom prehliadači – nikam sa neodosiela ani neukladá.',
+          run: 'Rozpoznať', apply: 'Vyplniť vybrané', cancel: 'Zrušiť', close: 'Zavrieť',
+          none: '❗ V texte sa nenašli údaje kontroly (restenóza, endoleak, ABI, dátum…).',
+          uncertain: 'overiť', done: '✅ Vyplnené: ',
+          L: { datum: 'dátum kontroly', rest: 'restenóza', bezRest: 'bez restenózy (priechodný stent)',
+               okl: 'oklúzia stentu', abi: 'ABI', ruth: 'Rutherford', el: 'endoleak', sac: 'priemer vaku',
+               zmena: 'vývoj vaku', reint: 'reintervencia', exitus: '✝ exitus', tia: 'TIA', cmp: 'CMP',
+               bezNeuro: 'bez neurologickej príhody', zobr: 'zobrazenie', pat: 'patencia' } },
+    cz: { btn: '📋 Z textu kontroly', title: '📋 Vyplnit follow-up z textu kontroly',
+          ph: 'Sem vložte text kontrolní zprávy (duplex USG, CT, ambulantní kontrola)…',
+          note: '🔒 Text se zpracuje jen ve vašem prohlížeči – nikam se neodesílá ani neukládá.',
+          run: 'Rozpoznat', apply: 'Vyplnit vybrané', cancel: 'Zrušit', close: 'Zavřít',
+          none: '❗ V textu nebyly nalezeny údaje kontroly (restenóza, endoleak, ABI, datum…).',
+          uncertain: 'ověřit', done: '✅ Vyplněno: ',
+          L: { datum: 'datum kontroly', rest: 'restenóza', bezRest: 'bez restenózy (průchodný stent)',
+               okl: 'okluze stentu', abi: 'ABI', ruth: 'Rutherford', el: 'endoleak', sac: 'průměr vaku',
+               zmena: 'vývoj vaku', reint: 'reintervence', exitus: '✝ exitus', tia: 'TIA', cmp: 'CMP',
+               bezNeuro: 'bez neurologické příhody', zobr: 'zobrazení', pat: 'patence' } }
+  };
+  // FU vyhľadávanie: všetky nenegované zhody. Okrem klauzuly kontroluje aj
+  // predponu pred zhodou, lebo skratková bodka („bez evid. endoleaku") rozbije
+  // klauzulu a negácia by sa stratila.
+  var NEGPRE = /(\bbez\b|vylucen|neprit|negat|neevid|nie je|neni)[^,;\n]{0,18}$/;
+  function findFUAll(S, re, opts) {
+    opts = opts || {};
+    var g = new RegExp(re.source, 'g' + (re.flags || '').replace(/g/g, ''));
+    var out = [];
+    for (var i = 0; i < S.length; i++) {
+      var L = S[i];
+      if (!usable(L.sec) && !(opts.odp && L.sec === 'odp')) continue;
+      g.lastIndex = 0;
+      var m;
+      while ((m = g.exec(L.norm))) {
+        var neg = !opts.noneg && (negated(L.norm, m.index) || NEGPRE.test(L.norm.slice(Math.max(0, m.index - 26), m.index)));
+        if (!neg) out.push({ m: m, line: L });
+        if (m.index === g.lastIndex) g.lastIndex++;
+      }
+    }
+    return out;
+  }
+
+  function detectTool() {
+    try {
+      var pth = (global.location && global.location.pathname || '').toUpperCase();
+      if (pth.indexOf('CAS') >= 0) return 'cas';
+      if (pth.indexOf('PEVAR') >= 0) return 'pevar';
+    } catch (e) {}
+    return 'evk';
+  }
+  function pad2(n) { n = parseInt(n, 10); return (n < 10 ? '0' : '') + n; }
+
+  function parseFU(text, tool, lang) {
+    lang = lang === 'cz' ? 'cz' : 'sk';
+    tool = tool || 'evk';
+    var t = TFU[lang];
+    var rawLines = explodeLines(String(text || '').split(/\r?\n/));
+    var normLines = rawLines.map(norm);
+    var S = sectionize(rawLines, normLines);
+    var found = [];
+    var seq = 0;
+    function add(kod, label, certain, patch, quote) {
+      found.push({ id: 'u' + (seq++), kod: kod, label: label, src: 'text', certain: certain, patch: patch, quote: quote || '' });
+    }
+    var m;
+
+    // dátum kontroly – prvý dátum v hlavičke (prvých 8 riadkov)
+    for (var i = 0; i < Math.min(8, S.length); i++) {
+      var dmm = RXF.datum.exec(S[i].norm);
+      var iso = null;
+      if (dmm) iso = dmm[3] + '-' + pad2(dmm[2]) + '-' + pad2(dmm[1]);
+      else { var di = RXF.datumISO.exec(S[i].norm); if (di) iso = di[1] + '-' + di[2] + '-' + di[3]; }
+      if (iso) { add('datum', t.L.datum + ' ' + iso, true, { datum: iso }, quoteOf(S[i], 0)); break; }
+    }
+
+    // zobrazenie – vyhráva modalita s najviac zmienkami; istá len ak je jediná
+    var zc = [
+      ['CTA', 'CTA', findFUAll(S, RXF.zobrCta, { noneg: true }).length],
+      ['duplex', 'duplex USG', findFUAll(S, RXF.zobrUsg, { noneg: true }).length],
+      ['MRA', 'MRA', findFUAll(S, RXF.zobrMra, { noneg: true }).length]
+    ].sort(function (a, b) { return b[2] - a[2]; });
+    if (zc[0][2] > 0) add('zobr', t.L.zobr + ': ' + zc[0][1], zc[1][2] === 0 && zc[2][2] === 0, { zobr: zc[0][0] }, '');
+
+    // restenóza / priechodnosť / oklúzia
+    var hits;
+    if ((hits = findFUAll(S, RXF.okluzia)).length) {
+      m = hits[0];
+      add('rest', t.L.okl, true, { okluzia: true }, quoteOf(m.line, m.m.index));
+    } else if ((hits = findFUAll(S, RXF.restPct)).length) {
+      m = hits[0];
+      var pct = parseInt(m.m[1] || m.m[2], 10);
+      var band = pct < 50 ? '<50' : (pct < 70 ? '50-70' : '>70');
+      add('rest', t.L.rest + ' ' + pct + ' % (' + band + ')', true, { rest_band: band }, quoteOf(m.line, m.m.index));
+    } else if ((hits = findFUAll(S, RXF.rest)).length) {
+      m = hits[0];
+      add('rest', t.L.rest + ' (stupeň neuvedený)', false, { rest_band: '50-70' }, quoteOf(m.line, m.m.index));
+    } else if ((hits = findFUAll(S, RXF.bezRest, { noneg: true })).length) {
+      m = hits[0];
+      add('rest', t.L.bezRest, true, { bez_rest: true }, quoteOf(m.line, m.m.index));
+    }
+
+    if (tool === 'evk') {
+      // posledná ABI hodnota v texte = najaktuálnejšia (po výkone / z kontroly)
+      var abisAll = findFUAll(S, RXF.abi, { noneg: true }).filter(function (h) {
+        var v = parseFloat(h.m[2].replace(',', '.'));
+        return v > 0 && v < 2;
+      });
+      var abis = abisAll.filter(function (h) {
+        return !/pred vykon/.test(h.line.norm.slice(Math.max(0, h.m.index - 30), h.m.index));
+      });
+      if (!abis.length) abis = abisAll;
+      if (abis.length) {
+        m = abis[abis.length - 1];
+        var abiV = parseFloat(m.m[2].replace(',', '.'));
+        add('abi', t.L.abi + ' ' + abiV + ' (' + m.m[1].toUpperCase() + ')', false, { abi: abiV }, quoteOf(m.line, m.m.index));
+      }
+      if ((m = findIn(S, RXF.ruth))) {
+        add('ruth', 'Rutherford ' + (m.m[1] ? m.m[1].toUpperCase() + '/' : '') + m.m[2], false, { ruth: m.m[2] }, quoteOf(m.line, m.m.index));
+      }
+    }
+    if (tool === 'cas') {
+      if ((m = findIn(S, RXF.tia))) add('neuro', t.L.tia, true, { neuro: 'TIA' }, quoteOf(m.line, m.m.index));
+      else if ((m = findIn(S, RXF.cmpFu))) add('neuro', t.L.cmp + ' – minor/major?', false, { neuro: 'minor CMP' }, quoteOf(m.line, m.m.index));
+      else if ((hits = findFUAll(S, RXF.bezNeuro, { noneg: true })).length) {
+        m = hits[0];
+        add('neuro', t.L.bezNeuro, true, { neuro: 'bez' }, quoteOf(m.line, m.m.index));
+      }
+    }
+    if (tool === 'pevar') {
+      // preferuj zmienku s uvedeným typom (často až v závere/doporučení)
+      var els = findFUAll(S, RXF.endoleak, { odp: true });
+      if (els.length) {
+        var typed = els.filter(function (h) { return h.m[1]; });
+        m = typed.length ? typed[0] : els[0];
+        var typ = (m.m[1] || '').toUpperCase();
+        if (typ === 'IIIA' || typ === 'IIIB') typ = 'III';
+        add('el', t.L.el + (typ ? ' typ ' + typ : ' (typ?)'), !!typ, { el: true, el_typ: typ || null }, quoteOf(m.line, m.m.index));
+      }
+      // posledná zmienka rozmeru = aktuálny nález (nie predoperačný z anamnézy);
+      // istá len keď je pri slove „vak"
+      var sacs = findFUAll(S, RXF.sac, { noneg: true }).map(function (h) {
+        var d1 = parseInt(h.m[1] || h.m[3], 10), d2 = parseInt(h.m[2] || h.m[4], 10) || 0;
+        return { h: h, val: Math.max(d1, d2), vak: !!h.m[1] };
+      }).filter(function (c) { return c.val >= 20 && c.val <= 130; });
+      if (sacs.length) {
+        var sc = sacs[sacs.length - 1];
+        add('sac', t.L.sac + ' ' + sc.val + ' mm', sc.vak, { sac: sc.val }, quoteOf(sc.h.line, sc.h.m.index));
+      }
+      if ((hits = findFUAll(S, RXF.regresia)).length) add('zmena', t.L.zmena + ': regresia', true, { zmena: 'regresi' }, quoteOf(hits[0].line, hits[0].m.index));
+      else if ((hits = findFUAll(S, RXF.rast)).length) add('zmena', t.L.zmena + ': rast', true, { zmena: 'rast' }, quoteOf(hits[0].line, hits[0].m.index));
+      else if ((hits = findFUAll(S, RXF.stacio, { noneg: true })).length) add('zmena', t.L.zmena + ': stacionárny', true, { zmena: 'stacionarn' }, quoteOf(hits[0].line, hits[0].m.index));
+    }
+
+    if ((m = findIn(S, RXF.reint))) add('reint', t.L.reint, false, { reint: true }, quoteOf(m.line, m.m.index));
+    if ((m = findIn(S, RXF.exitus))) add('exitus', t.L.exitus, false, { exitus: true }, quoteOf(m.line, m.m.index));
+
+    return { found: found, tool: tool, lang: lang };
+  }
+
+  function setSel(id, pred) {
+    var el = document.getElementById(id);
+    if (!el) return false;
+    for (var i = 0; i < el.options.length; i++) {
+      if (pred(norm(el.options[i].value || el.options[i].text))) { el.value = el.options[i].value; fire(el, 'change'); return true; }
+    }
+    return false;
+  }
+  function setIfEmpty(id, v) {
+    var el = document.getElementById(id);
+    if (el && !el.value) { el.value = v; fire(el, 'input'); fire(el, 'change'); }
+  }
+
+  function applyFU(res, selectedIds) {
+    var d = {};
+    res.found.forEach(function (f) {
+      if (selectedIds && selectedIds.indexOf(f.id) < 0) return;
+      for (var k in f.patch) if (f.patch[k] !== null && f.patch[k] !== undefined) d[k] = f.patch[k];
+    });
+    if (d.datum) setIfEmpty('fu_datum', d.datum);
+    if (d.zobr) setSel('fu_zobr', function (v) { return v.indexOf(norm(d.zobr)) >= 0; });
+    if (res.tool === 'evk') {
+      if (d.okluzia) setSel('fu_pat', function (v) { return v.indexOf('okluzia') === 0 || v.indexOf('okl') === 0; });
+      else if (d.rest_band) setSel('fu_pat', function (v) { return v.indexOf('restenoz') === 0; });
+      else if (d.bez_rest) setSel('fu_pat', function (v) { return v === 'primarna patencia'; });
+      if (d.abi) setIfEmpty('fu_abi', d.abi);
+      if (d.ruth) setSel('fu_ruth', function (v) { return new RegExp('\\/' + d.ruth + ' ').test(v + ' ') || v.indexOf('/' + d.ruth) >= 0 || v.indexOf(d.ruth + '/') === 2; });
+    }
+    if (res.tool === 'cas') {
+      if (d.okluzia) setSel('fu_rest', function (v) { return v.indexOf('okluzia') === 0; });
+      else if (d.rest_band === '<50') setSel('fu_rest', function (v) { return v.indexOf('<50') === 0; });
+      else if (d.rest_band === '50-70') setSel('fu_rest', function (v) { return v.indexOf('50') === 0; });
+      else if (d.rest_band === '>70') setSel('fu_rest', function (v) { return v.indexOf('>70') === 0; });
+      else if (d.bez_rest) setSel('fu_rest', function (v) { return v.indexOf('bez restenoz') === 0; });
+      if (d.neuro === 'TIA') setSel('fu_neuro', function (v) { return v === 'tia'; });
+      else if (d.neuro === 'minor CMP') setSel('fu_neuro', function (v) { return v.indexOf('minor') === 0; });
+      else if (d.neuro === 'bez') setSel('fu_neuro', function (v) { return v.indexOf('bez') === 0; });
+    }
+    if (res.tool === 'pevar') {
+      if (d.el) {
+        tickCheckbox(document.getElementById('fu_el'));
+        if (d.el_typ) setSel('fu_el_typ', function (v) { return v === norm(d.el_typ) || v.indexOf(norm(d.el_typ)) === 0; });
+      }
+      if (d.sac) setIfEmpty('fu_sac', d.sac);
+      if (d.zmena) setSel('fu_sac_zmena', function (v) { return v.indexOf(norm(d.zmena)) >= 0 || (d.zmena === 'rast' && v.indexOf('rast') === 0); });
+    }
+    if (d.reint) tickCheckbox(document.getElementById('fu_reint'));
+    if (d.exitus) tickCheckbox(document.getElementById('fu_exitus'));
+    return true;
+  }
+
+  /* ---------- FU modal (rovnaký kontrolný panel ako anamnéza) ---------- */
+  var fuModal = null;
+  var fuLastRes = null;
+
+  function buildFuModal(lang) {
+    var t = TFU[lang];
+    var ov = document.createElement('div');
+    ov.id = 'anamneza_fu_modal';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    var box = document.createElement('div');
+    box.style.cssText = 'background:#fff;border-radius:12px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;padding:16px 18px;box-shadow:0 20px 60px rgba(0,0,0,.25);font-size:13px';
+    box.innerHTML =
+      '<div style="font-weight:700;font-size:14px;margin-bottom:8px">' + t.title + '</div>' +
+      '<textarea id="anamneza_fu_txt" rows="8" placeholder="' + t.ph + '" style="width:100%;box-sizing:border-box;border:1.5px solid #dde1ea;border-radius:8px;padding:8px;font-size:12.5px;font-family:inherit;outline:none;resize:vertical"></textarea>' +
+      '<div style="font-size:11px;color:#6b7280;margin:6px 0 10px">' + t.note + '</div>' +
+      '<div id="anamneza_fu_review" style="display:none;margin-bottom:10px"></div>' +
+      '<div id="anamneza_fu_result" style="display:none;font-size:12px;line-height:1.5;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 10px;margin-bottom:10px"></div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button type="button" id="anamneza_fu_cancel" style="padding:6px 14px;border:1.5px solid #dde1ea;background:#fff;border-radius:8px;cursor:pointer;font-size:12.5px">' + t.cancel + '</button>' +
+      '<button type="button" id="anamneza_fu_run" style="padding:6px 14px;border:none;background:#2563eb;color:#fff;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600">' + t.run + '</button>' +
+      '<button type="button" id="anamneza_fu_apply" style="display:none;padding:6px 14px;border:none;background:#16a34a;color:#fff;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700">' + t.apply + '</button>' +
+      '</div>';
+    ov.appendChild(box);
+    ov.addEventListener('click', function (e) { if (e.target === ov) closeFU(); });
+    box.querySelector('#anamneza_fu_cancel').addEventListener('click', closeFU);
+    box.querySelector('#anamneza_fu_run').addEventListener('click', function () { runFuParse(lang); });
+    box.querySelector('#anamneza_fu_apply').addEventListener('click', function () { runFuApply(lang); });
+    return ov;
+  }
+  function openFU() {
+    var lang = isCZ() ? 'cz' : 'sk';
+    if (!fuModal) { fuModal = buildFuModal(lang); document.body.appendChild(fuModal); }
+    fuModal.style.display = 'flex';
+    fuLastRes = null;
+    fuModal.querySelector('#anamneza_fu_review').style.display = 'none';
+    fuModal.querySelector('#anamneza_fu_review').innerHTML = '';
+    fuModal.querySelector('#anamneza_fu_result').style.display = 'none';
+    fuModal.querySelector('#anamneza_fu_apply').style.display = 'none';
+    fuModal.querySelector('#anamneza_fu_cancel').textContent = TFU[lang].cancel;
+    setTimeout(function () { fuModal.querySelector('#anamneza_fu_txt').focus(); }, 0);
+  }
+  function closeFU() { if (fuModal) fuModal.style.display = 'none'; }
+  function runFuParse(lang) {
+    var t = TFU[lang];
+    fuLastRes = parseFU(fuModal.querySelector('#anamneza_fu_txt').value, detectTool(), lang);
+    var box = fuModal.querySelector('#anamneza_fu_review');
+    fuModal.querySelector('#anamneza_fu_result').style.display = 'none';
+    if (!fuLastRes.found.length) {
+      box.style.display = 'block';
+      box.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;font-size:12px">' + escHtml(t.none) + '</div>';
+      fuModal.querySelector('#anamneza_fu_apply').style.display = 'none';
+      return;
+    }
+    var html = '<div style="border:1.5px solid #dde1ea;border-radius:10px;padding:8px 10px;max-height:44vh;overflow-y:auto">';
+    fuLastRes.found.forEach(function (f) {
+      var tag = f.certain
+        ? '<span style="font-size:10px;font-weight:700;color:#166534;background:#dcfce7;border-radius:5px;padding:1px 6px">✓</span>'
+        : '<span style="font-size:10px;font-weight:700;color:#92400e;background:#fef3c7;border-radius:5px;padding:1px 6px">❓ ' + escHtml(t.uncertain) + '</span>';
+      html += '<label style="display:flex;gap:8px;align-items:flex-start;padding:5px 2px;border-bottom:1px solid #f1f5f9;cursor:pointer">' +
+        '<input type="checkbox" class="anamneza_fu_pick" data-id="' + f.id + '"' + (f.certain ? ' checked' : '') + ' style="margin-top:2px">' +
+        '<span style="flex:1"><b>' + escHtml(f.label) + '</b> ' + tag +
+        (f.quote ? '<br><span style="color:#6b7280;font-style:italic;font-size:11.5px">„' + escHtml(f.quote) + '"</span>' : '') +
+        '</span></label>';
+    });
+    html += '</div>';
+    box.innerHTML = html;
+    box.style.display = 'block';
+    var ab = fuModal.querySelector('#anamneza_fu_apply');
+    ab.style.display = '';
+    var upd = function () { ab.textContent = t.apply + ' (' + fuModal.querySelectorAll('.anamneza_fu_pick:checked').length + ')'; };
+    upd();
+    box.querySelectorAll('.anamneza_fu_pick').forEach(function (cb) { cb.addEventListener('change', upd); });
+  }
+  function runFuApply(lang) {
+    if (!fuLastRes) return;
+    var t = TFU[lang];
+    var ids = [];
+    fuModal.querySelectorAll('.anamneza_fu_pick:checked').forEach(function (cb) { ids.push(cb.dataset.id); });
+    applyFU(fuLastRes, ids);
+    var labels = fuLastRes.found.filter(function (f) { return ids.indexOf(f.id) >= 0; }).map(function (f) { return f.label; });
+    var out = fuModal.querySelector('#anamneza_fu_result');
+    out.style.display = 'block';
+    out.textContent = t.done + (labels.join(', ') || '–');
+    fuModal.querySelector('#anamneza_fu_cancel').textContent = t.close;
+  }
+
+  var API = { parse: parse, apply: apply, open: open, close: close, _norm: norm, _buildData: buildData,
+              parseFU: parseFU, applyFU: applyFU, openFU: openFU, closeFU: closeFU };
   global.AnamnezaParser = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof window !== 'undefined' ? window : globalThis);
