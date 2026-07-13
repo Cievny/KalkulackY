@@ -196,6 +196,7 @@ body.tv .prow.vyradeny .pval{text-decoration:line-through;color:#991b1b;}
   <button class="btn-print" onclick="window.print()">🖨️ Tlač</button>
   <a class="btn-day" href="?tv=1" target="_blank" title="režim na monitor oddelenia – len na čítanie, veľké písmo">📺 TV</a>
   <a class="btn-day" href="/tools/velin/" target="_blank" title="riadiace centrum pre tablet pri sestrách – prepínanie stavu pacienta jedným ťuknutím">🎛 Veľín</a>
+  <button class="btn-day" onclick="openImport()" title="vloženie pacientov z wordového programu OIRA alebo z NIS kalendára – text sa spracuje len v prehliadači">📥 Import</button>
   <span class="live" id="live_info">⟳ obnovuje sa automaticky</span>
   <span class="msg" id="p_msg"></span>
 </div>
@@ -1057,6 +1058,109 @@ setInterval(()=>{
     if(chip)chip.textContent=stavLabel(r);
   });
 },30000);
+</script>
+
+<!-- Modal: import programu z textu (Word OIRA / NIS kalendár) -->
+<div class="overlay" id="imp_overlay" onclick="if(event.target===this)zavriImport()">
+  <div class="dmodal" style="max-width:780px;max-height:92vh;overflow-y:auto">
+    <h2>📥 Import programu z textu</h2>
+    <div class="dsub">Vložte text wordového programu (Katetrizačný program OIRA) alebo text skopírovaný z NIS kalendára.<br>🔒 Text sa spracuje len vo vašom prehliadači – do databázy ide len meno a ročník, celé rodné číslo sa nikam neukladá.</div>
+    <textarea id="imp_txt" rows="8" placeholder="Sem vložte text programu…" style="width:100%;box-sizing:border-box;border:1.5px solid #dde1ea;border-radius:8px;padding:8px;font-size:12.5px;font-family:inherit;resize:vertical;outline:none"></textarea>
+    <div style="display:flex;gap:10px;align-items:flex-end;margin-top:10px;flex-wrap:wrap">
+      <div><label style="font-size:11px;font-weight:600;color:#5a6a8a;display:block;margin-bottom:3px">Deň programu</label><input type="date" id="imp_datum" style="width:auto;padding:8px 10px"></div>
+      <div><label style="font-size:11px;font-weight:600;color:#5a6a8a;display:block;margin-bottom:3px">Sála</label><select id="imp_sala" style="padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px"><option value="A">A</option><option value="B">B</option></select></div>
+      <button class="dbtn-ok" style="background:#1e40af;flex:0 0 auto;padding:9px 16px" onclick="impParse()">🔎 Rozpoznať</button>
+    </div>
+    <div id="imp_prev" style="margin-top:12px"></div>
+    <div class="dbtns">
+      <button class="dbtn-ok" id="imp_apply" style="display:none" onclick="impApply()">➕ Pridať do programu</button>
+      <button class="dbtn-no" onclick="zavriImport()">Zavrieť</button>
+    </div>
+  </div>
+</div>
+<script src="/tools/program-import.js"></script>
+<script>
+// ── Import programu z textu – UI nad ProgramImport.parseProgram ──
+let IMP_ROWS=[];
+function openImport(){
+  document.getElementById('imp_datum').value=g('datum')||isoLocal(new Date());
+  document.getElementById('imp_txt').value='';
+  document.getElementById('imp_prev').innerHTML='';
+  document.getElementById('imp_apply').style.display='none';
+  document.getElementById('imp_overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('imp_txt').focus(),0);
+}
+function zavriImport(){document.getElementById('imp_overlay').classList.remove('open');}
+function impDup(p){
+  return ROWS.some(r=>r.stav!=='vyradeny'
+    &&(r.meno||'').trim().toLowerCase()===(p.meno||'').trim().toLowerCase()
+    &&(r.rocnik||null)===(p.rocnik||null));
+}
+function impParse(){
+  const res=ProgramImport.parseProgram(g('imp_txt'));
+  IMP_ROWS=res.pacienti;
+  if(res.datum)document.getElementById('imp_datum').value=res.datum;
+  const box=document.getElementById('imp_prev');
+  if(!IMP_ROWS.length){
+    box.innerHTML='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;font-size:12.5px">❗ V texte sa nenašiel žiadny pacient – skontrolujte, či je skopírovaný celý program (riadky s menami).</div>';
+    document.getElementById('imp_apply').style.display='none';return;
+  }
+  const sameDay=document.getElementById('imp_datum').value===g('datum');
+  let html='<div style="border:1.5px solid #dde1ea;border-radius:10px;overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><tr style="background:#f0f2f7;font-weight:600;color:#5a6a8a"><td style="padding:6px"></td><td>Meno</td><td>Ročník</td><td>Čas</td><td>Výkon</td><td>Operatér</td></tr>';
+  IMP_ROWS.forEach((p,i)=>{
+    const dup=sameDay&&impDup(p);
+    html+='<tr style="border-top:1px solid #f1f5f9'+(dup?';opacity:.55':'')+'">'
+      +'<td style="padding:5px 6px"><input type="checkbox" class="imp_pick" data-i="'+i+'"'+(dup?'':' checked')+'></td>'
+      +'<td><input value="'+escHtml(p.meno)+'" data-i="'+i+'" data-f="meno" class="imp_f" style="width:140px">'+(dup?'<div style="font-size:10.5px;color:#b45309">⚠ už v programe</div>':'')+'</td>'
+      +'<td><input value="'+(p.rocnik??'')+'" data-i="'+i+'" data-f="rocnik" class="imp_f" style="width:54px"></td>'
+      +'<td><input value="'+escHtml(p.cas||'')+'" data-i="'+i+'" data-f="cas" class="imp_f" style="width:54px" placeholder="–"></td>'
+      +'<td><input value="'+escHtml(p.vykon||'')+'" data-i="'+i+'" data-f="vykon" class="imp_f" style="width:170px"></td>'
+      +'<td><input value="'+escHtml(p.operator||'')+'" data-i="'+i+'" data-f="operator" class="imp_f" style="width:150px"></td></tr>';
+  });
+  html+='</table></div>';
+  box.innerHTML=html;
+  box.querySelectorAll('.imp_f').forEach(inp=>inp.addEventListener('change',()=>{
+    const p=IMP_ROWS[+inp.dataset.i],f=inp.dataset.f;
+    p[f]=f==='rocnik'?(inp.value?parseInt(inp.value):null):inp.value.trim();
+  }));
+  const ab=document.getElementById('imp_apply');ab.style.display='';
+  const upd=()=>{ab.textContent='➕ Pridať do programu ('+box.querySelectorAll('.imp_pick:checked').length+')';};
+  upd();box.querySelectorAll('.imp_pick').forEach(cb=>cb.addEventListener('change',upd));
+}
+async function impApply(){
+  const box=document.getElementById('imp_prev');
+  const picks=[...box.querySelectorAll('.imp_pick:checked')].map(cb=>IMP_ROWS[+cb.dataset.i]);
+  if(!picks.length)return;
+  const den=document.getElementById('imp_datum').value;
+  if(!den){msg('⚠️ Vyberte deň programu','#b45309');return;}
+  const ab=document.getElementById('imp_apply');
+  if(ab.disabled)return;
+  ab.disabled=true;
+  try{
+    // prepni board na cieľový deň – poradie nadväzuje a výsledok hneď vidno
+    document.getElementById('datum').value=den;USER_DATE=true;await loadRows();
+    let poradie=ROWS.length?Math.max(...ROWS.map(r=>r.poradie||0))+1:1;
+    let pridane=0,preskocene=0,chyby=0;
+    const sala=document.getElementById('imp_sala').value;
+    for(const p of picks){
+      if(!p.meno||impDup(p)){preskocene++;continue;}
+      const body={meno:p.meno,rocnik:p.rocnik||null,diagnoza:p.diagnoza||null,vykon:p.vykon||null,lozko:p.lozko||null,operator:p.operator||null,datum:den,poradie:poradie++,stav:'planovany',stav_vykonu:'na_oddeleni'};
+      if(p.cas)body.cas_okno=p.cas;
+      if(sala==='B')body.sala='B';
+      try{
+        let r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
+        if(r.status===400&&(body.cas_okno||body.sala)){
+          delete body.cas_okno;delete body.sala;  // staršia DB bez stĺpcov – pacienta ulož aspoň bez nich
+          r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
+        }
+        if(r.ok)pridane++;else chyby++;
+      }catch(e){chyby++;}
+    }
+    await loadRows();
+    if(chyby)msg('⚠️ Pridané '+pridane+', chyby '+chyby+' – skúste chýbajúcich pridať ručne','#b45309');
+    else{msg('✅ Import: pridané '+pridane+(preskocene?', preskočené duplicity '+preskocene:''),'#1d6f42');zavriImport();}
+  }finally{ab.disabled=false;}
+}
 </script>
 </body>
 </html>

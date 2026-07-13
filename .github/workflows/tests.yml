@@ -24,3 +24,5 @@ jobs:
         run: node tests/parser-korpus.mjs
       - name: Testy follow-up parsera
         run: node tests/parser-fu.mjs
+      - name: Testy importu programu
+        run: node tests/program-import.mjs
