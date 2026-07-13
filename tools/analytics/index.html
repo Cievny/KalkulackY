@@ -120,6 +120,9 @@ details summary:hover{color:#1737a0}
     <div class="row2">
       <div class="chart-card"><h3>Komplikácie (SVS)</h3><div class="chart-wrap"><canvas id="ch-evk-compl"></canvas></div></div>
       <div class="chart-card"><h3>Clavien-Dindo</h3><div class="chart-wrap"><canvas id="ch-evk-clavien"></canvas></div></div>
+      <div class="chart-card"><h3>TASC II</h3><div class="chart-wrap"><canvas id="ch-evk-tasc"></canvas></div></div>
+      <div class="chart-card"><h3>GLASS štádium</h3><div class="chart-wrap"><canvas id="ch-evk-glass"></canvas></div></div>
+      <div class="chart-card"><h3>WIfI štádium</h3><div class="chart-wrap"><canvas id="ch-evk-wifi"></canvas></div></div>
     </div>
     <div class="chart-card">
       <details><summary>🗑️ Správa záznamov (vymazanie)</summary>
@@ -534,6 +537,8 @@ async function loadEVK(){
   document.getElementById('evk-content').style.display='block';
 
   const avgAge=rows.filter(r=>r.vek).reduce((s,r)=>s+r.vek,0)/(rows.filter(r=>r.vek).length||1);
+  // staging (TASC/GLASS/WIfI) – JSON stĺpec; korekcia lekára má prednosť pred auto hodnotou
+  const stg=rows.map(r=>{try{return r.staging?(typeof r.staging==='string'?JSON.parse(r.staging):r.staging):null;}catch(e){return null;}}).filter(Boolean);
   document.getElementById('evk-stats').innerHTML=
     statCard('Celkový počet výkonov',rows.length)+
     statCard('Priemerný vek',Math.round(avgAge)||'–')+
@@ -544,7 +549,8 @@ async function loadEVK(){
     statCard('Ø kontrast (ml)',avgNum(rows,'contrast_ml',0)||'–')+
     statCard('Ø DAP (Gy·cm²)',avgNum(rows,'dap',0)||'–')+
     statCard('Komplikácie (n výkonov)',complRows(rows).length)+
-    statCard('Konverzie',rows.filter(r=>r.konverzia===true).length);
+    statCard('Konverzie',rows.filter(r=>r.konverzia===true).length)+
+    statCard('Staging vyplnený',rows.length?Math.round(stg.length/rows.length*100)+' %':'–');
 
   // month chart
   const months={};rows.forEach(r=>{const m=monthKey(r.datum||r.created_at);if(m)months[m]=(months[m]||0)+1;});
@@ -599,6 +605,17 @@ async function loadEVK(){
   // Komplikácie + Clavien
   const cf=complFreq(rows);if(cf.length)mkChart('ch-evk-compl','bar',cf.map(x=>x[0]),cf.map(x=>x[1]),false);
   const cd=sortedFreq(rows.filter(r=>r.clavien_dindo),'clavien_dindo');if(cd.length)mkChart('ch-evk-clavien','doughnut',cd.map(x=>x[0]),cd.map(x=>x[1]));
+
+  // Staging – TASC II / GLASS / WIfI
+  const tCnt={},gCnt={},wCnt={};
+  stg.forEach(s=>{
+    const t=(s.korekcie&&s.korekcie.tasc)||(s.auto&&(s.auto.tasc_fp||s.auto.tasc_ai));if(t)tCnt[t]=(tCnt[t]||0)+1;
+    const gl=(s.korekcie&&s.korekcie.glass)||(s.auto&&s.auto.glass_stadium);if(gl)gCnt[gl]=(gCnt[gl]||0)+1;
+    const w=(s.korekcie&&s.korekcie.wifi)||(s.auto&&s.auto.wifi_stadium);if(w!=null&&w!=='')wCnt[String(w)]=(wCnt[String(w)]||0)+1;
+  });
+  const tK=['A','B','C','D'].filter(k=>tCnt[k]);if(tK.length)mkChart('ch-evk-tasc','doughnut',tK,tK.map(k=>tCnt[k]));
+  const gK=['I','II','III'].filter(k=>gCnt[k]);if(gK.length)mkChart('ch-evk-glass','doughnut',gK,gK.map(k=>gCnt[k]));
+  const wK=['1','2','3','4'].filter(k=>wCnt[k]);if(wK.length)mkChart('ch-evk-wifi','doughnut',wK.map(k=>'št. '+k),wK.map(k=>wCnt[k]));
 
   renderRecordTable(rows,
     document.getElementById('evk-tbl-head'),

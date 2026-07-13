@@ -548,6 +548,22 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     <label class="ck"><input type="radio" name="tech_uspech" value="Technický neúspech" class="success-no" onchange="gen()"> ❌ Technický neúspech</label>
   </div>
 </div>
+<div class="f"><div class="lbl">📊 Staging – TASC II / GLASS / WIfI <span style="font-weight:400;color:#9ca3af">(návrh z DSA nálezu a intervencií – skontrolujte)</span></div>
+  <div class="row r3" style="margin-bottom:6px">
+    <div class="f"><label>GLASS – cieľová krurálna tepna (TAP)</label><select id="stg_tap" onchange="gen()"><option value="">–</option><option>ATA</option><option>ATP</option><option>AFib</option></select></div>
+    <div class="f"><label>WIfI – rana (W)</label><select id="stg_w" onchange="gen()"><option value="">–</option><option value="0">0 – bez rany (pokojová bolesť)</option><option value="1">1 – malý vred</option><option value="2">2 – hlboký vred / gangréna prstov</option><option value="3">3 – rozsiahly defekt / gangréna</option></select></div>
+    <div class="f"><label>WIfI – infekcia (fI)</label><select id="stg_fi" onchange="gen()"><option value="">–</option><option value="0">0 – bez infekcie</option><option value="1">1 – mierna lokálna</option><option value="2">2 – stredná (hlbšie / erytém &gt;2 cm)</option><option value="3">3 – ťažká so systémovou odpoveďou</option></select></div>
+  </div>
+  <div class="row r3" style="margin-bottom:6px">
+    <div class="f"><label>Palcový tlak / TcPO₂ (mmHg) <span style="font-weight:400;color:#9ca3af">– pri DM presnejšie než ABI</span></label><input type="number" id="stg_tp" placeholder="45" oninput="gen()"></div>
+    <div class="f" style="grid-column:span 2;display:flex;align-items:flex-end"><div id="stg_out" style="font-size:12.5px;line-height:1.7;color:#1a2745"></div></div>
+  </div>
+  <div class="row r3">
+    <div class="f"><label>TASC (korekcia lekárom)</label><select id="stg_o_tasc" onchange="gen()"><option value="">automaticky</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+    <div class="f"><label>GLASS štádium (korekcia)</label><select id="stg_o_glass" onchange="gen()"><option value="">automaticky</option><option>I</option><option>II</option><option>III</option></select></div>
+    <div class="f"><label>WIfI štádium (korekcia)</label><select id="stg_o_wifi" onchange="gen()"><option value="">automaticky</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+  </div>
+</div>
 <div class="f"><div class="lbl">Komplikácie</div>
   <div class="checks"><label class="ck"><input type="checkbox" class="komp_ck" value="žiadne" onchange="gen()"> Žiadne</label><label class="ck"><input type="checkbox" class="komp_ck" value="hematóm" onchange="gen()"> Hematóm</label><label class="ck"><input type="checkbox" class="komp_ck" value="pseudoaneuryzma" onchange="gen()"> Pseudoaneuryzma</label><label class="ck"><input type="checkbox" class="komp_ck" value="perforácia" onchange="gen()"> Perforácia</label><label class="ck"><input type="checkbox" class="komp_ck" value="distálna embólia" onchange="gen()"> Distálna embólia</label><label class="ck"><input type="checkbox" class="komp_ck" value="flow-limitujúca disekcia" onchange="gen()"> Flow-limit. disekcia</label><label class="ck"><input type="checkbox" class="komp_ck" value="technicky neúspešná intervencia" onchange="gen()"> Tech. neúspešná interv.</label><label class="ck"><input type="checkbox" class="komp_ck" value="chirurgická konverzia" onchange="gen()"> Chir. konverzia</label><label class="ck"><input type="checkbox" class="komp_ck" value="exitus" onchange="gen()"> Exitus</label><label class="ck"><input type="checkbox" class="komp_ck" value="iné" onchange="gen()"> Iné</label></div>
   <input type="text" id="komp_text" placeholder="Popis komplikácie..." oninput="gen()" style="margin-top:6px">
@@ -647,6 +663,11 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
       <div class="f"><label>ABI</label><input type="number" id="fu_abi" placeholder="0.85" step="0.01" min="0" max="2"></div>
     </div>
     <div class="f"><label>Patencia</label><select id="fu_pat"><option value="">–</option><option>primárna patencia</option><option>asistovaná primárna patencia</option><option>sekundárna patencia</option><option>restenóza</option><option>oklúzia</option></select></div>
+    <div class="row r2" style="margin-top:6px">
+      <div class="f"><label>WIfI – rana (W)</label><select id="fu_wifi_w" onchange="fuWifiUpd()"><option value="">–</option><option value="0">0 – bez rany</option><option value="1">1 – malý vred</option><option value="2">2 – hlboký vred / gangréna prstov</option><option value="3">3 – rozsiahly defekt</option></select></div>
+      <div class="f"><label>WIfI – infekcia (fI)</label><select id="fu_wifi_fi" onchange="fuWifiUpd()"><option value="">–</option><option value="0">0 – bez infekcie</option><option value="1">1 – mierna</option><option value="2">2 – stredná</option><option value="3">3 – ťažká</option></select></div>
+    </div>
+    <div id="fu_wifi_out" style="font-size:12px;color:#1a2745;margin-bottom:6px"></div>
     <div class="row r2">
       <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="fu_reint"> Reintervencia</label></div>
       <div class="f"><label class="ck" style="margin-bottom:5px"><input type="checkbox" id="fu_amput"> Amputácia</label><select id="fu_amput_typ"><option value="">– typ –</option><option>veľká</option><option>malá</option></select></div>
@@ -1136,7 +1157,14 @@ async function saveToSupabase(table,data){
   // edit: maž len null/undefined (neznáme hodnoty); prázdny string '' ostáva v PATCHi, aby sa vyprázdnené pole dalo vyčistiť
   if(isEdit){data={...data};Object.keys(data).forEach(k=>{if(data[k]==null)delete data[k];});delete data.vykon_id;}
   const url=`${SB_URL}/rest/v1/${table}`+(isEdit?`?id=eq.${window._editRecordId}`:'');
-  return fetch(url,{method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(data)});
+  const opts=body=>({method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
+  let r=await fetch(url,opts(data));
+  // staršia DB bez stĺpcov staging/wifi – ulož záznam aspoň bez nich
+  if(r.status===400&&(('staging' in data)||('wifi' in data))){
+    const d2={...data};delete d2.staging;delete d2.wifi;
+    r=await fetch(url,opts(d2));
+  }
+  return r;
 }
 function collectFullData(){
   const dsaFields=['v_Ao','v_AIC_s','v_AIC_d','v_AIE_s','v_AIE_d','v_AII_s','v_AII_d',
@@ -1297,6 +1325,7 @@ function collectFullData(){
   try{_drgKody=JSON.stringify(collectDRG());}catch(e){_drgKody=null;}
   return{
     drg_kody:_drgKody,
+    staging:(typeof collectStagingJSON==='function'?collectStagingJSON():null),
     vykon_id:'EVK-'+y+'-'+(g('id_suffix')||'???'),
     datum:g('datum'),
     operator:g('operator'),
@@ -1451,6 +1480,7 @@ async function saveFUToSheets(){
     exitus:exitusOn,
     exitus_datum:exitusOn?(g('fu_exitus_datum')||isoLocal(new Date())):null,
     exitus_suvis:exitusOn?(g('fu_exitus_suvis')||null):null
+    ,wifi:(typeof collectFuWifi==='function'?collectFuWifi():null)
   };
   const tasks=[];
   tasks.push(saveToSupabase('evk_followup',fuData).then(r=>r.ok?'sb_ok':'sb_err').catch(()=>'sb_err'));
@@ -1888,6 +1918,7 @@ function loadEditRecord(){
     if(tool!=='EVK')return;
     sessionStorage.removeItem('cievny_edit');
     window._editRecordId=record.id;
+    window._editRecord=record;
     const sv=(id,val)=>{if(val==null||val==='')return;const el=document.getElementById(id);if(el)el.value=val;};
     const scb=(id,val)=>{const el=document.getElementById(id);if(el)el.checked=!!val;};
 
@@ -2290,6 +2321,122 @@ function resetKomor(){
 }
 window.addEventListener('pageshow', resetKomor);
 document.addEventListener('DOMContentLoaded', resetKomor);
+</script>
+<script src="/tools/staging.js"></script>
+<script>
+/* ── Staging addon: počíta TASC II / GLASS / WIfI z už zadaného DSA nálezu,
+   dĺžok lézií pri intervenciách a ABI. Výsledok je návrh – korekcie lekára
+   majú prednosť a všetko sa ukladá do stĺpca staging (JSON). ── */
+const STG_FIELDS=['v_Ao','v_AIC_s','v_AIC_d','v_AIE_s','v_AIE_d','v_AII_s','v_AII_d',
+  'f_AFC_s','f_AFC_d','f_APF_s','f_APF_d','f_AFS_s','f_AFS_d',
+  'p_P1_s','p_P1_d','p_P2_s','p_P2_d','p_P3_s','p_P3_d',
+  'd_ATA_s','d_ATA_d','d_ATP_s','d_ATP_d','d_AFib_s','d_AFib_d','d_TTF_s','d_TTF_d'];
+function stgZbierajDsa(){
+  const dsa={};
+  STG_FIELDS.forEach(f=>{
+    const el=document.getElementById(f);
+    if(el&&el.value&&el.value!=='bez závažnej stenózy')dsa[f]=el.value;
+    if(typeof segExtras==='function'){const ex=segExtras(f);if(ex&&ex.length)(dsa._segs=dsa._segs||{})[f]=ex;}
+  });
+  return dsa;
+}
+function stgZbierajInterv(){
+  const out=[];
+  document.querySelectorAll('input[id$="_lmm"]').forEach(inp=>{
+    const base=inp.id.slice(0,-4);
+    const tp=document.getElementById(base+'_tp');
+    if(!tp||!tp.value||tp.value.indexOf('tepna')>=0)return;
+    out.push({tepna:tp.value,lezia_mm:inp.value,
+      kalcif:(document.getElementById(base+'_lkalc')||{}).value||'',
+      cto:!!(document.getElementById(base+'_lcto')||{}).checked});
+  });
+  return out;
+}
+let _stgAuto=null;
+function stagingUpdate(){
+  const out=document.getElementById('stg_out');
+  if(!out||!window.Staging)return;
+  const model=Staging.lezieZEvk(stgZbierajDsa(),stgZbierajInterv());
+  // liečená končatina podľa laterality FP riečiska; pri bilat. vezmi horšiu stranu
+  const lat=g('fem_lat');
+  const strany=lat==='sin'?['s']:lat==='dx'?['d']:['d','s'];
+  const RANK={A:1,B:2,C:3,D:4};
+  let strana=strany[0],fp=Staging.tascFP(model,strany[0]),gfp=Staging.glassFP(model,strany[0]);
+  for(let si=1;si<strany.length;si++){
+    const fp2=Staging.tascFP(model,strany[si]),gfp2=Staging.glassFP(model,strany[si]);
+    if((gfp2.grade||0)>(gfp.grade||0)||(RANK[fp2.tasc]||0)>(RANK[fp.tasc]||0)){strana=strany[si];fp=fp2;gfp=gfp2;}
+  }
+  const bilatPozn=(strany.length>1&&(fp.tasc||gfp.grade))?('hodnotená horšia strana: l.'+(strana==='d'?'dx.':'sin.')):null;
+  const ai=Staging.tascAI(model);
+  const gip=Staging.glassIP(model,strana,g('stg_tap'));
+  const stad=Staging.glassStadium(gfp.grade,gip.grade==null?(gfp.grade>0?0:null):gip.grade);
+  const W=g('stg_w')===''?null:parseInt(g('stg_w'));
+  const fI=g('stg_fi')===''?null:parseInt(g('stg_fi'));
+  const I=g('stg_tp')?Staging.wifiIzTP(g('stg_tp')):Staging.wifiIzABI(g('abi_pred'));
+  const wf=Staging.wifi(W,I,fI);
+  _stgAuto={tasc_ai:ai.tasc,tasc_fp:fp.tasc,glass_fp:gfp.grade,glass_ip:gip.grade,glass_stadium:stad,
+            wifi_w:W,wifi_i:I,wifi_fi:fI,wifi_stadium:wf.stadium,wifi_riziko:wf.riziko};
+  const oT=g('stg_o_tasc'),oG=g('stg_o_glass'),oW=g('stg_o_wifi');
+  const b=(t,c)=>'<span style="display:inline-block;background:'+c+';border-radius:6px;padding:1px 8px;font-weight:800;margin-right:6px">'+t+'</span>';
+  let html='';
+  const tascTxt=[ai.tasc?('panva '+ai.tasc):null,fp.tasc?('FP '+fp.tasc):null].filter(Boolean).join(' • ');
+  html+=b('TASC II: '+(oT?oT+' (korekcia)':(tascTxt||'–')),'#e0e7ff');
+  html+=b('GLASS: '+(oG?oG+' (korekcia)':(stad?('št. '+stad+' (FP'+gfp.grade+(gip.grade!=null?'/IP'+gip.grade:'')+')'):'–')),'#dbeafe');
+  html+=b('WIfI: '+(oW?oW+' (korekcia)':(wf.stadium?('št. '+wf.stadium+' ('+W+'-'+I+'-'+fI+', riziko '+wf.riziko+')'):'–')),'#dcfce7');
+  const pozn=[].concat(ai.pozn||[],fp.pozn||[],gfp.pozn||[],gip.pozn||[]);
+  if(model.chybajuceDlzky.length)pozn.push('bez dĺžky: '+model.chybajuceDlzky.join(', '));
+  if(bilatPozn)pozn.push(bilatPozn);
+  const dmEl=document.getElementById('k_dm');
+  if(dmEl&&dmEl.checked&&parseFloat(g('abi_pred'))>1.3&&!g('stg_tp'))pozn.push('DM + ABI >1,3 (mediokalcinóza) – doplňte palcový tlak/TcPO₂');
+  if(pozn.length)html+='<div style="font-size:11px;color:#92400e">⚠ '+pozn.join(' · ')+'</div>';
+  out.innerHTML=html;
+}
+function collectStagingJSON(){
+  if(!_stgAuto)stagingUpdate();
+  const a=_stgAuto||{};
+  const o={tasc:g('stg_o_tasc')||null,glass:g('stg_o_glass')||null,wifi:g('stg_o_wifi')||null};
+  const vst={tap:g('stg_tap')||null,w:g('stg_w')||null,fi:g('stg_fi')||null,tp:g('stg_tp')||null};
+  const maAuto=a.tasc_ai||a.tasc_fp||a.glass_stadium||a.wifi_stadium!=null;
+  const maVstup=vst.tap||vst.w||vst.fi||vst.tp||o.tasc||o.glass||o.wifi;
+  if(!maAuto&&!maVstup)return null;
+  return JSON.stringify({auto:a,vstupy:vst,korekcie:o});
+}
+function stagingRestore(rec){
+  if(!rec||!rec.staging)return;
+  try{
+    const s=typeof rec.staging==='string'?JSON.parse(rec.staging):rec.staging;
+    const sv=(id,v)=>{if(v!=null&&v!==''){const el=document.getElementById(id);if(el)el.value=v;}};
+    sv('stg_tap',s.vstupy?.tap);sv('stg_w',s.vstupy?.w);sv('stg_fi',s.vstupy?.fi);sv('stg_tp',s.vstupy?.tp);
+    sv('stg_o_tasc',s.korekcie?.tasc);sv('stg_o_glass',s.korekcie?.glass);sv('stg_o_wifi',s.korekcie?.wifi);
+  }catch(e){}
+}
+/* FU – mini WIfI (I sa berie z fu_abi) */
+function collectFuWifi(){
+  const W=g('fu_wifi_w')===''?null:parseInt(g('fu_wifi_w'));
+  const fI=g('fu_wifi_fi')===''?null:parseInt(g('fu_wifi_fi'));
+  const I=Staging.wifiIzABI(g('fu_abi'));
+  if(W==null&&fI==null)return null;
+  const wf=Staging.wifi(W,I,fI);
+  return JSON.stringify({w:W,i:I,fi:fI,stadium:wf.stadium,riziko:wf.riziko});
+}
+function fuWifiUpd(){
+  const out=document.getElementById('fu_wifi_out');
+  if(!out)return;
+  const W=g('fu_wifi_w')===''?null:parseInt(g('fu_wifi_w'));
+  const fI=g('fu_wifi_fi')===''?null:parseInt(g('fu_wifi_fi'));
+  const I=Staging.wifiIzABI(g('fu_abi'));
+  const wf=Staging.wifi(W,I,fI);
+  out.textContent=wf.stadium?('WIfI '+W+'-'+I+'-'+fI+' → štádium '+wf.stadium+' (riziko amputácie: '+wf.riziko+')')
+    :(W!=null||fI!=null?'WIfI: doplňte ranu, infekciu a ABI':'');
+}
+document.getElementById('fu_abi')?.addEventListener('input',fuWifiUpd);
+/* prepočet pri každej zmene formulára – gen() volá každý input */
+if(typeof window.gen==='function'){
+  const _gen=window.gen;
+  window.gen=function(){_gen.apply(this,arguments);try{stagingUpdate();}catch(e){}};
+}
+if(window._editRecord)stagingRestore(window._editRecord);
+try{stagingUpdate();}catch(e){}
 </script>
 </body>
 </html>

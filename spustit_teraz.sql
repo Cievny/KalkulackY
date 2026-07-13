@@ -159,6 +159,12 @@ ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS sizing         TEXT;  -- JS
 ALTER TABLE cas_vykony    ADD COLUMN IF NOT EXISTS konz_detail TEXT;
 ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS konz_detail TEXT;
 
+-- 3j) EVK – staging DK ischémie (TASC II / GLASS / WIfI ako JSON:
+--     {auto:{...vypočítané}, vstupy:{tap,w,fi,tp}, korekcie:{tasc,glass,wifi}})
+--     + WIfI pri follow-up kontrolách
+ALTER TABLE evk_vykony   ADD COLUMN IF NOT EXISTS staging TEXT;
+ALTER TABLE evk_followup ADD COLUMN IF NOT EXISTS wifi    TEXT;
+
 -- 3i) PEVAR – katetrizácia aorty (voľný text z formulára; doteraz sa neukladal)
 ALTER TABLE pevar_vykony    ADD COLUMN IF NOT EXISTS katetrizacia_aorty TEXT;
 ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS katetrizacia_aorty TEXT;

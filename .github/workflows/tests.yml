@@ -28,3 +28,5 @@ jobs:
         run: node tests/program-import.mjs
       - name: Testy extraktora poziadaviek
         run: node tests/poziadavky-import.mjs
+      - name: Testy staging algoritmov (TASC/GLASS/WIfI)
+        run: node tests/staging.mjs
