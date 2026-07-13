@@ -1066,6 +1066,11 @@ setInterval(()=>{
     <h2>📥 Import programu z textu</h2>
     <div class="dsub">Vložte text wordového programu (Katetrizačný program OIRA) alebo text skopírovaný z NIS kalendára.<br>🔒 Text sa spracuje len vo vašom prehliadači – do databázy ide len meno a ročník, celé rodné číslo sa nikam neukladá.</div>
     <textarea id="imp_txt" rows="8" placeholder="Sem vložte text programu…" style="width:100%;box-sizing:border-box;border:1.5px solid #dde1ea;border-radius:8px;padding:8px;font-size:12.5px;font-family:inherit;resize:vertical;outline:none"></textarea>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap">
+      <label class="bmini" style="cursor:pointer">📷 Načítať zo screenshotu<input type="file" id="imp_img" accept="image/*" style="display:none" onchange="impOcrFile(this.files[0]);this.value=''"></label>
+      <span style="font-size:11px;color:#6b7280">alebo obrázok vložte Ctrl+V či potiahnite na textové pole • OCR beží len vo vašom prehliadači</span>
+    </div>
+    <div id="imp_ocr_stav" style="display:none;font-size:12.5px;margin-top:6px;color:#1e40af;font-weight:600"></div>
     <div style="display:flex;gap:10px;align-items:flex-end;margin-top:10px;flex-wrap:wrap">
       <div><label style="font-size:11px;font-weight:600;color:#5a6a8a;display:block;margin-bottom:3px">Deň programu</label><input type="date" id="imp_datum" style="width:auto;padding:8px 10px"></div>
       <div><label style="font-size:11px;font-weight:600;color:#5a6a8a;display:block;margin-bottom:3px">Sála</label><select id="imp_sala" style="padding:8px 10px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px"><option value="A">A</option><option value="B">B</option></select></div>
@@ -1161,6 +1166,50 @@ async function impApply(){
     else{msg('✅ Import: pridané '+pridane+(preskocene?', preskočené duplicity '+preskocene:''),'#1d6f42');zavriImport();}
   }finally{ab.disabled=false;}
 }
+
+// ── OCR screenshotu (tesseract.js, servované z nášho webu – obrázok neopúšťa prehliadač) ──
+let OCR_WORKER=null;
+function impOcrStav(t){const el=document.getElementById('imp_ocr_stav');el.style.display=t?'block':'none';el.textContent=t||'';}
+function loadTesseract(){
+  return window.Tesseract?Promise.resolve():new Promise((res,rej)=>{
+    const s=document.createElement('script');s.src='/tools/vendor/tesseract/tesseract.min.js';
+    s.onload=res;s.onerror=()=>rej(new Error('nepodarilo sa načítať OCR knižnicu'));
+    document.head.appendChild(s);
+  });
+}
+async function impOcrFile(file){
+  if(!file||!file.type||!file.type.startsWith('image/'))return;
+  try{
+    impOcrStav('⏳ Načítavam OCR (prvýkrát sa sťahuje ~6 MB)…');
+    await loadTesseract();
+    if(!OCR_WORKER){
+      OCR_WORKER=await Tesseract.createWorker('slk',1,{
+        workerPath:'/tools/vendor/tesseract/worker.min.js',
+        corePath:'/tools/vendor/tesseract/tesseract-core-simd-lstm.wasm.js',
+        langPath:'/tools/vendor/tesseract',
+        logger:m=>{if(m.status==='recognizing text')impOcrStav('🔍 Čítam obrázok… '+Math.round((m.progress||0)*100)+' %');}
+      });
+    }
+    impOcrStav('🔍 Čítam obrázok…');
+    const r=await OCR_WORKER.recognize(file);
+    const txt=(r&&r.data&&r.data.text||'').trim();
+    if(!txt){impOcrStav('❗ Z obrázka sa nepodarilo prečítať text – skúste ostrejší/väčší screenshot.');return;}
+    const ta=document.getElementById('imp_txt');
+    ta.value=(ta.value.trim()?ta.value.trim()+'\n':'')+txt;
+    impOcrStav('');
+    impParse();
+  }catch(e){impOcrStav('❌ OCR zlyhalo: '+((e&&e.message)||e));}
+}
+// Ctrl+V obrázka priamo v modáli + drag&drop na textové pole
+document.getElementById('imp_overlay').addEventListener('paste',e=>{
+  const it=[...((e.clipboardData||{}).items||[])].find(i=>i.type&&i.type.startsWith('image/'));
+  if(it){e.preventDefault();impOcrFile(it.getAsFile());}
+});
+document.getElementById('imp_txt').addEventListener('dragover',e=>e.preventDefault());
+document.getElementById('imp_txt').addEventListener('drop',e=>{
+  const f=[...((e.dataTransfer||{}).files||[])].find(f=>f.type&&f.type.startsWith('image/'));
+  if(f){e.preventDefault();impOcrFile(f);}
+});
 </script>
 </body>
 </html>
