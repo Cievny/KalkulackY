@@ -54,9 +54,9 @@ body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Seg
 .cpozn{font-size:14px;color:#92400e;background:#fef3c7;border-radius:8px;padding:4px 8px;margin-top:6px;display:inline-block}
 .cstav{font-size:14px;font-weight:800;margin-top:8px;display:inline-block;padding:4px 12px;border-radius:999px}
 .cright{display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;gap:8px;flex-shrink:0}
-.bignext{min-width:190px;min-height:64px;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit;padding:10px 16px;color:#fff;box-shadow:0 3px 8px rgba(15,30,61,.18);touch-action:manipulation}
+.cstav-big{min-width:190px;box-sizing:border-box;text-align:center;font-size:19px;font-weight:800;padding:14px 16px;border-radius:14px;border:2.5px solid;line-height:1.25}
+.bignext{min-width:190px;box-sizing:border-box;min-height:44px;border:none;border-radius:11px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:8px 14px;color:#fff;box-shadow:0 2px 6px rgba(15,30,61,.15);touch-action:manipulation}
 .bignext:active{transform:scale(.97)}
-.bignext.done{background:#e5e7eb;color:#6b7280;box-shadow:none;cursor:default}
 .dots{display:flex;gap:6px}
 .dot{width:38px;height:38px;border-radius:10px;border:2px solid transparent;font-size:16px;cursor:pointer;background:#f0f2f7;font-family:inherit;padding:0;touch-action:manipulation}
 .dot.on{border-color:#1e40af;background:#dbeafe}
@@ -76,7 +76,8 @@ body{margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Seg
 #conn_banner{display:none;position:fixed;top:0;left:0;right:0;z-index:400;background:#b91c1c;color:#fff;font-size:16px;font-weight:800;text-align:center;padding:10px 16px;box-shadow:0 2px 10px rgba(0,0,0,.35)}
 /* úzky mobil (≤520px): menšie tlačidlá, nech 390px displej nemá horizontálny scroll */
 @media(max-width:520px){
-  .bignext{min-width:150px;font-size:15px;padding:10px 12px}
+  .cstav-big{min-width:150px;font-size:16px;padding:11px 12px}
+  .bignext{min-width:150px;font-size:12.5px;padding:8px 10px}
   .dot{width:32px;height:32px;font-size:14px}
   .notebtn{width:32px;height:32px;font-size:14px}
 }
@@ -289,11 +290,10 @@ function makeCard(r){
       ${sub?`<div class="csub">${sub}</div>`:''}
       ${sub2?`<div class="csub2">${sub2}</div>`:''}
       ${r.poznamka?`<div class="cpozn">📝 ${escHtml(r.poznamka)}</div>`:''}
-      <div><span class="cstav" style="background:${c.bg};color:${c.fg}" id="stav_${r.id}">${stavText(r)}</span></div>
     </div>
     <div class="cright">
-      ${next?`<button class="bignext" style="background:${c.btn}" onclick="setStav('${r.id}','${next}')">${ST[sv].akcia}</button>`
-            :`<button class="bignext done" disabled>✅ Hotový</button>`}
+      <div class="cstav-big" style="background:${c.bg};color:${c.fg};border-color:${c.bar}" id="stav_${r.id}">${stavText(r)}</div>
+      ${next?`<button class="bignext" style="background:${c.btn}" onclick="setStav('${r.id}','${next}')">➜ ${ST[sv].akcia}</button>`:''}
       <div style="display:flex;gap:6px;align-items:center">
         <button class="notebtn" title="poznámka" onclick="otvorPoznamku('${r.id}')">✏️</button>
         <span class="dots">${dots}</span>
