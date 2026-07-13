@@ -26,3 +26,5 @@ jobs:
         run: node tests/parser-fu.mjs
       - name: Testy importu programu
         run: node tests/program-import.mjs
+      - name: Testy extraktora poziadaviek
+        run: node tests/poziadavky-import.mjs

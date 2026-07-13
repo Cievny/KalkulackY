@@ -150,7 +150,10 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 <!-- Modal: detail pacienta -->
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <h2 id="m_title">Nová požiadavka</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <h2 id="m_title" style="margin:0">Nová požiadavka</h2>
+      <button type="button" onclick="PoziadavkyImport.openPZ()" title="Vyplní polia z vloženého textu žiadanky, CT popisu alebo mailu – spracuje sa len v prehliadači" style="padding:6px 12px;border:1.5px solid #2563eb;background:#eff6ff;color:#1d4ed8;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600">📋 Z textu žiadanky / CT</button>
+    </div>
 
     <div class="m-sec" data-t="Pacient a žiadanka">1. Pacient a žiadanka</div>
     <div class="m-grid">
@@ -1174,5 +1177,6 @@ setInterval(()=>{
   loadItems();
 },60000);
 </script>
+<script src="/tools/poziadavky-import.js"></script>
 </body>
 </html>
