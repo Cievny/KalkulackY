@@ -173,6 +173,14 @@ function renderNat(){
   html+='<span style="width:10px"></span>';
   html+='<button class="btn '+(NAT_VIEW==='M'?'btn-primary':'btn-sec')+'" onclick="natView(\'M\')">Mesiac</button>';
   html+='<button class="btn '+(NAT_VIEW==='Z'?'btn-primary':'btn-sec')+'" onclick="natView(\'Z\')">Zoznam</button>';
+  html+='<span style="width:10px"></span>';
+  if(EDIT_CFG()){
+    html+=GTOKEN
+      ?'<button class="btn btn-primary" onclick="otvorUdalost(null)">➕ Nová udalosť</button>'
+      :'<button class="btn btn-sec" onclick="zapniEdit()" title="prihlásenie Google účtom s právom zápisu do kalendára">✏️ Upravovať</button>';
+  }else{
+    html+='<a class="btn btn-sec" target="_blank" rel="noopener" href="'+gcalTemplateUrl()+'" title="otvorí Google kalendár s predvyplnenou udalosťou – vyberte v ňom kalendár oddelenia">➕ Pridať cez Google</a>';
+  }
   html+='</div>';
   if(NAT_VIEW==='M')html+=natMesiac();else html+=natZoznam();
   html+='<p style="font-size:11px;color:#9ca3af;margin-top:10px">synchronizované z neverejného Google kalendára (~2 h interval)</p></div>';
@@ -199,7 +207,8 @@ function natMesiac(){
     html+='<div style="font-size:12px;font-weight:800;color:#1a2745;margin-bottom:3px">'+cur.getDate()+'</div>';
     evs.slice(0,3).forEach(u=>{
       const cas=(!u.cely_den&&u.zaciatok.length>10)?fmtCas(u.zaciatok)+' ':'';
-      html+='<div title="'+ESC(u.nazov||'')+(u.popis?' – '+ESC(u.popis):'')+'" style="font-size:10.5px;line-height:1.35;background:#eff6ff;color:#1e40af;border-radius:5px;padding:1px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cas+ESC(u.nazov||'')+'</div>';
+      const ei=EVENTS.indexOf(u);
+      html+='<div '+(GTOKEN?'onclick="otvorUdalost('+ei+')"':'')+' title="'+ESC(u.nazov||'')+(u.popis?' – '+ESC(u.popis):'')+'" style="font-size:10.5px;line-height:1.35;background:#eff6ff;color:#1e40af;border-radius:5px;padding:1px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'+(GTOKEN?';cursor:pointer':'')+'">'+cas+ESC(u.nazov||'')+'</div>';
     });
     if(evs.length>3)html+='<div style="font-size:10px;color:#9ca3af">+ '+(evs.length-3)+' ďalšie</div>';
     html+='</div>';
@@ -223,7 +232,8 @@ function natZoznam(){
     let datum=fmtD(u.zaciatok)+cas;
     const dni=dniUdalosti(u);
     if(dni.length>1)datum+=' – '+fmtD(dni[dni.length-1]);
-    html+='<div style="display:flex;gap:12px;padding:7px 0;border-bottom:1px solid #eef1f6;font-size:13.5px"><span style="min-width:120px;font-weight:700;color:#1e40af;white-space:nowrap">'+datum+'</span><span>'+ESC(u.nazov||'')+(u.popis?'<div style="font-size:11.5px;color:#6b7280">'+ESC(u.popis)+'</div>':'')+'</span></div>';
+    const ei=EVENTS.indexOf(u);
+    html+='<div style="display:flex;gap:12px;padding:7px 0;border-bottom:1px solid #eef1f6;font-size:13.5px;align-items:flex-start"><span style="min-width:120px;font-weight:700;color:#1e40af;white-space:nowrap">'+datum+'</span><span style="flex:1">'+ESC(u.nazov||'')+(u.popis?'<div style="font-size:11.5px;color:#6b7280">'+ESC(u.popis)+'</div>':'')+'</span>'+(GTOKEN?'<button class="btn btn-sec" style="padding:2px 9px;font-size:12px" onclick="otvorUdalost('+ei+')">✏️</button>':'')+'</div>';
   });
   return html;
 }
@@ -245,6 +255,172 @@ function clearTemp(){
 }
 
 render();
+
+/* ════ EDITOVANIE – Google Calendar API (token cez Google Identity Services).
+   Zapína sa vyplnením GCAL_CLIENT_ID + GCAL_CALENDAR_ID v /tools/gcal-config.js.
+   Po zápise do Googlu sa zmena zrkadlí aj do kalendar_udalosti, aby bola vidno
+   hneď (najbližší 2h sync ju aj tak zosúladí s Googlom). ════ */
+function EDIT_CFG(){return !!(window.GCAL_CLIENT_ID&&window.GCAL_CALENDAR_ID);}
+let GTOKEN=null,GTOKEN_EXP=0,tokClient=null,EDIT_ROW=null;
+const GAPI='https://www.googleapis.com/calendar/v3/calendars/';
+
+function gcalTemplateUrl(){
+  const d=new Date();const k=d.getFullYear()+P2(d.getMonth()+1)+P2(d.getDate());
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&ctz=Europe/Bratislava&dates='+k+'/'+k;
+}
+function nacitajGIS(){
+  return window.google&&google.accounts?Promise.resolve():new Promise((res,rej)=>{
+    const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';
+    s.onload=res;s.onerror=()=>rej(new Error('Google prihlásenie sa nepodarilo načítať'));document.head.appendChild(s);
+  });
+}
+function ziskajToken(){
+  return new Promise((res,rej)=>{
+    if(GTOKEN&&Date.now()<GTOKEN_EXP-60000)return res(GTOKEN);
+    nacitajGIS().then(()=>{
+      if(!tokClient)tokClient=google.accounts.oauth2.initTokenClient({
+        client_id:window.GCAL_CLIENT_ID,
+        scope:'https://www.googleapis.com/auth/calendar.events',
+        callback:t=>{
+          if(t&&t.access_token){GTOKEN=t.access_token;GTOKEN_EXP=Date.now()+(t.expires_in||3600)*1000;res(GTOKEN);}
+          else rej(new Error('prihlásenie zrušené'));
+        }
+      });
+      tokClient.requestAccessToken();
+    }).catch(rej);
+  });
+}
+function zapniEdit(){ziskajToken().then(()=>renderNat()).catch(e=>alert('⚠️ '+e.message));}
+
+async function gapiCall(method,cesta,body){
+  const tok=await ziskajToken();
+  const r=await fetch(GAPI+encodeURIComponent(window.GCAL_CALENDAR_ID)+cesta,{
+    method,headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+    body:body?JSON.stringify(body):undefined});
+  if(r.status===401){GTOKEN=null;throw new Error('prihlásenie vypršalo – skúste znova');}
+  if(!r.ok&&r.status!==204&&r.status!==410)throw new Error('Google API '+r.status);
+  return r.status===204||r.status===410?null:r.json();
+}
+// event id z riadku sync tabuľky (id = UID_zaciatok, UID býva eventId@google.com)
+function eventIdZ(row){
+  const uid=row.id.slice(0,row.id.lastIndexOf('_'));
+  return uid.replace(/@google\.com$/,'');
+}
+function uidZ(eventId){return eventId+'@google.com';}
+
+/* zrkadlenie do Supabase – best effort; keď zlyhá, zmena je v Googli
+   a prejaví sa pri najbližšej synchronizácii */
+async function zrkadli(eventId,row){
+  try{
+    const uid=uidZ(eventId);
+    await fetch('https://ncqtiicfqhaturjlfxcj.supabase.co/rest/v1/kalendar_udalosti?id=like.'+encodeURIComponent(uid)+'*',
+      {method:'DELETE',headers:sbHeaders()});
+    if(row){
+      row.id=(uid+'_'+row.zaciatok).slice(0,200);
+      row.updated_at=new Date().toISOString();
+      await fetch('https://ncqtiicfqhaturjlfxcj.supabase.co/rest/v1/kalendar_udalosti',
+        {method:'POST',headers:{...sbHeaders(),'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(row)});
+    }
+    return true;
+  }catch(e){return false;}
+}
+
+function otvorUdalost(idx){
+  EDIT_ROW=idx==null?null:EVENTS[idx];
+  const u=EDIT_ROW;
+  document.getElementById('ev_title').textContent=u?'✏️ Upraviť udalosť':'➕ Nová udalosť';
+  document.getElementById('ev_nazov').value=u?(u.nazov||''):'';
+  document.getElementById('ev_popis').value=u?(u.popis||''):'';
+  const cd=u?u.cely_den!==false:true;
+  document.getElementById('ev_celyden').checked=cd;
+  const z=u?u.zaciatok:null, k=u?u.koniec:null;
+  const dnes=new Date().toISOString().slice(0,10);
+  document.getElementById('ev_od_d').value=z?z.slice(0,10):dnes;
+  document.getElementById('ev_od_t').value=(z&&z.length>10)?z.slice(11,16):'08:00';
+  // celodenná viacdenná: DTEND je exkluzívny → zobraz posledný pokrytý deň
+  let doD=z?z.slice(0,10):dnes;
+  if(u){const dni=dniUdalosti(u);doD=dni[dni.length-1];}
+  document.getElementById('ev_do_d').value=doD;
+  document.getElementById('ev_do_t').value=(k&&k.length>10)?k.slice(11,16):'09:00';
+  document.getElementById('ev_zmaz').style.display=u?'':'none';
+  prepniCelyDen();
+  document.getElementById('ev_msg').textContent='';
+  document.getElementById('ev_overlay').style.display='flex';
+  setTimeout(()=>document.getElementById('ev_nazov').focus(),0);
+}
+function zavriUdalost(){document.getElementById('ev_overlay').style.display='none';}
+function prepniCelyDen(){
+  const cd=document.getElementById('ev_celyden').checked;
+  document.getElementById('ev_od_t').style.display=cd?'none':'';
+  document.getElementById('ev_do_t').style.display=cd?'none':'';
+}
+function plusDen(d){const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+1);return x.getFullYear()+'-'+P2(x.getMonth()+1)+'-'+P2(x.getDate());}
+
+async function ulozUdalost(){
+  const nazov=document.getElementById('ev_nazov').value.trim();
+  const msg=document.getElementById('ev_msg');
+  if(!nazov){msg.textContent='⚠️ Vyplňte názov';msg.style.color='#b45309';return;}
+  const cd=document.getElementById('ev_celyden').checked;
+  const odD=document.getElementById('ev_od_d').value,doD=document.getElementById('ev_do_d').value||odD;
+  const odT=document.getElementById('ev_od_t').value||'08:00',doT=document.getElementById('ev_do_t').value||odT;
+  if(!odD){msg.textContent='⚠️ Vyplňte dátum';msg.style.color='#b45309';return;}
+  const popis=document.getElementById('ev_popis').value.trim();
+  const body={summary:nazov,description:popis||undefined};
+  if(cd){body.start={date:odD};body.end={date:plusDen(doD<odD?odD:doD)};}
+  else{
+    body.start={dateTime:odD+'T'+odT+':00',timeZone:'Europe/Bratislava'};
+    body.end={dateTime:(doD<odD?odD:doD)+'T'+doT+':00',timeZone:'Europe/Bratislava'};
+  }
+  msg.textContent='⏳ Ukladám…';msg.style.color='#1e40af';
+  try{
+    let ev;
+    if(EDIT_ROW)ev=await gapiCall('PATCH','/events/'+encodeURIComponent(eventIdZ(EDIT_ROW)),body);
+    else ev=await gapiCall('POST','/events',body);
+    const riadok={nazov:nazov,zaciatok:cd?odD:odD+'T'+odT+':00',koniec:cd?plusDen(doD<odD?odD:doD):(doD<odD?odD:doD)+'T'+doT+':00',cely_den:cd,popis:popis||null};
+    const zrk=await zrkadli(ev.id,riadok);
+    zavriUdalost();
+    await nacitajUdalosti();
+    renderNat();
+    if(!zrk)alert('✅ Uložené v Google kalendári. Tu sa zmena zobrazí pri najbližšej synchronizácii (do 2 h).');
+  }catch(e){msg.textContent='❌ '+e.message;msg.style.color='#dc2626';}
+}
+async function zmazUdalost(){
+  if(!EDIT_ROW)return;
+  if(!confirm('Naozaj zmazať udalosť „'+(EDIT_ROW.nazov||'')+'"?'))return;
+  const msg=document.getElementById('ev_msg');
+  msg.textContent='⏳ Mažem…';msg.style.color='#1e40af';
+  try{
+    await gapiCall('DELETE','/events/'+encodeURIComponent(eventIdZ(EDIT_ROW)));
+    await zrkadli(eventIdZ(EDIT_ROW),null);
+    zavriUdalost();
+    await nacitajUdalosti();
+    renderNat();
+  }catch(e){msg.textContent='❌ '+e.message;msg.style.color='#dc2626';}
+}
 </script>
+<!-- Modal: udalosť (editovanie kalendára) -->
+<div id="ev_overlay" style="display:none;position:fixed;inset:0;background:rgba(15,30,61,.55);z-index:400;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)zavriUdalost()">
+  <div style="background:#fff;border-radius:14px;padding:20px 22px;width:100%;max-width:430px;box-shadow:0 10px 40px rgba(0,0,0,.25);font-size:13px">
+    <h2 id="ev_title" style="font-size:15px;color:#1a2745;margin-bottom:12px">➕ Nová udalosť</h2>
+    <label style="font-size:11px;font-weight:600;color:#5a6a8a;display:block;margin-bottom:3px">Názov *</label>
+    <input id="ev_nazov" style="width:100%;box-sizing:border-box;padding:9px 11px;border:1.5px solid #dde1ea;border-radius:8px;font-size:14px;margin-bottom:10px" placeholder="napr. Seminár / Dovolenka Dr. …">
+    <label style="display:flex;gap:7px;align-items:center;font-size:13px;margin-bottom:10px;cursor:pointer"><input type="checkbox" id="ev_celyden" checked onchange="prepniCelyDen()"> celý deň</label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <div><label style="font-size:11px;font-weight:600;color:#5a6a8a;display:block;margin-bottom:3px">Od</label>
+        <div style="display:flex;gap:6px"><input type="date" id="ev_od_d" style="padding:8px;border:1.5px solid #dde1ea;border-radius:8px"><input type="time" id="ev_od_t" style="padding:8px;border:1.5px solid #dde1ea;border-radius:8px"></div></div>
+      <div><label style="font-size:11px;font-weight:600;color:#5a6a8a;display:block;margin-bottom:3px">Do</label>
+        <div style="display:flex;gap:6px"><input type="date" id="ev_do_d" style="padding:8px;border:1.5px solid #dde1ea;border-radius:8px"><input type="time" id="ev_do_t" style="padding:8px;border:1.5px solid #dde1ea;border-radius:8px"></div></div>
+    </div>
+    <label style="font-size:11px;font-weight:600;color:#5a6a8a;display:block;margin-bottom:3px">Popis</label>
+    <textarea id="ev_popis" rows="2" style="width:100%;box-sizing:border-box;padding:9px 11px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;resize:vertical" placeholder="voľný text (bez pacientskych údajov!)"></textarea>
+    <div id="ev_msg" style="min-height:18px;font-size:12.5px;margin-top:6px"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="ev_zmaz" class="btn btn-sec" style="color:#dc2626;border-color:#fecaca" onclick="zmazUdalost()">🗑 Zmazať</button>
+      <span style="flex:1"></span>
+      <button class="btn btn-sec" onclick="zavriUdalost()">Zrušiť</button>
+      <button class="btn btn-primary" onclick="ulozUdalost()">Uložiť</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
