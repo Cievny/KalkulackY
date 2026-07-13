@@ -21,14 +21,14 @@
     return sessionStorage.getItem(EK)||'';
   };
 
-  // Prihlásenie cez Google (OAuth) – presmeruje na Supabase, ten na Google a späť
+  // Prihlásenie cez Google (OAuth) – presmeruje na Supabase, ten na Google a späť.
+  // POZOR: vlastný „state" parameter sa do /authorize posielať NESMIE – GoTrue si
+  // state spravuje sám (podpísaný JWT) a cudzí odmietne s chybou bad_oauth_state.
+  // Ochrana pred session fixation je marker v sessionStorage nižšie.
   window.doGoogle=function(){
-    // náhodný „state" – návrat prijmeme len ak flow inicioval tento prehliadač (proti podvrhnutiu relácie)
-    let st='';
-    try{st=Math.random().toString(36).slice(2)+Date.now().toString(36);sessionStorage.setItem('cievny_oauth_state',st);}catch(e){}
+    try{sessionStorage.setItem('cievny_oauth_state','1');}catch(e){}
     const redirect=location.origin+'/tools/login/';
-    location.href=SB_URL+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(redirect)
-      +(st?'&state='+encodeURIComponent(st):'');
+    location.href=SB_URL+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(redirect);
   };
   // Spracovanie návratu z OAuth: tokeny prídu v URL fragmente (#access_token=…)
   async function handleOAuthCallback(){
@@ -38,10 +38,6 @@
     sessionStorage.removeItem('cievny_oauth_state');
     if(!started){history.replaceState(null,'',location.pathname+location.search);return false;}
     const p=new URLSearchParams(location.hash.slice(1));
-    // ak provider vrátil state, MUSÍ sedieť s uloženou hodnotou; ak ho nevrátil,
-    // ostáva aspoň kontrola existencie kľúča vyššie (nerozbiť login)
-    const respState=p.get('state');
-    if(respState&&respState!==started){history.replaceState(null,'',location.pathname+location.search);return false;}
     const at=p.get('access_token');if(!at)return false;
     const d={access_token:at,refresh_token:p.get('refresh_token')||'',expires_in:parseInt(p.get('expires_in')||'3600')};
     let emailOk=false;
@@ -319,6 +315,18 @@
   if('serviceWorker' in navigator){
     try{navigator.serviceWorker.register('/sw.js').catch(function(){});}catch(e){}
   }
+
+  // ak OAuth vrátil chybu (?error_code=…), ukáž ju na login stránke namiesto tichého zlyhania
+  function showOAuthError(){
+    if(location.pathname.indexOf('/login')<0)return;
+    const q=new URLSearchParams(location.search);
+    if(!q.get('error')&&!q.get('error_code'))return;
+    const desc=q.get('error_description')||q.get('error_code')||q.get('error');
+    const show=()=>{const m=document.getElementById('login-msg');if(m){m.textContent='Prihlásenie cez Google zlyhalo: '+desc+' – skúste znova.';m.style.color='#dc2626';}};
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',show);else show();
+    history.replaceState(null,'',location.pathname); // vyčisti chybu z URL
+  }
+  showOAuthError();
 
   // ak sa vraciame z Google (tokeny v URL fragmente), spracuj a presmeruj – inak bežná inicializácia
   handleOAuthCallback().then(handled=>{
