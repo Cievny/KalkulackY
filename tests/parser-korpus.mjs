@@ -247,5 +247,22 @@ const byKod = (r, k) => r.found.find(f => f.kod === k);
   ok('16: vek neznámy', d.vek === null);
 }
 
+/* ── syntetické: fajčenie – nikotinizmus vs. exnikotinizmus ── */
+{
+  const r = P.parse('OA: Exnikotinizmus, art. hypertenzia', 'sk');
+  const f = byKod(r, 'faj');
+  ok('synt: Exnikotinizmus → exfajčiar', f && f.patch.faj === true && f.patch.faj_ex === true, JSON.stringify(f?.patch));
+}
+{
+  const r = P.parse('OA: chronický nikotinizmus, art. hypertenzia', 'sk');
+  const f = byKod(r, 'faj');
+  ok('synt: chronický nikotinizmus → aktívny fajčiar', f && f.patch.faj === true && !f.patch.faj_ex, JSON.stringify(f?.patch));
+}
+{
+  const r = P.parse('OA: st.p. nikotinizme (10 rokov nefajčí)', 'sk');
+  const f = byKod(r, 'faj');
+  ok('synt: st.p. nikotinizme → exfajčiar', f && f.patch.faj_ex === true, JSON.stringify(f?.patch));
+}
+
 console.log(fail ? `\n${fail} korpusových testov ZLYHALO` : '\nVšetky korpusové testy prešli.');
 process.exit(fail ? 1 : 0);

@@ -141,7 +141,7 @@
     im:      /st\.?\s*p\.?\s*im\b|infarkt[a-z]* myokardu|\bn?stemi\b|\bpo im\b/,
     cmp:     /st\.?\s*p\.?\s*i?n?cmp\b|\bi?n?cmp\b|cievna mozgova prihoda|cevni mozkova prihoda|\biktus|\bstroke\b|\btia\b/,
     faj:     /fajciar|fajcen|\bfajci\b|\bfajcil|nikotinizm|kurak|kouri|koureni|kuractvi/,
-    fajEx:   /(ex|stop)\s*-?\s*(fajciar|kurak)|byval[a-z]* (fajciar|kurak)/,
+    fajEx:   /(ex|stop)\s*-?\s*(fajciar|kurak|nikotinizm|nikotinik)|byval[a-z]* (fajciar|kurak)|st\.?\s?p\.?\s?nikotinizm/,
     packy:   /(\d{1,3})\s*(?:pack[\s-]?years?|\bpy\b|balicko\s*-?\s*rok)/,
     dysl:    /dyslipidemi|\bdlp\b|hyperlipoproteinemi|\bhlp\b|hypercholesterolemi|hyperlipidemi/,
     statin:  /\bstatin|atorvastatin|rosuvastatin|simvastatin|fluvastatin|pravastatin|sortis|crestor|torvacard|rosucard|tulip|atoris|ezetimib|sorvasta|\brozor\b|rosazimib|zetovar|atoritimb|cornusan/,
@@ -300,11 +300,14 @@
     if ((m = findIn(S, RX.ichs)))   add('ichs', 'ICHS', m.line.sec === 'dg' ? 'dg' : 'text', true, { ichs: true }, quoteOf(m.line, m.m.index));
     if ((m = findIn(S, RX.im)))     add('im', 'st.p. IM', m.line.sec === 'dg' ? 'dg' : 'text', true, { im: true }, quoteOf(m.line, m.m.index));
     if ((m = findIn(S, RX.cmp)))    add('cmp', 'st.p. CMP/TIA', m.line.sec === 'dg' ? 'dg' : 'text', true, { cmp: true }, quoteOf(m.line, m.m.index));
-    if ((m = findIn(S, RX.faj))) {
-      var ex = findIn(S, RX.fajEx);
+    // fajEx najprv a nezávisle: „st.p. nikotinizme (10 rokov nefajčí)" – NEG
+    // v klauzule by inak zabil celý nález, hoci ide o ex-fajčiara
+    var ex = findIn(S, RX.fajEx);
+    if (ex || (m = findIn(S, RX.faj))) {
+      var fajM = ex || m;
       var py = findIn(S, RX.packy);
       add('faj', (ex ? (lang === 'cz' ? 'ex-kuřák' : 'exfajčiar') : (lang === 'cz' ? 'kuřák' : 'fajčiar')) + (py ? ' (' + py.m[1] + ' PY)' : ''),
-          'text', true, { faj: true, faj_ex: !!ex, faj_py: py ? parseInt(py.m[1], 10) : null }, quoteOf(m.line, m.m.index));
+          'text', true, { faj: true, faj_ex: !!ex, faj_py: py ? parseInt(py.m[1], 10) : null }, quoteOf(fajM.line, fajM.m.index));
     }
     if ((m = findIn(S, RX.dysl)))   add('dysl', lang === 'cz' ? 'dyslipidemie' : 'dyslipidémia', m.line.sec === 'dg' ? 'dg' : 'text', true, { dysl: {} }, quoteOf(m.line, m.m.index));
     if ((m = findIn(S, RX.chochp))) add('chochp', lang === 'cz' ? 'CHOPN' : 'CHOCHP', m.line.sec === 'dg' ? 'dg' : 'text', true, { chochp: true }, quoteOf(m.line, m.m.index));
