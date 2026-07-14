@@ -159,6 +159,13 @@ ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS sizing         TEXT;  -- JS
 ALTER TABLE cas_vykony    ADD COLUMN IF NOT EXISTS konz_detail TEXT;
 ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS konz_detail TEXT;
 
+-- 3k) PEVAR – sac filling (embolizačné plugy do vaku; objem = počet × 1,25 ml,
+--     objem 1 plugu je vo formulári editovateľný)
+ALTER TABLE pevar_vykony    ADD COLUMN IF NOT EXISTS sac_fill_pocet    INT;
+ALTER TABLE pevar_vykony    ADD COLUMN IF NOT EXISTS sac_fill_objem_ml NUMERIC;
+ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS sac_fill_pocet    INT;
+ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS sac_fill_objem_ml NUMERIC;
+
 -- 3j) EVK – staging DK ischémie (TASC II / GLASS / WIfI ako JSON:
 --     {auto:{...vypočítané}, vstupy:{tap,w,fi,tp}, korekcie:{tasc,glass,wifi}})
 --     + WIfI pri follow-up kontrolách

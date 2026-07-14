@@ -748,7 +748,9 @@ async function loadPEVAR(){
     statCard('Ø skiaskopia (min)',avgNum(rows,'fluoro_time_min')||'–')+
     statCard('Ø kontrast (ml)',avgNum(rows,'contrast_ml',0)||'–')+
     statCard('Komplikácie (n výkonov)',complRows(rows).length)+
-    statCard('Konverzie',rows.filter(r=>r.konverzia===true).length);
+    statCard('Konverzie',rows.filter(r=>r.konverzia===true).length)+
+    statCard('Sac filling (n)',rows.filter(r=>r.sac_fill_pocet>0).length)+
+    statCard('Ø plugov / objem',(()=>{const s=rows.filter(r=>r.sac_fill_pocet>0);if(!s.length)return '–';const p=Math.round(s.reduce((a,r)=>a+r.sac_fill_pocet,0)/s.length*10)/10;const o=Math.round(s.reduce((a,r)=>a+(+r.sac_fill_objem_ml||0),0)/s.length*10)/10;return p+' / '+o+' ml';})());
 
   const months={};rows.forEach(r=>{const m=monthKey(r.datum_zaznamu||r.created_at);if(m)months[m]=(months[m]||0)+1;});
   const mk=Object.keys(months).sort();mkChart('ch-pevar-month','bar',mk,mk.map(m=>months[m]),false);

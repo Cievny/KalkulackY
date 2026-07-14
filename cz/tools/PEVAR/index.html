@@ -563,6 +563,17 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <button type="button" class="add-btn" onclick="addVetva()">＋ Přidat větev/fenestraci</button>
 </div>
 
+<div class="tog">
+  <label class="thdr"><input type="checkbox" id="c_sacfill" onchange="tB('sacfill');gen()"><span>💧 Sac filling – embolizační plugy do vaku</span></label>
+  <div class="tbody" id="b_sacfill">
+    <div class="row r2">
+      <div class="f"><label>Počet implantovaných plugů</label><input type="number" id="sacfill_pocet" min="1" max="80" step="1" placeholder="napr. 8" oninput="gen()"></div>
+      <div class="f"><label>Objem 1 plugu (ml)</label><input type="number" id="sacfill_objem1" value="1.25" step="0.01" min="0" oninput="gen()"></div>
+    </div>
+    <div id="sacfill_sum" style="font-size:12.5px;color:#1e40af;font-weight:700;margin-top:2px"></div>
+  </div>
+</div>
+
 <div class="f"><label>Další postup / Komplikace</label>
   <textarea id="implantacia_komentar" rows="2" placeholder="Zadajte další postup alebo komplikace..." oninput="gen()"></textarea>
 </div>
@@ -1049,6 +1060,13 @@ function gen(){
     if(chk('spinalna_drenaz'))katLines.push('Spinální drenáž zavedena.');
   }
   if(komentar)katLines.push(komentar);
+  if(chk('c_sacfill')&&g('sacfill_pocet')){
+    const _sfN=parseInt(g('sacfill_pocet')),_sfV=parseFloat(g('sacfill_objem1'))||1.25;
+    const _sfObj=(Math.round(_sfN*_sfV*100)/100).toString().replace('.',',');
+    const _sfTvar=_sfN===1?'implantován 1 embolizační plug':(_sfN<5?('implantovány '+_sfN+' embolizační plugy'):('implantováno '+_sfN+' embolizačních plugů'));
+    katLines.push('Sac filling vaku aneuryzmatu: '+_sfTvar+', celkový objem výplně '+_sfObj+' ml.');
+    const _sfS=document.getElementById('sacfill_sum');if(_sfS)_sfS.textContent='Celkový objem výplně: '+_sfObj+' ml ('+_sfN+' × '+String(_sfV).replace('.',',')+' ml)';
+  }else{const _sfS=document.getElementById('sacfill_sum');if(_sfS)_sfS.textContent='';}
 
   const modParts=[];
   if(chk('modelovanie_telo')){
@@ -1328,6 +1346,8 @@ async function saveToSupabase(){
     clavien_dindo:g('st_clavien'),
     antitrombotika:[...document.querySelectorAll('.atb:checked')].map(e=>e.value).join(', '),
     sac_diameter_mm:g('sac_diameter_mm')?parseFloat(g('sac_diameter_mm')):null,
+    sac_fill_pocet:(chk('c_sacfill')&&g('sacfill_pocet'))?parseInt(g('sacfill_pocet')):null,
+    sac_fill_objem_ml:(chk('c_sacfill')&&g('sacfill_pocet'))?Math.round(parseInt(g('sacfill_pocet'))*(parseFloat(g('sacfill_objem1'))||1.25)*100)/100:null,
     neck_length_mm:g('neck_length_mm')?parseFloat(g('neck_length_mm')):null,
     neck_diameter_mm:g('neck_diameter_mm')?parseFloat(g('neck_diameter_mm')):null,
     neck_angle_alpha:g('neck_angle_alpha')?parseInt(g('neck_angle_alpha')):null,
@@ -1391,6 +1411,11 @@ async function saveToSupabase(){
     if(!r.ok&&r.status===400&&'katetrizacia_aorty' in payload){
       const _etxt=await r.clone().text();
       if(_etxt.includes('katetrizacia_aorty')){delete payload.katetrizacia_aorty;r=await _send();}
+    }
+    // stĺpce sac_fill_* ešte nemusia existovať (setup SQL 3k)
+    if(!r.ok&&r.status===400&&('sac_fill_pocet' in payload)){
+      const _etxt2=await r.clone().text();
+      if(_etxt2.includes('sac_fill')){delete payload.sac_fill_pocet;delete payload.sac_fill_objem_ml;r=await _send();}
     }
     if(r.ok){window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizováno ✓':'Uloženo ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizován ✓':'Uloženo ✓','#1d6f42');}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
@@ -1474,6 +1499,8 @@ function loadEditRecord(){
     sv('zaver_vykonu',record.zaver_vykonu);
     sv('st_dur',record.proc_duration_min);
     sv('sac_diameter_mm',record.sac_diameter_mm);
+    if(record.sac_fill_pocet){const _c=document.getElementById('c_sacfill');if(_c&&!_c.checked){_c.checked=true;tB('sacfill');}sv('sacfill_pocet',record.sac_fill_pocet);
+      if(record.sac_fill_objem_ml)sv('sacfill_objem1',Math.round(record.sac_fill_objem_ml/record.sac_fill_pocet*100)/100);}
     sv('neck_length_mm',record.neck_length_mm);
     sv('neck_diameter_mm',record.neck_diameter_mm);
     sv('neck_angle_alpha',record.neck_angle_alpha);
