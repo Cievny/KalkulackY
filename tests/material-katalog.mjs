@@ -79,5 +79,14 @@ ok(M._rozmery('').priemer === null, 'rozmery: prázdne');
   ok(await M.syncMaterial('https://x.supabase.co', {}, 'evk', 'X', null, [{ nazov: 'a' }]) === false, 'sync: chyba siete → false (best-effort)');
 }
 
+/* ── audit-fix regresie ── */
+ok(M.normalizuj('Astron Pulsar').nazov === 'Astron Pulsar', 'audit: „Astron Pulsar" sa nezmení na „Pulsar"');
+ok(M.normalizuj('Pulsar-18').nazov === 'Pulsar', 'audit: „Pulsar" ostáva Pulsar');
+ok(Array.isArray(M.rowsFromPevar(null)) && M.rowsFromPevar(null).length === 0, 'audit: rowsFromPevar(null) nespadne');
+{
+  const cz = M.rowsFromEvk([{ typ: 'stent', stent_typ: 'DES', stent_nazov: 'Eluvia', 'průměr': '6', dlzka: '120', tepna: 'AFS l.dx.' }]);
+  ok(cz[0].priemer_mm === 6, 'audit: CZ kľúč „průměr" sa zapíše do priemer_mm');
+}
+
 if (fails) { console.error(`\n${fails} testov materiálu zlyhalo.`); process.exit(1); }
 console.log('\nVšetky testy materiálového registra prešli.');

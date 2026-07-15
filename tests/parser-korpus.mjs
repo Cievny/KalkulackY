@@ -264,5 +264,16 @@ const byKod = (r, k) => r.found.find(f => f.kod === k);
   ok('synt: st.p. nikotinizme → exfajčiar', f && f.patch.faj_ex === true, JSON.stringify(f?.patch));
 }
 
+/* ── audit: negácia vymenovania + skratková bodka ── */
+{
+  const kod = txt => P.parse(txt, 'sk').found.map(f => f.kod);
+  ok('audit: „neguje DM, ICHS, CMP" negované všetky', !kod('OA: neguje DM, ICHS, CMP').some(k => ['dm', 'ichs', 'cmp'].includes(k)));
+  ok('audit: „bez zn. ICHS" negované', !kod('OA: bez zn. ICHS').includes('ichs'));
+  ok('audit: „bez evid. ICHS, AH na terapii" – ICHS preč, AH ostáva', !kod('OA: bez evid. ICHS, AH na terapii').includes('ichs') && kod('OA: bez evid. ICHS, AH na terapii').includes('ah'));
+  ok('audit: „…, ICHS prítomná" ostáva pozitívne', kod('OA: neguje alergie, ICHS prítomná').includes('ichs'));
+  ok('audit: „bez ICHS. DM na inzulíne" – DM nie je falošne negované', kod('OA: bez ICHS. DM na inzulíne').includes('dm'));
+  ok('audit: „DM neguje" postfix negované', !kod('OA: DM neguje').includes('dm'));
+}
+
 console.log(fail ? `\n${fail} korpusových testov ZLYHALO` : '\nVšetky korpusové testy prešli.');
 process.exit(fail ? 1 : 0);

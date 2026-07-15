@@ -1142,7 +1142,9 @@ async function impApply(){
   if(ab.disabled)return;
   ab.disabled=true;
   try{
-    // prepni board na cieľový deň – poradie nadväzuje a výsledok hneď vidno
+    // prepni board na denný pohľad cieľového dňa – inak loadRows() v týždňovom/
+    // mesačnom režime NEobnoví ROWS a duplicity/poradie by sa rátali zo zlého dňa
+    if(MODE!=='day')setMode('day');
     document.getElementById('datum').value=den;USER_DATE=true;await loadRows();
     let poradie=ROWS.length?Math.max(...ROWS.map(r=>r.poradie||0))+1:1;
     let pridane=0,preskocene=0,chyby=0;

@@ -1231,6 +1231,8 @@ function resetFuVetvy(){
 }
 async function saveFU(){
   if(!g('fu_id')){msgFu('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  if(saveFU._busy)return;saveFU._busy=true;   // ochrana před dvojklikem
+  const _fb=document.querySelector('button[onclick="saveFU()"]');if(_fb)_fb.disabled=true;
   const _exitus=chk('fu_exitus');
   const data={
     vykon_id:g('fu_id'),datum_kontroly:g('fu_datum'),casovy_bod:g('fu_bod'),zobrazenie:g('fu_zobr'),
@@ -1252,6 +1254,7 @@ async function saveFU(){
     if(r.ok){msgFu('✅ Follow-up uložen!','#1d6f42');['fu_sac','fu_pozn','fu_reint_detail'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});const ch=document.getElementById('fu_reint');if(ch)ch.checked=false;const el2=document.getElementById('fu_el');if(el2)el2.checked=false;resetFuExitus();resetFuVetvy();}
     else msgFu('❌ Chyba: '+r.status+(r.status===404?' (spusťte setup SQL)':''),'#dc2626');
   }catch(e){msgFu('❌ Chyba sítě','#dc2626');}
+  finally{saveFU._busy=false;if(_fb)_fb.disabled=false;}
 }
 
 // NIS-safe text: prazdne riadky dostanu medzeru (NIS ich inak zlepi) a konce riadkov su CRLF pre stare Windows editory
@@ -1387,6 +1390,7 @@ async function saveToSupabase(){
   if(_btn)_btn.disabled=true;
   try{
     const _isEdit=!!window._editRecordId;
+    const _vykonIdSaved=payload.vykon_id;   // pôvodné ID pre synchronizáciu materiálu (po edite sa z payloadu maže)
     if(!_isEdit){
       // kontrola duplicitního ID před INSERTem
       const _dupR=await fetch(SB_URL+'/rest/v1/cz_pevar_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
@@ -1396,8 +1400,11 @@ async function saveToSupabase(){
       }
     }
     if(_isEdit){
-      // mažeme jen null/undefined – prázdný řetězec '' ponecháváme, aby šlo pole při úpravě vyčistit
+      // mažeme jen null/undefined – prázdný řetězec '' ponecháváme, aby šlo pole při úpravě vyčistit.
+      // Sac filling má číselné sloupce: při odškrtnutí pošli do PATCHe null (ne vynechat), ať se DB vyčistí.
+      const _sfOff=!(chk('c_sacfill')&&g('sacfill_pocet'));
       Object.keys(payload).forEach(k=>{if(payload[k]==null)delete payload[k];});
+      if(_sfOff){payload.sac_fill_pocet=null;payload.sac_fill_objem_ml=null;}
       delete payload.vykon_id;
     }
     const _url=SB_URL+'/rest/v1/cz_pevar_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
@@ -1417,7 +1424,7 @@ async function saveToSupabase(){
       const _etxt2=await r.clone().text();
       if(_etxt2.includes('sac_fill')){delete payload.sac_fill_pocet;delete payload.sac_fill_objem_ml;r=await _send();}
     }
-    if(r.ok){try{MaterialKatalog.syncPevar(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'cz_pevar',payload);}catch(e){}window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizováno ✓':'Uloženo ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizován ✓':'Uloženo ✓','#1d6f42');}
+    if(r.ok){try{MaterialKatalog.syncPevar(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'cz_pevar',{...payload,vykon_id:_vykonIdSaved});}catch(e){}window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizováno ✓':'Uloženo ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizován ✓':'Uloženo ✓','#1d6f42');}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
   finally{if(_btn)_btn.disabled=false;}

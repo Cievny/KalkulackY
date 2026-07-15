@@ -63,7 +63,7 @@ const byKod = (res, kod) => res.found.find(f => f.kod === kod);
   ok(abi && abi.patch.abi === 1, '06: ABI 1,0 po výkone (nie 0,19 spred výkonu)');
   ok(abi && !abi.certain, '06: ABI je na overenie (❓), nie prednastavené');
   const zobr = byKod(r, 'zobr');
-  ok(zobr && zobr.patch.zobr === 'duplex', '06: zobrazenie duplex (CDUS kontrola)');
+  ok(!zobr, '06: EVK neponúka zobrazenie (nemá pole fu_zobr)');
 }
 
 /* ── sprava05: EVK – ABI hodnoty, Rutherford ── */
@@ -101,6 +101,16 @@ const byKod = (res, kod) => res.found.find(f => f.kod === kod);
   const r = P.parseFU(txt, 'evk', 'sk');
   const ex = byKod(r, 'exitus');
   ok(ex && !ex.certain, 'exitus: zachytený ako neistý (❓ overiť)');
+}
+
+/* ── audit: CZ tvary sa rozpoznajú (okluze / růst / regrese) ── */
+{
+  const okl = byKod(P.parseFU('Kontrola 5.5.2026\nDuplex: okluze stentu ACI l.sin.', 'cas', 'cz'), 'rest');
+  ok(okl && okl.patch.okluzia === true, 'CZ CAS: „okluze stentu" rozpoznaná');
+  const rust = byKod(P.parseFU('Kontrola\nCT: vak 62 mm, růst vaku aneuryzmatu', 'pevar', 'cz'), 'zmena');
+  ok(rust && rust.patch.zmena === 'rast', 'CZ PEVAR: „růst" → rast');
+  const reg = byKod(P.parseFU('Kontrola\nCT: vak v regresi (58 mm)', 'pevar', 'cz'), 'zmena');
+  ok(reg && reg.patch.zmena === 'regresi', 'CZ PEVAR: „regrese/regresi" → regresi');
 }
 
 if (fails) { console.error(`\n${fails} FU testov zlyhalo.`); process.exit(1); }

@@ -953,8 +953,9 @@ async function loadPROG(){
 async function loadAll(){
   document.getElementById('err-box').style.display='none';
   // Obnoviť musí prenačítať aj follow-upy – resetni cache flagy, aby ensureFU refetchol
-  const wasPub=PUB.fetched||PUB.fuError, wasVyk=VYK.opened;
+  const wasPub=PUB.fetched||PUB.fuError, wasVyk=VYK.opened, wasMat=MAT_LOADED;
   PUB.fetched=false;PUB.fetching=false;PUB.fuError=false;
+  MAT_LOADED=false;if(wasMat)loadMat(); // Obnoviť prenačíta aj materiálový register
   loadPOZ(); // nezávisle – nesmie zhodiť ostatné sekcie
   loadPROG(); // nezávisle – nesmie zhodiť ostatné sekcie
   const p=Promise.all([loadEVK(),loadCAS(),loadPEVAR()]);
@@ -977,7 +978,9 @@ let MAT_LOADED=false;
 async function loadMat(){
   if(MAT_LOADED)return;
   document.getElementById('mat-loading').style.display='block';
-  const rows=await fetchAll('material_pouzitie');
+  let rows;
+  try{rows=await fetchAll('material_pouzitie');}
+  catch(e){document.getElementById('mat-loading').innerHTML='❌ Materiálový register sa nepodarilo načítať (spustili ste SQL 3l?).<br><span style="font-size:12px;color:#9ca3af">'+String(e.message||e).slice(0,120)+'</span>';return;}
   MAT_LOADED=true;
   RAW.mat=rows;ensureExportBtn('mat');
   document.getElementById('mat-loading').style.display='none';

@@ -50,7 +50,12 @@
       }
     }
     if (!datum) {
+      // fallback len z HLAVIČKY (riadky pred prvým pacientom) – inak by sa vzal
+      // napr. dátum CT z „Dôvodu" v NIS bloku
       for (var j = 0; j < lines.length && !datum; j++) {
+        var mc0 = CISLOVANY.exec(lines[j]);
+        var mt0 = CAS.exec(lines[j]);
+        if ((mc0 && MENO_OK.test(mc0[1])) || (mt0 && MENO_OK.test(mt0[3]))) break; // začal program
         var nj = norm(lines[j]);
         if (/\bdna\b|schvalil/.test(nj)) continue;
         var d2 = DATUM.exec(lines[j]);

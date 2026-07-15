@@ -16,6 +16,15 @@
   function pad2(n) { n = parseInt(n, 10); return (n < 10 ? '0' : '') + n; }
   function fire(el, type) { try { el.dispatchEvent(new Event(type, { bubbles: true })); } catch (e) {} }
 
+  // validácia mesiaca/dňa v rodnom čísle (YYMMDD) – aby sa evidenčné číslo
+  // žiadanky (napr. 123456/2026) nezaevidovalo ako RČ pacienta
+  function rcOk(six) {
+    var mm = parseInt(six.slice(2, 4), 10), dd = parseInt(six.slice(4, 6), 10);
+    if (mm > 50) mm -= 50;      // žena
+    if (mm > 20 && mm <= 32) mm -= 20; // preplnenie od r. 2004
+    return mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31;
+  }
+
   // negácia v klauzule pred zhodou („bez prejavov ruptúry", „bez endoleaku")
   function negPred(nline, idx) {
     var od = Math.max(0, idx - 32);
@@ -33,9 +42,9 @@
     maxPriem:  /max[.]?\s*(?:diameter|diametr[a-z]*|priemer[a-z]*|diam\.?)[^\d\n]{0,15}(\d{2,3})(?:[.,]\d)?\s*(?:x\s*\d{2,3}\s*)?mm/g,
     rastZNa:   /z\s*(\d{2,3})\s*mm\s*na\s*(\d{2,3})\s*mm[^.\n]{0,45}?(\d{1,2})\s*(?:mesiac|mes\.)/,
     rastPriamo:/rast[a-z]*[^\d\n]{0,15}(\d{1,2})(?:[.,]\d)?\s*mm/,
-    krcokDlzka:/krc[oc]k[a-z]*[^\n]{0,30}?dlzk[a-z]*\D{0,8}(\d{1,2})(?:[.,]\d)?\s*mm|dlzk[a-z]*\s*krc[oc]k[a-z]*\D{0,8}(\d{1,2})(?:[.,]\d)?\s*mm/,
-    krcokPriem:/krc[oc]k[a-z]*[^\n]{0,40}?priemer[a-z]*\D{0,8}(\d{2})(?:[.,]\d)?\s*mm|priemer\s*krc[oc]k[a-z]*\D{0,8}(\d{2})(?:[.,]\d)?\s*mm/,
-    krcokAng:  /angul[a-z]*\D{0,12}(\d{2,3})/,
+    krcokDlzka:/krc[oc]?k[a-z]*[^\n]{0,30}?dlzk[a-z]*\D{0,8}(\d{1,2})(?:[.,]\d)?\s*mm|dlzk[a-z]*\s*krc[oc]?k[a-z]*\D{0,8}(\d{1,2})(?:[.,]\d)?\s*mm/,
+    krcokPriem:/krc[oc]?k[a-z]*[^\n]{0,40}?priemer[a-z]*\D{0,8}(\d{2})(?:[.,]\d)?\s*mm|priemer\s*krc[oc]?k[a-z]*\D{0,8}(\d{2})(?:[.,]\d)?\s*mm/,
+    krcokAng:  /angul[a-z]*[^\d\n]{0,12}(\d{2,3})\s*(?:°|stupn|deg)?/,
     aicDx:     /\baic\b[^\n]{0,14}?(?:l\.?\s?dx|dx\b|vpravo)[^\d\n,]{0,50}(\d{2})(?:[.,]\d)?\s*mm/,
     aicSin:    /\baic\b[^\n]{0,14}?(?:l\.?\s?sin|sin\b|vlavo)[^\d\n,]{0,50}(\d{2})(?:[.,]\d)?\s*mm/,
     aieDx:     /\baie\b[^\n]{0,14}?(?:l\.?\s?dx|dx\b|vpravo)[^\d\n,]{0,40}(\d{2})(?:[.,]\d)?\s*mm/,
@@ -97,7 +106,7 @@
 
     // rodné číslo → RČ + ročník + pohlavie (doplní formulár sám)
     for (i = 0; i < lines.length; i++) {
-      if ((m = RX.rc.exec(lines[i].n))) {
+      if ((m = RX.rc.exec(lines[i].n)) && rcOk(m[1])) {
         add('rc', 'Rodné číslo ' + m[1] + '/' + m[2], true, { rc: m[1] + '/' + m[2] }, quote(lines[i].raw, m.index));
         // iniciály: 2 slová s veľkým začiatkom tesne pred RČ (napr. „Mrkvička Ján 481205/123")
         var pred = lines[i].raw.slice(0, lines[i].raw.search(/\d{6}\s*\//));
@@ -210,10 +219,10 @@
     LIEKY.forEach(function (lk) { if (lk[1].test(cely)) lieky.push(lk[0]); });
     if (lieky.length) add('medikacia', 'Antitrombotiká: ' + lieky.join(', '), true, { medikacia: lieky.join(', ') }, '');
 
-    // urgencia + navrhovaný výkon
-    if ((m = new RegExp(RX.urgent.source, 'g').exec(cely)) && !negPred(cely.slice(Math.max(0, m.index - 60), m.index) + '', 60)) {
-      var urg = /emergentn/.test(m[0]) || /ruptur/.test(m[0]) ? 'emergentné' : 'urgentné';
-      if (!(/ruptur/.test(m[0]) && negPred(cely, m.index))) add('urgencia', 'Urgencia: ' + urg, false, { urgencia: urg }, quote(m[0], 0));
+    // urgencia + navrhovaný výkon (negáciu „nie je urgentné"/„bez ruptúry" berie negPred)
+    if ((m = new RegExp(RX.urgent.source, 'g').exec(cely)) && !negPred(cely, m.index)) {
+      var urg = /emergentn|ruptur/.test(m[0]) ? 'emergentné' : 'urgentné';
+      add('urgencia', 'Urgencia: ' + urg, false, { urgencia: urg }, quote(cely.slice(Math.max(0, m.index - 20), m.index + 20), Math.min(20, m.index)));
     }
     if ((m = RX.vykon.exec(cely))) {
       var vk = m[1] === 'embolizaci' ? 'Embolizácia' : m[1].toUpperCase();

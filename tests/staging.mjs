@@ -90,5 +90,26 @@ ok(S.wifi(2, 1, 1).riziko === 'M' && S.wifi(2, 1, 1).stadium === 3, 'WIfI: W2 I1
 ok(S.wifi(3, 3, 3).riziko === 'H' && S.wifi(3, 3, 3).stadium === 4, 'WIfI: W3 I3 fI3 → H / 4');
 ok(S.wifi(null, 1, 0).stadium === null, 'WIfI: neúplné vstupy → null');
 
+/* ── audit-fix regresie ── */
+// lézia zadaná IBA segmentovým riadkom (hlavný select ostal normálny)
+{
+  const m = S.lezieZEvk({ _segs: { f_AFS_d: [{ seg: 'stredný', val: 'oklúzia' }] } }, []);
+  ok(m.d.AFS && m.d.AFS.stav === 'okluzia', 'audit: lézia len z _segs sa nestratí');
+}
+// jednotlivá stenóza >15 cm → C (nie A)
+ok(S.tascFP(M({ AFS: { stav: 'stenoza', dlzka: 200 } }), 'd').tasc === 'C', 'audit: jedna stenóza 20 cm → C');
+ok(S.tascFP(M({ AFS: { stav: 'stenoza', dlzka: 150 } }), 'd').tasc === 'B', 'audit: stenóza presne 15 cm ostáva B');
+// in-stent restenóza → min C
+{
+  const m = S.lezieZEvk({ f_AFS_d: 'in-stent restenóza' }, [{ typ: 'stent', tepna: 'AFS l.dx.', lezia_mm: '40' }]);
+  ok(m.d.AFS.restenoza === true, 'audit: in-stent restenóza označená');
+  ok(S.tascFP(m, 'd').tasc === 'C', 'audit: in-stent restenóza → C');
+}
+// bilaterálne AIE 3–10 cm len keď OBE strany >3 cm
+ok(S.tascAI(M({ AIE: { stav: 'stenoza', dlzka: 40 } }, { AIE: { stav: 'stenoza', dlzka: 10 } })).tasc === 'B', 'audit: unilat. AIE 4 cm + kontralat. 1 cm → B (nie C)');
+ok(S.tascAI(M({ AIE: { stav: 'stenoza', dlzka: 40 } }, { AIE: { stav: 'stenoza', dlzka: 40 } })).tasc === 'C', 'audit: bilat. AIE 4 cm → C');
+// odstupová (flush) CTO AFS → GLASS FP grade 3
+ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 80, subseg: 'odstup' } }), 'd').grade === 3, 'audit: flush CTO (odstup) → GLASS FP 3');
+
 if (fails) { console.error(`\n${fails} staging testov zlyhalo.`); process.exit(1); }
 console.log('\nVšetky staging testy prešli.');

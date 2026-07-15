@@ -87,5 +87,17 @@ Lieky: Anopyrin 100mg, Xarelto 20mg`;
   ok(byKod(r, 'vykon')?.patch.vykon === 'EVAR', 'ruptúra: výkon EVAR');
 }
 
+/* ── audit-fix regresie ── */
+{
+  const b = (txt, kod) => { const f = P.parsePZ(txt).found.find(x => x.kod === kod); return f ? f.patch : null; };
+  ok(!b('Žiadanka ev. č. 123456/2026, AAA 55 mm', 'rc'), 'audit: evidenčné číslo (neplatný mesiac) sa neberie ako RČ');
+  ok(b('Pacient 480512/1234, AAA', 'rc')?.rc === '480512/1234', 'audit: platné RČ ostáva');
+  ok(b('CT: dĺžka krčka 12 mm', 'krcok_dlzka')?.krcok_dlzka === 12, 'audit: „krčka" (genitív) – dĺžka');
+  ok(b('CT: priemer krčka 26 mm', 'krcok_priemer')?.krcok_priemer === 26, 'audit: „krčka" (genitív) – priemer');
+  ok(!b('AAA, angulovaný priebeh\n58 mm max. šírka vaku', 'krcok_ang'), 'audit: rozmer vaku z ďalšieho riadku nie je angulácia');
+  ok(!b('AAA 52 mm, nie je urgentné, plánovaná kontrola', 'urgencia'), 'audit: „nie je urgentné" sa neponúkne ako urgentné');
+  ok(b('AAA 80 mm, urgentne prosím o EVAR', 'urgencia')?.urgencia === 'urgentné', 'audit: skutočná urgencia ostáva');
+}
+
 if (fails) { console.error(`\n${fails} testov požiadaviek zlyhalo.`); process.exit(1); }
 console.log('\nVšetky testy extraktora požiadaviek prešli.');

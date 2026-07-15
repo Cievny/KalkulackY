@@ -28,7 +28,7 @@
   // (AFS ~30 cm; prox/stred/dist ≈ tretiny; krurálne tepny ~30 cm)
   function odhadDlzky(seg) {
     if (seg === 'celý' || seg === 'cely') return 300;
-    if (seg === 'proximálny' || seg === 'stredný' || seg === 'distálny') return 100;
+    if (seg === 'proximálny' || seg === 'stredný' || seg === 'distálny' || seg === 'odstup') return 100;
     return null;
   }
 
@@ -55,23 +55,32 @@
     dsa = dsa || {};
     var model = { Ao: null, d: {}, s: {}, chybajuceDlzky: [] };
     var segsExtra = dsa._segs || {};
-    Object.keys(dsa).forEach(function (f) {
-      if (f === '_segs' || /_text$/.test(f)) return;
+    // zjednotenie kľúčov: lézia môže byť zadaná IBA segmentovým riadkom (_segs),
+    // keď hlavný select ostal „bez závažnej stenózy" – tie EVK do dsa nepridá
+    var kluce = {};
+    Object.keys(dsa).forEach(function (f) { if (f !== '_segs' && !/_text$/.test(f)) kluce[f] = 1; });
+    Object.keys(segsExtra).forEach(function (f) { kluce[f] = 1; });
+    Object.keys(kluce).forEach(function (f) {
       var kl = dsaKluc(f);
       if (!kl) return;
-      var stav = stavZ(dsa[f]);
+      var raw = dsa[f];
+      var stav = stavZ(raw);
       var seg = null;
+      var rest = /in-?stent|restenoz/i.test(String(raw || ''));
       // subsegmentové nálezy: vezmi najhorší + jeho subsegment
       (segsExtra[f] || []).forEach(function (sx) {
         var s2 = stavZ(sx.val);
-        if (s2 && (ZAV[s2] || 0) >= (ZAV[stav] || 0)) { stav = horsi(stav, s2); seg = sx.seg || seg; }
+        if (s2 && (ZAV[s2] || 0) >= (ZAV[stav] || 0)) {
+          stav = horsi(stav, s2); seg = sx.seg || seg;
+          if (/in-?stent|restenoz/i.test(String(sx.val || ''))) rest = true;
+        }
       });
       if (!stav || stav === 'mierna') {
         if (stav === 'mierna' && kl.seg !== 'Ao') (kl.strana ? model[kl.strana] : model)[kl.seg] = { stav: 'mierna' };
         return;
       }
       if (kl.seg === 'Ao') { model.Ao = { stav: stav }; return; }
-      model[kl.strana][kl.seg] = { stav: stav, dlzka: odhadDlzky(seg), subseg: seg, kalcif: false, cto: stav === 'okluzia' };
+      model[kl.strana][kl.seg] = { stav: stav, dlzka: odhadDlzky(seg), subseg: seg, kalcif: false, cto: stav === 'okluzia', restenoza: rest };
     });
     // dĺžky/CTO/kalcifikácia z intervenčných položiek (presnejšie než odhad)
     (intervDetail || []).forEach(function (it) {
@@ -128,7 +137,7 @@
       if (sten(y.aie) && (sten(y.afc) || okl(y.afc))) return { tasc: 'C', pozn: ['stenóza AIE prechádzajúca do AFC'] };
       if (okl(y.aie) && y.aie.kalcif) return { tasc: 'C', pozn: ['ťažko kalcifikovaná oklúzia AIE'] };
     }
-    if (sten(d.aie) && sten(s.aie) && ((d.aie.dlzka || 0) > 30 || (s.aie.dlzka || 0) > 30))
+    if (sten(d.aie) && sten(s.aie) && (d.aie.dlzka || 0) > 30 && (s.aie.dlzka || 0) > 30)
       return { tasc: 'C', pozn: ['bilaterálne stenózy AIE 3–10 cm'] };
     // B
     if (okl(d.aic) || okl(s.aic)) return { tasc: 'B', pozn: ['unilaterálna oklúzia AIC'] };
@@ -159,14 +168,16 @@
     var popOkl = p1.stav === 'okluzia' || p2.stav === 'okluzia' || p3.stav === 'okluzia';
     var popInfra = (p2.stav === 'stenoza' || p2.stav === 'okluzia' || p3.stav === 'stenoza' || p3.stav === 'okluzia');
     var total = lez.reduce(function (a, e) { return a + (e.dlzka || 0); }, 0);
+    var restenoza = [afs, p1, p2, p3].some(function (e) { return e.restenoza; });
 
     // D: CTO AFC alebo AFS >20 cm (so zasahom popliteálnej); CTO popliteálnej + trifurkácie
     if (afc.stav === 'okluzia') return { tasc: 'D', pozn: ['chronická oklúzia AFC'] };
     if (afsOkl && (afsL > 200 || (afsL === 0 && afs.subseg === 'celý'))) return { tasc: 'D', pozn: ['CTO AFS >20 cm'] };
     if (popOkl && (ttf.stav === 'okluzia' || ttf.stav === 'stenoza')) return { tasc: 'D', pozn: ['CTO popliteálnej + proximálna trifurkácia'] };
-    // C: viacnásobné spolu >15 cm; recidíva (in-stent)
-    if (total > 150 && lez.length > 1) return { tasc: 'C', pozn: ['lézie spolu >15 cm'] };
+    // C: jednotlivé/viacnásobné spolu >15 cm; CTO AFS 15–20 cm; recidíva (in-stent)
+    if (total > 150) return { tasc: 'C', pozn: [lez.length > 1 ? 'lézie spolu >15 cm' : 'lézia >15 cm'] };
     if (afsOkl && afsL > 150) return { tasc: 'C', pozn: ['CTO AFS 15–20 cm'] };
+    if (restenoza) return { tasc: 'C', pozn: ['in-stent restenóza – recidíva'] };
     // B: jednotlivé ≤15 cm; oklúzia 5–15 cm; infragenikulárna popliteálna; viac lézií ≤5 cm
     if (afsOkl && afsL > 50) return { tasc: 'B', pozn: ['oklúzia AFS 5–15 cm'] };
     if (!afsOkl && afsL > 100 && afsL <= 150) return { tasc: 'B', pozn: ['stenóza 10–15 cm'] };
@@ -188,7 +199,7 @@
     var afsL = afs.dlzka || 0;
     var afsSig = afs.stav === 'stenoza' || afs.stav === 'okluzia';
     var afsOkl = afs.stav === 'okluzia';
-    var flush = afsOkl && afs.subseg === 'proximálny'; // odstupová oklúzia ~ flush
+    var flush = afsOkl && (afs.subseg === 'proximálny' || afs.subseg === 'odstup'); // odstupová oklúzia ~ flush
     var popSig = [p1, p2, p3].some(function (e) { return e.stav === 'stenoza'; });
     var popOkl = [p1, p2, p3].some(function (e) { return e.stav === 'okluzia'; });
     var trif = (M.TTF || {}).stav != null && (M.TTF || {}).stav !== 'mierna';

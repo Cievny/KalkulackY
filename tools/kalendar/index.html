@@ -281,11 +281,14 @@ function ziskajToken(){
       if(!tokClient)tokClient=google.accounts.oauth2.initTokenClient({
         client_id:window.GCAL_CLIENT_ID,
         scope:'https://www.googleapis.com/auth/calendar.events',
-        callback:t=>{
-          if(t&&t.access_token){GTOKEN=t.access_token;GTOKEN_EXP=Date.now()+(t.expires_in||3600)*1000;res(GTOKEN);}
-          else rej(new Error('prihlásenie zrušené'));
-        }
+        callback:()=>{}   // nastaví sa pri každom volaní nižšie (inak drží starý Promise po expirácii)
       });
+      // callback musí vždy rezolvovať AKTUÁLNY Promise – inak po expirácii tokenu
+      // (aj po 401) druhé volanie visí navždy na „⏳ Ukladám…"
+      tokClient.callback=t=>{
+        if(t&&t.access_token){GTOKEN=t.access_token;GTOKEN_EXP=Date.now()+(t.expires_in||3600)*1000;res(GTOKEN);}
+        else rej(new Error('prihlásenie zrušené'));
+      };
       tokClient.requestAccessToken();
     }).catch(rej);
   });

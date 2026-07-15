@@ -95,7 +95,21 @@
     if (/^\s*neguje/.test(line)) return true;
     // negácia platí pre celú klauzulu – „DM neguje" aj „bez ICHS"
     var cl = clauseOf(line, matchIdx);
-    return NEG.test(cl.text);
+    if (NEG.test(cl.text)) return true;
+    // skratková bodka odseka negáciu od nálezu: „bez zn. ICHS", „bez evid. ICHS"
+    // (whitelist skratiek, aby sa nenegoval nasledujúci nález za koncom vety)
+    var pre = line.slice(Math.max(0, matchIdx - 34), matchIdx);
+    if (/\b(bez|neprit\w*|neevid\w*|vylucen\w*|vyloucen\w*)\s+(zn|znam\w*|evid\w*|susp\w*|vyj\w*|jednozn\w*|klin\w*|prejav\w*|priznak\w*|prizna\w*)\.?\s*$/i.test(pre)) return true;
+    // vymenovanie za „neguje/popiera DM, ICHS, CMP" – sloveso pred čiarkovým
+    // zoznamom; aplikuj LEN ak vlastná klauzula je holá položka (bez prísudku
+    // za termínom), aby „…, ICHS prítomná" ostalo pozitívne
+    var sStart = 0;
+    for (var k = matchIdx - 1; k >= 0; k--) { if (';.'.indexOf(line[k]) >= 0) { sStart = k + 1; break; } }
+    if (/\b(neguje|neguju|popiera|popira|neudava)\b/i.test(line.slice(sStart, matchIdx))) {
+      var tail = cl.text.slice(matchIdx - cl.start).replace(/^\s*\S+/, '');
+      if (!/\s[a-z]{4,}/i.test(tail)) return true;
+    }
+    return false;
   }
 
   // Prvá nenegovaná zhoda regexu v použiteľných sekciách.
@@ -676,14 +690,14 @@
     restPct:  /restenoz[a-z]*[^,;\n]{0,20}?(\d{2})\s*[-–]?\s*\d{0,2}\s*%|(\d{2})\s*[-–]?\s*\d{0,2}\s*%[^,;\n]{0,12}restenoz/,
     rest:     /restenoz/,
     bezRest:  /bez restenoz|stent[^,;.\n]{0,35}(priechodn|pruchodn|trif|stihl)|priechodn[a-z]*[^,;.\n]{0,15}stent/,
-    okluzia:  /okluzi[a-z]*[^,;\n]{0,12}stent|stent[^,;\n]{0,15}okl(u|ú)dovan|uzaver[^,;\n]{0,12}stentu/,
+    okluzia:  /okluz[a-z]*[^,;\n]{0,12}stent|stent[^,;\n]{0,15}okl(u|ú)dovan|uzaver[^,;\n]{0,12}stentu/,
     abi:      /\b([rl]?abi)\b[^0-9\n]{0,18}(\d[.,]\d{1,2})/,
     ruth:     /ruthe?r?for?d[a-z]*[^\d\n]{0,10}(i{1,3})?\/?\s*([0-6])\b/,
     endoleak: /endoleak[a-z]*(?:[^,;\n]{0,20}?typu?\s*\.?\s*(ia|ib|iiib|iiia|iii|ii|iv|v)\b)?/,
     sac:      /vak[a-z]*[^\n]{0,60}?(\d{2,3})(?:\s*x\s*(\d{2,3}))?\s*mm|max\.?\s*(?:priemer|diameter)[^\d\n]{0,15}(\d{2,3})(?:\s*x\s*(\d{2,3}))?\s*mm/,
-    regresia: /regresi/,
+    regresia: /regres/,
     stacio:   /stacionarn|bez narastu|bez rastu|bez zvacsen/,
-    rast:     /(progresi|narast|\brast)[^\n]{0,20}(vaku|diametr|aneuryzm)|vak[^\n]{0,30}(progresi|narast)/,
+    rast:     /(progresi|narast|\brast|\brust)[^\n]{0,20}(vaku|diametr|aneuryzm)|vak[^\n]{0,30}(progresi|narast|rust)/,
     reint:    /reintervenc|\bre-?pta\b|\bredo\b/,
     exitus:   /\bexitus\b|zomrel[a]?\b|umrel[a]?\b|zemrel[a]?\b/,
     tia:      /\btia\b/,
@@ -770,13 +784,16 @@
       if (iso) { add('datum', t.L.datum + ' ' + iso, true, { datum: iso }, quoteOf(S[i], 0)); break; }
     }
 
-    // zobrazenie – vyhráva modalita s najviac zmienkami; istá len ak je jediná
-    var zc = [
-      ['CTA', 'CTA', findFUAll(S, RXF.zobrCta, { noneg: true }).length],
-      ['duplex', 'duplex USG', findFUAll(S, RXF.zobrUsg, { noneg: true }).length],
-      ['MRA', 'MRA', findFUAll(S, RXF.zobrMra, { noneg: true }).length]
-    ].sort(function (a, b) { return b[2] - a[2]; });
-    if (zc[0][2] > 0) add('zobr', t.L.zobr + ': ' + zc[0][1], zc[1][2] === 0 && zc[2][2] === 0, { zobr: zc[0][0] }, '');
+    // zobrazenie – vyhráva modalita s najviac zmienkami; istá len ak je jediná.
+    // EVK follow-up nemá pole na zobrazenie, tak ho neponúkame (nebolo by kam vyplniť)
+    if (tool !== 'evk') {
+      var zc = [
+        ['CTA', 'CTA', findFUAll(S, RXF.zobrCta, { noneg: true }).length],
+        ['duplex', 'duplex USG', findFUAll(S, RXF.zobrUsg, { noneg: true }).length],
+        ['MRA', 'MRA', findFUAll(S, RXF.zobrMra, { noneg: true }).length]
+      ].sort(function (a, b) { return b[2] - a[2]; });
+      if (zc[0][2] > 0) add('zobr', t.L.zobr + ': ' + zc[0][1], zc[1][2] === 0 && zc[2][2] === 0, { zobr: zc[0][0] }, '');
+    }
 
     // restenóza / priechodnosť / oklúzia
     var hits;
@@ -878,12 +895,12 @@
     if (res.tool === 'evk') {
       if (d.okluzia) setSel('fu_pat', function (v) { return v.indexOf('okluzia') === 0 || v.indexOf('okl') === 0; });
       else if (d.rest_band) setSel('fu_pat', function (v) { return v.indexOf('restenoz') === 0; });
-      else if (d.bez_rest) setSel('fu_pat', function (v) { return v === 'primarna patencia'; });
+      else if (d.bez_rest) setSel('fu_pat', function (v) { return v.indexOf('primarn') === 0; });
       if (d.abi) setIfEmpty('fu_abi', d.abi);
       if (d.ruth) setSel('fu_ruth', function (v) { return new RegExp('\\/' + d.ruth + ' ').test(v + ' ') || v.indexOf('/' + d.ruth) >= 0 || v.indexOf(d.ruth + '/') === 2; });
     }
     if (res.tool === 'cas') {
-      if (d.okluzia) setSel('fu_rest', function (v) { return v.indexOf('okluzia') === 0; });
+      if (d.okluzia) setSel('fu_rest', function (v) { return v.indexOf('okluzia') === 0 || v.indexOf('okluze') === 0; });
       else if (d.rest_band === '<50') setSel('fu_rest', function (v) { return v.indexOf('<50') === 0; });
       else if (d.rest_band === '50-70') setSel('fu_rest', function (v) { return v.indexOf('50') === 0; });
       else if (d.rest_band === '>70') setSel('fu_rest', function (v) { return v.indexOf('>70') === 0; });
@@ -898,7 +915,12 @@
         if (d.el_typ) setSel('fu_el_typ', function (v) { return v === norm(d.el_typ) || v.indexOf(norm(d.el_typ)) === 0; });
       }
       if (d.sac) setIfEmpty('fu_sac', d.sac);
-      if (d.zmena) setSel('fu_sac_zmena', function (v) { return v.indexOf(norm(d.zmena)) >= 0 || (d.zmena === 'rast' && v.indexOf('rast') === 0); });
+      // pozor na CZ tvary: „regrese" (regresi), „růst"→norm „rust" (rast)
+      if (d.zmena) setSel('fu_sac_zmena', function (v) {
+        if (d.zmena === 'rast') return v.indexOf('rast') === 0 || v.indexOf('rust') === 0;
+        if (d.zmena === 'regresi') return v.indexOf('regres') === 0;
+        return v.indexOf(norm(d.zmena)) >= 0;
+      });
     }
     if (d.reint) tickCheckbox(document.getElementById('fu_reint'));
     if (d.exitus) tickCheckbox(document.getElementById('fu_exitus'));

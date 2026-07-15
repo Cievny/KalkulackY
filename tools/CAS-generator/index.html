@@ -1185,6 +1185,8 @@ function resetFuExitus(){
 }
 async function saveFU(){
   if(!g('fu_id')){msgFu('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  if(saveFU._busy)return;saveFU._busy=true;   // ochrana pred dvojklikom
+  const _fb=document.querySelector('button[onclick="saveFU()"]');if(_fb)_fb.disabled=true;
   const _exitus=chk('fu_exitus');
   const data={
     vykon_id:g('fu_id'),datum_kontroly:g('fu_datum'),casovy_bod:g('fu_bod'),zobrazenie:g('fu_zobr'),
@@ -1201,6 +1203,7 @@ async function saveFU(){
     if(r.ok){msgFu('✅ Follow-up uložený!','#1d6f42');['fu_rest','fu_neuro','fu_pozn','fu_reint_detail'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});const ch=document.getElementById('fu_reint');if(ch)ch.checked=false;resetFuExitus();}
     else msgFu('❌ Chyba: '+r.status+(r.status===404?' (spustite setup SQL)':''),'#dc2626');
   }catch(e){msgFu('❌ Chyba siete','#dc2626');}
+  finally{saveFU._busy=false;if(_fb)_fb.disabled=false;}
 }
 
 // NIS-safe text: prazdne riadky dostanu medzeru (NIS ich inak zlepi) a konce riadkov su CRLF pre stare Windows editory

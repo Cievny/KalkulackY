@@ -16,6 +16,7 @@
   var KATALOG = [
     // periférne stenty
     { re: /absolute\s*pro/, nazov: 'Absolute Pro', vyrobca: 'Abbott', kategoria: 'BMS' },
+    { re: /astron\s*pulsar/, nazov: 'Astron Pulsar', vyrobca: 'Biotronik', kategoria: 'BMS' },
     { re: /pulsar/, nazov: 'Pulsar', vyrobca: 'Biotronik', kategoria: 'BMS' },
     { re: /astron/, nazov: 'Astron', vyrobca: 'Biotronik', kategoria: 'BMS' },
     { re: /biomimics/, nazov: 'BioMimics 3D', vyrobca: 'Veryan', kategoria: 'BMS' },
@@ -119,6 +120,8 @@
   };
   function rowsFromEvk(intervDetail) {
     var out = [];
+    // CZ formulár ukladá priemer pod kľúčom „průměr" – akceptuj oba
+    var pr = function (it) { return it.priemer != null ? it.priemer : it['průměr']; };
     (intervDetail || []).forEach(function (it) {
       if (!it || !it.typ) return;
       var tepna = it.tepna && it.tepna.indexOf('tepna') < 0 ? it.tepna : '';
@@ -129,11 +132,11 @@
           (/DES/i.test(it.stent_typ || '') ? 'DES' :
            (/kryt|graft/i.test(it.stent_typ || '') ? 'krytý stent' :
             (kn0 && (kn0.kategoria === 'DES' || kn0.kategoria === 'krytý stent') ? kn0.kategoria : 'BMS')));
-        var r1 = radek(kat, it.stent_nazov, it.priemer, it.dlzka, 1, tepna || it.segment);
+        var r1 = radek(kat, it.stent_nazov, pr(it), it.dlzka, 1, tepna || it.segment);
         if (r1 && (r1.nazov || r1.kategoria)) out.push(r1);
       } else if (EVK_TYP[it.typ]) {
-        if (!it.nazov && !it.priemer && !it.dlzka) return; // prázdny riadok
-        var r2 = radek(EVK_TYP[it.typ], it.nazov, it.priemer, it.dlzka, 1, tepna);
+        if (!it.nazov && pr(it) == null && !it.dlzka) return; // prázdny riadok
+        var r2 = radek(EVK_TYP[it.typ], it.nazov, pr(it), it.dlzka, 1, tepna);
         if (r2) out.push(r2);
       } else if (it.typ === 'aterektomia') {
         out.push(radek('aterektómia', it.device || 'aterektomický katéter', null, null, 1, tepna));
@@ -148,6 +151,7 @@
 
   // PEVAR: SG telo + extenzie + vetvy (bridging) + plugy + modelovacie balóny
   function rowsFromPevar(p) {
+    p = p || {};
     var out = [];
     var sgR = rozmery(p.sg_rozmery);
     if (p.sg_nazov) out.push(radek('stentgraft', p.sg_nazov, sgR.priemer, sgR.dlzka, 1, 'aorta'));
@@ -201,7 +205,8 @@
     return syncMaterial(sbUrl, headers, zdroj, fullData.vykon_id, fullData.datum || null, rowsFromEvk(det));
   }
   function syncPevar(sbUrl, headers, zdroj, payload) {
-    return syncMaterial(sbUrl, headers, zdroj, payload.vykon_id, payload.datum || null, rowsFromPevar(payload));
+    // PEVAR/CAS payload má dátum pod kľúčom datum_zaznamu (EVK má datum)
+    return syncMaterial(sbUrl, headers, zdroj, payload.vykon_id, payload.datum_zaznamu || payload.datum || null, rowsFromPevar(payload));
   }
 
   var API = {

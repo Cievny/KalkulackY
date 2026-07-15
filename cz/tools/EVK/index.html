@@ -1287,7 +1287,7 @@ function collectFullData(){
     pristup_kat:g('kat'),
     pristup_sheath:g('sheath'),
     pristup_sheath_dlz:g('sheathdlz'),
-    ...(document.getElementById('c_ivsheath')?.checked?{interv_sheath:g('iv_sheath'),interv_sheath_dlz:g('iv_sheath_dlz'),interv_sheath_znacka:g('iv_sheath_zn')==='vlastní'?g('iv_sheath_zn_c'):g('iv_sheath_zn')}:{}),
+    ...(document.getElementById('c_ivsheath')?.checked?{interv_sheath:g('iv_sheath'),interv_sheath_dlz:g('iv_sheath_dlz'),interv_sheath_znacka:g('iv_sheath_zn')==='vlastní'?g('iv_sheath_zn_c'):g('iv_sheath_zn')}:{interv_sheath:'',interv_sheath_dlz:'',interv_sheath_znacka:''}),
     anestazia:g('anes'),
     kontrast:[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join('+'),
     vodic:g('vodic')==='vlastní'?(g('vodic_c')||''):g('vodic'),
@@ -1348,7 +1348,7 @@ async function saveToSheets(){
     }
     const tasks=[];
     tasks.push(saveToSupabase('cz_evk_vykony',fullData).then(r=>{
-      if(r.ok){try{MaterialKatalog.syncEvk(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'cz_evk',fullData);}catch(e){}}
+      if(r.ok){try{const _md=(window._editRecordId&&window._editVykonId)?{...fullData,vykon_id:window._editVykonId}:fullData;MaterialKatalog.syncEvk(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'cz_evk',_md);}catch(e){}}
       return r.ok?'sb_ok':'sb_err:'+r.status;
     }).catch(()=>'sb_err'));
     const url=g('apps_script_url');
@@ -1376,6 +1376,9 @@ async function saveToSheets(){
 async function saveFUToSheets(){
   const url=g('apps_script_url');
   if(!g('fu_id')){msg('fu_msg','⚠️ Vyplňte ID výkonu','#b45309');return;}
+  if(saveFUToSheets._busy)return;saveFUToSheets._busy=true;   // ochrana před dvojklikem → duplicitní follow-up
+  const _fb=document.querySelector('button[onclick="saveFUToSheets()"]');if(_fb)_fb.disabled=true;
+  try{
   msg('fu_msg','⏳ Ukládám...','#3b82f6');
   const amput=document.getElementById('fu_amput').checked?(g('fu_amput_typ')||'áno'):'nie';
   const exitusOn=document.getElementById('fu_exitus').checked;
@@ -1403,6 +1406,7 @@ async function saveFUToSheets(){
   if(results[0]==='sb_ok'){msg('fu_msg','✅ Follow-up uložen!','#1d6f42');resetFuExitus();}
   else if(results.includes('gs_ok'))msg('fu_msg','⚠️ Uloženo jen do Sheets – zápis do databáze selhal','#b45309');
   else msg('fu_msg','❌ Chyba uložení','#dc2626');
+  }finally{saveFUToSheets._busy=false;if(_fb)_fb.disabled=false;}
 }
 function toggleFuExitus(){
   const b=document.getElementById('fu_exitus_box');
@@ -1571,6 +1575,7 @@ function loadEditRecord(){
     if(tool!=='EVK')return;
     sessionStorage.removeItem('cievny_edit');
     window._editRecordId=record.id;
+    window._editVykonId=record.vykon_id;   // pôvodné ID pre synchronizáciu materiálu
     const sv=(id,val)=>{if(val==null||val==='')return;const el=document.getElementById(id);if(el)el.value=val;};
 
     // Banner

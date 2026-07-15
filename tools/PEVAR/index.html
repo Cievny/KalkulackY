@@ -1434,6 +1434,8 @@ function resetFuVetvy(){
 }
 async function saveFU(){
   if(!g('fu_id')){msgFu('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  if(saveFU._busy)return;saveFU._busy=true;   // ochrana pred dvojklikom → duplicitný follow-up
+  const _fb=document.querySelector('button[onclick="saveFU()"]');if(_fb)_fb.disabled=true;
   const _exitus=chk('fu_exitus');
   const data={
     vykon_id:g('fu_id'),datum_kontroly:g('fu_datum'),casovy_bod:g('fu_bod'),zobrazenie:g('fu_zobr'),
@@ -1455,6 +1457,7 @@ async function saveFU(){
     if(r.ok){msgFu('✅ Follow-up uložený!','#1d6f42');['fu_sac','fu_pozn','fu_reint_detail'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});const ch=document.getElementById('fu_reint');if(ch)ch.checked=false;const el2=document.getElementById('fu_el');if(el2)el2.checked=false;resetFuExitus();resetFuVetvy();}
     else msgFu('❌ Chyba: '+r.status+(r.status===404?' (spustite setup SQL)':''),'#dc2626');
   }catch(e){msgFu('❌ Chyba siete','#dc2626');}
+  finally{saveFU._busy=false;if(_fb)_fb.disabled=false;}
 }
 
 // NIS-safe text: prazdne riadky dostanu medzeru (NIS ich inak zlepi) a konce riadkov su CRLF pre stare Windows editory
@@ -1602,8 +1605,11 @@ async function saveToSupabase(){
       }
     }
     if(_isEdit){
-      // mažeme len null/undefined – prázdny reťazec '' ponechávame, aby sa dalo pole pri úprave vyčistiť
+      // mažeme len null/undefined – prázdny reťazec '' ponechávame, aby sa dalo pole pri úprave vyčistiť.
+      // Sac filling má číselné stĺpce: pri odškrtnutí treba do PATCHu poslať null (nie ho vynechať), nech sa DB vyčistí.
+      const _sfOff=!(chk('c_sacfill')&&g('sacfill_pocet'));
       Object.keys(payload).forEach(k=>{if(payload[k]==null)delete payload[k];});
+      if(_sfOff){payload.sac_fill_pocet=null;payload.sac_fill_objem_ml=null;}
       delete payload.vykon_id;
     }
     const _url=SB_URL+'/rest/v1/pevar_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
@@ -1623,7 +1629,7 @@ async function saveToSupabase(){
       const _etxt2=await r.clone().text();
       if(_etxt2.includes('sac_fill')){delete payload.sac_fill_pocet;delete payload.sac_fill_objem_ml;r=await _send();}
     }
-    if(r.ok){try{MaterialKatalog.syncPevar(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'pevar',payload);}catch(e){}window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(_vykonIdSaved);}
+    if(r.ok){try{MaterialKatalog.syncPevar(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'pevar',{...payload,vykon_id:_vykonIdSaved});}catch(e){}window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(_vykonIdSaved);}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
   finally{if(_btn)_btn.disabled=false;}

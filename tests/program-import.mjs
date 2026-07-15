@@ -90,5 +90,13 @@ FEVAR
   ok(P.parseProgram('dnešný program o 10:00 v knižnici').pacienti.length === 0, 'text bez pacientov → nič (čas bez mena+RČ)');
 }
 
+/* ── audit-fix regresia: fallback dátum nesmie brať dátum CT z Dôvodu ── */
+{
+  const r = P.parseProgram('08:00 Vzorka Milan 431031/107\nDôvod:\nCT 20.6.2026: AAA max. diameter 57 mm');
+  ok(r.datum === null, 'audit: NIS bez hlavičky → datum null (nie dátum CT z Dôvodu)');
+  const r2 = P.parseProgram('Katetrizačný program OIRA\nPONDELOK 13.7. 2026\n\n1. Vzorka Milan 1948 RAS OIA');
+  ok(r2.datum === '2026-07-13', 'audit: hlavičkový dátum ostáva funkčný');
+}
+
 if (fails) { console.error(`\n${fails} testov importu zlyhalo.`); process.exit(1); }
 console.log('\nVšetky testy importu programu prešli.');
