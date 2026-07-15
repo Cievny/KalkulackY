@@ -1646,7 +1646,7 @@ function gen(){
   uz+=(uzatv?'Uzatváracie zariadenie: '+uzatv+'. ':'Manuálna kompresia. ');
   uz+='Dosahujeme hemostázu '+hemo+(fs?', nasadený Femostop':'')+'.';;L.push(uz);
 
-  if(!zaverManual){const az=buildAutoZaver();if(az)document.getElementById('zaver').value=az;}
+  if(!zaverManual){document.getElementById('zaver').value=buildAutoZaver()||'';}
   L.push('ZÁVER:');
   const zav=g('zaver');if(zav)L.push(zav);
 

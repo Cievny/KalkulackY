@@ -1554,7 +1554,7 @@ function gen(){
   uz+=(uzatv?'Uzavírací zařízení: '+uzatv+'. ':'Manuální komprese. ');
   uz+='Dosahujeme hemostázy '+hemo+(fs?', nasazen Femostop':'')+'.';;L.push(uz);
 
-  if(!zaverManual){const az=buildAutoZaver();if(az)document.getElementById('zaver').value=az;}
+  if(!zaverManual){document.getElementById('zaver').value=buildAutoZaver()||'';}
   L.push('ZÁVĚR:');
   const zav=g('zaver');if(zav)L.push(zav);
 
