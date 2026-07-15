@@ -167,7 +167,7 @@
     (vetvy || []).forEach(function (v) {
       if (!v || !v.bridging) return;
       var r = rozmery(v.rozmer);
-      out.push(radek('bridging stent', v.bridging, r.priemer, r.dlzka, 1, v.cieva === 'iná' ? (v.cieva_ine || 'vetva') : v.cieva));
+      out.push(radek('bridging stent', v.bridging, r.priemer, r.dlzka, 1, v.cieva === 'ine' ? (v.cieva_ine || 'vetva') : v.cieva));
     });
     if (p.sac_fill_pocet > 0) {
       var plug = radek('embolizačný plug', 'IMPEDE-FX', null, null, p.sac_fill_pocet, 'vak AAA');
