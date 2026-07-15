@@ -159,6 +159,34 @@ ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS sizing         TEXT;  -- JS
 ALTER TABLE cas_vykony    ADD COLUMN IF NOT EXISTS konz_detail TEXT;
 ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS konz_detail TEXT;
 
+-- 3l) MATERIÁLOVÝ REGISTER – 1 riadok = 1 zariadenie použité na výkone.
+--     Plní sa automaticky pri uložení EVK/PEVAR výkonu (delete+insert per
+--     výkon, takže opakované uloženie nevytvára duplicity).
+CREATE TABLE IF NOT EXISTS material_pouzitie (
+  id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  zdroj      TEXT NOT NULL,          -- evk / pevar / cz_evk / cz_pevar
+  vykon_id   TEXT NOT NULL,
+  datum      TEXT,
+  kategoria  TEXT,                   -- BMS/DES/krytý stent/balón/DEB/IVL/stentgraft/…
+  nazov      TEXT,                   -- kanonický názov z číselníka
+  vyrobca    TEXT,
+  priemer_mm NUMERIC,
+  dlzka_mm   NUMERIC,
+  pocet      INT DEFAULT 1,
+  tepna      TEXT,                   -- miesto použitia
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS material_pouzitie_vykon_idx ON material_pouzitie (zdroj, vykon_id);
+ALTER TABLE material_pouzitie ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "pov sel material_pouzitie" ON material_pouzitie;
+DROP POLICY IF EXISTS "pov ins material_pouzitie" ON material_pouzitie;
+DROP POLICY IF EXISTS "pov upd material_pouzitie" ON material_pouzitie;
+DROP POLICY IF EXISTS "pov del material_pouzitie" ON material_pouzitie;
+CREATE POLICY "pov sel material_pouzitie" ON material_pouzitie FOR SELECT TO authenticated USING (je_povoleny());
+CREATE POLICY "pov ins material_pouzitie" ON material_pouzitie FOR INSERT TO authenticated WITH CHECK (je_povoleny() AND NOT je_tv());
+CREATE POLICY "pov upd material_pouzitie" ON material_pouzitie FOR UPDATE TO authenticated USING (je_povoleny() AND NOT je_tv()) WITH CHECK (je_povoleny() AND NOT je_tv());
+CREATE POLICY "pov del material_pouzitie" ON material_pouzitie FOR DELETE TO authenticated USING (je_povoleny() AND NOT je_tv());
+
 -- 3k) PEVAR – sac filling (embolizačné plugy do vaku; objem = počet × 1,25 ml,
 --     objem 1 plugu je vo formulári editovateľný)
 ALTER TABLE pevar_vykony    ADD COLUMN IF NOT EXISTS sac_fill_pocet    INT;
@@ -228,7 +256,7 @@ BEGIN
     'evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
     'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy','oznam_reakcie','objednavky_dni','objednavky',
     'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup','cz_cas_followup','cz_ideas',
-    'zaujimavi_pacienti','cz_zaujimavi_pacienti','kalendar_udalosti'
+    'zaujimavi_pacienti','cz_zaujimavi_pacienti','kalendar_udalosti','material_pouzitie'
   ]) LOOP
     IF to_regclass('public.'||t) IS NOT NULL THEN
       EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);

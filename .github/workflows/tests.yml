@@ -30,3 +30,5 @@ jobs:
         run: node tests/poziadavky-import.mjs
       - name: Testy staging algoritmov (TASC/GLASS/WIfI)
         run: node tests/staging.mjs
+      - name: Testy materialoveho registra
+        run: node tests/material-katalog.mjs

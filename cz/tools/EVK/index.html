@@ -1347,7 +1347,10 @@ async function saveToSheets(){
       }catch(e){/* kontrola nedostupná – pokračujeme, insert samotný chybu ohlásí */}
     }
     const tasks=[];
-    tasks.push(saveToSupabase('cz_evk_vykony',fullData).then(r=>r.ok?'sb_ok':'sb_err:'+r.status).catch(()=>'sb_err'));
+    tasks.push(saveToSupabase('cz_evk_vykony',fullData).then(r=>{
+      if(r.ok){try{MaterialKatalog.syncEvk(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'cz_evk',fullData);}catch(e){}}
+      return r.ok?'sb_ok':'sb_err:'+r.status;
+    }).catch(()=>'sb_err'));
     const url=g('apps_script_url');
     if(url)tasks.push(fetch(url,{method:'POST',body:JSON.stringify(collectStatsRow())}).then(r=>r.json()).then(j=>j.status==='ok'?'gs_ok':'gs_err').catch(()=>'gs_err'));
     const results=await Promise.all(tasks);
@@ -1965,5 +1968,6 @@ function resetKomor(){
 window.addEventListener('pageshow', resetKomor);
 document.addEventListener('DOMContentLoaded', resetKomor);
 </script>
+<script src="/tools/material-katalog.js"></script>
 </body>
 </html>
