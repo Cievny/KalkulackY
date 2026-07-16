@@ -52,7 +52,7 @@ jobs:
                   'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy','oznam_reakcie',
                   'objednavky_dni','objednavky','povoleni_pouzivatelia','pozvanky','zaujimavi_pacienti','cz_zaujimavi_pacienti','kalendar_udalosti',
                   'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup',
-                  'cz_cas_followup','cz_ideas','material_pouzitie']
+                  'cz_cas_followup','cz_ideas','material_pouzitie','ras_vykony','ras_followup']
           # tabuľky bez stĺpca id majú vlastné triedenie
           ORDER={'povoleni_pouzivatelia':'email.asc','pozvanky':'created_at.asc','kalendar_udalosti':'zaciatok.asc,id.asc'}
           errors=[]

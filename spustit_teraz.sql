@@ -159,6 +159,46 @@ ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS sizing         TEXT;  -- JS
 ALTER TABLE cas_vykony    ADD COLUMN IF NOT EXISTS konz_detail TEXT;
 ALTER TABLE cz_cas_vykony ADD COLUMN IF NOT EXISTS konz_detail TEXT;
 
+-- 3m) RAS – RENÁLNY STENTING (nový popisovač výkonu + follow-up)
+CREATE TABLE IF NOT EXISTS ras_vykony (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  vykon_id TEXT UNIQUE,
+  datum_zaznamu TEXT,
+  operator TEXT, vek INT, pohlavie TEXT, rodne_cislo TEXT,
+  strana TEXT, stenoza_pct INT, lokalizacia TEXT, etiologia TEXT,
+  post_dilatacia BOOLEAN, indikacie TEXT, komorbidity TEXT, antitrombotika TEXT,
+  krea_pred NUMERIC, egfr_pred NUMERIC, tk_pred TEXT, pocet_ah_liekov INT,
+  pristup_arteria TEXT, sheath TEXT, guiding TEXT, heparin_iu INT,
+  predilatacia BOOLEAN, predil_balon TEXT, predil_rozmer TEXT,
+  stent_nazov TEXT, stent_priemer NUMERIC, stent_dlzka NUMERIC, stent_tlak_atm INT,
+  postdilatacia BOOLEAN, rezidualna_stenoza TEXT,
+  komplikacie TEXT, komplikacie_text TEXT, uzaver TEXT,
+  kontrast_ml INT, fluoro_time_min NUMERIC, dap NUMERIC, zaver TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS ras_followup (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  vykon_id TEXT, datum_kontroly TEXT, casovy_bod TEXT,
+  tk TEXT, krea NUMERIC, egfr NUMERIC, pocet_ah_liekov INT,
+  duplex_restenoza TEXT, reintervencia BOOLEAN, reintervencia_detail TEXT,
+  poznamka TEXT, exitus BOOLEAN, exitus_datum TEXT, exitus_suvis TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+DO $ras$
+DECLARE t text; pol record;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY['ras_vykony','ras_followup']) LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+    FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename=t LOOP
+      EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, t);
+    END LOOP;
+    EXECUTE format('CREATE POLICY "pov sel %1$s" ON public.%1$I FOR SELECT TO authenticated USING (je_povoleny())', t);
+    EXECUTE format('CREATE POLICY "pov ins %1$s" ON public.%1$I FOR INSERT TO authenticated WITH CHECK (je_povoleny() AND NOT je_tv())', t);
+    EXECUTE format('CREATE POLICY "pov upd %1$s" ON public.%1$I FOR UPDATE TO authenticated USING (je_povoleny() AND NOT je_tv()) WITH CHECK (je_povoleny() AND NOT je_tv())', t);
+    EXECUTE format('CREATE POLICY "pov del %1$s" ON public.%1$I FOR DELETE TO authenticated USING (je_povoleny() AND NOT je_tv())', t);
+  END LOOP;
+END $ras$;
+
 -- 3l) MATERIÁLOVÝ REGISTER – 1 riadok = 1 zariadenie použité na výkone.
 --     Plní sa automaticky pri uložení EVK/PEVAR výkonu (delete+insert per
 --     výkon, takže opakované uloženie nevytvára duplicity).
@@ -256,7 +296,7 @@ BEGIN
     'evk_vykony','cas_vykony','pevar_vykony','evk_followup','pevar_followup','cas_followup',
     'ideas','aorta_indikacie','aorta_prilohy','denny_program','oznamy','oznam_reakcie','objednavky_dni','objednavky',
     'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony','cz_evk_followup','cz_pevar_followup','cz_cas_followup','cz_ideas',
-    'zaujimavi_pacienti','cz_zaujimavi_pacienti','kalendar_udalosti','material_pouzitie'
+    'zaujimavi_pacienti','cz_zaujimavi_pacienti','kalendar_udalosti','material_pouzitie','ras_vykony','ras_followup'
   ]) LOOP
     IF to_regclass('public.'||t) IS NOT NULL THEN
       EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);

@@ -30,6 +30,11 @@
     { re: /viabahn/, nazov: 'Viabahn', vyrobca: 'Gore', kategoria: 'krytý stent' },
     { re: /papyrus/, nazov: 'Papyrus', vyrobca: 'Biotronik', kategoria: 'krytý stent' },
     { re: /advanta|v12/, nazov: 'Advanta V12', vyrobca: 'Getinge', kategoria: 'krytý stent' },
+    // renálne (balón-expandibilné) stenty
+    { re: /dynamic/, nazov: 'Dynamic Renal', vyrobca: 'Biotronik', kategoria: 'renálny stent' },
+    { re: /hippocampus/, nazov: 'Hippocampus', vyrobca: 'Medtronic', kategoria: 'renálny stent' },
+    { re: /herculink/, nazov: 'Herculink Elite', vyrobca: 'Abbott', kategoria: 'renálny stent' },
+    { re: /palmaz/, nazov: 'Palmaz Blue', vyrobca: 'Cordis', kategoria: 'renálny stent' },
     // balóny
     { re: /jade/, nazov: 'Jade', vyrobca: 'OrbusNeich', kategoria: 'balón' },
     { re: /armada/, nazov: 'Armada', vyrobca: 'Abbott', kategoria: 'balón' },
