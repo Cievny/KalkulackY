@@ -206,6 +206,7 @@
       {href:'/tools/EVK/',label:'EVK – endovaskulárne výkony'},
       {href:'/tools/CAS-generator/',label:'CAS – karotídy'},
       {href:'/tools/PEVAR/',label:'PEVAR – aortálne stentgrafty'},
+      {href:'/tools/RAS/',label:'RAS – renálny stenting'},
       {href:'/tools/zaznamy/',label:'📁 Záznamy výkonov'},
     ]},
     {href:'/tools/kontroly/',label:'🩺 Kontroly'},
