@@ -24,6 +24,20 @@
   var ODDELENIE_NIS = /^\s*(O[IA][A-Z]{0,3})\s*[-–]\s*odd/i;
   var DOVOD = /^\s*d[oô]vod\s*:\s*(.*)$/i;
   var MENO_OK = /[a-zA-Zá-žÁ-Ž]{2,}\s+[a-zA-Zá-žÁ-Ž]{2,}/;
+  // riadky hlavičky/pätičky – nikdy nie pacient (pre voľný OCR fallback)
+  var HLAVICKA = /pondelok|utorok|streda|stvrtok|piatok|sobota|nedela|schvalil|katetrizacn|\bprogram\b|oddelen|nemocnic|bratislava|kosice|primar|\bdna\b|\bsala\b/;
+
+  // rok narodenia v riadku: 19xx/20xx, ktorý NIE JE časťou dátumu („16.7. 2026")
+  // ani RČ za lomkou – pred rokom nesmie byť „číslica + bodka/lomka"
+  function najdiRok(line) {
+    var re = /\b(19\d{2}|20\d{2})\b/g, m;
+    while ((m = re.exec(line))) {
+      var pred = line.slice(Math.max(0, m.index - 4), m.index);
+      if (/\d\s*[.\/]\s*$/.test(pred)) continue;
+      return m;
+    }
+    return null;
+  }
 
   // ročník z prvých dvoch číslic RČ (57 → 1957, 04 → 2004)
   function rokZRc(yy) {
@@ -107,6 +121,33 @@
         var hh = pad2(mt[1]), mm = mt[2];
         if (!(hh === '00' && mm === '00')) cur.cas = hh + ':' + mm;
         continue;
+      }
+
+      // formát A – OCR fallback: číslo riadku sa nedalo prečítať, ale je tam
+      // meno + rok narodenia („Melichárková Jana 1958 DK OIA"). Len mimo NIS
+      // bloku (v Dôvode by rok v texte spravil falošného pacienta).
+      if (!cur) {
+        var mr = najdiRok(line);
+        if (mr && !HLAVICKA.test(norm(line))) {
+          // meno = posledné 2–3 čisto písmenové tokeny pred rokom (šum „4", „A“", „|" odpadne)
+          var tok = line.slice(0, mr.index).split(/\s+/).filter(function (t) {
+            return /^[a-zA-Zá-žÁ-Ž][a-zA-Zá-žÁ-Ž-]+$/.test(t);
+          });
+          if (tok.length >= 2) {
+            var p2 = novyPacient();
+            // priezvisko + meno; tretí token len ak vyzerá ako časť mena (veľké písmeno)
+            var meno2 = tok.slice(-2);
+            if (tok.length >= 3 && /^[A-ZÁ-Ž]/.test(tok[tok.length - 3])) meno2.unshift(tok[tok.length - 3]);
+            p2.meno = meno2.join(' ');
+            p2.rocnik = parseInt(mr[1], 10);
+            var zv2 = line.slice(mr.index + mr[0].length).trim();
+            var od2 = ODDELENIE_KONIEC.exec(zv2);
+            if (od2) { p2.lozko = od2[1].toUpperCase(); zv2 = zv2.slice(0, od2.index).trim(); }
+            p2.vykon = zv2;
+            pacienti.push(p2);
+            continue;
+          }
+        }
       }
 
       if (!cur) continue;

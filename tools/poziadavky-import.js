@@ -389,7 +389,10 @@
       }).then(function (w) { ocrWorker = w; return w; });
     }).then(function (w) {
       ocrStav('🔍 Čítam obrázok…');
-      return w.recognize(file);
+      var prip = global.OcrUtils
+        ? OcrUtils.pripravObrazok(file).catch(function () { return file; })
+        : Promise.resolve(file);
+      return prip.then(function (src) { return w.recognize(src); });
     }).then(function (r) {
       var txt = (r && r.data && r.data.text || '').trim();
       if (!txt) { ocrStav('❗ Z obrázka sa nepodarilo prečítať text – skúste ostrejší screenshot.'); return; }

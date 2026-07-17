@@ -110,6 +110,29 @@ FEVAR
   ok(r.datum === '2026-07-17', 'OCR šum: dátum z riadku PIATOK (nie zo „schválil")');
 }
 
+/* ── OCR fallback: číslo riadku úplne rozbité – stačí meno + rok narodenia ── */
+{
+  const r = P.parseProgram([
+    'Katetrizačný program OIRA',
+    'PIATOK 17.7. 2026',
+    'Melichárková Jana 1958 DK OIA',            // číslo úplne chýba
+    '—= Horváthová Helena 1946 DK+PTA OIA',     // číslo zožraté šumom
+    'll Petrík Miroslav 1973 DK OIA',           // „1." prečítané ako „ll"
+    'A Bratislava dňa 16.7. 2026 schválil: MUDr.Vincze Lukáš'
+  ].join('\n'));
+  ok(r.pacienti.length === 3, 'OCR fallback: 3 pacienti bez čitateľného čísla', r.pacienti.length);
+  ok(r.pacienti[0].meno === 'Melichárková Jana' && r.pacienti[0].rocnik === 1958 && r.pacienti[0].vykon === 'DK' && r.pacienti[0].lozko === 'OIA', 'OCR fallback: meno+rok+výkon+lôžko');
+  ok(r.pacienti[1].meno === 'Horváthová Helena' && r.pacienti[1].vykon === 'DK+PTA', 'OCR fallback: šum pred menom odpadne');
+  ok(r.pacienti[2].meno === 'Petrík Miroslav', 'OCR fallback: „ll" pred menom odpadne (malé písmená sa do mena neberú zľava)');
+  ok(r.datum === '2026-07-17', 'OCR fallback: dátum z hlavičky, riadok „schválil" nie je pacient');
+}
+
+/* ── OCR fallback nesmie robiť falošných pacientov z NIS Dôvodu ── */
+{
+  const r = P.parseProgram('08:00 Vzorka Milan 431031/107\nDôvod:\nAAA od 2019 sledované, progresia');
+  ok(r.pacienti.length === 1 && r.pacienti[0].meno === 'Vzorka Milan', 'NIS: rok 2019 v Dôvode nevyrobí pacienta');
+}
+
 /* ── audit-fix regresia: fallback dátum nesmie brať dátum CT z Dôvodu ── */
 {
   const r = P.parseProgram('08:00 Vzorka Milan 431031/107\nDôvod:\nCT 20.6.2026: AAA max. diameter 57 mm');

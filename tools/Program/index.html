@@ -1084,6 +1084,7 @@ setInterval(()=>{
   </div>
 </div>
 <script src="/tools/program-import.js"></script>
+<script src="/tools/ocr-utils.js"></script>
 <script>
 // ── Import programu z textu – UI nad ProgramImport.parseProgram ──
 let IMP_ROWS=[];
@@ -1193,7 +1194,9 @@ async function impOcrFile(file){
       });
     }
     impOcrStav('🔍 Čítam obrázok…');
-    const r=await OCR_WORKER.recognize(file);
+    let src=file;
+    try{if(window.OcrUtils)src=await OcrUtils.pripravObrazok(file);}catch(e){/* fallback na originál */}
+    const r=await OCR_WORKER.recognize(src);
     const txt=(r&&r.data&&r.data.text||'').trim();
     if(!txt){impOcrStav('❗ Z obrázka sa nepodarilo prečítať text – skúste ostrejší/väčší screenshot.');return;}
     const ta=document.getElementById('imp_txt');
