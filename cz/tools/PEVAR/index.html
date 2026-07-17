@@ -509,6 +509,14 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     </div>
   </div>
 </div>
+<label class="ck" style="margin-top:8px"><input type="checkbox" id="c_pristup2" onchange="p2Toggle();gen()"> ➕ Další přístup (např. brachiální)</label>
+<div id="b_pristup2" style="display:none">
+  <div class="row r3">
+    <div class="f"><label>Tepna</label><select id="p2_art" onchange="p2Vl();gen()"><option>a. brachialis</option><option>a. radialis</option><option>a. axillaris</option><option>AFC</option><option value="vlastna">vlastní</option></select><input type="text" id="p2_art_c" placeholder="tepna…" oninput="gen()" style="display:none;margin-top:5px"></div>
+    <div class="f"><label>Strana</label><select id="p2_strana" onchange="gen()"><option>l.sin.</option><option>l.dx.</option></select></div>
+    <div class="f"><label>Sheath</label><select id="p2_sheath" onchange="gen()"><option value="">–</option><option>4 Fr</option><option>5 Fr</option><option>6 Fr</option><option>7 Fr</option><option>8 Fr</option></select></div>
+  </div>
+</div>
 </div>
 
 <!-- Katetrizace a implantace -->
@@ -1130,6 +1138,7 @@ function gen(){
 
   // ── PŘÍSTUP ──
   L.push('PŘÍSTUP: '+pristupText);
+  const p2t=p2Text();if(p2t)L.push('DALŠÍ PŘÍSTUP: punkce '+p2t+'.');
 
   // ── VÝKON ──
   L.push('VÝKON:');
@@ -1276,6 +1285,13 @@ function copyOut(){
 
 function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',3000);}
 
+// ── Další přístup (pomocná punkce, např. brachiální) ──
+function p2Toggle(){const b=document.getElementById('b_pristup2');if(b)b.style.display=document.getElementById('c_pristup2').checked?'':'none';}
+function p2Vl(){document.getElementById('p2_art_c').style.display=document.getElementById('p2_art').value==='vlastna'?'':'none';}
+function p2Art(){const a=document.getElementById('p2_art');return a.value==='vlastna'?(document.getElementById('p2_art_c').value||'').trim():a.value;}
+function p2Text(){if(!document.getElementById('c_pristup2')?.checked)return '';const a=p2Art();if(!a)return '';const sh=document.getElementById('p2_sheath').value;return a+' '+document.getElementById('p2_strana').value+(sh?' ('+sh+')':'');}
+function p2Restore(t){const c=document.getElementById('c_pristup2');if(!c||!t)return;c.checked=true;p2Toggle();const m=/^(.*?)\s+(l\.dx\.|l\.sin\.)(?:\s+\((.+?)\))?$/.exec(String(t).trim());const art=document.getElementById('p2_art'),ac=document.getElementById('p2_art_c');if(m&&[...art.options].some(o=>o.value===m[1])){art.value=m[1];}else{art.value='vlastna';ac.value=m?m[1]:String(t).trim();ac.style.display='';}if(m){document.getElementById('p2_strana').value=m[2];if(m[3])document.getElementById('p2_sheath').value=m[3];}}
+
 async function saveToSupabase(){
   if(!g('id_suffix').trim()){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
   const pristupVal=g('pristup_strana').split('|');
@@ -1308,6 +1324,7 @@ async function saveToSupabase(){
     anestezia_typ:g('anestezia_typ'),
     pristup_strana:pristupVal[0]||'',
     punkcia_arteria:g('punkce_arteria'),
+    pristup_dalsi:p2Text(),
     punkcia_technika:g('punkce_technika'),
     usg_nav:chk('usg_nav'),
     rtg_nav:chk('rtg_nav'),
@@ -1420,6 +1437,11 @@ async function saveToSupabase(){
       if(_etxt.includes('katetrizacia_aorty')){delete payload.katetrizacia_aorty;r=await _send();}
     }
     // stĺpce sac_fill_* ešte nemusia existovať (setup SQL 3k)
+    // sloupec pristup_dalsi ještě nemusí existovat (setup SQL 3n)
+    if(!r.ok&&r.status===400&&('pristup_dalsi' in payload)){
+      const _etxt3=await r.clone().text();
+      if(_etxt3.includes('pristup_dalsi')){delete payload.pristup_dalsi;r=await _send();}
+    }
     if(!r.ok&&r.status===400&&('sac_fill_pocet' in payload)){
       const _etxt2=await r.clone().text();
       if(_etxt2.includes('sac_fill')){delete payload.sac_fill_pocet;delete payload.sac_fill_objem_ml;r=await _send();}
@@ -1464,6 +1486,7 @@ function loadEditRecord(){
     restoreChecks('st_cmp',record.komplikacie_struct);
     restoreChecks('atb',record.antitrombotika);
     sv('punkce_arteria',record.punkcia_arteria);
+    p2Restore(record.pristup_dalsi);
     sv('punkce_technika',record.punkcia_technika);
     sv('kompr_dx',record.kompresia_dx_min);
     sv('kompr_sin',record.kompresia_sin_min);

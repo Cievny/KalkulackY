@@ -142,6 +142,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="f"><label>Guiding katéter</label><select id="guiding" onchange="chkVl('guiding');gen()"><option>RDC</option><option>JR4</option><option>IMA</option><option>Hockey stick</option><option>vlastný</option></select><input type="text" id="guiding_c" style="display:none;margin-top:4px" placeholder="vlastný katéter…" oninput="gen()"></div>
 </div>
 <div class="f"><label>Heparín (IU i.v.)</label><input type="number" id="heparin" step="500" value="5000" oninput="gen()"></div>
+<label class="ck" style="margin-top:8px"><input type="checkbox" id="c_pristup2" onchange="p2Toggle();gen()"> ➕ Ďalší prístup</label>
+<div id="b_pristup2" style="display:none">
+  <div class="row r3">
+    <div class="f"><label>Tepna</label><select id="p2_art" onchange="p2Vl();gen()"><option>AFC</option><option>a. brachialis</option><option>a. radialis</option><option value="vlastna">vlastná</option></select><input type="text" id="p2_art_c" placeholder="tepna…" oninput="gen()" style="display:none;margin-top:4px"></div>
+    <div class="f"><label>Strana</label><select id="p2_strana" onchange="gen()"><option>l.dx.</option><option>l.sin.</option></select></div>
+    <div class="f"><label>Sheath</label><select id="p2_sheath" onchange="gen()"><option value="">–</option><option>4 Fr</option><option>5 Fr</option><option>6 Fr</option><option>7 Fr</option><option>8 Fr</option></select></div>
+  </div>
+</div>
 </div>
 
 <div class="card">
@@ -302,6 +310,12 @@ function typVykonuZmena(){
   }
 }
 function lokGen(){const m={'ostiálna':'ostiálnej','proximálny kmeň':'proximálnej kmeňovej','kmeň':'kmeňovej','bifurkácia':'bifurkačnej'};return m[g('lokalizacia')]||g('lokalizacia');}
+// ── Ďalší prístup (druhá punkcia) ──
+function p2Toggle(){const b=document.getElementById('b_pristup2');if(b)b.style.display=document.getElementById('c_pristup2').checked?'':'none';}
+function p2Vl(){document.getElementById('p2_art_c').style.display=document.getElementById('p2_art').value==='vlastna'?'':'none';}
+function p2Art(){const a=document.getElementById('p2_art');return a.value==='vlastna'?(g('p2_art_c')||'').trim():a.value;}
+function p2Text(){if(!chk('c_pristup2'))return '';const a=p2Art();if(!a)return '';const sh=g('p2_sheath');return a+' '+g('p2_strana')+(sh?' ('+sh+')':'');}
+function p2Restore(t){const c=document.getElementById('c_pristup2');if(!c||!t)return;c.checked=true;p2Toggle();const m=/^(.*?)\s+(l\.dx\.|l\.sin\.)(?:\s+\((.+?)\))?$/.exec(String(t).trim());const art=document.getElementById('p2_art'),ac=document.getElementById('p2_art_c');if(m&&[...art.options].some(o=>o.value===m[1])){art.value=m[1];}else{art.value='vlastna';ac.value=m?m[1]:String(t).trim();ac.style.display='';}if(m){document.getElementById('p2_strana').value=m[2];if(m[3])document.getElementById('p2_sheath').value=m[3];}}
 function kompEx(cb){
   // „Žiadne" je exkluzívne voči ostatným
   if(cb.value==='žiadne'&&cb.checked)document.querySelectorAll('.komp_ck').forEach(c=>{if(c.value!=='žiadne')c.checked=false;});
@@ -360,6 +374,7 @@ function gen(){
   if(g('heparin'))v+=' Podaný Heparín '+g('heparin')+' IU i.v.';
   v+=' '+(vN('guiding')||'guiding')+' katétrom selektívna katetrizácia '+stranaTxt()+'.';
   L.push(v);
+  const p2t=p2Text();if(p2t)L.push('Ďalší prístup: punkcia '+p2t+'.');
   L.push('AG: '+g('lokalizacia')+' stenóza'+(g('stenoza_pct')?' '+g('stenoza_pct')+' %':'')+(g('post_dilat')==='ano'?' s poststenotickou dilatáciou':'')+'. Léziou prechádzame vodičom 0,014".');
   if(t!=='POBA'&&chk('c_predil')&&(vN('predil_balon')||g('predil_p')))L.push('Predilatácia balónom '+(vN('predil_balon')||'')+(g('predil_p')?' '+g('predil_p')+(g('predil_d')?'×'+g('predil_d'):'')+' mm':'')+'.');
   if(t==='stenting'){
@@ -421,6 +436,7 @@ function collectPayload(){
     sheath:g('sheath'),
     guiding:vN('guiding'),
     heparin_iu:g('heparin')?parseInt(g('heparin')):null,
+    pristup_dalsi:p2Text(),
     predilatacia:t!=='POBA'&&chk('c_predil'),
     predil_balon:(t!=='POBA'&&chk('c_predil'))?vN('predil_balon'):null,
     predil_rozmer:(t!=='POBA'&&chk('c_predil')&&g('predil_p'))?g('predil_p')+(g('predil_d')?'x'+g('predil_d'):''):null,
@@ -488,7 +504,7 @@ async function saveRAS(){
     if(r.status===400){
       // stará DB bez stĺpcov typu výkonu – ulož aspoň zvyšok
       const p2=Object.assign({},payload);
-      ['typ_vykonu','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s'].forEach(k=>delete p2[k]);
+      ['typ_vykonu','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','pristup_dalsi'].forEach(k=>delete p2[k]);
       r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(p2)});
     }
     if(r.ok){
@@ -557,6 +573,7 @@ function loadEditRecord(){
     const setVl=(id,val)=>{if(!val)return;const el=document.getElementById(id);if([...el.options].some(o=>o.value===val))el.value=val;else{el.value='vlastný';const c=document.getElementById(id+'_c');if(c){c.value=val;c.style.display='block';}}};
     setVl('guiding',record.guiding);
     sv('heparin',record.heparin_iu);
+    p2Restore(record.pristup_dalsi);
     if(record.predilatacia){document.getElementById('c_predil').checked=true;tB('predil');setVl('predil_balon',record.predil_balon);const rz=(record.predil_rozmer||'').split('x');if(rz[0])sv('predil_p',rz[0]);if(rz[1])sv('predil_d',rz[1]);}
     if(record.typ_vykonu){document.getElementById('typ_vykonu').value=record.typ_vykonu;typVykonuZmena();}
     setVl('dilat_balon',record.dilat_balon);

@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS ras_vykony (
   strana TEXT, stenoza_pct INT, lokalizacia TEXT, etiologia TEXT,
   post_dilatacia BOOLEAN, indikacie TEXT, komorbidity TEXT, antitrombotika TEXT,
   krea_pred NUMERIC, egfr_pred NUMERIC, tk_pred TEXT, pocet_ah_liekov INT,
-  pristup_arteria TEXT, sheath TEXT, guiding TEXT, heparin_iu INT,
+  pristup_arteria TEXT, sheath TEXT, guiding TEXT, heparin_iu INT, pristup_dalsi TEXT,
   typ_vykonu TEXT DEFAULT 'stenting',
   predilatacia BOOLEAN, predil_balon TEXT, predil_rozmer TEXT,
   stent_nazov TEXT, stent_priemer NUMERIC, stent_dlzka NUMERIC, stent_tlak_atm INT,
@@ -322,6 +322,15 @@ BEGIN
     END IF;
   END LOOP;
 END $do$;
+
+-- 3n) Ďalší prístup (druhá punkcia) – textový popis pri všetkých popisovačoch
+ALTER TABLE evk_vykony      ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
+ALTER TABLE cas_vykony      ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
+ALTER TABLE pevar_vykony    ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
+ALTER TABLE ras_vykony      ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
+ALTER TABLE cz_evk_vykony   ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
+ALTER TABLE cz_cas_vykony   ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
+ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
 
 -- Schránka: obnov jedinú anon výnimku (verejný formulár podnetov do „ideas")
 DROP POLICY IF EXISTS "anon insert ideas schranka" ON ideas;

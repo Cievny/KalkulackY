@@ -392,6 +392,14 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <div class="row r2">
   <div class="f"><label>Dĺžka sheatu</label><select id="sheathdlz" onchange="gen()"><option value="">–</option><option>10 cm</option><option>25 cm</option><option>45 cm</option><option>55 cm</option><option>90 cm</option></select></div>
 </div>
+<label class="ck" style="margin-top:8px"><input type="checkbox" id="c_pristup2" onchange="p2Toggle();gen()"> ➕ Ďalší prístup</label>
+<div id="b_pristup2" style="display:none">
+  <div class="row r3">
+    <div class="f"><label>Tepna</label><select id="p2_art" onchange="p2Vl();gen()"><option>AFC</option><option>a. brachialis</option><option>a. radialis</option><option value="vlastna">vlastná</option></select><input type="text" id="p2_art_c" placeholder="tepna…" oninput="gen()" style="display:none;margin-top:5px"></div>
+    <div class="f"><label>Strana</label><select id="p2_strana" onchange="gen()"><option>l.dx.</option><option>l.sin.</option></select></div>
+    <div class="f"><label>Sheath</label><select id="p2_sheath" onchange="gen()"><option value="">–</option><option>4 Fr</option><option>5 Fr</option><option>6 Fr</option><option>7 Fr</option><option>8 Fr</option></select></div>
+  </div>
+</div>
 </div>
 
 <!-- DSA Nález -->
@@ -1025,6 +1033,7 @@ function gen(){
   // ── PRÍSTUP ──
   const pristupParts=[art+' '+g('strana'),g('smer'),g('tech'),g('spos'),'v '+g('anes'),'pod '+g('nav')+' navigáciou'].filter(Boolean);
   L.push('PRÍSTUP: '+pristupParts.join(', ')+', zavádzame '+katDiag+' katéter'+(shText?', sheath '+shText:'')+'.');
+  const p2t=p2Text();if(p2t)L.push('ĎALŠÍ PRÍSTUP: punkcia '+p2t+'.');
 
   const kontr=[...document.querySelectorAll('.kontr:checked')].map(e=>e.value).join(' + kombin. s ');
   if(kontr)L.push('KONTRASTNÁ LÁTKA: '+kontr);
@@ -1223,6 +1232,13 @@ function copyOut(){
   else fallback();
 }
 
+// ── Ďalší prístup (druhá punkcia) ──
+function p2Toggle(){const b=document.getElementById('b_pristup2');if(b)b.style.display=document.getElementById('c_pristup2').checked?'':'none';}
+function p2Vl(){document.getElementById('p2_art_c').style.display=document.getElementById('p2_art').value==='vlastna'?'':'none';}
+function p2Art(){const a=document.getElementById('p2_art');return a.value==='vlastna'?(document.getElementById('p2_art_c').value||'').trim():a.value;}
+function p2Text(){if(!document.getElementById('c_pristup2')?.checked)return '';const a=p2Art();if(!a)return '';const sh=document.getElementById('p2_sheath').value;return a+' '+document.getElementById('p2_strana').value+(sh?' ('+sh+')':'');}
+function p2Restore(t){const c=document.getElementById('c_pristup2');if(!c||!t)return;c.checked=true;p2Toggle();const m=/^(.*?)\s+(l\.dx\.|l\.sin\.)(?:\s+\((.+?)\))?$/.exec(String(t).trim());const art=document.getElementById('p2_art'),ac=document.getElementById('p2_art_c');if(m&&[...art.options].some(o=>o.value===m[1])){art.value=m[1];}else{art.value='vlastna';ac.value=m?m[1]:String(t).trim();ac.style.display='';}if(m){document.getElementById('p2_strana').value=m[2];if(m[3])document.getElementById('p2_sheath').value=m[3];}}
+
 async function saveData(){
   if(!(window._editRecordId&&window._editVykonId)&&!g('id_suffix')){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
   const artVal=g('access_art');
@@ -1260,6 +1276,7 @@ async function saveData(){
     pristup_smer:g('smer'),
     pristup_technika:g('tech'),
     pristup_sposob:g('spos'),
+    pristup_dalsi:p2Text(),
     navadzanie:g('nav'),
     uvodny_sheath:g('sheath')+(g('sheathdlz')?' '+g('sheathdlz'):''),
     diag_kateter:g('kateter_diag'),
@@ -1338,6 +1355,11 @@ async function saveData(){
     if(!r.ok&&r.status===400&&'konz_detail' in payload){
       const _etxt=await r.clone().text();
       if(_etxt.includes('konz_detail')){delete payload.konz_detail;r=await _send();}
+    }
+    // stĺpec pristup_dalsi ešte nemusí existovať (setup SQL 3n)
+    if(!r.ok&&r.status===400&&'pristup_dalsi' in payload){
+      const _etxt3=await r.clone().text();
+      if(_etxt3.includes('pristup_dalsi')){delete payload.pristup_dalsi;r=await _send();}
     }
     if(r.ok){window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(payload.vykon_id);}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
@@ -1435,6 +1457,7 @@ function loadEditRecord(){
     sv('smer',record.pristup_smer);
     sv('tech',record.pristup_technika);
     sv('spos',record.pristup_sposob);
+    p2Restore(record.pristup_dalsi);
     sv('nav',record.navadzanie);
     sv('kateter_diag',record.diag_kateter);
     if(record.uvodny_sheath){const um=record.uvodny_sheath.match(/^(\d+ Fr)(?:\s+(.+))?$/);if(um){sv('sheath',um[1]);if(um[2])sv('sheathdlz',um[2]);}}
