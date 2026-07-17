@@ -169,8 +169,10 @@ CREATE TABLE IF NOT EXISTS ras_vykony (
   post_dilatacia BOOLEAN, indikacie TEXT, komorbidity TEXT, antitrombotika TEXT,
   krea_pred NUMERIC, egfr_pred NUMERIC, tk_pred TEXT, pocet_ah_liekov INT,
   pristup_arteria TEXT, sheath TEXT, guiding TEXT, heparin_iu INT,
+  typ_vykonu TEXT DEFAULT 'stenting',
   predilatacia BOOLEAN, predil_balon TEXT, predil_rozmer TEXT,
   stent_nazov TEXT, stent_priemer NUMERIC, stent_dlzka NUMERIC, stent_tlak_atm INT,
+  dilat_balon TEXT, dilat_priemer NUMERIC, dilat_dlzka NUMERIC, dilat_tlak_atm INT, dilat_inflacia_s INT,
   postdilatacia BOOLEAN, rezidualna_stenoza TEXT,
   komplikacie TEXT, komplikacie_text TEXT, uzaver TEXT,
   kontrast_ml INT, fluoro_time_min NUMERIC, dap NUMERIC, zaver TEXT,
@@ -184,6 +186,13 @@ CREATE TABLE IF NOT EXISTS ras_followup (
   poznamka TEXT, exitus BOOLEAN, exitus_datum TEXT, exitus_suvis TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+-- 3m-doplnok) RAS: typ výkonu (stenting / POBA / DEB) – pre existujúce inštalácie
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS typ_vykonu TEXT DEFAULT 'stenting';
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS dilat_balon TEXT;
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS dilat_priemer NUMERIC;
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS dilat_dlzka NUMERIC;
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS dilat_tlak_atm INT;
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS dilat_inflacia_s INT;
 DO $ras$
 DECLARE t text; pol record;
 BEGIN

@@ -146,7 +146,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 
 <div class="card">
 <div class="st">Intervencia</div>
-<div class="tog">
+<div class="f"><label>Typ výkonu</label><select id="typ_vykonu" onchange="typVykonuZmena();gen()"><option value="stenting">Stenting (± dilatácia)</option><option value="POBA">Iba dilatácia – POBA (obyčajný balón)</option><option value="DEB">Iba dilatácia – DEB (liekom povlečený balón)</option></select></div>
+<div class="tog" id="tog_predil">
   <label class="thdr"><input type="checkbox" id="c_predil" onchange="tB('predil');gen()"><span>Predilatácia</span></label>
   <div class="tbody" id="b_predil">
     <div class="row r3">
@@ -156,6 +157,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     </div>
   </div>
 </div>
+<div id="b_dilat" style="display:none">
+  <div class="row r3">
+    <div class="f"><label id="dilat_lbl">Balón (POBA)</label><select id="dilat_balon" onchange="chkVl('dilat_balon');gen()"></select><input type="text" id="dilat_balon_c" style="display:none;margin-top:4px" placeholder="vlastný balón…" oninput="gen()"></div>
+    <div class="f"><label>Priemer (mm)</label><input type="number" id="dilat_p" step="0.5" placeholder="5" oninput="gen()"></div>
+    <div class="f"><label>Dĺžka (mm)</label><input type="number" id="dilat_d" placeholder="20" oninput="gen()"></div>
+  </div>
+  <div class="row r2">
+    <div class="f"><label>Tlak (atm)</label><input type="number" id="dilat_atm" placeholder="12" oninput="gen()"></div>
+    <div class="f"><label>Inflácia (s)</label><input type="number" id="dilat_infl" placeholder="60" oninput="gen()"></div>
+  </div>
+</div>
+<div id="b_stent_sekcia">
 <div class="row r3">
   <div class="f"><label>Stent (balón-expandibilný)</label><select id="stent_n" onchange="chkVl('stent_n');gen()"><option>Dynamic Renal</option><option>Hippocampus</option><option>Herculink Elite</option><option>Palmaz Blue</option><option>BeGraft</option><option>vlastný</option></select><input type="text" id="stent_n_c" style="display:none;margin-top:4px" oninput="gen()"></div>
   <div class="f"><label>Priemer (mm)</label><input type="number" id="stent_p" step="0.5" placeholder="6" oninput="gen()"></div>
@@ -173,6 +186,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
       <div class="f"><label>Tlak (atm)</label><input type="number" id="postdil_atm" placeholder="16" oninput="gen()"></div>
     </div>
   </div>
+</div>
 </div>
 </div>
 
@@ -273,6 +287,21 @@ function showTab(t){
 function tB(k){document.getElementById('b_'+k).classList.toggle('on',chk('c_'+k));}
 function chkVl(id){const el=document.getElementById(id);const c=document.getElementById(id+'_c');if(c)c.style.display=el.value==='vlastný'?'block':'none';}
 function vN(id){const v=g(id);return v==='vlastný'?(g(id+'_c')||''):v;}
+function typVykonuZmena(){
+  const t=g('typ_vykonu');
+  document.getElementById('b_stent_sekcia').style.display=t==='stenting'?'':'none';
+  document.getElementById('b_dilat').style.display=t==='stenting'?'none':'';
+  document.getElementById('tog_predil').style.display=t==='POBA'?'none':'';
+  if(t!=='stenting'){
+    const opts=t==='DEB'?['IN.PACT','Ranger','Selution SLR','Luminor','vlastný']:['Armada','Jade','Passeo','Mustang','vlastný'];
+    const sel=document.getElementById('dilat_balon');const cur=sel.value;
+    sel.innerHTML=opts.map(o=>'<option>'+o+'</option>').join('');
+    sel.value=opts.includes(cur)?cur:opts[0];
+    chkVl('dilat_balon');
+    document.getElementById('dilat_lbl').textContent=t==='DEB'?'Liekom povlečený balón (DEB)':'Balón (POBA)';
+  }
+}
+function lokGen(){const m={'ostiálna':'ostiálnej','proximálny kmeň':'proximálnej kmeňovej','kmeň':'kmeňovej','bifurkácia':'bifurkačnej'};return m[g('lokalizacia')]||g('lokalizacia');}
 function kompEx(cb){
   // „Žiadne" je exkluzívne voči ostatným
   if(cb.value==='žiadne'&&cb.checked)document.querySelectorAll('.komp_ck').forEach(c=>{if(c.value!=='žiadne')c.checked=false;});
@@ -295,10 +324,13 @@ function stranaTxt(){const s=g('strana');return s==='bilat.'?'bilaterálne':('a.
 
 function buildAutoZaver(){
   const komp=getKomp();
-  let z='Úspešný stenting '+g('lokalizacia')+'ej stenózy a. renalis '+(g('strana')==='bilat.'?'bilat.':g('strana'))+(g('rezid')?', '+g('rezid'):'')+'. ';
+  const t=g('typ_vykonu');
+  const uvod=t==='POBA'?'Úspešná PTA (POBA) ':t==='DEB'?'Úspešná DEB angioplastika ':'Úspešný stenting ';
+  let z=uvod+lokGen()+' stenózy a. renalis '+(g('strana')==='bilat.'?'bilat.':g('strana'))+(g('rezid')?', '+g('rezid'):'')+'. ';
   if(komp.length)z+='Komplikácie: '+komp.join(', ')+(g('komp_text')?' – '+g('komp_text'):'')+'. ';
   z+='Pokoj na lôžku podľa zvyklostí pracoviska, dostatočná hydratácia. Kontrola renálnych parametrov o 48 hodín. ';
-  z+='DAPT: ASA 100 mg dlhodobo + Klopidogrel 75 mg 1 mesiac. Pravidelné kontroly TK, úprava antihypertenzívnej liečby podľa vývoja. ';
+  if(t==='POBA')z+='ASA 100 mg dlhodobo. Pravidelné kontroly TK, úprava antihypertenzívnej liečby podľa vývoja. ';
+  else z+='DAPT: ASA 100 mg dlhodobo + Klopidogrel 75 mg 1 mesiac. Pravidelné kontroly TK, úprava antihypertenzívnej liečby podľa vývoja. ';
   z+='Duplex renálnych artérií a angiologická kontrola o 6 mesiacov.';
   return z;
 }
@@ -307,7 +339,9 @@ function gen(){
   updateIdPrefix();
   if(!zaverManual)document.getElementById('zaver').value=buildAutoZaver()||'';
   const L=[];
-  L.push('PERKUTÁNNA ANGIOPLASTIKA A STENTING RENÁLNEJ ARTÉRIE ('+('RAS-'+rasYear()+'-'+(g('id_suffix')||'???'))+')');
+  const t=g('typ_vykonu');
+  const nadpis=t==='POBA'?'PERKUTÁNNA TRANSLUMINÁLNA ANGIOPLASTIKA RENÁLNEJ ARTÉRIE (POBA)':t==='DEB'?'PERKUTÁNNA TRANSLUMINÁLNA ANGIOPLASTIKA RENÁLNEJ ARTÉRIE (DEB)':'PERKUTÁNNA ANGIOPLASTIKA A STENTING RENÁLNEJ ARTÉRIE';
+  L.push(nadpis+' ('+('RAS-'+rasYear()+'-'+(g('id_suffix')||'???'))+')');
   L.push('');
   const ind=[...document.querySelectorAll('.ind:checked')].map(c=>c.value);
   let dg='Hemodynamicky významná '+(g('etiologia')==='iná'?'':g('etiologia')+' ')+'stenóza '+stranaTxt()+(g('stenoza_pct')?' ('+g('stenoza_pct')+' %)':'')+', '+g('lokalizacia')+(g('post_dilat')==='ano'?', s poststenotickou dilatáciou':'')+'.';
@@ -327,11 +361,20 @@ function gen(){
   v+=' '+(vN('guiding')||'guiding')+' katétrom selektívna katetrizácia '+stranaTxt()+'.';
   L.push(v);
   L.push('AG: '+g('lokalizacia')+' stenóza'+(g('stenoza_pct')?' '+g('stenoza_pct')+' %':'')+(g('post_dilat')==='ano'?' s poststenotickou dilatáciou':'')+'. Léziou prechádzame vodičom 0,014".');
-  if(chk('c_predil')&&(vN('predil_balon')||g('predil_p')))L.push('Predilatácia balónom '+(vN('predil_balon')||'')+(g('predil_p')?' '+g('predil_p')+(g('predil_d')?'×'+g('predil_d'):'')+' mm':'')+'.');
-  let s=(chk('c_predil')?'Implantácia':'Priama implantácia')+' balón-expandibilného stentu '+(vN('stent_n')||'')+(g('stent_p')?' '+g('stent_p')+(g('stent_d')?'×'+g('stent_d'):'')+' mm':'')+(g('stent_atm')?' ('+g('stent_atm')+' atm)':'')+(g('lokalizacia')==='ostiálna'&&g('presah')?', s presahom do aorty '+g('presah')+' mm':'')+'.';
-  L.push(s);
-  if(chk('c_postdil')&&g('postdil_p'))L.push('Postdilatácia balónom stentu '+g('postdil_p')+' mm'+(g('postdil_atm')?' ('+g('postdil_atm')+' atm)':'')+'.');
-  L.push('Kontrolná AG: stent v dobrej pozícii, plne rozvinutý, '+g('rezid')+', dobrý prietok do periférie, bez známok disekcie či distálnej embolizácie.');
+  if(t!=='POBA'&&chk('c_predil')&&(vN('predil_balon')||g('predil_p')))L.push('Predilatácia balónom '+(vN('predil_balon')||'')+(g('predil_p')?' '+g('predil_p')+(g('predil_d')?'×'+g('predil_d'):'')+' mm':'')+'.');
+  if(t==='stenting'){
+    let s=(chk('c_predil')?'Implantácia':'Priama implantácia')+' balón-expandibilného stentu '+(vN('stent_n')||'')+(g('stent_p')?' '+g('stent_p')+(g('stent_d')?'×'+g('stent_d'):'')+' mm':'')+(g('stent_atm')?' ('+g('stent_atm')+' atm)':'')+(g('lokalizacia')==='ostiálna'&&g('presah')?', s presahom do aorty '+g('presah')+' mm':'')+'.';
+    L.push(s);
+    if(chk('c_postdil')&&g('postdil_p'))L.push('Postdilatácia balónom stentu '+g('postdil_p')+' mm'+(g('postdil_atm')?' ('+g('postdil_atm')+' atm)':'')+'.');
+    L.push('Kontrolná AG: stent v dobrej pozícii, plne rozvinutý, '+g('rezid')+', dobrý prietok do periférie, bez známok disekcie či distálnej embolizácie.');
+  }else{
+    const parPar=[];
+    if(g('dilat_atm'))parPar.push(g('dilat_atm')+' atm');
+    if(g('dilat_infl'))parPar.push('inflácia '+g('dilat_infl')+' s');
+    let s=(t==='DEB'?'Angioplastika liekom povlečeným balónom (DEB) ':'PTA lézie balónom ')+(vN('dilat_balon')||'')+(g('dilat_p')?' '+g('dilat_p')+(g('dilat_d')?'×'+g('dilat_d'):'')+' mm':'')+(parPar.length?' ('+parPar.join(', ')+')':'')+'.';
+    L.push(s);
+    L.push('Kontrolná AG: dobrý angiografický výsledok, '+g('rezid')+', dobrý prietok do periférie, bez známok disekcie či distálnej embolizácie, bez nutnosti implantácie stentu.');
+  }
   L.push('Extrakcia inštrumentária, uzáver miesta vpichu: '+g('uzaver')+'. Dosiahnutá hemostáza.');
   const peri=[];
   if(g('kontrast_ml'))peri.push('Kontrast: '+g('kontrast_ml')+' ml');
@@ -353,8 +396,10 @@ function copyTxt(){
 }
 
 function collectPayload(){
+  const t=g('typ_vykonu');
   return{
     vykon_id:'RAS-'+rasYear()+'-'+(g('id_suffix')||'???'),
+    typ_vykonu:t,
     datum_zaznamu:g('datum'),
     operator:g('operator'),
     vek:g('vek')?parseInt(g('vek')):null,
@@ -376,14 +421,19 @@ function collectPayload(){
     sheath:g('sheath'),
     guiding:vN('guiding'),
     heparin_iu:g('heparin')?parseInt(g('heparin')):null,
-    predilatacia:chk('c_predil'),
-    predil_balon:chk('c_predil')?vN('predil_balon'):null,
-    predil_rozmer:chk('c_predil')&&g('predil_p')?g('predil_p')+(g('predil_d')?'x'+g('predil_d'):''):null,
-    stent_nazov:vN('stent_n'),
-    stent_priemer:g('stent_p')?parseFloat(g('stent_p')):null,
-    stent_dlzka:g('stent_d')?parseFloat(g('stent_d')):null,
-    stent_tlak_atm:g('stent_atm')?parseInt(g('stent_atm')):null,
-    postdilatacia:chk('c_postdil'),
+    predilatacia:t!=='POBA'&&chk('c_predil'),
+    predil_balon:(t!=='POBA'&&chk('c_predil'))?vN('predil_balon'):null,
+    predil_rozmer:(t!=='POBA'&&chk('c_predil')&&g('predil_p'))?g('predil_p')+(g('predil_d')?'x'+g('predil_d'):''):null,
+    stent_nazov:t==='stenting'?vN('stent_n'):null,
+    stent_priemer:t==='stenting'&&g('stent_p')?parseFloat(g('stent_p')):null,
+    stent_dlzka:t==='stenting'&&g('stent_d')?parseFloat(g('stent_d')):null,
+    stent_tlak_atm:t==='stenting'&&g('stent_atm')?parseInt(g('stent_atm')):null,
+    dilat_balon:t!=='stenting'?vN('dilat_balon'):null,
+    dilat_priemer:t!=='stenting'&&g('dilat_p')?parseFloat(g('dilat_p')):null,
+    dilat_dlzka:t!=='stenting'&&g('dilat_d')?parseFloat(g('dilat_d')):null,
+    dilat_tlak_atm:t!=='stenting'&&g('dilat_atm')?parseInt(g('dilat_atm')):null,
+    dilat_inflacia_s:t!=='stenting'&&g('dilat_infl')?parseInt(g('dilat_infl')):null,
+    postdilatacia:t==='stenting'&&chk('c_postdil'),
     rezidualna_stenoza:g('rezid'),
     komplikacie:getKomp().join(', ')||'žiadne',
     komplikacie_text:g('komp_text')||null,
@@ -401,6 +451,11 @@ function materialRows(p){
   if(p.stent_nazov){
     const kn=MaterialKatalog.normalizuj(p.stent_nazov,'renálny stent')||{};
     rows.push({kategoria:'renálny stent',nazov:kn.nazov||p.stent_nazov,vyrobca:kn.vyrobca||'',priemer_mm:p.stent_priemer,dlzka_mm:p.stent_dlzka,pocet:1,tepna:tep});
+  }
+  if(p.dilat_balon){
+    const kat=p.typ_vykonu==='DEB'?'DEB':'balón';
+    const kn=MaterialKatalog.normalizuj(p.dilat_balon,kat)||{};
+    rows.push({kategoria:kat,nazov:kn.nazov||p.dilat_balon,vyrobca:kn.vyrobca||'',priemer_mm:p.dilat_priemer,dlzka_mm:p.dilat_dlzka,pocet:1,tepna:tep});
   }
   if(p.predilatacia&&p.predil_balon){
     const kn=MaterialKatalog.normalizuj(p.predil_balon,'balón')||{};
@@ -422,9 +477,20 @@ async function saveRAS(){
       const dupR=await fetch(SB_URL+'/rest/v1/ras_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:H()});
       if(dupR.ok){const dup=await dupR.json();if(Array.isArray(dup)&&dup.length){msg('cmsg','⚠️ ID '+payload.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}}
     }
-    if(_isEdit){Object.keys(payload).forEach(k=>{if(payload[k]==null)delete payload[k];});delete payload.vykon_id;}
+    if(_isEdit){
+      // pri edite ponechať null v poliach typu výkonu – zmena stenting↔POBA/DEB musí staré hodnoty vymazať
+      const keepNull=['stent_nazov','stent_priemer','stent_dlzka','stent_tlak_atm','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','predil_balon','predil_rozmer'];
+      Object.keys(payload).forEach(k=>{if(payload[k]==null&&!keepNull.includes(k))delete payload[k];});
+      delete payload.vykon_id;
+    }
     const url=SB_URL+'/rest/v1/ras_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
-    const r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(_isEdit?payload:Object.assign({},payload))});
+    let r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(_isEdit?payload:Object.assign({},payload))});
+    if(r.status===400){
+      // stará DB bez stĺpcov typu výkonu – ulož aspoň zvyšok
+      const p2=Object.assign({},payload);
+      ['typ_vykonu','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s'].forEach(k=>delete p2[k]);
+      r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(p2)});
+    }
     if(r.ok){
       try{
         const mid=(_isEdit&&window._editVykonId)?window._editVykonId:_vykonId;
@@ -492,6 +558,9 @@ function loadEditRecord(){
     setVl('guiding',record.guiding);
     sv('heparin',record.heparin_iu);
     if(record.predilatacia){document.getElementById('c_predil').checked=true;tB('predil');setVl('predil_balon',record.predil_balon);const rz=(record.predil_rozmer||'').split('x');if(rz[0])sv('predil_p',rz[0]);if(rz[1])sv('predil_d',rz[1]);}
+    if(record.typ_vykonu){document.getElementById('typ_vykonu').value=record.typ_vykonu;typVykonuZmena();}
+    setVl('dilat_balon',record.dilat_balon);
+    sv('dilat_p',record.dilat_priemer);sv('dilat_d',record.dilat_dlzka);sv('dilat_atm',record.dilat_tlak_atm);sv('dilat_infl',record.dilat_inflacia_s);
     setVl('stent_n',record.stent_nazov);
     sv('stent_p',record.stent_priemer);sv('stent_d',record.stent_dlzka);sv('stent_atm',record.stent_tlak_atm);
     if(record.postdilatacia){document.getElementById('c_postdil').checked=true;tB('postdil');}
