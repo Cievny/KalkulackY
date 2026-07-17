@@ -124,7 +124,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 
 <div class="card">
 <div class="st">Riečisko výkonu</div>
-<select id="territory" class="terr-sel" onchange="updateTerritory();gen()">
+<select id="territory" class="terr-sel" onchange="updateTerritory();updateVsel();gen()">
   <option value="fem">Femoropopliteálne + predkolenie</option>
   <option value="pelv">Panvové (aortoiliakálne)</option>
   <option value="both">Panvové + Femoropopliteálne</option>
@@ -385,13 +385,13 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 </div>
 <div id="pelv_lat_wrap" style="display:none;margin-top:10px">
   <div class="f"><label>Lateralita – panvové</label>
-    <select id="pelv_lat" onchange="buildPelvDSA();gen()"><option value="bilat">Bilaterálne (bilat.)</option><option value="sin">Ľavá (l.sin.)</option><option value="dx">Pravá (l.dx.)</option></select>
+    <select id="pelv_lat" onchange="buildPelvDSA();updateVsel();gen()"><option value="bilat">Bilaterálne (bilat.)</option><option value="sin">Ľavá (l.sin.)</option><option value="dx">Pravá (l.dx.)</option></select>
   </div>
 </div>
 <div id="pelv_dsa" style="display:none"></div>
 <div id="fem_lat_wrap" style="margin-top:10px">
   <div class="f"><label>Lateralita – femoropopliteálne</label>
-    <select id="fem_lat" onchange="buildFemDSA();gen()"><option value="bilat">Bilaterálne (bilat.)</option><option value="sin">Ľavá (l.sin.)</option><option value="dx">Pravá (l.dx.)</option></select>
+    <select id="fem_lat" onchange="buildFemDSA();updateVsel();gen()"><option value="bilat">Bilaterálne (bilat.)</option><option value="sin">Ľavá (l.sin.)</option><option value="dx">Pravá (l.dx.)</option></select>
   </div>
 </div>
 <div id="fem_dsa"></div>
@@ -739,7 +739,35 @@ const PELV_VESSELS=[['AIC','v_AIC'],['AIE','v_AIE'],['AII','v_AII']];
 const FEM_GROUPS=[{st:'Femorálne riečisko',vs:[['AFC','f_AFC'],['APF','f_APF'],['AFS','f_AFS']]},{st:'Popliteálne riečisko',vs:[['P1','p_P1'],['P2','p_P2'],['P3','p_P3']]},{st:'Predkolenie',vs:[['ATA','d_ATA'],['ATP','d_ATP'],['AFib','d_AFib'],['TTF','d_TTF']]}];
 let cnts={}, zaverManual=false, locCnt={};
 
-function vsel(){return VESSEL_OPTS.map(o=>`<option>${o}</option>`).join('');}
+// Tepny vo výkonoch len pre stranu zvolenú v DSA lateralite (pelv_lat / fem_lat).
+// Panvové tepny sa riadia pelv_lat, femoropopliteálne fem_lat; pri skrytom
+// riečisku sa preberá lateralita toho viditeľného.
+const PELV_TEPNY=['AIC','AIE','AII'];
+function allowedSides(group){
+  const t=g('territory');
+  const lat=group==='pelv'
+    ?((t==='pelv'||t==='both')?g('pelv_lat'):g('fem_lat'))
+    :((t==='fem'||t==='both')?g('fem_lat'):g('pelv_lat'));
+  return lat==='sin'?['l.sin.']:lat==='dx'?['l.dx.']:['l.sin.','l.dx.'];
+}
+function vesselAllowed(opt){
+  const m=/^(\S+)\s+(l\.(?:sin|dx)\.)$/.exec(opt);
+  if(!m)return true;
+  return allowedSides(PELV_TEPNY.includes(m[1])?'pelv':'fem').includes(m[2]);
+}
+function vsel(){return VESSEL_OPTS.filter(vesselAllowed).map(o=>`<option>${o}</option>`).join('');}
+// po zmene laterality/riečiska prefiltruj VŠETKY tepnové selecty (statické aj dynamické riadky)
+function updateVsel(){
+  document.querySelectorAll('select').forEach(sel=>{
+    if(!sel.options.length||sel.options[0].text!=='– tepna –')return;
+    const cur=sel.value;
+    const first=sel.options[0].value===''?'<option value="">– tepna –</option>':'<option>– tepna –</option>';
+    sel.innerHTML=first+VESSEL_OPTS.slice(1).filter(vesselAllowed).map(o=>`<option>${o}</option>`).join('');
+    if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;
+  });
+}
+// restore: uloženú tepnu doplň ako option, aj keby aktuálna lateralita túto stranu neponúkala
+function svTp(id,val){const el=document.getElementById(id);if(!el||val==null||val==='')return;if(![...el.options].some(o=>o.value===val))el.insertAdjacentHTML('beforeend','<option>'+val+'</option>');el.value=val;}
 function sgsel(){return SEG_OPTS.map(o=>`<option>${o}</option>`).join('');}
 
 
@@ -2215,12 +2243,12 @@ function restoreInterventionRows(record){
         on('sg');
         sv('sg_t',it.stent_typ);setSel('sg_n',it.stent_nazov);
         sv('sg_p',dia(it));sv('sg_d',it.dlzka);
-        sv('sg_tp',it.tepna);sv('sg_sg',it.segment);
+        svTp('sg_tp',it.tepna);sv('sg_sg',it.segment);
         return;
       }
       if(it.typ==='aterektomia'){
         on('atek');
-        sv('atek_tp',it.tepna);sv('atek_d',it.dlzka_lezie);sv('atek_e',it.emboloprotekcia);
+        svTp('atek_tp',it.tepna);sv('atek_d',it.dlzka_lezie);sv('atek_e',it.emboloprotekcia);
         if(Array.isArray(it.subtypy))document.querySelectorAll('.atek_t').forEach(c=>{if(it.subtypy.includes(c.value))c.checked=true;});
         return;
       }
@@ -2250,7 +2278,7 @@ function restoreInterventionRows(record){
       }
       if(it.typ==='trombektomia'){
         on('trom');
-        sv('trom_tp',it.tepna);sv('trom_sg',it.segment);
+        svTp('trom_tp',it.tepna);sv('trom_sg',it.segment);
         if(it.metoda==='Rotarex'){
           const c=document.getElementById('trom_rotarex');if(c)c.checked=true;toggleRotarex();
           sv('rotarex_fr',it.velkost);
@@ -2271,7 +2299,7 @@ function restoreInterventionRows(record){
       if(!cleared[pfx]){const l=document.getElementById(pfx+'_list');if(l)l.innerHTML='';cleared[pfx]=true;}
       addItem(pfx,kind,true);
       const id=pfx+'_'+(cnts[pfx]-1);
-      sv(id+'_tp',it.tepna);sv(id+'_sg',it.segment);
+      svTp(id+'_tp',it.tepna);sv(id+'_sg',it.segment);
       // lézia (mm / kalcifikácia / CTO) – staré záznamy tieto kľúče nemajú
       sv(id+'_lmm',it.lezia_mm);sv(id+'_lkalc',it.kalcif);
       if(it.cto){const cc=document.getElementById(id+'_lcto');if(cc)cc.checked=true;}
@@ -2284,7 +2312,7 @@ function restoreInterventionRows(record){
       }else{
         setSel(id+'_s',it.nazov);
         sv(id+'_p',dia(it));sv(id+'_d',it.dlzka);sv(id+'_i',it.inflacia);sv(id+'_a',it.atm);
-        if(Array.isArray(it.extra_locs))it.extra_locs.forEach(l=>{addLoc(id,true);const li=locCnt[id]-1;sv(id+'_l'+li+'_tp',l.tepna);sv(id+'_l'+li+'_sg',l.segment);});
+        if(Array.isArray(it.extra_locs))it.extra_locs.forEach(l=>{addLoc(id,true);const li=locCnt[id]-1;svTp(id+'_l'+li+'_tp',l.tepna);sv(id+'_l'+li+'_sg',l.segment);});
       }
     });
   }catch(e){console.error('restoreInterventionRows:',e);}
@@ -2380,7 +2408,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   addItem('sw','balon_ivl',true);
   addItem('stent','stent',true);
   addItem('post','balon',true);
-  if(window._editRecord){restoreInterventionRows(window._editRecord);window._editRecord=null;}
+  if(window._editRecord){updateVsel();restoreInterventionRows(window._editRecord);window._editRecord=null;}
   initProgramHandoff('EVK',d=>{
     if(d.rocnik){const el=document.getElementById('vek');if(el&&!el.value)el.value=new Date().getFullYear()-d.rocnik;}
     if(d.diagnoza){const el=document.getElementById('diag');if(el&&!el.value)el.value=d.diagnoza;}
