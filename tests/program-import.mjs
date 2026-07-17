@@ -90,6 +90,26 @@ FEVAR
   ok(P.parseProgram('dnešný program o 10:00 v knižnici').pacienti.length === 0, 'text bez pacientov → nič (čas bez mena+RČ)');
 }
 
+/* ── OCR šum pred poradovým číslom (okraje tabuľky z Wordu) ── */
+{
+  const r = P.parseProgram([
+    '1 PIATOK 17.7. 2026',
+    '4 1. Horváthová Helena 1946 DK OIA',
+    'A“ 2. Melichárková Jana 1958 DK OIA',
+    '4 A 3. Petrík Miroslav 1973 DK OIA',
+    '| a 4. Pokorný František 1961 DK OIA',
+    'Ä',
+    'A Bratislava dňa 16.7. 2026 schválil: MUDr.Vincze Lukáš',
+    '/ |'
+  ].join('\n'));
+  ok(r.pacienti.length === 4, 'OCR šum: 4 pacienti napriek prefixom pred číslom', r.pacienti.length);
+  ok(r.pacienti[0].meno === 'Horváthová Helena' && r.pacienti[0].rocnik === 1946, 'OCR šum: „4 1." → meno + ročník');
+  ok(r.pacienti[1].meno === 'Melichárková Jana', 'OCR šum: „A“ 2." → meno');
+  ok(r.pacienti[2].meno === 'Petrík Miroslav' && r.pacienti[2].rocnik === 1973, 'OCR šum: „4 A 3." → meno');
+  ok(r.pacienti[3].meno === 'Pokorný František' && r.pacienti[3].lozko === 'OIA' && r.pacienti[3].vykon === 'DK', 'OCR šum: „| a 4." → meno + výkon + lôžko');
+  ok(r.datum === '2026-07-17', 'OCR šum: dátum z riadku PIATOK (nie zo „schválil")');
+}
+
 /* ── audit-fix regresia: fallback dátum nesmie brať dátum CT z Dôvodu ── */
 {
   const r = P.parseProgram('08:00 Vzorka Milan 431031/107\nDôvod:\nCT 20.6.2026: AAA max. diameter 57 mm');

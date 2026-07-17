@@ -13,7 +13,9 @@
   var DEN = /(pondelok|utorok|streda|stvrtok|piatok|sobota|nedela)/;
   var DATUM = /(\d{1,2})\.\s*(\d{1,2})\.\s*(20\d{2})/;
   // číslovaný riadok wordového programu: „1. Priezvisko Meno   1948   VÝKON   OIA"
-  var CISLOVANY = /^\s*\d{1,2}[.)]\s+(.+?)\s+(19\d{2}|20\d{2})\b\s*(.*)$/;
+  // Pred číslom toleruje 1–3 krátke OCR šumové tokeny z okrajov tabuľky
+  // („4 1. Meno…", „A“ 2. Meno…", „| a 4. Meno…") – token bez bodky/zátvorky, max 3 znaky.
+  var CISLOVANY = /^\s*(?:[^.)\s]{1,3}\s+){0,3}\d{1,2}[.)]\s+(.+?)\s+(19\d{2}|20\d{2})\b\s*(.*)$/;
   var ODDELENIE_KONIEC = /\s+(OIA|OIRA|OAIM|KAIM|JIS|OUM)\s*$/i;
   // NIS kalendár: blok začína časom, na riadku je meno + RČ (aj orezané „57/")
   var CAS = /^\s*(\d{1,2}):(\d{2})\b\s*(.*)$/;
