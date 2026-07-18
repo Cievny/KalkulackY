@@ -53,7 +53,7 @@ jobs:
           # rovnaká logika ako /tools/kontroly: 1M/6M/12M, mešká = >14 dní po termíne,
           # max 18 mesiacov dozadu, zosnulí (exitus) sa nepripomínajú
           meskajuce=[]
-          for tbl,dcol,label in [('evk_vykony','datum','EVK'),('cas_vykony','datum_zaznamu','CAS'),('pevar_vykony','datum_zaznamu','PEVAR')]:
+          for tbl,dcol,label in [('evk_vykony','datum','EVK'),('cas_vykony','datum_zaznamu','CAS'),('pevar_vykony','datum_zaznamu','PEVAR'),('ras_vykony','datum_zaznamu','RAS')]:
               vykony=fetch_all(f'{tbl}?select=vykon_id,{dcol}')
               fus=fetch_all(tbl.replace('_vykony','_followup')+'?select=vykon_id,casovy_bod,exitus')
               if vykony is None or fus is None:
