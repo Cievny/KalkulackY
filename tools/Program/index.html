@@ -337,7 +337,7 @@ const salaOf=r=>r&&r.sala==='B'?'B':'A'; // NULL/undefined/staré záznamy = A
 let SALA_FILTER='all';
 const STAVY={na_oddeleni:'🛏 na oddelení',poslat:'🚑 poslať pre pacienta',caka:'⏳ čaká pred sálou',na_sale:'💉 na sále',hotovy:'✅ hotový'};
 function g(id){return (document.getElementById(id)||{}).value||'';}
-function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
 function parseISO(s){const p=(''+s).split('-');return new Date(+p[0],(+p[1]||1)-1,+p[2]||1);} // lokálna polnoc, bez UTC posunu
 function todayISO(off){const d=new Date();d.setDate(d.getDate()+(off||0));return isoLocal(d);}

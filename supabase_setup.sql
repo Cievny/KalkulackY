@@ -242,12 +242,23 @@ ALTER TABLE oznamy ADD COLUMN IF NOT EXISTS priloha_mime TEXT;
 INSERT INTO storage.buckets (id, name, public, file_size_limit)
 VALUES ('oznamy-prilohy','oznamy-prilohy', false, 20971520)
 ON CONFLICT (id) DO NOTHING;
+-- Storage politiky oznamy: fail-closed, ak je_povoleny() ešte neexistuje –
+-- prílohy sa NIKDY nesprístupnia hocijakému prihlásenému účtu (len allowlistu).
 DROP POLICY IF EXISTS "auth oznamy storage select" ON storage.objects;
 DROP POLICY IF EXISTS "auth oznamy storage insert" ON storage.objects;
 DROP POLICY IF EXISTS "auth oznamy storage delete" ON storage.objects;
-CREATE POLICY "auth oznamy storage select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id='oznamy-prilohy');
-CREATE POLICY "auth oznamy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='oznamy-prilohy');
-CREATE POLICY "auth oznamy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='oznamy-prilohy');
+DO $ozn_st$
+DECLARE r_sel text; w_expr text;
+BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    r_sel := 'false'; w_expr := 'false';   -- zatvorené, kým nebeží spustit_na_konci.sql
+  ELSE
+    r_sel := 'je_povoleny()'; w_expr := 'je_povoleny() AND NOT je_tv()';
+  END IF;
+  EXECUTE format('CREATE POLICY "auth oznamy storage select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id=''oznamy-prilohy'' AND %s)', r_sel);
+  EXECUTE format('CREATE POLICY "auth oznamy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id=''oznamy-prilohy'' AND %s)', w_expr);
+  EXECUTE format('CREATE POLICY "auth oznamy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id=''oznamy-prilohy'' AND %s)', w_expr);
+END $ozn_st$;
 
 ALTER TABLE oznamy ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "auth all oznamy" ON oznamy;
@@ -655,12 +666,22 @@ CREATE POLICY "anon insert ideas schranka" ON ideas
   );
 
 -- Storage politiky pre bucket aorta-prilohy – iba prihlásení (obsahuje pacientske dokumenty/fotky)
+-- Storage politiky aorta-prilohy: fail-closed, ak je_povoleny() ešte neexistuje
 DROP POLICY IF EXISTS "aorta prilohy storage select" ON storage.objects;
 DROP POLICY IF EXISTS "aorta prilohy storage insert" ON storage.objects;
 DROP POLICY IF EXISTS "aorta prilohy storage delete" ON storage.objects;
-CREATE POLICY "aorta prilohy storage select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id='aorta-prilohy');
-CREATE POLICY "aorta prilohy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='aorta-prilohy');
-CREATE POLICY "aorta prilohy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='aorta-prilohy');
+DO $aor_st$
+DECLARE r_sel text; w_expr text;
+BEGIN
+  IF to_regproc('public.je_povoleny') IS NULL THEN
+    r_sel := 'false'; w_expr := 'false';
+  ELSE
+    r_sel := 'je_povoleny()'; w_expr := 'je_povoleny() AND NOT je_tv()';
+  END IF;
+  EXECUTE format('CREATE POLICY "aorta prilohy storage select" ON storage.objects FOR SELECT TO authenticated USING (bucket_id=''aorta-prilohy'' AND %s)', r_sel);
+  EXECUTE format('CREATE POLICY "aorta prilohy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id=''aorta-prilohy'' AND %s)', w_expr);
+  EXECUTE format('CREATE POLICY "aorta prilohy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id=''aorta-prilohy'' AND %s)', w_expr);
+END $aor_st$;
 
 -- ============================================================
 -- 5. OBJEDNÁVKY CEUS / CT (odblokované dni + objednávky)

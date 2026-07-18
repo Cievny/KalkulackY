@@ -114,7 +114,7 @@ let ROWS=[];        // {typ,pacient,vykon_datum,bod,termin,stav}
 let LOAD_ERR=false;
 let SORT={key:'termin',dir:1};
 
-function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 // ---- dátumy (lokálne, bez UTC posunov) ----
 function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}

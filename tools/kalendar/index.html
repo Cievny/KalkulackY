@@ -119,7 +119,7 @@ function render(){
 // natívny MESAČNÝ náhľad (mriežka) + prepínateľný zoznam.
 let EVENTS=null, NAT_VIEW='M', NAT_Y=0, NAT_M=0; // NAT_M: 0-11
 const P2=n=>String(n).padStart(2,'0');
-const ESC=t=>String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ESC=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const MESIACE=['Január','Február','Marec','Apríl','Máj','Jún','Júl','August','September','Október','November','December'];
 
 // čas udalosti pre zobrazenie: string s časovou zónou (Z / +HH:MM) preveď na lokálny

@@ -193,6 +193,9 @@
     sessionStorage.removeItem(RK);
     sessionStorage.removeItem(XK);
     sessionStorage.removeItem(EK);
+    // zruš aj kioskové markery a uložené kódy (TV/veľín) – inak sa zdieľaný
+    // tablet po odhlásení sám znovu prihlási a kód sály/TV ostane v plaintexte
+    ['cievny_tv_kiosk','cievny_velin','cievny_tv_sala','cievny_tv_code','cievny_sala_code'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
     location.replace('/tools/login/');
   };
 

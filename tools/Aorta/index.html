@@ -372,7 +372,7 @@ let PRILOHY=[];    // všetky prílohy (pre počty na kartách + zoznam v modál
 let editId=null;   // id práve otvorenej karty v modáli (null = nová)
 let archId=null;   // id karty pre archiváciu
 
-function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
 function today(){return isoLocal(new Date());}
 function fmtD(d){if(!d)return'–';const x=new Date(d);return isNaN(x)?'–':x.toLocaleDateString('sk-SK');}

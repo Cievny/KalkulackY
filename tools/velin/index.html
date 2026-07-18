@@ -165,7 +165,7 @@ const ST={
 };
 const DOT_ICON={na_oddeleni:'🛏',poslat:'🚑',caka:'⏳',na_sale:'💉',hotovy:'✅'};
 
-function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
 function fmtTrvanie(m){if(m<60)return m+' min';const h=Math.floor(m/60),mm=m%60;return mm?h+' h '+mm+' min':h+' h';}
 function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),3500);}

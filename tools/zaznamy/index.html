@@ -136,7 +136,7 @@ const STAR_TABLE='zaujimavi_pacienti';
 let STARS=[];      // ⭐ zaujímaví pacienti
 let STAR_ERR='';
 
-function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escHtml(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 // stránkovanie: načítaj VŠETKY riadky po 1000 (url bez limit/offset)
 async function fetchAllRows(url){
