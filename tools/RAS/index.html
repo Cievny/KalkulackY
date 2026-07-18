@@ -225,6 +225,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     <label class="ck"><input type="checkbox" class="komp_ck" value="iné" onchange="kompEx(this);gen()"> Iné</label>
   </div>
   <input type="text" id="komp_text" placeholder="Popis komplikácie…" oninput="gen()" style="margin-top:6px">
+  <div class="f" style="margin-top:6px"><label>Clavien-Dindo (najzávažnejšia)</label><select id="st_clavien" onchange="gen()"><option value="">žiadna</option><option value="I">I</option><option value="II">II</option><option value="IIIa">IIIa</option><option value="IIIb">IIIb</option><option value="IVa">IVa</option><option value="IVb">IVb</option><option value="V">V (úmrtie)</option></select><small style="color:#6b7280;font-size:0.78em;line-height:1.3;display:block;margin-top:2px">I odchýlka · II lieky · IIIa inter./bez CA · IIIb inter./CA · IVa JIS 1org · IVb JIS multi · V úmrtie</small></div>
 </div>
 <div class="row r3">
   <div class="f"><label>Kontrast (ml)</label><input type="number" id="kontrast_ml" placeholder="60" oninput="gen()"></div>
@@ -516,6 +517,8 @@ function collectPayload(){
     postdilatacia:t==='stenting'&&chk('c_postdil'),
     rezidualna_stenoza:g('rezid'),
     komplikacie:getKomp().join(', ')||'žiadne',
+    komplikacie_struct:getKomp().join(', '),
+    clavien_dindo:g('st_clavien')||null,
     komplikacie_text:g('komp_text')||null,
     uzaver:g('uzaver'),
     kontrast_ml:g('kontrast_ml')?parseInt(g('kontrast_ml')):null,
@@ -568,7 +571,7 @@ async function saveRAS(){
     if(r.status===400){
       // stará DB bez stĺpcov typu výkonu – ulož aspoň zvyšok
       const p2=Object.assign({},payload);
-      ['typ_vykonu','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','pristup_dalsi'].forEach(k=>delete p2[k]);
+      ['typ_vykonu','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','pristup_dalsi','komplikacie_struct','clavien_dindo'].forEach(k=>delete p2[k]);
       r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(p2)});
     }
     if(r.ok){
@@ -649,6 +652,7 @@ function loadEditRecord(){
     const komp=record.komplikacie||'';
     document.querySelectorAll('.komp_ck').forEach(c=>{c.checked=c.value==='žiadne'?(!komp||komp==='žiadne'):komp.includes(c.value);});
     sv('komp_text',record.komplikacie_text);
+    sv('st_clavien',record.clavien_dindo);
     sv('uzaver',record.uzaver);sv('kontrast_ml',record.kontrast_ml);sv('fluoro_min',record.fluoro_time_min);sv('dap',record.dap);
     if(record.zaver){document.getElementById('zaver').value=record.zaver;zaverManual=true;}
   }catch(e){}

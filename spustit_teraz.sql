@@ -336,6 +336,10 @@ ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
 ALTER TABLE evk_vykony    ADD COLUMN IF NOT EXISTS heparin_iu INT;
 ALTER TABLE cz_evk_vykony ADD COLUMN IF NOT EXISTS heparin_iu INT;
 
+-- 3p) RAS zarovnaný na spoločný model komplikácií (pre M&M a analytics)
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS clavien_dindo TEXT;
+
 -- Schránka: obnov jedinú anon výnimku (verejný formulár podnetov do „ideas")
 DROP POLICY IF EXISTS "anon insert ideas schranka" ON ideas;
 CREATE POLICY "anon insert ideas schranka" ON ideas
