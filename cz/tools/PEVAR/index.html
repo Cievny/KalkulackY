@@ -1097,11 +1097,17 @@ function gen(){
   const modText=modParts.length?'Kritická místa stentgraftu domodelovaná '+modParts.join(' a ')+'.':'';
 
   const segAo=g('segment_aorty')||'abdominalna';
-  const agParts=['Na závěrečné DSA se zobrazuje dobrý výsledek endovaskulární léčby '+(segAo==='torakalna'?'hrudní aorty':(segAo==='torakoabdominalna'?'torakoabdominální aorty':'AAA'))+'.'];
+  const _aoTxt=segAo==='torakalna'?'hrudní aorty':(segAo==='torakoabdominalna'?'torakoabdominální aorty':'AAA');
+  // endoleak I/III je závažný → závěrečná věta si nesmí protiřečit
+  const _elSignif=chk('endoleak_check')&&(g('endoleak_typ')==='I'||g('endoleak_typ')==='III');
+  const agParts=[_elSignif
+    ? 'Na závěrečné DSA '+_aoTxt+' zobrazen endoleak (viz níže).'
+    : 'Na závěrečné DSA se zobrazuje dobrý výsledek endovaskulární léčby '+_aoTxt+'.'];
   if(chk('endoleak_check')){
     const typ=g('endoleak_typ');
     let v='Zobrazuje se endoleak '+typ+'. typu';
     if(typ==='II')v+=' '+g('endoleak_typ2_zdroj');
+    if(typ==='I'||typ==='III')v+=' – indikováno periprocedurální řešení';
     agParts.push(v+'.');
   } else {
     agParts.push('Nezobrazuje se žádný endoleak.');

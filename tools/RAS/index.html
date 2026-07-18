@@ -394,7 +394,13 @@ function stranaTxt(){const s=g('strana');return s==='bilat.'?'bilaterálne':('a.
 function buildAutoZaver(){
   const komp=getKomp();
   const t=g('typ_vykonu');
-  const uvod=t==='POBA'?'Úspešná PTA (POBA) ':t==='DEB'?'Úspešná DEB angioplastika ':'Úspešný stenting ';
+  // „Úspešný" len ak nie je reziduál >30 % ani závažná komplikácia
+  const _vyznamKomp=komp.some(k=>/disekci|perfor|emboliz|uzáver|tromb/i.test(k));
+  const _rezidZly=/>\s*30/.test(g('rezid')||'');
+  const uspesne=!_vyznamKomp&&!_rezidZly;
+  const nazov=t==='POBA'?'PTA (POBA)':t==='DEB'?'DEB angioplastika':'stenting';
+  const rod=(t==='POBA'||t==='DEB')?'á':'ý';
+  const uvod=uspesne?'Úspešn'+rod+' '+nazov+' ':(nazov.charAt(0).toUpperCase()+nazov.slice(1)+' ');
   let z=uvod+lokGen()+' stenózy a. renalis '+(g('strana')==='bilat.'?'bilat.':g('strana'))+(g('rezid')?', '+g('rezid'):'')+'. ';
   if(komp.length)z+='Komplikácie: '+komp.join(', ')+(g('komp_text')?' – '+g('komp_text'):'')+'. ';
   z+='Pokoj na lôžku podľa zvyklostí pracoviska, dostatočná hydratácia. Kontrola renálnych parametrov o 48 hodín. ';
@@ -432,18 +438,21 @@ function gen(){
   const p2t=p2Text();if(p2t)L.push('Ďalší prístup: '+p2t);
   L.push('AG: '+g('lokalizacia')+' stenóza'+(g('stenoza_pct')?' '+g('stenoza_pct')+' %':'')+(g('post_dilat')==='ano'?' s poststenotickou dilatáciou':'')+'. Léziou prechádzame vodičom 0,014".');
   if(t!=='POBA'&&chk('c_predil')&&(vN('predil_balon')||g('predil_p')))L.push('Predilatácia balónom '+(vN('predil_balon')||'')+(g('predil_p')?' '+g('predil_p')+(g('predil_d')?'×'+g('predil_d'):'')+' mm':'')+'.');
+  // kontrolná AG nesmie tvrdiť „bez disekcie/embolizácie", ak sú zaškrtnuté ako komplikácia
+  const _kAG=getKomp().filter(k=>/disekci|perfor|emboliz/i.test(k));
+  const _agEnd=_kAG.length?', s nálezom: '+_kAG.join(', ')+'.':', bez známok disekcie či distálnej embolizácie.';
   if(t==='stenting'){
     let s=(chk('c_predil')?'Implantácia':'Priama implantácia')+' balón-expandibilného stentu '+(vN('stent_n')||'')+(g('stent_p')?' '+g('stent_p')+(g('stent_d')?'×'+g('stent_d'):'')+' mm':'')+(g('stent_atm')?' ('+g('stent_atm')+' atm)':'')+(g('lokalizacia')==='ostiálna'&&g('presah')?', s presahom do aorty '+g('presah')+' mm':'')+'.';
     L.push(s);
     if(chk('c_postdil')&&g('postdil_p'))L.push('Postdilatácia balónom stentu '+g('postdil_p')+' mm'+(g('postdil_atm')?' ('+g('postdil_atm')+' atm)':'')+'.');
-    L.push('Kontrolná AG: stent v dobrej pozícii, plne rozvinutý, '+g('rezid')+', dobrý prietok do periférie, bez známok disekcie či distálnej embolizácie.');
+    L.push('Kontrolná AG: stent v dobrej pozícii, plne rozvinutý, '+g('rezid')+', dobrý prietok do periférie'+_agEnd);
   }else{
     const parPar=[];
     if(g('dilat_atm'))parPar.push(g('dilat_atm')+' atm');
     if(g('dilat_infl'))parPar.push('inflácia '+g('dilat_infl')+' s');
     let s=(t==='DEB'?'Angioplastika liekom povlečeným balónom (DEB) ':'PTA lézie balónom ')+(vN('dilat_balon')||'')+(g('dilat_p')?' '+g('dilat_p')+(g('dilat_d')?'×'+g('dilat_d'):'')+' mm':'')+(parPar.length?' ('+parPar.join(', ')+')':'')+'.';
     L.push(s);
-    L.push('Kontrolná AG: dobrý angiografický výsledok, '+g('rezid')+', dobrý prietok do periférie, bez známok disekcie či distálnej embolizácie, bez nutnosti implantácie stentu.');
+    L.push('Kontrolná AG: '+g('rezid')+', dobrý prietok do periférie'+_agEnd.replace(/\.$/,'')+', bez nutnosti implantácie stentu.');
   }
   L.push('Extrakcia inštrumentária, uzáver miesta vpichu: '+g('uzaver')+'. Dosiahnutá hemostáza.');
   const peri=[];

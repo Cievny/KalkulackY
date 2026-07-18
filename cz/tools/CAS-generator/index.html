@@ -1070,23 +1070,33 @@ function gen(){
   // ── ZÁVĚR ──
   // automatický závěr podle postupu – dokud jej lékař ručně nepřepíše
   const zaverEl=document.getElementById('zaver_vykonu');
+  const _komp=[...document.querySelectorAll('.st_cmp:checked')].map(e=>e.value);
+  const _kompTxt=_komp.length?'komplikace: '+_komp.join(', '):'bez komplikací';
   if(zaverEl&&!window._zaverManual){
     const _tu=(document.querySelector('input[name="tech_uspech"]:checked')||{}).value||'';
     zaverEl.value=konz
       ?'DSA karotid – '+aci+' '+typAci+', volíme konzervativní postup'+(chk('konz_duplex')?', duplexní USG kontrola za '+konzDuplexTxt():'')+'.'
       :(_tu==='Technický neúspěch'
-        ?'CAS '+aci+' technicky neúspěšný.'
+        ?'CAS '+aci+' technicky neúspěšný, '+_kompTxt+'.'
         :_tu==='Parciální úspěch'
-          ?'CAS '+aci+' s parciálním efektem, bez komplikaci.'
-          :'CAS '+aci+' s dobrým efektem, bez komplikaci.');
+          ?'CAS '+aci+' s parciálním efektem, '+_kompTxt+'.'
+          :'CAS '+aci+' s dobrým efektem, '+_kompTxt+'.');
   }
   L.push('ZÁVĚR:');
   const zav=g('zaver_vykonu');if(zav)L.push(zav);
 
-  // ── DOPORUČENÍ (konzervativní postup) ──
+  // ── DOPORUČENÍ ──
   if(konz){
     const odp=konzOdporucania();
     if(odp.length){L.push('DOPORUČENÍ:');odp.forEach(o=>L.push('• '+o));}
+  }else if(postup==='intervencia'){
+    const odp=[
+      'DAPT: ASA 100 mg dlouhodobě + klopidogrel 75 mg minimálně 4 týdny',
+      'Monitorace a důsledná kontrola TK (prevence hyperperfuzního syndromu)',
+      'Neurologické sledování, při nových příznacích urgentní zobrazení mozku',
+      'Duplexní USG karotid za 1 měsíc, dále dle nálezu'
+    ];
+    L.push('DOPORUČENÍ:');odp.forEach(o=>L.push('• '+o));
   }
 
   document.getElementById('out').value=L.filter(x=>x!=='').join('\n');
