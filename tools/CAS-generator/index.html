@@ -70,6 +70,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <script src="/tools/auth.js"></script>
 <script>checkAuth();</script>
 <script src="/tools/anamneza-parser.js"></script>
+<script src="/tools/material-katalog.js"></script>
 <nav class="tabnav">
   <button class="tnb active" id="tnb-nalez" onclick="showFuTab('nalez')">🧠 CAS</button>
   <button class="tnb" id="tnb-drg" onclick="showFuTab('drg')">📊 DRG kódy</button>
@@ -1427,7 +1428,12 @@ async function saveData(){
       const _etxt3=await r.clone().text();
       if(_etxt3.includes('pristup_dalsi')){delete payload.pristup_dalsi;r=await _send();}
     }
-    if(r.ok){window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(payload.vykon_id);}
+    if(r.ok){window._dirty=false;
+      try{
+        const _mid=(_isEdit&&window._editVykonId)?window._editVykonId:payload.vykon_id;
+        if(window.MaterialKatalog)MaterialKatalog.syncCas(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'cas',Object.assign({},payload,{vykon_id:_mid}));
+      }catch(e){}
+      const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(payload.vykon_id);}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
   finally{if(_saveBtn)_saveBtn.disabled=false;}

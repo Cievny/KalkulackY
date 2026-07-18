@@ -186,6 +186,22 @@
     return out.filter(Boolean);
   }
 
+  // CAS – karotický stenting: stent, emboloprotekcia, predilatačný a modelovací balón
+  function rowsFromCas(p) {
+    p = p || {};
+    var out = [];
+    var strana = String(p.lokalizacia || '').indexOf('dx.') >= 0 ? 'l.dx.' : 'l.sin.';
+    var tep = 'ACI ' + strana;
+    if (p.stent_znacka) out.push(radek('karotický stent', p.stent_znacka, num(p.stent_diameter_mm), num(p.stent_length_mm), 1, tep));
+    if (p.emboloprotekcia) {
+      var er = rozmery(p.emboloprotekcia); // napr. „6mm (Spider Fx)"
+      out.push(radek('emboloprotekcia', p.emboloprotekcia, er.priemer, null, 1, tep));
+    }
+    if (p.predilatacny_balon_znacka) out.push(radek('balón', p.predilatacny_balon_znacka, num(p.predilatacny_balon_diameter_mm), num(p.predilatacny_balon_length_mm), 1, tep));
+    if (p.domodelovaci_balon_znacka) out.push(radek('balón', p.domodelovaci_balon_znacka, num(p.domodelovaci_balon_diameter_mm), num(p.domodelovaci_balon_length_mm), 1, tep));
+    return out.filter(Boolean);
+  }
+
   // best-effort zápis: zmaž staré riadky výkonu, vlož nové (idempotentné uloženie)
   function syncMaterial(sbUrl, headers, zdroj, vykonId, datum, rows) {
     if (!vykonId) return Promise.resolve(false);
@@ -213,15 +229,20 @@
     // PEVAR/CAS payload má dátum pod kľúčom datum_zaznamu (EVK má datum)
     return syncMaterial(sbUrl, headers, zdroj, payload.vykon_id, payload.datum_zaznamu || payload.datum || null, rowsFromPevar(payload));
   }
+  function syncCas(sbUrl, headers, zdroj, payload) {
+    return syncMaterial(sbUrl, headers, zdroj, payload.vykon_id, payload.datum_zaznamu || payload.datum || null, rowsFromCas(payload));
+  }
 
   var API = {
     KATALOG: KATALOG,
     normalizuj: normalizuj,
     rowsFromEvk: rowsFromEvk,
     rowsFromPevar: rowsFromPevar,
+    rowsFromCas: rowsFromCas,
     syncMaterial: syncMaterial,
     syncEvk: syncEvk,
     syncPevar: syncPevar,
+    syncCas: syncCas,
     _rozmery: rozmery
   };
   global.MaterialKatalog = API;

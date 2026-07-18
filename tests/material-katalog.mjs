@@ -88,5 +88,21 @@ ok(Array.isArray(M.rowsFromPevar(null)) && M.rowsFromPevar(null).length === 0, '
   ok(cz[0].priemer_mm === 6, 'audit: CZ kľúč „průměr" sa zapíše do priemer_mm');
 }
 
+/* ── CAS materiál (karotický stenting) ── */
+{
+  const r = M.rowsFromCas({
+    vykon_id: 'CAS-2026-005', lokalizacia: 'ACI l.dx.',
+    stent_znacka: 'Roadsaver', stent_diameter_mm: 8, stent_length_mm: 20,
+    emboloprotekcia: '6mm (Spider Fx)',
+    predilatacny_balon_znacka: 'Sterling', predilatacny_balon_diameter_mm: 3, predilatacny_balon_length_mm: 20,
+    domodelovaci_balon_znacka: 'Viatrac', domodelovaci_balon_diameter_mm: 5, domodelovaci_balon_length_mm: 20
+  });
+  ok(r.some(x => x.kategoria === 'karotický stent' && x.priemer_mm === 8 && x.dlzka_mm === 20 && x.tepna === 'ACI l.dx.'), 'CAS: karotický stent s rozmermi a stranou', JSON.stringify(r));
+  ok(r.some(x => x.kategoria === 'emboloprotekcia'), 'CAS: emboloprotekcia riadok');
+  ok(r.filter(x => x.kategoria === 'balón').length === 2, 'CAS: predilatačný + modelovací balón');
+  ok(M.rowsFromCas({ vykon_id: 'X', lokalizacia: 'ACI l.sin.' }).length === 0, 'CAS: bez materiálu → prázdne');
+  ok(M.rowsFromCas(null).length === 0, 'CAS: rowsFromCas(null) nespadne');
+}
+
 if (fails) { console.error(`\n${fails} testov materiálu zlyhalo.`); process.exit(1); }
 console.log('\nVšetky testy materiálového registra prešli.');
