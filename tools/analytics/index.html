@@ -304,7 +304,7 @@ details summary:hover{color:#1737a0}
   <div class="chart-card">
     <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between">
       <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">
-        <div class="pub-f"><label id="pub-lbl-typ">Výkon</label><select id="pub-typ" onchange="renderPub()"><option value="evk">EVK</option><option value="cas">CAS</option><option value="pevar">PEVAR</option></select></div>
+        <div class="pub-f"><label id="pub-lbl-typ">Výkon</label><select id="pub-typ" onchange="renderPub()"><option value="evk">EVK</option><option value="cas">CAS</option><option value="pevar">PEVAR</option><option value="ras">RAS</option></select></div>
         <div class="pub-f"><label id="pub-lbl-od">Od</label><input type="date" id="pub-od" onchange="renderPub()"></div>
         <div class="pub-f"><label id="pub-lbl-do">Do</label><input type="date" id="pub-do" onchange="renderPub()"></div>
         <div class="pub-f" id="pub-riecisko-wrap"><label id="pub-lbl-riec">Riečisko</label><select id="pub-riecisko" onchange="renderPub()"><option value="">Všetky</option></select></div>
@@ -370,7 +370,7 @@ details summary:hover{color:#1737a0}
   <div class="chart-card">
     <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">
       <div class="pub-f"><label>Mesiac</label><input type="month" id="vyk-month" onchange="renderVyk()"></div>
-      <div class="pub-f"><label>Typ výkonu</label><select id="vyk-typ" onchange="renderVyk()"><option value="">Všetky</option><option value="evk">EVK</option><option value="cas">CAS</option><option value="pevar">PEVAR</option></select></div>
+      <div class="pub-f"><label>Typ výkonu</label><select id="vyk-typ" onchange="renderVyk()"><option value="">Všetky</option><option value="evk">EVK</option><option value="cas">CAS</option><option value="pevar">PEVAR</option><option value="ras">RAS</option></select></div>
     </div>
     <div id="vyk-status" class="loading" style="display:none;padding:12px"></div>
   </div>
@@ -392,7 +392,7 @@ details summary:hover{color:#1737a0}
     <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">
       <div class="pub-f"><label>Obdobie od</label><input type="date" id="mm-od" onchange="renderMM()"></div>
       <div class="pub-f"><label>do</label><input type="date" id="mm-do" onchange="renderMM()"></div>
-      <div class="pub-f"><label>Typ výkonu</label><select id="mm-typ" onchange="renderMM()"><option value="">Všetky</option><option value="evk">EVK</option><option value="cas">CAS</option><option value="pevar">PEVAR</option></select></div>
+      <div class="pub-f"><label>Typ výkonu</label><select id="mm-typ" onchange="renderMM()"><option value="">Všetky</option><option value="evk">EVK</option><option value="cas">CAS</option><option value="pevar">PEVAR</option><option value="ras">RAS</option></select></div>
     </div>
     <div id="mm-period" class="vyk-sum" style="margin:0 0 12px"></div>
     <div class="grid" id="mm-summary"></div>
@@ -437,7 +437,7 @@ function medianSorted(a){if(!a||!a.length)return null;const m=a.length>>1;return
 function escHtml(v){return (v==null?'':''+v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 // --- Štúdijné helpery ---
-const RAW={evk:[],cas:[],pevar:[]};
+const RAW={evk:[],cas:[],pevar:[],ras:[]};
 function avgNum(rows,key,dec=1){
   const v=rows.map(r=>r[key]).filter(x=>x!=null&&x!==''&&!isNaN(x)).map(Number);
   if(!v.length)return null;
@@ -950,6 +950,20 @@ async function loadPROG(){
   const vb=ageBins(vekRows);if(vb.length)mkChart('ch-prog-vek','bar',vb.map(x=>x[0]),vb.map(x=>x[1]),false);
 }
 
+// RAS – renálny stenting. Nemá vlastnú dashboard kartu; napĺňa RAW.ras
+// pre Publikácie / Výkaz / M&M. Adaptér zarovná názvy polí na spoločné
+// (kontrast_ml→contrast_ml, egfr_pred→egfr, datum_zaznamu→datum), aby
+// generický publikačný kód fungoval bez špeciálnych výnimiek.
+async function loadRAS(){
+  let rows=[];
+  try{rows=await fetchAll('ras_vykony');}catch(e){RAW.ras=[];return;}
+  RAW.ras=(rows||[]).map(r=>Object.assign({},r,{
+    contrast_ml:(r.contrast_ml!=null?r.contrast_ml:r.kontrast_ml),
+    egfr:(r.egfr!=null?r.egfr:r.egfr_pred),
+    datum:(r.datum||r.datum_zaznamu)
+  }));
+}
+
 async function loadAll(){
   document.getElementById('err-box').style.display='none';
   // Obnoviť musí prenačítať aj follow-upy – resetni cache flagy, aby ensureFU refetchol
@@ -958,7 +972,7 @@ async function loadAll(){
   MAT_LOADED=false;if(wasMat)loadMat(); // Obnoviť prenačíta aj materiálový register
   loadPOZ(); // nezávisle – nesmie zhodiť ostatné sekcie
   loadPROG(); // nezávisle – nesmie zhodiť ostatné sekcie
-  const p=Promise.all([loadEVK(),loadCAS(),loadPEVAR()]);
+  const p=Promise.all([loadEVK(),loadCAS(),loadPEVAR(),loadRAS()]);
   window._pubDataP=p.catch(()=>{}); // Publikácie počkajú na dáta (chyby rieši catch nižšie)
   try{
     await p;
@@ -1020,8 +1034,8 @@ function showTab(name,btn){
 }
 
 /* ==================== 📄 PUBLIKÁCIE – publikačné štatistiky ==================== */
-const PUB={lang:'sk',fetched:false,fetching:false,fuError:false,fu:{evk:[],cas:[],pevar:[]},tables:{}};
-const PUB_FU_TBL={evk:'evk_followup',cas:'cas_followup',pevar:'pevar_followup'};
+const PUB={lang:'sk',fetched:false,fetching:false,fuError:false,fu:{evk:[],cas:[],pevar:[],ras:[]},tables:{}};
+const PUB_FU_TBL={evk:'evk_followup',cas:'cas_followup',pevar:'pevar_followup',ras:'ras_followup'};
 
 // --- Popisky (SK/EN) ---
 const PUB_L={
@@ -1039,12 +1053,15 @@ sk:{
  kmEvk:'Kaplan–Meier – primárna patencia (EVK)',
  kmCas:'Kaplan–Meier – prežívanie bez restenózy ≥50 % (CAS)',
  kmPevar:'Kaplan–Meier – prežívanie bez reintervencie (PEVAR)',
+ kmRas:'Kaplan–Meier – prežívanie bez restenózy ≥60 % (RAS)',
+ rasStrana:'Strana',rasLok:'Lokalizácia stenózy',rasEtio:'Etiológia',rasSten:'Stenóza (%)',rasTk:'Systolický TK pred (mmHg)',rasAh:'Počet antihypertenzív',rasTyp:'Typ výkonu',rasStent:'Renálny stent (značka)',rasKrea:'Kreatinín pred (µmol/l)',
  kmCopy:'📋 Kopírovať KM tabuľku',
  kmNote:(n,ev,ex)=>`Zahrnutých ${n} výkonov s follow-up (${ev} udalostí); ${ex} výkonov bez follow-up bolo vylúčených.`,
  exclKonz:n=>` · ${n} diagnostických/konzervatívnych DSA vylúčených z kohorty (bez stentu)`,
  kmDefEvk:'Udalosť: restenóza alebo oklúzia pri kontrole, asistovaná alebo sekundárna patencia, reintervencia alebo amputácia.',
  kmDefCas:'Udalosť: restenóza ≥50 % (50–70 %, >70 %, oklúzia stentu), progresia s indikáciou na revaskularizáciu alebo reintervencia.',
  kmDefPevar:'Udalosť: reintervencia alebo endoleak typu Ia/Ib/III.',
+ kmDefRas:'Udalosť: duplexná restenóza ≥60 %, oklúzia stentu alebo reintervencia.',
  kmTime:'Čas (mesiace)',kmAtRisk:'V riziku',kmEvents:'Udalosti',kmEst:'Odhad % (95 % IS)',kmMonths:'Mesiace',
  char:'Charakteristika',value:'Hodnota',indicator:'Ukazovateľ',
  nProc:'Počet výkonov, n',age:'Vek (roky)',meanSd:'priemer ± SD',medIqr:'medián (IQR)',range:'min–max',
@@ -1063,7 +1080,7 @@ sk:{
  rest:'Restenóza, n (%)',neuro:'Neurologická príhoda, n (%)',
  komDM:'Diabetes mellitus',komAH:'Artériová hypertenzia',komCKD:'Chronická choroba obličiek (CKD)',komICHS:'Ischemická choroba srdca',komIM:'St.p. infarkte myokardu',komCMP:'St.p. cievnej mozgovej príhode',komFaj:'Fajčenie (aktívne alebo v minulosti)',komDysl:'Dyslipidémia',komObez:'Obezita',komCHOCHP:'CHOCHP',
  tPTA:'PTA',tDEB:'DEB PTA (liekový balónik)',tSTENT:'Stenting',tIVL:'Intravaskulárna litotrypsia (IVL)',tATER:'Aterektómia',tTROM:'Trombektómia',tVP:'Vessel prep',tRE:'Re-entry katéter',tKISS:'Kissing stent',tCERAB:'CERAB',tSG:'Stentgraft',tPRED:'Predilatácia',tPOST:'Postdilatácia',
- endpEvk:'Primárna patencia',endpCas:'Prežívanie bez restenózy ≥50 %',endpPevar:'Prežívanie bez reintervencie',
+ endpEvk:'Primárna patencia',endpCas:'Prežívanie bez restenózy ≥50 %',endpPevar:'Prežívanie bez reintervencie',endpRas:'Prežívanie bez restenózy ≥60 %',
  egfr:'eGFR (ml/min/1,73 m²)',abiBase:'ABI pred výkonom',
  tl:'Charakteristika lézií',lesN:'Počet lézií s údajmi, n',lesLen:'Dĺžka lézie (mm)',lesCalc:'Kalcifikácia, n (%)',calcNone:'žiadna',calcMod:'stredná',calcSev:'ťažká',lesCTO:'CTO, n (%)',
  balD:'Balónik – priemer (mm)',balL:'Balónik – dĺžka (mm)',stD:'Stent – priemer (mm)',stL:'Stent – dĺžka (mm)',ivlD:'IVL – priemer (mm)',ivlL:'IVL – dĺžka (mm)',
@@ -1108,6 +1125,8 @@ en:{
  kmDefEvk:'Event: restenosis or occlusion at follow-up, assisted or secondary patency, reintervention, or amputation.',
  kmDefCas:'Event: restenosis ≥50 % (50–70 %, >70 %, stent occlusion), progression indicated for revascularisation, or reintervention.',
  kmDefPevar:'Event: reintervention or type Ia/Ib/III endoleak.',
+ kmDefRas:'Event: duplex restenosis ≥60 %, stent occlusion, or reintervention.',
+ rasStrana:'Side',rasLok:'Stenosis location',rasEtio:'Aetiology',rasSten:'Stenosis (%)',rasTk:'Systolic BP pre (mmHg)',rasAh:'No. of antihypertensives',rasTyp:'Procedure type',rasStent:'Renal stent (brand)',rasKrea:'Creatinine pre (µmol/L)',
  kmTime:'Time (months)',kmAtRisk:'At risk',kmEvents:'Events',kmEst:'Estimate % (95% CI)',kmMonths:'Months',
  char:'Characteristic',value:'Value',indicator:'Outcome',
  nProc:'Number of procedures, n',age:'Age (years)',meanSd:'mean ± SD',medIqr:'median (IQR)',range:'min–max',
@@ -1420,6 +1439,16 @@ function pubT1(typ,rows){
       Object.entries(lm).sort((a,b)=>b[1]-a[1]).forEach(([v,c])=>out.push([IND+pubLV('lsa_',v),fPct(c,lsRows.length)]));
     }
   }
+  if(typ==='ras'){
+    const catSecR=(labelKey,key)=>{const {ents,N:n}=pubCats(rows,key);if(!n)return;out.push([LT(labelKey)+` (N=${n})`]);ents.forEach(([v,c])=>out.push([IND+TV(v),fPct(c,n)]));};
+    catSecR('rasStrana','strana');
+    catSecR('rasLok','lokalizacia');
+    catSecR('rasEtio','etiologia');
+    const st=pubNums(rows,'stenoza_pct');out.push([LT('rasSten')+`, ${LT('meanSd')} (N=${st.length})`,fMeanSD(st,0)]);
+    const tk=pubNumsParse(rows,'tk_pred');out.push([LT('rasTk')+`, ${LT('meanSd')} (N=${tk.length})`,fMeanSD(tk,0)]);
+    const ah=pubNums(rows,'pocet_ah_liekov');out.push([LT('rasAh')+`, ${LT('meanSd')} (N=${ah.length})`,fMeanSD(ah,1)]);
+    const kr=pubNums(rows,'krea_pred');out.push([LT('rasKrea')+`, ${LT('meanSd')} (N=${kr.length})`,fMeanSD(kr,0)]);
+  }
   out.push([LT('komor')]);
   PUB_KOMOR.forEach(([lk,re])=>{
     const c=rows.filter(r=>re.test((r.komorbidity==null?'':''+r.komorbidity))).length;
@@ -1475,6 +1504,12 @@ function pubT2(typ,rows){
     out.push([LT('epd'),fPct(rows.filter(r=>(r.emboloprotekcia||'').trim()).length,N)]);
     out.push([LT('predil'),fPct(rows.filter(r=>r.predilatacia_vykonana==='Ano').length,N)]);
     out.push([LT('postdil'),fPct(rows.filter(r=>r.domodelovanie_vykonane==='Ano').length,N)]);
+  }
+  if(typ==='ras'){
+    catSec('rasTyp','typ_vykonu');
+    catSec('access','pristup_arteria');
+    catSec('rasStent','stent_nazov',8);
+    out.push([LT('predil'),fPct(rows.filter(r=>r.predilatacia===true).length,N)]);
   }
   [['contrast','contrast_ml'],['fluoro','fluoro_time_min'],['dap','dap'],['dur','proc_duration_min']].forEach(([lk,key])=>{
     const v=pubNums(rows,key);
@@ -1655,6 +1690,13 @@ function pubT3(typ,rows){
     catBlock('neuro','neuro');
     boolRow('reint',f=>f.reintervencia===true);
   }
+  if(typ==='ras'){
+    catBlock('rest','duplex_restenoza');
+    numRow('rasTk','tk',0);
+    numRow('rasKrea','krea',0);
+    numRow('egfr','egfr',1);
+    boolRow('reint',f=>f.reintervencia===true);
+  }
   // úmrtia hlásené vo follow-up (exitus)
   out.push([LT('deaths'),...known.map(tp=>''+byTp[tp].filter(f=>f.exitus===true).length)]);
   pubRenderTable('pub-t3','t3',out);
@@ -1689,7 +1731,8 @@ window.computeKM=computeKM; // exportované pre testy
 const PUB_KM_EVENT={
   evk:f=>{const p=(f.patencia==null?'':''+f.patencia).trim().toLowerCase();return p==='restenóza'||p.indexOf('okl')===0||p.indexOf('asistovan')===0||p.indexOf('sekund')===0||f.reintervencia===true||pubIsAmput(f.amputacia);},
   pevar:f=>f.reintervencia===true||['Ia','Ib','III'].includes((f.endoleak_typ==null?'':''+f.endoleak_typ).trim()),
-  cas:f=>{const v=(f.restenoza==null?'':''+f.restenoza).replace(/\s+/g,'');return /^50[–-]70%$/.test(v)||/^>70%$/.test(v)||/^okl/i.test(v)||/^progres/i.test(v)||f.reintervencia===true;}
+  cas:f=>{const v=(f.restenoza==null?'':''+f.restenoza).replace(/\s+/g,'');return /^50[–-]70%$/.test(v)||/^>70%$/.test(v)||/^okl/i.test(v)||/^progres/i.test(v)||f.reintervencia===true;},
+  ras:f=>{const v=(f.duplex_restenoza==null?'':''+f.duplex_restenoza).replace(/\s+/g,'').toLowerCase();return v.indexOf('≥60')===0||/60%$/.test(v)||v.indexOf('okl')>=0||f.reintervencia===true;}
 };
 
 function pubKMSubjects(typ,rows){
@@ -1742,8 +1785,8 @@ function drawKMChart(km,id){
 function pubKMRender(typ,rows){
   const {subs,excl}=pubKMSubjects(typ,rows);
   const km=computeKM(subs);
-  pubEl('pub-km-title').textContent=LT(typ==='evk'?'kmEvk':typ==='cas'?'kmCas':'kmPevar');
-  pubEl('pub-km-note').textContent=LT(typ==='evk'?'kmDefEvk':typ==='cas'?'kmDefCas':'kmDefPevar')+' '+LT('kmNote')(km.total,km.events,excl);
+  pubEl('pub-km-title').textContent=LT(typ==='evk'?'kmEvk':typ==='cas'?'kmCas':typ==='ras'?'kmRas':'kmPevar');
+  pubEl('pub-km-note').textContent=LT(typ==='evk'?'kmDefEvk':typ==='cas'?'kmDefCas':typ==='ras'?'kmDefRas':'kmDefPevar')+' '+LT('kmNote')(km.total,km.events,excl);
   drawKMChart(km);
   // Number at risk (0/3/6/12/24 mesiacov)
   const marks=[0,3,6,12,24].filter(m=>m===0||m*30.44<=km.maxT+15);
@@ -1855,7 +1898,7 @@ function pubKMRenderTV(rows){
 
 // --- Metódy ---
 function pubMethods(typ,rows){
-  const e=LT(typ==='evk'?'endpEvk':typ==='cas'?'endpCas':'endpPevar');
+  const e=LT(typ==='evk'?'endpEvk':typ==='cas'?'endpCas':typ==='ras'?'endpRas':'endpPevar');
   let t=LT('methods')(e);
   if((PUB.fu[typ]||[]).some(f=>f&&f.exitus===true))t+=LT('methodsOs'); // veta o OS len keď existujú exitus dáta
   if(typ==='pevar'&&rows&&pubTVSubjects(rows).subs.length)t+=LT('methodsTv'); // veta o per-vessel patencii len keď sa analýza zobrazuje
@@ -1910,8 +1953,8 @@ async function ensureFU(){
       try{await (window._pubDataP||Promise.resolve());}catch(e){}
       let failed=false;
       const grab=t=>fetchAll(t).catch(()=>{failed=true;return[];});
-      const [e,c,p]=await Promise.all([grab(PUB_FU_TBL.evk),grab(PUB_FU_TBL.cas),grab(PUB_FU_TBL.pevar)]);
-      PUB.fu={evk:e||[],cas:c||[],pevar:p||[]};
+      const [e,c,p,ra]=await Promise.all([grab(PUB_FU_TBL.evk),grab(PUB_FU_TBL.cas),grab(PUB_FU_TBL.pevar),grab(PUB_FU_TBL.ras)]);
+      PUB.fu={evk:e||[],cas:c||[],pevar:p||[],ras:ra||[]};
       PUB.fuError=failed;
       if(!failed)PUB.fetched=true; // pri zlyhaní neoznač ako načítané – ďalšie otvorenie tabu skúsi znova
     })();
@@ -1965,7 +2008,7 @@ function renderPub(){
 
 /* ==================== 💶 VÝKAZY (DRG) + 📽 M&M REPORT ==================== */
 const VYK={opened:false};
-const VYK_TYP_LBL={evk:'EVK',cas:'CAS',pevar:'PEVAR'};
+const VYK_TYP_LBL={evk:'EVK',cas:'CAS',pevar:'PEVAR',ras:'RAS'};
 function vykEl(id){return document.getElementById(id);}
 // formát EUR: medzera ako oddeľovač tisícov, čiarka pred desatinami (deterministicky, bez locale)
 function fmtEur(x){if(x==null||!isFinite(x))return'–';const neg=x<0?'-':'';const p=Math.abs(x).toFixed(2).split('.');return neg+p[0].replace(/\B(?=(\d{3})+(?!\d))/g,' ')+','+p[1];}
@@ -1992,7 +2035,7 @@ function renderVyk(){
   if(!VYK.opened)return;
   const month=vykEl('vyk-month').value; // 'YYYY-MM'
   const typFilter=vykEl('vyk-typ').value;
-  const typs=typFilter?[typFilter]:['evk','cas','pevar'];
+  const typs=typFilter?[typFilter]:['evk','cas','pevar','ras'];
   const agg={};const missing=[];let nvyk=0;
   typs.forEach(typ=>(RAW[typ]||[]).forEach(r=>{
     const d=pubDateOf(r,typ); // datum resp. datum_zaznamu (fallback created_at)
@@ -2052,7 +2095,7 @@ function renderMM(){
   showFUBanner();
   const od=vykEl('mm-od').value,doo=vykEl('mm-do').value;
   const typFilter=vykEl('mm-typ').value;
-  const typs=typFilter?[typFilter]:['evk','cas','pevar'];
+  const typs=typFilter?[typFilter]:['evk','cas','pevar','ras'];
   // follow-upy podľa vykon_id (join)
   const fuBy={};
   typs.forEach(typ=>{
