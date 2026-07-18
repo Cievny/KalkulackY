@@ -357,6 +357,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 </div>
 <div class="row r2">
   <div class="f"><label>Dĺžka sheatu</label><select id="sheathdlz" onchange="gen()"><option value="">–</option><option>10 cm</option><option>25 cm</option><option>45 cm</option><option>55 cm</option><option>90 cm</option></select></div>
+  <div class="f"><label>Heparín (IU i.v.)</label><input type="number" id="heparin" step="500" placeholder="5000" oninput="gen()"></div>
 </div>
 <label class="ck" style="margin-top:8px"><input type="checkbox" id="c_pristup2" onchange="p2Toggle();gen()"> ➕ Ďalší prístup</label>
 <div id="b_pristup2" style="display:none">
@@ -1258,8 +1259,8 @@ async function saveToSupabase(table,data){
   const opts=body=>({method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
   let r=await fetch(url,opts(data));
   // staršia DB bez stĺpcov staging/wifi – ulož záznam aspoň bez nich
-  if(r.status===400&&(('staging' in data)||('wifi' in data)||('pristup_dalsi' in data))){
-    const d2={...data};delete d2.staging;delete d2.wifi;delete d2.pristup_dalsi;
+  if(r.status===400&&(('staging' in data)||('wifi' in data)||('pristup_dalsi' in data)||('heparin_iu' in data))){
+    const d2={...data};delete d2.staging;delete d2.wifi;delete d2.pristup_dalsi;delete d2.heparin_iu;
     r=await fetch(url,opts(d2));
   }
   return r;
@@ -1444,6 +1445,7 @@ function collectFullData(){
     pristup_kat:g('kat'),
     pristup_sheath:g('sheath'),
     pristup_sheath_dlz:g('sheathdlz'),
+    heparin_iu:g('heparin')?parseInt(g('heparin')):null,
     pristup_dalsi:p2Data(),
     ...(document.getElementById('c_ivsheath')?.checked?{interv_sheath:g('iv_sheath'),interv_sheath_dlz:g('iv_sheath_dlz'),interv_sheath_znacka:g('iv_sheath_zn')==='vlastný'?g('iv_sheath_zn_c'):g('iv_sheath_zn')}:{interv_sheath:'',interv_sheath_dlz:'',interv_sheath_znacka:''}),
     anestazia:g('anes'),
@@ -1635,6 +1637,7 @@ function gen(){
   let dev=[];if(sh)dev.push('sheath '+sh+(shd?' dĺžky '+shd:''));dev.push(g('kat')+' katéter');
   pr.push('zavádzame '+dev.join(' a '));
   L.push('PRÍSTUP: '+pr.filter(Boolean).join(', ')+'.');
+  if(g('heparin'))L.push('Podaný Heparín '+g('heparin')+' IU i.v.');
   const p2t=p2Text();if(p2t)L.push('ĎALŠÍ PRÍSTUP: '+p2t);
 
   const kontr=[...document.querySelectorAll('.kontr:checked')].map(e=>e.value);
@@ -2078,6 +2081,7 @@ function loadEditRecord(){
     sv('kat',record.pristup_kat);
     sv('sheath',record.pristup_sheath);
     sv('sheathdlz',record.pristup_sheath_dlz);
+    sv('heparin',record.heparin_iu);
     p2Restore(record.pristup_dalsi);
     if(record.interv_sheath){
       const cb=document.getElementById('c_ivsheath');

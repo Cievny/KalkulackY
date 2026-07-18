@@ -332,6 +332,10 @@ ALTER TABLE cz_evk_vykony   ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
 ALTER TABLE cz_cas_vykony   ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
 ALTER TABLE cz_pevar_vykony ADD COLUMN IF NOT EXISTS pristup_dalsi TEXT;
 
+-- 3o) Heparín IU v EVK náleze (periprocedurálna heparinizácia)
+ALTER TABLE evk_vykony    ADD COLUMN IF NOT EXISTS heparin_iu INT;
+ALTER TABLE cz_evk_vykony ADD COLUMN IF NOT EXISTS heparin_iu INT;
+
 -- Schránka: obnov jedinú anon výnimku (verejný formulár podnetov do „ideas")
 DROP POLICY IF EXISTS "anon insert ideas schranka" ON ideas;
 CREATE POLICY "anon insert ideas schranka" ON ideas
