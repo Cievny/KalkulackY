@@ -340,6 +340,9 @@ ALTER TABLE cz_evk_vykony ADD COLUMN IF NOT EXISTS heparin_iu INT;
 ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS komplikacie_struct TEXT;
 ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS clavien_dindo TEXT;
 
+-- 3q) RAS DRG kódy (ručné zadanie – pre DRG výkaz)
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS drg_kody TEXT;
+
 -- Schránka: obnov jedinú anon výnimku (verejný formulár podnetov do „ideas")
 DROP POLICY IF EXISTS "anon insert ideas schranka" ON ideas;
 CREATE POLICY "anon insert ideas schranka" ON ideas

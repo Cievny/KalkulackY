@@ -235,6 +235,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 </div>
 
 <div class="card">
+<div class="st">DRG kódy <span style="font-weight:400;color:#9ca3af;text-transform:none;letter-spacing:0">(voliteľné – pre výkaz; jeden na riadok: „KÓD popis")</span></div>
+<div class="f"><textarea id="drg_manual" rows="2" placeholder="napr.:&#10;8r800.x  PTA renálnej artérie&#10;8r880.x  Stenting renálnej artérie" oninput="gen()" style="font-family:monospace;font-size:12px"></textarea></div>
+</div>
+
+<div class="card">
 <div class="st">Záver / Odporúčanie <button type="button" onclick="resetZaver()" style="font-size:10px;padding:2px 7px;border:1px solid #dde1ea;border-radius:4px;background:#f7f8fc;cursor:pointer;color:#5a6a8a">🔄 Auto</button></div>
 <div class="f"><textarea id="zaver" rows="5" oninput="zaverManual=true;gen()"></textarea></div>
 </div>
@@ -325,6 +330,13 @@ function typVykonuZmena(){
   }
 }
 function lokGen(){const m={'ostiálna':'ostiálnej','proximálny kmeň':'proximálnej kmeňovej','kmeň':'kmeňovej','bifurkácia':'bifurkačnej'};return m[g('lokalizacia')]||g('lokalizacia');}
+// DRG kódy z textarea (jeden na riadok: „KÓD popis") → JSON [{code,desc}] alebo null
+function drgManual(){
+  const t=g('drg_manual')||'';
+  const out=[];
+  t.split(/\r?\n/).forEach(l=>{l=l.trim();if(!l)return;const m=l.match(/^(\S+)\s*(.*)$/);if(m)out.push({code:m[1],desc:(m[2]||'').trim()});});
+  return out.length?JSON.stringify(out):null;
+}
 // ── Ďalší prístup (druhá punkcia, plnohodnotný popis) ──
 function p2Toggle(){const b=document.getElementById('b_pristup2');if(b)b.style.display=document.getElementById('c_pristup2').checked?'':'none';}
 function p2Vl(){document.getElementById('p2_art_c').style.display=document.getElementById('p2_art').value==='vlastna'?'':'none';}
@@ -523,6 +535,7 @@ function collectPayload(){
     komplikacie:getKomp().join(', ')||'žiadne',
     komplikacie_struct:getKomp().join(', '),
     clavien_dindo:g('st_clavien')||null,
+    drg_kody:drgManual(),
     komplikacie_text:g('komp_text')||null,
     uzaver:g('uzaver'),
     kontrast_ml:g('kontrast_ml')?parseInt(g('kontrast_ml')):null,
@@ -577,7 +590,7 @@ async function saveRAS(){
     if(r.status===400){
       // stará DB bez stĺpcov typu výkonu – ulož aspoň zvyšok
       const p2=Object.assign({},payload);
-      ['typ_vykonu','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','pristup_dalsi','komplikacie_struct','clavien_dindo','pacient_id'].forEach(k=>delete p2[k]);
+      ['typ_vykonu','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','pristup_dalsi','komplikacie_struct','clavien_dindo','pacient_id','drg_kody'].forEach(k=>delete p2[k]);
       r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(p2)});
     }
     if(r.ok){
@@ -659,6 +672,7 @@ function loadEditRecord(){
     document.querySelectorAll('.komp_ck').forEach(c=>{c.checked=c.value==='žiadne'?(!komp||komp==='žiadne'):komp.includes(c.value);});
     sv('komp_text',record.komplikacie_text);
     sv('st_clavien',record.clavien_dindo);
+    try{const dk=typeof record.drg_kody==='string'?JSON.parse(record.drg_kody):record.drg_kody;if(Array.isArray(dk)&&dk.length)sv('drg_manual',dk.map(x=>[x.code,x.desc].filter(Boolean).join(' ')).join('\n'));}catch(e){}
     sv('uzaver',record.uzaver);sv('kontrast_ml',record.kontrast_ml);sv('fluoro_min',record.fluoro_time_min);sv('dap',record.dap);
     if(record.zaver){document.getElementById('zaver').value=record.zaver;zaverManual=true;}
   }catch(e){}
