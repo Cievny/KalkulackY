@@ -1203,7 +1203,7 @@ function delExtenzia(idx){const r=document.querySelector('#extenzie_list [data-i
 
 
 // ── Follow-up ────────────────────────────────────────────────
-function showFuTab(t){
+function showFuTab(t){if(window.GenBar)GenBar.show(t!=='fu'&&t!=='drg');
   document.querySelector('.wrap').style.display=t==='fu'?'none':'grid';
   document.getElementById('tab-fu').style.display=t==='fu'?'block':'none';
   document.getElementById('tnb-nalez').classList.toggle('active',t!=='fu');
@@ -1800,5 +1800,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 window.addEventListener('beforeunload',e=>{if(window._dirty){e.preventDefault();e.returnValue='';}});
 </script>
 <script src="/tools/material-katalog.js"></script>
+<script>window.GEN_BAR={copy:'copyOut',save:'saveToSupabase'};</script>
+<script src="/tools/gen-actionbar.js"></script>
 </body>
 </html>

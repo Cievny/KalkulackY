@@ -1127,7 +1127,7 @@ function gen(){
 
 
 // ── Follow-up ────────────────────────────────────────────────
-function showFuTab(t){
+function showFuTab(t){if(window.GenBar)GenBar.show(t!=='fu'&&t!=='drg');
   document.querySelector('.wrap').style.display=(t==='fu'||t==='drg')?'none':'grid';
   document.getElementById('tab-fu').style.display=t==='fu'?'block':'none';
   document.getElementById('tab-drg').style.display=t==='drg'?'block':'none';
@@ -1740,5 +1740,7 @@ window.addEventListener('pageshow', resetKomor);
 document.addEventListener('DOMContentLoaded', resetKomor);
 window.addEventListener('beforeunload',e=>{if(window._dirty){e.preventDefault();e.returnValue='';}});
 </script>
+<script>window.GEN_BAR={copy:'copyOut',save:'saveData'};</script>
+<script src="/tools/gen-actionbar.js"></script>
 </body>
 </html>

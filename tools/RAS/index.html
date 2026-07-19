@@ -289,6 +289,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 
 <script src="/tools/anamneza-parser.js"></script>
 <script src="/tools/material-katalog.js"></script>
+<script>window.GEN_BAR={copy:'copyTxt',save:'saveRAS'};</script>
+<script src="/tools/gen-actionbar.js"></script>
 <script>
 const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
@@ -302,6 +304,7 @@ function showTab(t){
   document.getElementById('tab-fu').style.display=t==='fu'?'':'none';
   document.getElementById('tnb-nalez').classList.toggle('active',t==='nalez');
   document.getElementById('tnb-fu').classList.toggle('active',t==='fu');
+  if(window.GenBar)GenBar.show(t==='nalez');
 }
 function tB(k){document.getElementById('b_'+k).classList.toggle('on',chk('c_'+k));}
 function chkVl(id){const el=document.getElementById(id);const c=document.getElementById(id+'_c');if(c)c.style.display=el.value==='vlastný'?'block':'none';}

@@ -725,7 +725,7 @@ function svTp(id,val){const el=document.getElementById(id);if(!el||val==null||va
 function sgsel(){return SEG_OPTS.map(o=>`<option>${o}</option>`).join('');}
 
 
-function showTab(t){['nalez','fu'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';document.getElementById('tnb-'+id).classList.toggle('active',id===t);});}
+function showTab(t){if(window.GenBar)GenBar.show(t==='nalez');['nalez','fu'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';document.getElementById('tnb-'+id).classList.toggle('active',id===t);});}
 function g(id){return(document.getElementById(id)||{}).value||'';}
 function chybaStud(){const M=[];if(!g('st_dur'))M.push('délka výkonu');if(!g('st_fluoro'))M.push('skiaskopie');if(!g('st_dap'))M.push('DAP');if(!g('st_contrast'))M.push('kontrast');return M;}
 const chk=cls=>[...document.querySelectorAll('.'+cls+':checked')].map(e=>e.value);
@@ -2086,5 +2086,7 @@ window.addEventListener('pageshow', resetKomor);
 document.addEventListener('DOMContentLoaded', resetKomor);
 </script>
 <script src="/tools/material-katalog.js"></script>
+<script>window.GEN_BAR={copy:'copyTxt',save:'saveToSheets'};</script>
+<script src="/tools/gen-actionbar.js"></script>
 </body>
 </html>
