@@ -213,6 +213,7 @@
       {href:'/tools/zaznamy/',label:'📁 Záznamy výkonov'},
     ]},
     {href:'/tools/kontroly/',label:'🩺 Kontroly'},
+    {href:'/tools/pacient/',label:'🧍 Cesta pacienta'},
     {href:'/tools/kalendar/',label:'📆 Kalendár'},
     {href:'/tools/oznamy/',label:'📢 Oznamy'},
     {href:'/tools/ideas/',label:'💡 Nápady'},

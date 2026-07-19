@@ -73,7 +73,7 @@ async function openPage(path){
 }
 
 // Board nástroje – len načítanie bez JS chýb
-for(const [name,path] of [['RAS','/tools/RAS/'],['Program','/tools/Program/'],['Objednávky','/tools/objednavky/'],['Aorta','/tools/Aorta/'],['Štatistiky','/tools/analytics/'],['Záznamy','/tools/zaznamy/'],['Kontroly','/tools/kontroly/']]){
+for(const [name,path] of [['RAS','/tools/RAS/'],['Program','/tools/Program/'],['Objednávky','/tools/objednavky/'],['Aorta','/tools/Aorta/'],['Štatistiky','/tools/analytics/'],['Záznamy','/tools/zaznamy/'],['Kontroly','/tools/kontroly/'],['Cesta pacienta','/tools/pacient/']]){
   const {ctx, errs} = await openPage(path);
   check(name+' bez JS chýb', errs.length===0);
   await ctx.close();
