@@ -1428,7 +1428,7 @@ async function saveData(){
       const _etxt3=await r.clone().text();
       if(_etxt3.includes('pristup_dalsi')){delete payload.pristup_dalsi;r=await _send();}
     }
-    if(r.ok){window._dirty=false;
+    if(r.ok){window._dirty=false;if(window.GenBar)GenBar.saved();
       try{
         const _mid=(_isEdit&&window._editVykonId)?window._editVykonId:payload.vykon_id;
         if(window.MaterialKatalog)MaterialKatalog.syncCas(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'cas',Object.assign({},payload,{vykon_id:_mid}));

@@ -1712,7 +1712,7 @@ async function saveToSupabase(){
       const _etxt2=await r.clone().text();
       if(_etxt2.includes('sac_fill')){delete payload.sac_fill_pocet;delete payload.sac_fill_objem_ml;r=await _send();}
     }
-    if(r.ok){try{MaterialKatalog.syncPevar(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'pevar',{...payload,vykon_id:_vykonIdSaved});}catch(e){}window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(_vykonIdSaved);}
+    if(r.ok){try{MaterialKatalog.syncPevar(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'pevar',{...payload,vykon_id:_vykonIdSaved});}catch(e){}window._dirty=false;if(window.GenBar)GenBar.saved();const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(_vykonIdSaved);}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
   finally{if(_btn)_btn.disabled=false;}

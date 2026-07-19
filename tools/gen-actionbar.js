@@ -36,7 +36,22 @@
     var bar = document.getElementById(BAR_ID);
     if (bar) bar.classList.toggle('on', v !== false);
   }
-  var API = { mount: mount, show: show };
+  // --- Ochrana pred stratou rozpísaného nálezu (beforeunload) ---
+  // dirty=true nastaví len SKUTOČNÁ interakcia používateľa (programové gen()
+  // hodnoty nemení cez input event). saved() volajú nástroje po uložení.
+  var dirty = false;
+  function markDirty() { dirty = true; }
+  function saved() { dirty = false; }
+  document.addEventListener('input', markDirty, true);
+  document.addEventListener('change', markDirty, true);
+  window.addEventListener('beforeunload', function (e) {
+    if (!dirty) return;
+    e.preventDefault();
+    e.returnValue = ''; // prehliadač zobrazí štandardné varovanie
+    return '';
+  });
+
+  var API = { mount: mount, show: show, saved: saved, markClean: saved };
   global.GenBar = API;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
   else mount();

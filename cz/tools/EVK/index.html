@@ -1464,7 +1464,7 @@ async function saveToSheets(){
     const results=await Promise.all(tasks);
     const sb=results[0];
     if(typeof sb==='string'&&sb.startsWith('sb_ok')){
-      window._dirty=false;
+      window._dirty=false;if(window.GenBar)GenBar.saved();
       {const _ch=chybaStud();
       if(_ch.length)msg('cmsg',(window._editRecordId?'✅ Aktualizováno':'✅ Uloženo')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');
       else msg('cmsg',window._editRecordId?'✅ Záznam aktualizován!':'✅ Uloženo do statistik!','#1d6f42');}

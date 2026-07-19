@@ -1343,7 +1343,7 @@ async function saveData(){
       const _etxt3=await r.clone().text();
       if(_etxt3.includes('pristup_dalsi')){delete payload.pristup_dalsi;r=await _send();}
     }
-    if(r.ok){window._dirty=false;const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizováno ✓':'Uloženo ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizován ✓':'Uloženo ✓','#1d6f42');}
+    if(r.ok){window._dirty=false;if(window.GenBar)GenBar.saved();const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizováno ✓':'Uloženo ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizován ✓':'Uloženo ✓','#1d6f42');}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba sítě: '+e.message,'#dc2626');}
   finally{if(_saveBtn)_saveBtn.disabled=false;}

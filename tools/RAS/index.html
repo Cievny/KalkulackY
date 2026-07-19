@@ -582,7 +582,7 @@ async function saveRAS(){
         const mid=(_isEdit&&window._editVykonId)?window._editVykonId:_vykonId;
         MaterialKatalog.syncMaterial(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'ras',mid,g('datum')||null,materialRows(collectPayload()));
       }catch(e){}
-      msg('cmsg',_isEdit?'✅ Záznam aktualizovaný':'✅ Uložené','#1d6f42');
+      msg('cmsg',_isEdit?'✅ Záznam aktualizovaný':'✅ Uložené','#1d6f42');if(window.GenBar)GenBar.saved();
     }else if(r.status===404){msg('cmsg','❌ Tabuľka ras_vykony neexistuje – spustite setup SQL','#dc2626');}
     else msg('cmsg','❌ Chyba: '+r.status,'#dc2626');
   }catch(e){msg('cmsg','❌ Chyba siete','#dc2626');}
