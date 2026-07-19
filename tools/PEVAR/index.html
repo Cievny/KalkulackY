@@ -1672,6 +1672,8 @@ async function saveToSupabase(){
   const _btn=document.getElementById('save_btn');
   if(_btn)_btn.disabled=true;
   try{
+    // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort)
+    try{if(window.Pacient)payload.pacient_id=await Pacient.id(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},g('rodne_cislo'),null,payload.pohlavie);}catch(e){}
     const _isEdit=!!window._editRecordId;
     const _vykonIdSaved=payload.vykon_id;
     if(!_isEdit){
@@ -1706,6 +1708,11 @@ async function saveToSupabase(){
     if(!r.ok&&r.status===400&&('pristup_dalsi' in payload)){
       const _etxt3=await r.clone().text();
       if(_etxt3.includes('pristup_dalsi')){delete payload.pristup_dalsi;r=await _send();}
+    }
+    // stĺpec pacient_id ešte nemusí existovať (v2 setup)
+    if(!r.ok&&r.status===400&&('pacient_id' in payload)){
+      const _etxt5=await r.clone().text();
+      if(_etxt5.includes('pacient_id')){delete payload.pacient_id;r=await _send();}
     }
     // stĺpce sac_fill_* ešte nemusia existovať (setup SQL 3k)
     if(!r.ok&&r.status===400&&('sac_fill_pocet' in payload)){
@@ -2073,6 +2080,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 window.addEventListener('beforeunload',e=>{if(window._dirty){e.preventDefault();e.returnValue='';}});
 </script>
 <script src="/tools/material-katalog.js"></script>
+<script src="/tools/pacient.js"></script>
 <script>window.GEN_BAR={copy:'copyOut',save:'saveToSupabase'};</script>
 <script src="/tools/gen-actionbar.js"></script>
 </body>

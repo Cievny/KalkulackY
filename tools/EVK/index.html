@@ -1259,8 +1259,8 @@ async function saveToSupabase(table,data){
   const opts=body=>({method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
   let r=await fetch(url,opts(data));
   // staršia DB bez stĺpcov staging/wifi – ulož záznam aspoň bez nich
-  if(r.status===400&&(('staging' in data)||('wifi' in data)||('pristup_dalsi' in data)||('heparin_iu' in data))){
-    const d2={...data};delete d2.staging;delete d2.wifi;delete d2.pristup_dalsi;delete d2.heparin_iu;
+  if(r.status===400&&(('staging' in data)||('wifi' in data)||('pristup_dalsi' in data)||('heparin_iu' in data)||('pacient_id' in data))){
+    const d2={...data};delete d2.staging;delete d2.wifi;delete d2.pristup_dalsi;delete d2.heparin_iu;delete d2.pacient_id;
     r=await fetch(url,opts(d2));
   }
   return r;
@@ -1496,6 +1496,8 @@ async function saveToSheets(){
   msg('cmsg','⏳ Ukladám...','#3b82f6');
   try{
     const fullData=collectFullData();
+    // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort)
+    try{if(window.Pacient)fullData.pacient_id=await Pacient.id(SB_URL,sbHeaders(),g('rodne_cislo'),null,fullData.pohlavie);}catch(e){}
     // Kontrola duplicitného ID – len pri novom zázname (INSERT), nie pri úprave (PATCH)
     if(!window._editRecordId){
       try{
@@ -2555,6 +2557,7 @@ if(window._editRecord)stagingRestore(window._editRecord);
 try{stagingUpdate();}catch(e){}
 </script>
 <script src="/tools/material-katalog.js"></script>
+<script src="/tools/pacient.js"></script>
 <script>window.GEN_BAR={copy:'copyTxt',save:'saveToSheets'};</script>
 <script src="/tools/gen-actionbar.js"></script>
 </body>

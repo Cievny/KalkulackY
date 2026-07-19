@@ -289,6 +289,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 
 <script src="/tools/anamneza-parser.js"></script>
 <script src="/tools/material-katalog.js"></script>
+<script src="/tools/pacient.js"></script>
 <script>window.GEN_BAR={copy:'copyTxt',save:'saveRAS'};</script>
 <script src="/tools/gen-actionbar.js"></script>
 <script>
@@ -557,6 +558,8 @@ async function saveRAS(){
   if(btn.disabled)return;btn.disabled=true;
   try{
     const payload=collectPayload();
+    // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort, nikdy nezhodí uloženie)
+    try{if(window.Pacient)payload.pacient_id=await Pacient.id(SB_URL,H(),g('rodne_cislo'),null,payload.pohlavie);}catch(e){}
     const _vykonId=payload.vykon_id;
     const _isEdit=!!window._editRecordId;
     if(!_isEdit){
@@ -574,7 +577,7 @@ async function saveRAS(){
     if(r.status===400){
       // stará DB bez stĺpcov typu výkonu – ulož aspoň zvyšok
       const p2=Object.assign({},payload);
-      ['typ_vykonu','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','pristup_dalsi','komplikacie_struct','clavien_dindo'].forEach(k=>delete p2[k]);
+      ['typ_vykonu','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','pristup_dalsi','komplikacie_struct','clavien_dindo','pacient_id'].forEach(k=>delete p2[k]);
       r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(p2)});
     }
     if(r.ok){

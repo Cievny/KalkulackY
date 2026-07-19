@@ -71,6 +71,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <script>checkAuth();</script>
 <script src="/tools/anamneza-parser.js"></script>
 <script src="/tools/material-katalog.js"></script>
+<script src="/tools/pacient.js"></script>
 <nav class="tabnav">
   <button class="tnb active" id="tnb-nalez" onclick="showFuTab('nalez')">🧠 CAS</button>
   <button class="tnb" id="tnb-drg" onclick="showFuTab('drg')">📊 DRG kódy</button>
@@ -1397,6 +1398,8 @@ async function saveData(){
   try{payload.drg_kody=JSON.stringify(collectDRG());}catch(e){payload.drg_kody=null;}
   msg('Ukladám...','#5a6a8a');
   try{
+    // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort)
+    try{if(window.Pacient)payload.pacient_id=await Pacient.id(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},g('rodne_cislo'),null,payload.pohlavie);}catch(e){}
     const _isEdit=!!window._editRecordId;
     if(_isEdit){
       // maž len null/undefined – prázdny reťazec je legitímne "vyčistenie" poľa v DB;
@@ -1427,6 +1430,11 @@ async function saveData(){
     if(!r.ok&&r.status===400&&'pristup_dalsi' in payload){
       const _etxt3=await r.clone().text();
       if(_etxt3.includes('pristup_dalsi')){delete payload.pristup_dalsi;r=await _send();}
+    }
+    // stĺpec pacient_id ešte nemusí existovať (v2 setup)
+    if(!r.ok&&r.status===400&&'pacient_id' in payload){
+      const _etxt4=await r.clone().text();
+      if(_etxt4.includes('pacient_id')){delete payload.pacient_id;r=await _send();}
     }
     if(r.ok){window._dirty=false;if(window.GenBar)GenBar.saved();
       try{
