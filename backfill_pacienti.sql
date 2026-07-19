@@ -48,6 +48,10 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Backfill smie spustiť LEN admin v SQL editore (service_role) – nie appka.
+-- Odober EXECUTE bežným rolám (inak by ju vedel spustiť hociktorý prihlásený účet).
+REVOKE EXECUTE ON FUNCTION backfill_pacienti() FROM PUBLIC, anon, authenticated;
+
 -- Spustenie (odkomentujte / spustite samostatne):
 --   SELECT * FROM backfill_pacienti();
 --

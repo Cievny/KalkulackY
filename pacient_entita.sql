@@ -9,7 +9,8 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 -- Kioskové kontá (TV/sála) nesmú vidieť rodné čísla
-CREATE OR REPLACE FUNCTION je_kiosk() RETURNS boolean LANGUAGE sql STABLE AS $$
+-- (SET search_path = '' – fixný search_path, odporúčanie Supabase lintera; auth.jwt() je kvalifikované)
+CREATE OR REPLACE FUNCTION je_kiosk() RETURNS boolean LANGUAGE sql STABLE SET search_path = '' AS $$
   SELECT coalesce((auth.jwt() ->> 'email') IN ('tv@cievny.sk','sala@cievny.sk'), false)
 $$;
 
@@ -60,6 +61,8 @@ BEGIN
   INSERT INTO pacient_rc(pacient_id, rodne_cislo) VALUES (pid, clean) ON CONFLICT (pacient_id) DO NOTHING;
   RETURN pid;
 END $$;
+-- len prihlásení (authenticated) smú volať; anon/public nie (linter 0028)
+REVOKE EXECUTE ON FUNCTION najdi_alebo_zaloz_pacienta(text,int,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION najdi_alebo_zaloz_pacienta(text,int,text) TO authenticated;
 
 -- Salt (vygeneruje databáza; druhé spustenie ho vďaka ON CONFLICT nezmení)
