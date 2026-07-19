@@ -30,7 +30,7 @@ END $rmpol$;
 -- ── Centrálna evidencia pacienta ──
 -- rc_hash = HMAC(RČ, salt) – deterministický párovací kľúč; RČ tu NIE JE.
 CREATE TABLE IF NOT EXISTS pacienti (
-  id         uuid PRIMARY KEY DEFAULT extensions.gen_random_uuid(),
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   rc_hash    text UNIQUE,
   rocnik     int,
   pohlavie   text,
