@@ -294,12 +294,14 @@
       '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">' +
       '<button type="button" id="pz_cancel" style="padding:6px 14px;border:1.5px solid #dde1ea;background:#fff;border-radius:8px;cursor:pointer;font-size:12.5px">Zrušiť</button>' +
       '<button type="button" id="pz_run" style="padding:6px 14px;border:none;background:#2563eb;color:#fff;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600">Rozpoznať</button>' +
+      '<button type="button" id="pz_ai" title="Text sa najprv lokálne zbaví osobných údajov a ukáže sa vám, čo odchádza" style="padding:6px 14px;border:1.5px solid #c7d2fe;background:#eef2ff;color:#4338ca;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600">🤖 Skús AI</button>' +
       '<button type="button" id="pz_apply" style="display:none;padding:6px 14px;border:none;background:#16a34a;color:#fff;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700">Vyplniť vybrané</button>' +
       '</div>';
     ov.appendChild(box);
     ov.addEventListener('click', function (e) { if (e.target === ov) closePZ(); });
     box.querySelector('#pz_cancel').addEventListener('click', closePZ);
     box.querySelector('#pz_run').addEventListener('click', runParse);
+    box.querySelector('#pz_ai').addEventListener('click', runAi);
     box.querySelector('#pz_apply').addEventListener('click', runApply);
     return ov;
   }
@@ -314,14 +316,17 @@
     setTimeout(function () { mdl.querySelector('#pz_txt').focus(); }, 0);
   }
   function closePZ() { if (mdl) mdl.style.display = 'none'; }
-  function runParse() {
-    lastRes = parsePZ(mdl.querySelector('#pz_txt').value);
+  function boxMsg(html) {
+    var box = mdl.querySelector('#pz_review');
+    box.style.display = 'block'; box.innerHTML = html;
+    mdl.querySelector('#pz_apply').style.display = 'none';
+  }
+  // vykreslí zoznam nálezov s odškrtávaním (spoločné pre parser aj AI)
+  function renderFound() {
     var box = mdl.querySelector('#pz_review');
     mdl.querySelector('#pz_result').style.display = 'none';
-    if (!lastRes.found.length) {
-      box.style.display = 'block';
-      box.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;font-size:12px">❗ V texte sa nenašli údaje požiadavky (RČ, diagnóza, priemer…).</div>';
-      mdl.querySelector('#pz_apply').style.display = 'none';
+    if (!lastRes || !lastRes.found.length) {
+      boxMsg('<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;font-size:12px">❗ V texte sa nenašli údaje požiadavky (RČ, diagnóza, priemer…).</div>');
       return;
     }
     var html = '<div style="border:1.5px solid #dde1ea;border-radius:10px;padding:8px 10px;max-height:42vh;overflow-y:auto">';
@@ -343,6 +348,89 @@
     var upd = function () { ab.textContent = 'Vyplniť vybrané (' + mdl.querySelectorAll('.pz_pick:checked').length + ')'; };
     upd();
     mdl.querySelectorAll('.pz_pick').forEach(function (cb) { cb.addEventListener('change', upd); });
+  }
+  function runParse() {
+    lastRes = parsePZ(mdl.querySelector('#pz_txt').value);
+    renderFound();
+  }
+
+  /* ---------- AI cesta: lokálna očista → náhľad → cloud extrakcia ---------- */
+  // mapa polí z edge funkcie na nálezy formulára (kod = to isté ako v parseri,
+  // aby sa dalo dedupovať; regex má prednosť, AI dopĺňa, čo regexu ušlo)
+  var AIMAP = {
+    diagnoza:       ['dg',            function (v) { return 'Diagnóza: ' + v; },        function (v) { return { dg: v }; }],
+    endoleak_typ:   ['endoleak_typ',  function (v) { return 'Endoleak typ ' + v; },     function (v) { return { endoleak_typ: v }; }],
+    symptomy:       ['sympt',         function (v) { return 'Klinický stav: ' + v; },    function (v) { return { sympt: v }; }],
+    priemer_mm:     ['priemer',       function (v) { return 'Max. priemer ' + v + ' mm'; }, function (v) { return { priemer: v }; }],
+    rast_mm_rok:    ['rast',          function (v) { return 'Rast ' + v + ' mm/rok'; },  function (v) { return { rast: v }; }],
+    krcok_dlzka_mm: ['krcok_dlzka',   function (v) { return 'Krčok dĺžka ' + v + ' mm'; }, function (v) { return { krcok_dlzka: v }; }],
+    krcok_priemer_mm:['krcok_priemer',function (v) { return 'Krčok priemer ' + v + ' mm'; }, function (v) { return { krcok_priemer: v }; }],
+    krcok_angulacia:['krcok_ang',     function (v) { return 'Krčok angulácia ' + v; },   function (v) { return { krcok_ang: v }; }],
+    aic_dx_mm:      ['aic_dx',        function (v) { return 'AIC dx ' + v + ' mm'; },    function (v) { return { aic_dx: v }; }],
+    aic_sin_mm:     ['aic_sin',       function (v) { return 'AIC sin ' + v + ' mm'; },   function (v) { return { aic_sin: v }; }],
+    aie_dx_mm:      ['aie_dx',        function (v) { return 'AIE dx ' + v + ' mm'; },    function (v) { return { aie_dx: v }; }],
+    aie_sin_mm:     ['aie_sin',       function (v) { return 'AIE sin ' + v + ' mm'; },   function (v) { return { aie_sin: v }; }],
+    renalne:        ['renalne',       function (v) { return 'Renálne: ' + v; },          function (v) { return { renalne: v }; }],
+    medikacia:      ['medikacia',     function (v) { return 'Antitrombotiká: ' + v; },   function (v) { return { medikacia: v }; }],
+    urgencia:       ['urgencia',      function (v) { return 'Urgencia: ' + v; },         function (v) { return { urgencia: v }; }],
+    vykon:          ['vykon',         function (v) { return 'Navrhovaný výkon: ' + v; }, function (v) { return { vykon: v }; }]
+  };
+  function mergeAi(regFound, fields) {
+    var out = regFound.slice(), have = {}, seq = 0;
+    regFound.forEach(function (f) { have[f.kod] = true; });
+    var zdroje = fields.zdroje || {};
+    Object.keys(AIMAP).forEach(function (fk) {
+      var v = fields[fk];
+      if (v == null || v === '') return;
+      var def = AIMAP[fk];
+      if (have[def[0]]) return;              // regex to už má – nechaj deterministické
+      out.push({ id: 'ai' + (seq++), kod: def[0], label: def[1](v) + ' 🤖', certain: false, patch: def[2](v), quote: zdroje[fk] || '' });
+    });
+    return out;
+  }
+  function runAi() {
+    var raw = mdl.querySelector('#pz_txt').value;
+    if (!raw.trim()) return;
+    if (!global.Scrub) { boxMsg('<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;font-size:12px">❗ Modul očisty (scrub.js) sa nenačítal.</div>'); return; }
+    var s = global.Scrub.scrub(raw);
+    var zhrn = s.hits.length ? global.Scrub.zhrnutie(s.hits) : 'nič citlivé sa nenašlo';
+    var box = mdl.querySelector('#pz_review');
+    box.style.display = 'block';
+    mdl.querySelector('#pz_result').style.display = 'none';
+    mdl.querySelector('#pz_apply').style.display = 'none';
+    box.innerHTML =
+      '<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:8px 10px;font-size:12px">' +
+      '<b>🔒 Pred odoslaním appka odstránila:</b> ' + esc(zhrn) + '.<br>' +
+      'Von pôjde <b>len</b> tento očistený text (osobné údaje ostávajú vo vašom prehliadači):</div>' +
+      '<textarea readonly style="width:100%;box-sizing:border-box;margin-top:6px;border:1.5px solid #dde1ea;border-radius:8px;padding:8px;font-size:12px;font-family:inherit;height:120px;background:#f8fafc;color:#334155">' + esc(s.clean) + '</textarea>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">' +
+      '<button type="button" id="pz_gate_back" style="padding:5px 12px;border:1.5px solid #dde1ea;background:#fff;border-radius:8px;cursor:pointer;font-size:12px">Späť</button>' +
+      '<button type="button" id="pz_gate_send" style="padding:5px 12px;border:none;background:#4338ca;color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">Odoslať očistené do AI</button>' +
+      '</div>';
+    box.querySelector('#pz_gate_back').addEventListener('click', function () { box.style.display = 'none'; box.innerHTML = ''; });
+    box.querySelector('#pz_gate_send').addEventListener('click', function () { sendAi(s.clean, raw); });
+  }
+  function sendAi(clean, raw) {
+    var box = mdl.querySelector('#pz_review');
+    if (!global.SB_BASE || !global.sbHeaders) { boxMsg('<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;font-size:12px">❗ AI extrakcia nie je v tomto nástroji dostupná.</div>'); return; }
+    box.innerHTML = '<div style="font-size:12.5px;color:#4338ca;font-weight:600;padding:6px 2px">⏳ Posielam očistený text do AI…</div>';
+    fetch(global.SB_BASE + '/functions/v1/extrakcia', {
+      method: 'POST', headers: global.sbHeaders(), body: JSON.stringify({ text: clean, kind: 'poziadavka' })
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, status: r.status, d: d }; });
+    }).then(function (res) {
+      if (!res.ok) {
+        var m = res.d && res.d.error ? res.d.error : ('chyba ' + res.status);
+        if (res.status === 503) m = 'AI zatiaľ nie je nastavené (chýba API kľúč na serveri).';
+        boxMsg('<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;font-size:12px">❌ ' + esc(m) + '</div>');
+        return;
+      }
+      var fields = (res.d && res.d.fields) || {};
+      lastRes = { found: mergeAi(parsePZ(raw).found, fields) };  // RČ/iniciály z regexu (lokálne, neodišli) + klinika z AI
+      renderFound();
+    }).catch(function (e) {
+      boxMsg('<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 10px;font-size:12px">❌ ' + esc(String(e && e.message || e)) + '</div>');
+    });
   }
   function runApply() {
     if (!lastRes) return;

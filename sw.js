@@ -1,7 +1,7 @@
 // Service worker cievny.sk – offline záchranná sieť.
 // Stratégia: navigácie a dáta = network-first (čerstvé HTML, žiadne staré nálezy),
 // statika (ikony, manifest, auth.js) = cache-first. Supabase sa NIKDY necachuje.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = 'cievny-' + VERSION;
 const PRECACHE = [
   '/', '/tools/', '/tools/auth.js', '/manifest.webmanifest',

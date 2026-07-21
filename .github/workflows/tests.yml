@@ -28,6 +28,8 @@ jobs:
         run: node tests/program-import.mjs
       - name: Testy extraktora poziadaviek
         run: node tests/poziadavky-import.mjs
+      - name: Testy scrubbera osobnych udajov
+        run: node tests/scrub.mjs
       - name: Testy staging algoritmov (TASC/GLASS/WIfI)
         run: node tests/staging.mjs
       - name: Testy materialoveho registra

@@ -71,6 +71,7 @@
   window.sbHeaders=function(){
     return {'apikey':SB_ANON,'Authorization':'Bearer '+window.sbToken(),'Content-Type':'application/json'};
   };
+  window.SB_BASE=SB_URL; // pre volania edge funkcií (napr. /functions/v1/extrakcia)
 
   async function refreshToken(){
     const rt=sessionStorage.getItem(RK);
