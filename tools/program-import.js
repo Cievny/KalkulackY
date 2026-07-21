@@ -13,7 +13,7 @@
   var DEN = /(pondelok|utorok|streda|stvrtok|piatok|sobota|nedela)/;
   var DATUM = /(\d{1,2})\.\s*(\d{1,2})\.\s*(20\d{2})/;
   // číslovaný riadok wordového programu: „1. Priezvisko Meno   1948   VÝKON   OIA"
-  // Pred číslom toleruje 1–3 krátke OCR šumové tokeny z okrajov tabuľky
+  // Pred číslom toleruje 1–3 krátke šumové tokeny z okrajov skopírovanej tabuľky
   // („4 1. Meno…", „A“ 2. Meno…", „| a 4. Meno…") – token bez bodky/zátvorky, max 3 znaky.
   var CISLOVANY = /^\s*(?:[^.)\s]{1,3}\s+){0,3}\d{1,2}[.)]\s+(.+?)\s+(19\d{2}|20\d{2})\b\s*(.*)$/;
   var ODDELENIE_KONIEC = /\s+(OIA|OIRA|OAIM|KAIM|JIS|OUM)\s*$/i;
@@ -24,7 +24,7 @@
   var ODDELENIE_NIS = /^\s*(O[IA][A-Z]{0,3})\s*[-–]\s*odd/i;
   var DOVOD = /^\s*d[oô]vod\s*:\s*(.*)$/i;
   var MENO_OK = /[a-zA-Zá-žÁ-Ž]{2,}\s+[a-zA-Zá-žÁ-Ž]{2,}/;
-  // riadky hlavičky/pätičky – nikdy nie pacient (pre voľný OCR fallback)
+  // riadky hlavičky/pätičky – nikdy nie pacient (pre voľný textový fallback)
   var HLAVICKA = /pondelok|utorok|streda|stvrtok|piatok|sobota|nedela|schvalil|katetrizacn|\bprogram\b|oddelen|nemocnic|bratislava|kosice|primar|\bdna\b|\bsala\b/;
 
   // rok narodenia v riadku: 19xx/20xx, ktorý NIE JE časťou dátumu („16.7. 2026")
@@ -123,7 +123,7 @@
         continue;
       }
 
-      // formát A – OCR fallback: číslo riadku sa nedalo prečítať, ale je tam
+      // formát A – textový fallback: číslo riadku sa nedalo prečítať, ale je tam
       // meno + rok narodenia („Melichárková Jana 1958 DK OIA"). Len mimo NIS
       // bloku (v Dôvode by rok v texte spravil falošného pacienta).
       if (!cur) {

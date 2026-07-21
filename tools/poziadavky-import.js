@@ -289,11 +289,6 @@
     box.innerHTML =
       '<div style="font-weight:700;font-size:14px;margin-bottom:8px">📋 Vyplniť požiadavku z textu (žiadanka / CT popis / mail)</div>' +
       '<textarea id="pz_txt" rows="8" placeholder="Sem vložte text žiadanky, CT popisu alebo mailu…" style="width:100%;box-sizing:border-box;border:1.5px solid #dde1ea;border-radius:8px;padding:8px;font-size:12.5px;font-family:inherit;outline:none;resize:vertical"></textarea>' +
-      '<div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap">' +
-      '<label style="cursor:pointer;font-size:12px;font-weight:600;color:#1e40af;border:1.5px solid #bfdbfe;background:#eff6ff;border-radius:8px;padding:5px 10px">📷 Načítať zo screenshotu<input type="file" id="pz_img" accept="image/*" style="display:none"></label>' +
-      '<span style="font-size:11px;color:#6b7280">alebo obrázok vložte Ctrl+V • všetko sa spracuje len vo vašom prehliadači</span>' +
-      '</div>' +
-      '<div id="pz_ocr" style="display:none;font-size:12.5px;margin-top:6px;color:#1e40af;font-weight:600"></div>' +
       '<div id="pz_review" style="display:none;margin:10px 0"></div>' +
       '<div id="pz_result" style="display:none;font-size:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 10px;margin:10px 0"></div>' +
       '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">' +
@@ -306,11 +301,6 @@
     box.querySelector('#pz_cancel').addEventListener('click', closePZ);
     box.querySelector('#pz_run').addEventListener('click', runParse);
     box.querySelector('#pz_apply').addEventListener('click', runApply);
-    box.querySelector('#pz_img').addEventListener('change', function () { ocrFile(this.files[0]); this.value = ''; });
-    ov.addEventListener('paste', function (e) {
-      var it = Array.prototype.find.call((e.clipboardData || {}).items || [], function (i) { return i.type && i.type.indexOf('image/') === 0; });
-      if (it) { e.preventDefault(); ocrFile(it.getAsFile()); }
-    });
     return ov;
   }
   function openPZ() {
@@ -364,43 +354,6 @@
     out.style.display = 'block';
     out.textContent = '✅ Vyplnené: ' + (labels.join(', ') || '–');
     mdl.querySelector('#pz_cancel').textContent = 'Zavrieť';
-  }
-
-  /* ---------- OCR (tesseract.js – lokálne, spoločné vendor súbory) ---------- */
-  var ocrWorker = null;
-  function ocrStav(t) { var el = mdl.querySelector('#pz_ocr'); el.style.display = t ? 'block' : 'none'; el.textContent = t || ''; }
-  function loadTess() {
-    return global.Tesseract ? Promise.resolve() : new Promise(function (res, rej) {
-      var s = document.createElement('script');
-      s.src = '/tools/vendor/tesseract/tesseract.min.js';
-      s.onload = res; s.onerror = function () { rej(new Error('nepodarilo sa načítať OCR knižnicu')); };
-      document.head.appendChild(s);
-    });
-  }
-  function ocrFile(file) {
-    if (!file || !file.type || file.type.indexOf('image/') !== 0) return;
-    ocrStav('⏳ Načítavam OCR (prvýkrát ~6 MB)…');
-    loadTess().then(function () {
-      return ocrWorker ? ocrWorker : Tesseract.createWorker('slk', 1, {
-        workerPath: '/tools/vendor/tesseract/worker.min.js',
-        corePath: '/tools/vendor/tesseract/tesseract-core-simd-lstm.wasm.js',
-        langPath: '/tools/vendor/tesseract',
-        logger: function (mm) { if (mm.status === 'recognizing text') ocrStav('🔍 Čítam obrázok… ' + Math.round((mm.progress || 0) * 100) + ' %'); }
-      }).then(function (w) { ocrWorker = w; return w; });
-    }).then(function (w) {
-      ocrStav('🔍 Čítam obrázok…');
-      var prip = global.OcrUtils
-        ? OcrUtils.pripravObrazok(file).catch(function () { return file; })
-        : Promise.resolve(file);
-      return prip.then(function (src) { return w.recognize(src); });
-    }).then(function (r) {
-      var txt = (r && r.data && r.data.text || '').trim();
-      if (!txt) { ocrStav('❗ Z obrázka sa nepodarilo prečítať text – skúste ostrejší screenshot.'); return; }
-      var ta = mdl.querySelector('#pz_txt');
-      ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + txt;
-      ocrStav('');
-      runParse();
-    }).catch(function (e) { ocrStav('❌ OCR zlyhalo: ' + ((e && e.message) || e)); });
   }
 
   var API = { parsePZ: parsePZ, applyPZ: applyPZ, openPZ: openPZ, closePZ: closePZ, _norm: norm };
