@@ -1558,6 +1558,8 @@ function p2Restore(t){
 
 async function saveToSupabase(){
   if(!g('id_suffix').trim()){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  // ochrana pred dvojklikom aj pri volaní mimo tlačidla (sticky lišta) – inak duplicitný záznam
+  if(saveToSupabase._busy)return;saveToSupabase._busy=true;
   const pristupVal=g('pristup_strana').split('|');
   // --- Flatten materiálov pre publikačnú štatistiku ---
   const extRows=[];
@@ -1722,7 +1724,7 @@ async function saveToSupabase(){
     if(r.ok){try{MaterialKatalog.syncPevar(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'pevar',{...payload,vykon_id:_vykonIdSaved});}catch(e){}window._dirty=false;if(window.GenBar)GenBar.saved();const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(_vykonIdSaved);}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
-  finally{if(_btn)_btn.disabled=false;}
+  finally{saveToSupabase._busy=false;if(_btn)_btn.disabled=false;}
 }
 
 // ── Prepojenie s denným programom (handoff z /tools/Program/) ──
@@ -2083,5 +2085,7 @@ window.addEventListener('beforeunload',e=>{if(window._dirty){e.preventDefault();
 <script src="/tools/pacient.js"></script>
 <script>window.GEN_BAR={copy:'copyOut',save:'saveToSupabase'};</script>
 <script src="/tools/gen-actionbar.js"></script>
+<script src="/tools/rc-auto.js"></script>
+<script>RcAuto.bind({rc:'rodne_cislo',pohl:'pohlavie',muz:'Muž',zena:'Žena',vek:'vek',datum:'datum_zaznamu'});</script>
 </body>
 </html>

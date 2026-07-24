@@ -1309,6 +1309,8 @@ function p2Restore(t){
 
 async function saveData(){
   if(!(window._editRecordId&&window._editVykonId)&&!g('id_suffix')){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  // ochrana pred dvojklikom aj pri volaní mimo tlačidla (sticky lišta) – inak duplicitný záznam
+  if(saveData._busy)return;saveData._busy=true;
   const artVal=g('access_art');
   const _saveBtn=document.querySelector('button[onclick="saveData()"]');
   if(_saveBtn)_saveBtn.disabled=true;
@@ -1444,7 +1446,7 @@ async function saveData(){
       const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(payload.vykon_id);}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
-  finally{if(_saveBtn)_saveBtn.disabled=false;}
+  finally{saveData._busy=false;if(_saveBtn)_saveBtn.disabled=false;}
 }
 
 // ── Prepojenie s denným programom (handoff z /tools/Program/) ──
@@ -1750,5 +1752,7 @@ window.addEventListener('beforeunload',e=>{if(window._dirty){e.preventDefault();
 </script>
 <script>window.GEN_BAR={copy:'copyOut',save:'saveData'};</script>
 <script src="/tools/gen-actionbar.js"></script>
+<script src="/tools/rc-auto.js"></script>
+<script>RcAuto.bind({rc:'rodne_cislo',pohl:'pohlavie',muz:'Muž',zena:'Žena',vek:'vek',datum:'datum_zaznamu'});</script>
 </body>
 </html>

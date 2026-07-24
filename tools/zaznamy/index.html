@@ -308,7 +308,7 @@ document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==
 
 function openInForm(tool,record){
   sessionStorage.setItem('cievny_edit',JSON.stringify({tool,record}));
-  const urls={EVK:'/tools/EVK/',CAS:'/tools/CAS-generator/',PEVAR:'/tools/PEVAR/'};
+  const urls={EVK:'/tools/EVK/',CAS:'/tools/CAS-generator/',PEVAR:'/tools/PEVAR/',RAS:'/tools/RAS/'};
   window.location.href=urls[tool]||'/tools/EVK/';
 }
 
