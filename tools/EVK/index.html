@@ -1057,7 +1057,7 @@ function collectInterventionItems(){
   if(document.getElementById('c_vprep').checked){rows('vprep').forEach(row=>{
     const idx=row.dataset.idx,id='vprep_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
     const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný device'):sel.value;
-    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:'vessel preparation: '+balloonDesc(id,'',nm),short:'vessel preparation ('+nm+')',order:1}));
+    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:'vessel preparation: '+balloonDesc(id,'',nm),short:'vessel preparation',order:1}));
   });}
   if(document.getElementById('c_pred').checked){rows('pred').forEach(row=>{
     const idx=row.dataset.idx,id='pred_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
@@ -1067,7 +1067,7 @@ function collectInterventionItems(){
   if(document.getElementById('c_reentry').checked){rows('reentry').forEach(row=>{
     const idx=row.dataset.idx,id='reentry_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
     const dev=sel.value==='vlastný'?(g(id+'_s_c')||'reentry katéter'):sel.value;
-    items.push({tp:tp(id),sg:'',desc:'pre nemožnosť intraluminálnej rekanalizácie použitý reentry katéter '+dev,short:'reentry katéter ('+dev+')',order:2.5});
+    items.push({tp:tp(id),sg:'',desc:'pre nemožnosť intraluminálnej rekanalizácie použitý reentry katéter '+dev,short:'reentry katéter',order:2.5});
   });}
   if(document.getElementById('c_trom').checked){
     const rot=document.getElementById('trom_rotarex').checked,asp=document.getElementById('trom_aspir').checked;
@@ -1082,7 +1082,7 @@ function collectInterventionItems(){
     const p=g(id+'_p'),d=g(id+'_d'),u=g(id+'_u');
     let s='IVL '+kat;if(p&&d)s+=' '+p+'×'+d+' mm';if(u)s+=', '+u+' pulzov podľa protokolu';
     // jeden IVL katéter môže ošetriť viac ciev (primárna + extra lokality)
-    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:s,short:'IVL ('+kat+')',order:4}));
+    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:s,short:'IVL',order:4}));
   });}
   if(document.getElementById('c_pta').checked){rows('pta').forEach(row=>{
     const idx=row.dataset.idx,id='pta_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
@@ -1092,7 +1092,7 @@ function collectInterventionItems(){
   if(document.getElementById('c_deb').checked){rows('deb').forEach(row=>{
     const idx=row.dataset.idx,id='deb_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
     const nm=sel.value==='vlastný'?(g(id+'_s_c')||'vlastný balón'):sel.value;
-    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:balloonDesc(id,'DEB PTA balónom ',nm),short:'DEB PTA ('+nm+')',order:6}));
+    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:balloonDesc(id,'DEB PTA balónom ',nm),short:'DEB PTA',order:6}));
   });}
   if(document.getElementById('c_stent').checked){
     rows('stent').forEach(row=>{
@@ -1100,7 +1100,7 @@ function collectInterventionItems(){
       const nm=ns.value==='vlastný'?(g(id+'_n_c')||'vlastný stent'):ns.value;
       const t=g(id+'_t'),p=g(id+'_p'),d=g(id+'_d');
       let s='implantácia '+(t?stGen(t)+' stentu ':'stentu ')+nm;if(p&&d)s+=' '+p+'×'+d+' mm';
-      items.push({tp:tp(id),sg:sg(id),desc:s,short:'stent '+nm+(p&&d?' '+p+'×'+d:''),order:7});
+      items.push({tp:tp(id),sg:sg(id),desc:s,short:'stent',order:7});
     });
     if(document.getElementById('c_post').checked){rows('post').forEach(row=>{
       const idx=row.dataset.idx,id='post_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
@@ -1111,7 +1111,7 @@ function collectInterventionItems(){
   if(document.getElementById('c_sg').checked){
     const t=g('sg_t'),n=vN('sg_n'),p=g('sg_p'),d=g('sg_d');
     let s='stentgraft: implantácia'+(t?' '+stGen(t):'')+' stentgraftu'+(n?' '+n:'')+(p&&d?' '+p+'×'+d+' mm':'');
-    items.push({tp:g('sg_tp'),sg:g('sg_sg')||'',desc:s,short:'stentgraft'+(n?' '+n:''),order:9});
+    items.push({tp:g('sg_tp'),sg:g('sg_sg')||'',desc:s,short:'stentgraft',order:9});
   }
   return items;
 }
@@ -1123,12 +1123,12 @@ function buildAutoZaver(){
   if(document.getElementById('c_pred').checked)interv.push('predilatácia');
   if(document.getElementById('c_atek').checked){const t=chk('atek_t');interv.push('aterektómia'+(t.length?' ('+t.join(', ')+')':''));}
   if(document.getElementById('c_sw').checked)interv.push('IVL');
-  if(document.getElementById('c_reentry').checked){const rrows=document.querySelectorAll('#reentry_list .dyn-row');const rdevs=Array.from(rrows).map(row=>{const idx=row.dataset.idx,sel=document.getElementById('reentry_'+idx+'_s');return sel?(sel.value==='vlastný'?(g('reentry_'+idx+'_s_c')||'reentry katéter'):sel.value):'reentry katéter';});interv.push('reentry katéter ('+(rdevs.length?rdevs.join(', '):'reentry katéter')+')');}
+  if(document.getElementById('c_reentry').checked)interv.push('reentry katéter');
   if(document.getElementById('c_trom').checked)interv.push('trombektómia');
   if(document.getElementById('c_pta').checked)interv.push('PTA');
   if(document.getElementById('c_deb').checked)interv.push('DEB PTA');
-  if(document.getElementById('c_stent').checked){const rows=document.querySelectorAll('#stent_list .dyn-row');const names=[];rows.forEach(row=>{const n=document.getElementById('stent_'+row.dataset.idx+'_n');if(n)names.push(n.value==='vlastný'?(g('stent_'+row.dataset.idx+'_n_c')||'stent'):n.value);});interv.push('stenting'+(names.length?' ('+[...new Set(names)].join(', ')+')':''));}
-  if(document.getElementById('c_sg').checked)interv.push('stentgraft ('+vN('sg_n')+')');
+  if(document.getElementById('c_stent').checked)interv.push('stenting');
+  if(document.getElementById('c_sg').checked)interv.push('stentgraft');
   if(document.getElementById('c_kiss').checked)interv.push('kissing stent');
   if(document.getElementById('c_cerab').checked)interv.push('CERAB technika');
   // Ošetrené tepny: zoskup intervencie podľa tepny (čo všetko sa v ktorej cieve urobilo)
@@ -1140,7 +1140,7 @@ function buildAutoZaver(){
   }
   collectInterventionItems().forEach(it=>addV(it.tp,it.short));
   if(document.getElementById('c_atek').checked){const t=chk('atek_t');addV(g('atek_tp'),'aterektómia'+(t.length?' ('+t.join(', ')+')':''));}
-  if(document.getElementById('c_reentry').checked){document.querySelectorAll('#reentry_list .dyn-row').forEach(row=>{const idx=row.dataset.idx,sel=document.getElementById('reentry_'+idx+'_s');const dev=sel?(sel.value==='vlastný'?(g('reentry_'+idx+'_s_c')||'reentry katéter'):sel.value):'reentry katéter';addV(g('reentry_'+idx+'_tp'),'reentry katéter ('+dev+')');});}
+  if(document.getElementById('c_reentry').checked){document.querySelectorAll('#reentry_list .dyn-row').forEach(row=>{addV(g('reentry_'+row.dataset.idx+'_tp'),'reentry katéter');});}
   const extra=[];
   if(document.getElementById('c_kiss').checked)extra.push('AIC bilat. – kissing stent');
   if(document.getElementById('c_cerab').checked)extra.push('aortoiliacky segment – CERAB technika');

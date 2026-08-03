@@ -186,12 +186,14 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   </div>
   <div class="f"><label>Čas od symptómov (dni)</label><input type="number" id="cas_symptom_days" min="0" max="3650" placeholder="napr. 7" oninput="gen()"></div>
 </div>
-<div class="f"><label>Typ AS plátu</label>
+<div class="f"><label>Typ lézie</label>
   <select id="plat" onchange="gen()">
-    <option value="mäkkým AS plátom (dif.dg. trombom)">mäkký (s dif.dg. trombom)</option>
-    <option value="mäkkým AS plátom">mäkký</option>
-    <option value="hrubo kalcifikovaným AS plátom">hrubo kalcifikovaný</option>
-    <option value="zmiešaným AS plátom">zmiešaný</option>
+    <option value="mäkkým AS plátom (dif.dg. trombom)">mäkký AS plát (s dif.dg. trombom)</option>
+    <option value="mäkkým AS plátom">mäkký AS plát</option>
+    <option value="hrubo kalcifikovaným AS plátom">hrubo kalcifikovaný AS plát</option>
+    <option value="zmiešaným AS plátom">zmiešaný AS plát</option>
+    <option value="v teréne restenózy po CEA">restenóza po CEA</option>
+    <option value="v teréne in-stent restenózy po CAS">restenóza po CAS (in-stent)</option>
   </select>
 </div>
 <details class="komor-details"><summary><span class="komor-arr">▶</span> 🏥 Komorbidity <span style="font-weight:400;color:#9ca3af;font-size:11px">(doplniť neskôr)</span> <button type="button" onclick="event.preventDefault();event.stopPropagation();AnamnezaParser.open()" style="margin-left:8px;font-size:11px;padding:2px 8px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;border-radius:6px;cursor:pointer;font-weight:600">📋 Z textu správy</button></summary>
@@ -1039,7 +1041,7 @@ function gen(){
   }else{
     L.push('INDIKÁCIA: '+(symp?'so symptomatickou ':'s asymptomatickou ')+(ACI_INSTR[typAci]||'stenózou')+' '+aci
       +(symp?' ('+klin+(sympDays?' pred '+sympDays+' dňami':'')+')':'')
-      +(plat?' s '+plat:'')+', '+indText+' k endovaskulárnej liečbe (EVL).');
+      +(plat?(plat.startsWith('v ')?' ':' s ')+plat:'')+', '+indText+' k endovaskulárnej liečbe (EVL).');
   }
 
   // ── PRÍSTUP ──
