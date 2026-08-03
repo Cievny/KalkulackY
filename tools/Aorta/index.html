@@ -190,8 +190,8 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
         <option>AAA infrarenálna</option><option>AAA juxtarenálna</option><option>AAA suprarenálna</option>
         <option>TAAA</option><option>Aneuryzma hrudnej aorty</option><option>Disekcia typ B</option>
         <option>PAU</option><option>IMH</option><option>Aneuryzma iliaky</option>
-        <option>Endoleak po EVAR/TEVAR</option><option>Reintervencia po EVAR/TEVAR</option><option>Iné</option>
-      </select><input id="af_diagnoza_ine" placeholder="voľný text – napr. stenóza AFS l.dx." style="display:none"></div>
+        <option>Endoleak po EVAR/TEVAR</option><option>Reintervencia po EVAR/TEVAR</option><option>Koarktácia aorty</option><option>Iné</option><option value="vlastné">vlastné…</option>
+      </select><input id="af_diagnoza_vl" placeholder="dopíšte vlastnú diagnózu…" style="display:none;margin-top:4px"><input id="af_diagnoza_ine" placeholder="voľný text – napr. stenóza AFS l.dx." style="display:none"></div>
       <div class="fld" id="fld_endoleak" style="display:none"><label>Typ endoleaku</label><select id="af_endoleak_typ">
         <option value="">neurčený</option><option>typ Ia</option><option>typ Ib</option><option>typ II</option><option>typ III</option><option>typ IV</option><option>typ V (endotenzia)</option>
       </select></div>
@@ -578,8 +578,9 @@ function navrhKontrolu(){
 
 function toggleEndoleak(){
   const ine=document.getElementById('af_kategoria').value==='ine';
-  const el=document.getElementById('af_diagnoza').value.startsWith('Endoleak');
-  document.getElementById('fld_endoleak').style.display=(!ine&&el)?'':'none';
+  const v=document.getElementById('af_diagnoza').value;
+  document.getElementById('fld_endoleak').style.display=(!ine&&v.startsWith('Endoleak'))?'':'none';
+  document.getElementById('af_diagnoza_vl').style.display=(!ine&&v==='vlastné')?'':'none';
 }
 
 function cardEl(it){
@@ -696,6 +697,8 @@ function formToObj(){
      'kardio','renalne','pulmo','frailty','dozitie','medikacia','vykon_typ','vykon_cieva','indikacia_poznamka','endoleak_typ','sizing'].forEach(k=>o[k]=null);
   }else{
     o.zaver_seminara=null; // záver seminára je len pre INÉ
+    if(document.getElementById('af_diagnoza').value==='vlastné')
+      o.diagnoza=document.getElementById('af_diagnoza_vl').value.trim()||'Iné';
   }
   if(!VYKON_DETAIL[o.vykon_typ])o.vykon_cieva=null; // detail len pri postupoch, ktoré ho majú
   if(!(o.diagnoza||'').startsWith('Endoleak'))o.endoleak_typ=null; // typ len pri endoleaku
@@ -710,6 +713,10 @@ function objToForm(it){
     if(el.tagName==='SELECT'&&el.selectedIndex===-1)el.selectedIndex=0;
   });
   document.getElementById('af_diagnoza_ine').value=(it&&kat(it)==='ine')?(it.diagnoza||''):'';
+  {const dgSel=document.getElementById('af_diagnoza'),dgVl=document.getElementById('af_diagnoza_vl');
+   const dgVal=it&&kat(it)!=='ine'?(it.diagnoza||''):'';
+   if(dgVal&&![...dgSel.options].some(o=>o.value===dgVal||o.text===dgVal)){dgSel.value='vlastné';dgVl.value=dgVal;}
+   else dgVl.value='';}
   sizingToForm(it);
   if(it)document.getElementById('af_kategoria').value=kat(it);
   toggleKategoria();
