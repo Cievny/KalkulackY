@@ -141,6 +141,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="f"><label>Rodné číslo</label><input type="text" id="rodne_cislo" autocomplete="off" inputmode="numeric" placeholder="bez lomky alebo s lomkou" oninput="gen()">
     <div style="font-size:10px;color:#6b7280;margin-top:2px">len na interné počítanie unikátnych pacientov</div>
   </div>
+  <div class="f"><label>Pacient ID <span style="font-weight:400;color:#9ca3af">(pridelí sa sám pri uložení)</span></label><input type="text" id="pacient_cislo" inputmode="numeric" autocomplete="off" placeholder="auto"></div>
   <div class="f"><label>ABI pred výkonom</label><input type="number" id="abi_pred" step="0.01" min="0" max="2" placeholder="0,55" oninput="gen()"></div>
 </div>
 <div class="row r3">
@@ -1511,9 +1512,9 @@ async function saveToSheets(){
   msg('cmsg','⏳ Ukladám...','#3b82f6');
   try{
     const fullData=collectFullData();
-    if(window._autoEdit&&window._editVykonId&&fullData.vykon_id!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;}  // zmena ID výkonu = nový pacient
+    if(window._autoEdit&&window._editVykonId&&fullData.vykon_id!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;const _pc=document.getElementById('pacient_cislo');if(_pc)_pc.value='';}  // zmena ID výkonu = nový pacient
     // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort)
-    try{if(window.Pacient)fullData.pacient_id=await Pacient.id(SB_URL,sbHeaders(),g('rodne_cislo'),null,fullData.pohlavie);}catch(e){}
+    try{if(window.Pacient){const _pp=await Pacient.paruj(SB_URL,sbHeaders(),g('rodne_cislo'),g('pacient_cislo'),null,fullData.pohlavie);if(_pp&&_pp.id){fullData.pacient_id=_pp.id;const _pe=document.getElementById('pacient_cislo');if(_pe&&_pp.cislo)_pe.value=_pp.cislo;}else if(_pp&&_pp.error){alert('⚠️ '+_pp.error);}}}catch(e){}
     // Kontrola duplicitného ID – len pri novom zázname (INSERT), nie pri úprave (PATCH)
     if(!window._editRecordId){
       try{

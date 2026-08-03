@@ -272,6 +272,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="f"><label>Rodné číslo</label><input type="text" id="rodne_cislo" autocomplete="off" inputmode="numeric" placeholder="123456/7890">
     <small style="display:block;color:#6b7280;font-size:10px;margin-top:2px">len na interné počítanie unikátnych pacientov</small>
   </div>
+  <div class="f"><label>Pacient ID <span style="font-weight:400;color:#9ca3af">(pridelí sa sám pri uložení)</span></label><input type="text" id="pacient_cislo" inputmode="numeric" autocomplete="off" placeholder="auto"></div>
 </div>
 <div class="f"><label>Diagnóza</label><input type="text" id="diagnoza" value="komplexným postihnutím infrarenálnej aorty – AAA" oninput="gen()"></div>
 <div class="row r2">
@@ -1684,8 +1685,8 @@ async function saveToSupabase(){
   if(_btn)_btn.disabled=true;
   try{
     // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort)
-    try{if(window.Pacient)payload.pacient_id=await Pacient.id(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},g('rodne_cislo'),null,payload.pohlavie);}catch(e){}
-    if(window._autoEdit&&window._editVykonId&&payload.vykon_id!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;}  // zmena ID výkonu = nový pacient
+    try{if(window.Pacient){const _pp=await Pacient.paruj(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},g('rodne_cislo'),g('pacient_cislo'),null,payload.pohlavie);if(_pp&&_pp.id){payload.pacient_id=_pp.id;const _pe=document.getElementById('pacient_cislo');if(_pe&&_pp.cislo)_pe.value=_pp.cislo;}else if(_pp&&_pp.error){alert('⚠️ '+_pp.error);}}}catch(e){}
+    if(window._autoEdit&&window._editVykonId&&payload.vykon_id!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;const _pc=document.getElementById('pacient_cislo');if(_pc)_pc.value='';}  // zmena ID výkonu = nový pacient
     const _isEdit=!!window._editRecordId;
     const _vykonIdSaved=payload.vykon_id;
     if(!_isEdit){

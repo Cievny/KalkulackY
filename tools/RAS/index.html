@@ -74,6 +74,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="f"><label>Pohlavie</label><select id="pohl" onchange="gen()"><option value="M">Muž</option><option value="Z">Žena</option></select></div>
   <div class="f"><label>Rodné číslo <span style="font-weight:400;color:#9ca3af">(len do DB)</span></label><input type="text" id="rodne_cislo" maxlength="11" autocomplete="off"></div>
 </div>
+<div class="row r3">
+  <div class="f"><label>Pacient ID <span style="font-weight:400;color:#9ca3af">(pridelí sa sám pri uložení)</span></label><input type="text" id="pacient_cislo" inputmode="numeric" autocomplete="off" placeholder="auto"></div>
+</div>
 </div>
 
 <div class="card">
@@ -583,9 +586,9 @@ async function saveRAS(){
   try{
     const payload=collectPayload();
     // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort, nikdy nezhodí uloženie)
-    try{if(window.Pacient)payload.pacient_id=await Pacient.id(SB_URL,H(),g('rodne_cislo'),null,payload.pohlavie);}catch(e){}
+    try{if(window.Pacient){const _pp=await Pacient.paruj(SB_URL,H(),g('rodne_cislo'),g('pacient_cislo'),null,payload.pohlavie);if(_pp&&_pp.id){payload.pacient_id=_pp.id;const _pe=document.getElementById('pacient_cislo');if(_pe&&_pp.cislo)_pe.value=_pp.cislo;}else if(_pp&&_pp.error){alert('⚠️ '+_pp.error);}}}catch(e){}
     const _vykonId=payload.vykon_id;
-    if(window._autoEdit&&window._editVykonId&&payload.vykon_id!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;}  // zmena ID výkonu = nový pacient
+    if(window._autoEdit&&window._editVykonId&&payload.vykon_id!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;const _pc=document.getElementById('pacient_cislo');if(_pc)_pc.value='';}  // zmena ID výkonu = nový pacient
     const _isEdit=!!window._editRecordId;
     if(!_isEdit){
       const dupR=await fetch(SB_URL+'/rest/v1/ras_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:H()});

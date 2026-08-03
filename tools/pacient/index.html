@@ -43,11 +43,11 @@ input:focus{outline:none;border-color:#3b82f6}
 
 <div class="wrap">
 <h1>🧍 Cesta pacienta</h1>
-<div class="sub">Všetky výkony a kontroly jedného pacienta naprieč nástrojmi. Rodné číslo sa spracuje len na vyhľadanie – nikam sa neukladá.</div>
+<div class="sub">Všetky výkony a kontroly jedného pacienta naprieč nástrojmi. Hľadať možno rodným číslom alebo krátkym Pacient ID; RČ sa spracuje len na vyhľadanie – nikam sa neukladá.</div>
 
 <div class="card">
   <div class="searchbar">
-    <div class="f"><label>Rodné číslo pacienta</label><input type="text" id="rc" placeholder="napr. 9001011234" autocomplete="off" inputmode="numeric"></div>
+    <div class="f"><label>Rodné číslo alebo Pacient ID</label><input type="text" id="rc" placeholder="RČ (9001011234) alebo ID (123)" autocomplete="off" inputmode="numeric"></div>
     <button class="btn" onclick="hladaj()">🔎 Nájsť</button>
   </div>
   <div class="msg" id="msg"></div>
@@ -78,15 +78,22 @@ async function get(path){const r=await fetch(SB_URL+'/rest/v1/'+path,{headers:H(
 async function hladaj(){
   const rc=(document.getElementById('rc').value||'').replace(/\D/g,'');
   document.getElementById('out').innerHTML='';
-  if(rc.length<6){msg('⚠️ Zadajte platné rodné číslo (aspoň 6 číslic).','#b45309');return;}
+  if(!rc.length){msg('⚠️ Zadajte rodné číslo alebo Pacient ID.','#b45309');return;}
   msg('Hľadám…');
   let pid=null;
+  if(rc.length<6){
+    // krátke číslo = Pacient ID
+    const rows=await get('pacienti?cislo=eq.'+rc+'&select=id');
+    pid=rows.length?rows[0].id:null;
+    if(!pid){msg('Pacient s ID '+rc+' sa nenašiel.','#6b7280');return;}
+  }else{
   try{
     const r=await fetch(SB_URL+'/rest/v1/rpc/najdi_pacienta',{method:'POST',headers:H(),body:JSON.stringify({p_rc:rc})});
     if(r.ok){const v=await r.json();pid=typeof v==='string'?v:(Array.isArray(v)?v[0]:v);}
     else if(r.status===404){msg('❌ Chýba funkcia najdi_pacienta – spustite v2 setup SQL.','#dc2626');return;}
   }catch(e){msg('❌ Chyba siete.','#dc2626');return;}
   if(!pid){msg('Pacient s týmto RČ zatiaľ nemá žiadny spárovaný výkon.','#6b7280');return;}
+  }
   msg('');
   // stiahni výkony zo všetkých nástrojov + follow-upy
   const events=[];let meta=null;
@@ -99,16 +106,17 @@ async function hladaj(){
     }
   }
   events.sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
-  render(pid,meta,events);
+  let cisloP=null;try{const pr=await get('pacienti?id=eq.'+encodeURIComponent(pid)+'&select=cislo');cisloP=pr.length?pr[0].cislo:null;}catch(e){}
+  render(pid,meta,events,cisloP);
 }
 
-function render(pid,meta,events){
+function render(pid,meta,events,cisloP){
   const out=document.getElementById('out');
   if(!events.length){out.innerHTML='<div class="card empty">Pacient nájdený, ale bez výkonov (možno len v tabuľke bez pacient_id).</div>';return;}
   const metaTxt=meta?[meta.vek?meta.vek+' r.':'',meta.pohlavie].filter(Boolean).join(' · '):'';
   const cnt={};events.forEach(e=>cnt[e.tool]=(cnt[e.tool]||0)+1);
   const cntTxt=Object.keys(cnt).map(t=>LBL[t]+' '+cnt[t]).join(' · ');
-  let h='<div class="card"><div class="pat-hd"><b>Pacient</b>'+(metaTxt?'<span>'+esc(metaTxt)+'</span>':'')+'<span>'+events.length+' výkonov · '+esc(cntTxt)+'</span></div><div class="tl">';
+  let h='<div class="card"><div class="pat-hd"><b>Pacient'+(cisloP?' ID '+esc(String(cisloP)):'')+'</b>'+(metaTxt?'<span>'+esc(metaTxt)+'</span>':'')+'<span>'+events.length+' výkonov · '+esc(cntTxt)+'</span></div><div class="tl">';
   for(const e of events){
     const editRec=encodeURIComponent(JSON.stringify({tool:e.tool.toUpperCase()==='EVK'?'EVK':e.tool==='cas'?'CAS':e.tool==='pevar'?'PEVAR':'RAS'}));
     h+='<div class="ev"><div class="row1"><span class="tag tag-'+e.tool+'">'+LBL[e.tool]+'</span>'+
