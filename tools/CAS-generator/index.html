@@ -773,6 +773,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="btns">
     <button class="btn bc" onclick="copyOut()">📋 Kopírovať</button>
     <button class="btn bp" onclick="saveData()">💾 Uložiť</button>
+    <button class="btn" style="background:#eef2ff;color:#3730a3;border:1.5px solid #c7d2fe" onclick="novyPacient()">🆕 Nový pacient</button>
     <button class="btn bstar" id="zp_btn" onclick="zpClick()">⭐ Zaujímavý pacient</button>
   </div>
   <div id="cmsg"></div>
@@ -1309,6 +1310,14 @@ function p2Restore(t){
   if(pozn){const el=document.getElementById('p2_pozn');if(el)el.value=pozn;}
 }
 
+
+// Nový pacient – vyčisti formulár a začni odznova (ukončí aj režim úpravy)
+function novyPacient(){
+  if(window._dirty&&!confirm('Začať nového pacienta? Neuložené zmeny sa stratia.'))return;
+  window._dirty=false;if(window.GenBar&&GenBar.markClean)GenBar.markClean();
+  try{sessionStorage.removeItem('cievny_edit');}catch(e){}
+  location.href=location.pathname;
+}
 async function saveData(){
   if(!(window._editRecordId&&window._editVykonId)&&!g('id_suffix')){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
   // ochrana pred dvojklikom aj pri volaní mimo tlačidla (sticky lišta) – inak duplicitný záznam
@@ -1404,6 +1413,9 @@ async function saveData(){
   try{
     // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort)
     try{if(window.Pacient)payload.pacient_id=await Pacient.id(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},g('rodne_cislo'),null,payload.pohlavie);}catch(e){}
+    // zmena ID výkonu = nový pacient (payload má počas úpravy pôvodné vykon_id, preto porovnaj čerstvé)
+    const _cerstveId='CAS-'+casYear()+'-'+g('id_suffix');
+    if(window._autoEdit&&window._editVykonId&&_cerstveId!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;payload.vykon_id=_cerstveId;}
     const _isEdit=!!window._editRecordId;
     if(_isEdit){
       // maž len null/undefined – prázdny reťazec je legitímne "vyčistenie" poľa v DB;
@@ -1421,7 +1433,7 @@ async function saveData(){
     const _url=SB_URL+'/rest/v1/cas_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
     const _send=()=>fetch(_url,{
       method:_isEdit?'PATCH':'POST',
-      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},
+      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':_isEdit?'return=minimal':'return=representation'},
       body:JSON.stringify(payload)
     });
     let r=await _send();
@@ -1441,6 +1453,7 @@ async function saveData(){
       if(_etxt4.includes('pacient_id')){delete payload.pacient_id;r=await _send();}
     }
     if(r.ok){window._dirty=false;if(window.GenBar)GenBar.saved();
+      if(!_isEdit){try{const _nr=await r.clone().json();if(_nr&&_nr[0]&&_nr[0].id){window._editRecordId=_nr[0].id;window._editVykonId=payload.vykon_id;window._autoEdit=true;}}catch(e){}}  // ďalšie Uložiť doplní ten istý záznam
       try{
         const _mid=(_isEdit&&window._editVykonId)?window._editVykonId:payload.vykon_id;
         if(window.MaterialKatalog)MaterialKatalog.syncCas(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'cas',Object.assign({},payload,{vykon_id:_mid}));

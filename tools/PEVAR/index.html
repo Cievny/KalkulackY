@@ -809,6 +809,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="btns">
     <button class="btn bc" onclick="copyOut()">📋 Kopírovať</button>
     <button class="btn bp" id="save_btn" onclick="saveToSupabase()">💾 Uložiť</button>
+    <button class="btn" style="background:#eef2ff;color:#3730a3;border:1.5px solid #c7d2fe" onclick="novyPacient()">🆕 Nový pacient</button>
     <button class="btn bstar" id="zp_btn" onclick="zpClick()">⭐ Zaujímavý pacient</button>
   </div>
   <div id="cmsg"></div>
@@ -1556,6 +1557,14 @@ function p2Restore(t){
   if(pozn){const el=document.getElementById('p2_pozn');if(el)el.value=pozn;}
 }
 
+
+// Nový pacient – vyčisti formulár a začni odznova (ukončí aj režim úpravy)
+function novyPacient(){
+  if(window._dirty&&!confirm('Začať nového pacienta? Neuložené zmeny sa stratia.'))return;
+  window._dirty=false;if(window.GenBar&&GenBar.markClean)GenBar.markClean();
+  try{sessionStorage.removeItem('cievny_edit');}catch(e){}
+  location.href=location.pathname;
+}
 async function saveToSupabase(){
   if(!g('id_suffix').trim()){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
   // ochrana pred dvojklikom aj pri volaní mimo tlačidla (sticky lišta) – inak duplicitný záznam
@@ -1676,6 +1685,7 @@ async function saveToSupabase(){
   try{
     // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort)
     try{if(window.Pacient)payload.pacient_id=await Pacient.id(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},g('rodne_cislo'),null,payload.pohlavie);}catch(e){}
+    if(window._autoEdit&&window._editVykonId&&payload.vykon_id!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;}  // zmena ID výkonu = nový pacient
     const _isEdit=!!window._editRecordId;
     const _vykonIdSaved=payload.vykon_id;
     if(!_isEdit){
@@ -1697,7 +1707,7 @@ async function saveToSupabase(){
     const _url=SB_URL+'/rest/v1/pevar_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
     const _send=()=>fetch(_url,{
       method:_isEdit?'PATCH':'POST',
-      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},
+      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':_isEdit?'return=minimal':'return=representation'},
       body:JSON.stringify(payload)
     });
     let r=await _send();
@@ -1721,7 +1731,8 @@ async function saveToSupabase(){
       const _etxt2=await r.clone().text();
       if(_etxt2.includes('sac_fill')){delete payload.sac_fill_pocet;delete payload.sac_fill_objem_ml;r=await _send();}
     }
-    if(r.ok){try{MaterialKatalog.syncPevar(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'pevar',{...payload,vykon_id:_vykonIdSaved});}catch(e){}window._dirty=false;if(window.GenBar)GenBar.saved();const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(_vykonIdSaved);}
+    if(r.ok){if(!_isEdit){try{const _nr=await r.clone().json();if(_nr&&_nr[0]&&_nr[0].id){window._editRecordId=_nr[0].id;window._editVykonId=_vykonIdSaved;window._autoEdit=true;}}catch(e){}}
+      try{MaterialKatalog.syncPevar(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'pevar',{...payload,vykon_id:_vykonIdSaved});}catch(e){}window._dirty=false;if(window.GenBar)GenBar.saved();const _ch=chybaStud();if(_ch.length)msg((_isEdit?'Aktualizované ✓':'Uložené ✓')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');else msg(_isEdit?'Záznam aktualizovaný ✓':'Uložené ✓','#1d6f42');propojProgram(_vykonIdSaved);}
     else{const e=await r.json();msg('Chyba: '+(e.message||r.status),'#dc2626');}
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
   finally{saveToSupabase._busy=false;if(_btn)_btn.disabled=false;}

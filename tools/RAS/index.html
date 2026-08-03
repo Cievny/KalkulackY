@@ -250,6 +250,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
   <div class="btns">
     <button class="btn bp" onclick="copyTxt()">📋 Kopírovať</button>
     <button class="btn bc" id="btn_save" onclick="saveRAS()">💾 Uložiť</button>
+    <button class="btn" style="background:#eef2ff;color:#3730a3;border:1.5px solid #c7d2fe" onclick="novyPacient()">🆕 Nový pacient</button>
   </div>
   <div id="cmsg"></div>
 </div>
@@ -567,6 +568,14 @@ function materialRows(p){
   return rows;
 }
 
+
+// Nový pacient – vyčisti formulár a začni odznova (ukončí aj režim úpravy)
+function novyPacient(){
+  if(window._dirty&&!confirm('Začať nového pacienta? Neuložené zmeny sa stratia.'))return;
+  window._dirty=false;if(window.GenBar&&GenBar.markClean)GenBar.markClean();
+  try{sessionStorage.removeItem('cievny_edit');}catch(e){}
+  location.href=location.pathname;
+}
 async function saveRAS(){
   if(!g('id_suffix').trim()){msg('cmsg','⚠️ Vyplňte ID výkonu','#b45309');return;}
   const btn=document.getElementById('btn_save');
@@ -576,6 +585,7 @@ async function saveRAS(){
     // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort, nikdy nezhodí uloženie)
     try{if(window.Pacient)payload.pacient_id=await Pacient.id(SB_URL,H(),g('rodne_cislo'),null,payload.pohlavie);}catch(e){}
     const _vykonId=payload.vykon_id;
+    if(window._autoEdit&&window._editVykonId&&payload.vykon_id!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;}  // zmena ID výkonu = nový pacient
     const _isEdit=!!window._editRecordId;
     if(!_isEdit){
       const dupR=await fetch(SB_URL+'/rest/v1/ras_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:H()});
@@ -588,12 +598,12 @@ async function saveRAS(){
       delete payload.vykon_id;
     }
     const url=SB_URL+'/rest/v1/ras_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
-    let r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(_isEdit?payload:Object.assign({},payload))});
+    let r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':_isEdit?'return=minimal':'return=representation'},body:JSON.stringify(_isEdit?payload:Object.assign({},payload))});
     if(r.status===400){
       // stará DB bez stĺpcov typu výkonu – ulož aspoň zvyšok
       const p2=Object.assign({},payload);
       ['typ_vykonu','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','pristup_dalsi','komplikacie_struct','clavien_dindo','pacient_id','drg_kody'].forEach(k=>delete p2[k]);
-      r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(p2)});
+      r=await fetch(url,{method:_isEdit?'PATCH':'POST',headers:{...H(),'Prefer':_isEdit?'return=minimal':'return=representation'},body:JSON.stringify(p2)});
     }
     if(r.ok){
       try{
@@ -601,6 +611,7 @@ async function saveRAS(){
         MaterialKatalog.syncMaterial(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'ras',mid,g('datum')||null,materialRows(collectPayload()));
       }catch(e){}
       msg('cmsg',_isEdit?'✅ Záznam aktualizovaný':'✅ Uložené','#1d6f42');if(window.GenBar)GenBar.saved();
+      if(!_isEdit){try{const _nr=await r.clone().json();if(_nr&&_nr[0]&&_nr[0].id){window._editRecordId=_nr[0].id;window._editVykonId=_vykonId;window._autoEdit=true;}}catch(e){}}
     }else if(r.status===404){msg('cmsg','❌ Tabuľka ras_vykony neexistuje – spustite setup SQL','#dc2626');}
     else msg('cmsg','❌ Chyba: '+r.status,'#dc2626');
   }catch(e){msg('cmsg','❌ Chyba siete','#dc2626');}

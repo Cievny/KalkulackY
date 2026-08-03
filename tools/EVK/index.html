@@ -645,6 +645,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="btns">
     <button class="btn bc" onclick="copyTxt()">📋 Kopírovať</button>
     <button class="btn bp" id="btn_save" onclick="saveToSheets()">💾 Uložiť</button>
+    <button class="btn" style="background:#eef2ff;color:#3730a3;border:1.5px solid #c7d2fe" onclick="novyPacient()">🆕 Nový pacient</button>
     <button class="btn bstar" id="zp_btn" onclick="zpClick()">⭐ Zaujímavý pacient</button>
     <button class="btn bw" onclick="window.print()">🖨️ Tlač</button>
     <button class="btn" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1" onclick="novyNalez()">🗒 Nový nález</button>
@@ -1259,13 +1260,14 @@ async function saveToSupabase(table,data){
   // edit: maž len null/undefined (neznáme hodnoty); prázdny string '' ostáva v PATCHi, aby sa vyprázdnené pole dalo vyčistiť
   if(isEdit){data={...data};Object.keys(data).forEach(k=>{if(data[k]==null)delete data[k];});delete data.vykon_id;}
   const url=`${SB_URL}/rest/v1/${table}`+(isEdit?`?id=eq.${window._editRecordId}`:'');
-  const opts=body=>({method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':'return=minimal'},body:JSON.stringify(body)});
+  const opts=body=>({method:isEdit?'PATCH':'POST',headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Prefer':isEdit?'return=minimal':'return=representation'},body:JSON.stringify(body)});
   let r=await fetch(url,opts(data));
   // staršia DB bez stĺpcov staging/wifi – ulož záznam aspoň bez nich
   if(r.status===400&&(('staging' in data)||('wifi' in data)||('pristup_dalsi' in data)||('heparin_iu' in data)||('pacient_id' in data))){
     const d2={...data};delete d2.staging;delete d2.wifi;delete d2.pristup_dalsi;delete d2.heparin_iu;delete d2.pacient_id;
     r=await fetch(url,opts(d2));
   }
+  if(!isEdit&&r.ok&&table==='evk_vykony'){try{const _nr=await r.clone().json();if(_nr&&_nr[0]&&_nr[0].id)window._lastInsertId=_nr[0].id;}catch(e){}}
   return r;
 }
 function collectFullData(){
@@ -1493,6 +1495,14 @@ function collectFullData(){
     ...mat
   };
 }
+
+// Nový pacient – vyčisti formulár a začni odznova (ukončí aj režim úpravy)
+function novyPacient(){
+  if(window._dirty&&!confirm('Začať nového pacienta? Neuložené zmeny sa stratia.'))return;
+  window._dirty=false;if(window.GenBar&&GenBar.markClean)GenBar.markClean();
+  try{sessionStorage.removeItem('cievny_edit');}catch(e){}
+  location.href=location.pathname;
+}
 async function saveToSheets(){
   if(!g('id_suffix')){msg('cmsg','⚠️ Vyplňte ID výkonu','#b45309');return;}
   const btn=document.getElementById('btn_save');
@@ -1501,6 +1511,7 @@ async function saveToSheets(){
   msg('cmsg','⏳ Ukladám...','#3b82f6');
   try{
     const fullData=collectFullData();
+    if(window._autoEdit&&window._editVykonId&&fullData.vykon_id!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;}  // zmena ID výkonu = nový pacient
     // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort)
     try{if(window.Pacient)fullData.pacient_id=await Pacient.id(SB_URL,sbHeaders(),g('rodne_cislo'),null,fullData.pohlavie);}catch(e){}
     // Kontrola duplicitného ID – len pri novom zázname (INSERT), nie pri úprave (PATCH)
@@ -1528,6 +1539,7 @@ async function saveToSheets(){
       if(_ch.length)msg('cmsg',(window._editRecordId?'✅ Aktualizované':'✅ Uložené')+' · 💡 doplňte: '+_ch.join(', '),'#b45309');
       else msg('cmsg',window._editRecordId?'✅ Záznam aktualizovaný!':'✅ Uložené do štatistík!','#1d6f42');}
       propojProgram(fullData.vykon_id);
+      if(!window._editRecordId&&window._lastInsertId){window._editRecordId=window._lastInsertId;window._editVykonId=fullData.vykon_id;window._autoEdit=true;window._lastInsertId=null;}  // ďalšie Uložiť doplní ten istý záznam
     }else{
       if(sb==='sb_err:403'){
         const _ue=(window.sbUserEmail&&sbUserEmail())||'';
