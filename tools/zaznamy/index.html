@@ -297,7 +297,17 @@ async function delRecord(){
   msg('Mažem…','#dc2626');
   try{
     const r=await fetch(`${SB_URL}/rest/v1/${CURRENT.table}?id=eq.${CURRENT.data.id}`,{method:'DELETE',headers:SB_HEAD()});
-    if(r.ok){ROWS=ROWS.filter(x=>x.data.id!==CURRENT.data.id);render();closeModal();}
+    if(r.ok){
+      // uprac naviazané dáta (best-effort) – inak ostanú osirelé follow-upy/materiál/hviezdička
+      const _vid=CURRENT.data.vykon_id;
+      if(_vid){
+        const FU={evk:'evk_followup',cas:'cas_followup',pevar:'pevar_followup',ras:'ras_followup'}[CURRENT.tool];
+        const _enc=encodeURIComponent(_vid);
+        if(FU)fetch(`${SB_URL}/rest/v1/${FU}?vykon_id=eq.${_enc}`,{method:'DELETE',headers:SB_HEAD()}).catch(()=>{});
+        fetch(`${SB_URL}/rest/v1/material_pouzitie?vykon_id=eq.${_enc}`,{method:'DELETE',headers:SB_HEAD()}).catch(()=>{});
+        fetch(`${SB_URL}/rest/v1/${STAR_TABLE}?tool=eq.${CURRENT.tool.toUpperCase()}&vykon_id=eq.${_enc}`,{method:'DELETE',headers:SB_HEAD()}).catch(()=>{});
+      }
+      ROWS=ROWS.filter(x=>x.data.id!==CURRENT.data.id);render();closeModal();}
     else msg('Chyba '+r.status,'#dc2626');
   }catch(e){msg('Chyba siete: '+e.message,'#dc2626');}
 }

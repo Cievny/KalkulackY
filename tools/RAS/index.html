@@ -167,7 +167,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 
 <div class="card">
 <div class="st">Intervencia</div>
-<div class="f"><label>Typ výkonu</label><select id="typ_vykonu" onchange="typVykonuZmena();gen()"><option value="stenting">Stenting (± dilatácia)</option><option value="POBA">Iba dilatácia – POBA (obyčajný balón)</option><option value="DEB">Iba dilatácia – DEB (liekom povlečený balón)</option></select></div>
+<div class="f"><label>Typ výkonu</label><select id="typ_vykonu" onchange="zaverManual=false;typVykonuZmena();gen()"><option value="stenting">Stenting (± dilatácia)</option><option value="POBA">Iba dilatácia – POBA (obyčajný balón)</option><option value="DEB">Iba dilatácia – DEB (liekom povlečený balón)</option></select></div>
 <div class="tog" id="tog_predil">
   <label class="thdr"><input type="checkbox" id="c_predil" onchange="tB('predil');gen()"><span>Predilatácia</span></label>
   <div class="tbody" id="b_predil">
@@ -586,9 +586,15 @@ async function saveRAS(){
   try{
     const payload=collectPayload();
     // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort, nikdy nezhodí uloženie)
-    try{if(window.Pacient){const _pp=await Pacient.paruj(SB_URL,H(),g('rodne_cislo'),g('pacient_cislo'),null,payload.pohlavie);if(_pp&&_pp.id){payload.pacient_id=_pp.id;const _pe=document.getElementById('pacient_cislo');if(_pe&&_pp.cislo)_pe.value=_pp.cislo;}else if(_pp&&_pp.error){alert('⚠️ '+_pp.error);}}}catch(e){}
     const _vykonId=payload.vykon_id;
-    if(window._autoEdit&&window._editVykonId&&payload.vykon_id!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;const _pc=document.getElementById('pacient_cislo');if(_pc)_pc.value='';}  // zmena ID výkonu = nový pacient
+    if(window._editRecordId&&window._editVykonId&&payload.vykon_id!==window._editVykonId&&g('id_suffix').trim()){
+      // zmena ID výkonu: v auto-režime nový záznam automaticky; pri úprave zo Záznamov sa spýtaj (inak by PATCH prepísal pôvodný nález!)
+      if(window._autoEdit||confirm('Zmenili ste ID výkonu ('+window._editVykonId+' → '+payload.vykon_id+').\nOK = uložiť ako NOVÝ záznam, Zrušiť = aktualizovať pôvodný.')){
+        window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;
+        const _pc=document.getElementById('pacient_cislo');if(_pc)_pc.value='';
+      }
+    }
+    try{if(window.Pacient&&(g('rodne_cislo').trim()||g('pacient_cislo').trim()||!window._editRecordId)){const _pp=await Pacient.paruj(SB_URL,H(),g('rodne_cislo'),g('pacient_cislo'),null,payload.pohlavie);if(_pp&&_pp.id){payload.pacient_id=_pp.id;const _pe=document.getElementById('pacient_cislo');if(_pe&&_pp.cislo)_pe.value=_pp.cislo;}else if(_pp&&_pp.error){alert('⚠️ '+_pp.error);}}}catch(e){}
     const _isEdit=!!window._editRecordId;
     if(!_isEdit){
       const dupR=await fetch(SB_URL+'/rest/v1/ras_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:H()});
@@ -596,7 +602,9 @@ async function saveRAS(){
     }
     if(_isEdit){
       // pri edite ponechať null v poliach typu výkonu – zmena stenting↔POBA/DEB musí staré hodnoty vymazať
-      const keepNull=['stent_nazov','stent_priemer','stent_dlzka','stent_tlak_atm','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','predil_balon','predil_rozmer'];
+      const keepNull=['stent_nazov','stent_priemer','stent_dlzka','stent_tlak_atm','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','predil_balon','predil_rozmer',
+        // aj vyprázdnené polia sa musia dať v DB vymazať (inak by po oprave ostala stará hodnota)
+        'clavien_dindo','komplikacie_struct','komplikacie_text','drg_kody','krea_pred','egfr_pred','tk_pred','kontrast_ml','fluoro_time_min','dap'];
       Object.keys(payload).forEach(k=>{if(payload[k]==null&&!keepNull.includes(k))delete payload[k];});
       delete payload.vykon_id;
     }
@@ -625,6 +633,10 @@ async function saveFU(){
   if(!g('fu_id')){msg('fu_msg','⚠️ Vyplňte ID výkonu','#b45309');return;}
   if(saveFU._busy)return;saveFU._busy=true;
   const _fb=document.querySelector('button[onclick="saveFU()"]');if(_fb)_fb.disabled=true;
+  // preklep v ID výkonu → follow-up by sa nikdy nezobrazil pri výkone (kontrola existencie)
+  try{const _exr=await fetch(SB_URL+'/rest/v1/ras_vykony?vykon_id=eq.'+encodeURIComponent(g('fu_id'))+'&select=id',{headers:sbHeaders()});
+    if(_exr.ok&&!(await _exr.json()).length&&!confirm('Výkon '+g('fu_id')+' sa v databáze nenašiel (preklep v ID?). Uložiť follow-up aj tak?')){saveFU._busy=false;if(_fb)_fb.disabled=false;msg('fu_msg','',null);return;}
+  }catch(e){}
   try{
     const ex=chk('fu_exitus');
     const data={
@@ -653,6 +665,7 @@ function loadEditRecord(){
     sessionStorage.removeItem('cievny_edit');
     window._editRecordId=record.id;
     window._editVykonId=record.vykon_id;
+    if(record.pacient_id&&window.Pacient&&Pacient.cislo)Pacient.cislo(SB_URL,sbHeaders(),record.pacient_id).then(function(c){const el=document.getElementById('pacient_cislo');if(el&&c!=null)el.value=c;});
     const sv=(id,val)=>{if(val==null||val==='')return;const el=document.getElementById(id);if(el)el.value=val;};
     const banner=document.createElement('div');
     banner.style.cssText='background:#fef9c3;color:#713f12;border-bottom:3px solid #ca8a04;padding:8px 16px;font-size:13px;font-weight:700;text-align:center;position:sticky;top:38px;z-index:200';

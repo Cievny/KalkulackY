@@ -390,7 +390,8 @@ function esvsAlerts(it){
   const isAorta=kat(it)==='aorta';
   if(it.symptomy==='ruptúra')A.push({t:'red',x:'RUPTÚRA – emergentný výkon!'});
   else if(it.symptomy==='symptomatický')A.push({t:'red',x:isAorta?'Symptomatická aneuryzma – urgentná indikácia':'Symptomatický pacient – urgentné posúdenie'});
-  if(isAorta){
+  const isAneur=/^(AAA|TAAA|Aneuryzma hrudnej)/.test(it.diagnoza||'');
+  if(isAorta&&isAneur){
     if(it.pohlavie==='M'&&d>=55)A.push({t:'red',x:'ESVS: Muž ≥ 55 mm = indikácia na intervenciu (Class I)'});
     if(it.pohlavie==='Ž'&&d>=50)A.push({t:'red',x:'ESVS: Žena ≥ 50 mm = indikácia na intervenciu (Class IIa)'});
     if(parseFloat(it.rast_mm_rok)>=10)A.push({t:'red',x:'Rýchly rast (≥ 10 mm/rok) = indikácia'});
@@ -433,7 +434,10 @@ async function fetchAllRows(table){
 async function loadItems(){
   try{
     ITEMS=await fetchAllRows(TBL);
-  }catch(e){ITEMS=[];msg('top_msg','⚠️ Tabuľka '+TBL+' nie je dostupná (spustite setup SQL) – '+e.message,'#b45309');render();return;}
+  }catch(e){
+    if(ITEMS.length){msg('top_msg','⚠️ Obnovenie zlyhalo – zobrazené sú posledné načítané dáta','#b45309');return;}
+    ITEMS=[];msg('top_msg','⚠️ Tabuľka '+TBL+' nie je dostupná (spustite setup SQL) – '+e.message,'#b45309');render();return;
+  }
   try{
     PRILOHY=await fetchAllRows(TBL_PRIL);
   }catch{PRILOHY=[];}
@@ -701,7 +705,7 @@ function formToObj(){
       o.diagnoza=document.getElementById('af_diagnoza_vl').value.trim()||'Iné';
   }
   if(!VYKON_DETAIL[o.vykon_typ])o.vykon_cieva=null; // detail len pri postupoch, ktoré ho majú
-  if(!(o.diagnoza||'').startsWith('Endoleak'))o.endoleak_typ=null; // typ len pri endoleaku
+  if(!document.getElementById('af_diagnoza').value.startsWith('Endoleak'))o.endoleak_typ=null; // typ len pri endoleaku (pri vlastnej dg je select typu skryty)
   return o;
 }
 function objToForm(it){
@@ -926,8 +930,16 @@ document.getElementById('af_rodne_cislo').addEventListener('input',()=>{
 });
 
 async function saveCard(){
+  if(saveCard._busy)return;
   const o=formToObj();
   if(!o.rodne_cislo){msg('m_msg','⚠️ Rodné číslo je povinné','#b45309');document.getElementById('af_rodne_cislo').focus();return;}
+  // prepnutie hotovej aortálnej karty na INÉ nenávratne maže CT merania a sizing – potvrdiť
+  if(o.kategoria==='ine'&&editId){
+    const cur=ITEMS.find(i=>i.id===editId);
+    if(cur&&kat(cur)!=='ine'&&(cur.priemer_mm||cur.sizing||cur.krcok_dlzka_mm)&&
+       !confirm('Kategória INÉ vymaže CT merania, anatómiu a sizing tejto karty. Pokračovať?'))return;
+  }
+  saveCard._busy=true;
   try{
     let r;
     if(editId){
@@ -939,10 +951,8 @@ async function saveCard(){
       if(r.ok){
         const rows=await r.json();
         if(!rows.length&&guard){
-          msg('m_msg','⚠️ Záznam medzitým zmenil niekto iný – načítal som jeho verziu, upravte a uložte znova','#b45309');
-          await loadItems();
-          const fresh=ITEMS.find(i=>i.id===editId);
-          if(fresh)objToForm(fresh);
+          await loadItems();   // obnov základňu updated_at, ale FORMULÁR nechaj – rozpísané údaje sa nesmú stratiť
+          msg('m_msg','⚠️ Kartu medzitým zmenil niekto iný. Vaše údaje ostali vo formulári – skontrolujte ich a Uložte znova (prepíše jeho verziu).','#b45309');
           return;
         }
         msg('m_msg','✓ Uložené','#1d6f42');await loadItems();updateNalezBtn();
@@ -965,6 +975,7 @@ async function saveCard(){
       }else msg('m_msg','❌ Chyba pri ukladaní: '+r.status,'#dc2626');
     }
   }catch(e){msg('m_msg','❌ Chyba siete','#dc2626');}
+  finally{saveCard._busy=false;}
 }
 
 // ── Prílohy (text / dokument / fotka) ────────────────────────
@@ -1062,13 +1073,14 @@ async function moveCard(id,newStatus,vysledok,retried){
         await loadItems();
         return moveCard(id,newStatus,vysledok,true);
       }
+      if(!rows.length&&guard&&retried)msg('top_msg','⚠️ Presun karty neprešiel (medzitým ju zmenil niekto iný) – skúste znova','#b45309');
       await loadItems();
     }else msg('top_msg','❌ Chyba: '+r.status,'#dc2626');
   }catch{msg('top_msg','❌ Chyba siete','#dc2626');}
 }
 
 // ── Archivácia ───────────────────────────────────────────────
-function openArch(id){archId=id;document.getElementById('arch_note').value='';document.getElementById('arch_overlay').classList.add('open');}
+function openArch(id){archId=id;document.getElementById('arch_note').value='';const _av=document.getElementById('arch_vysledok');if(_av)_av.selectedIndex=0;document.getElementById('arch_overlay').classList.add('open');}
 function closeArch(){document.getElementById('arch_overlay').classList.remove('open');archId=null;}
 async function confirmArch(){
   if(!archId)return;

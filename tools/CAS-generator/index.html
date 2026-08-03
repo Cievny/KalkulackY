@@ -575,7 +575,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <div class="card">
 <div class="st">Postup</div>
 <div class="f">
-  <select id="postup_vykonu" onchange="postupZmena()">
+  <select id="postup_vykonu" onchange="window._zaverManual=false;postupZmena()">
     <option value="intervencia">Pristupujeme k intervencii</option>
     <option value="konzervativny">Konzervatívny postup</option>
   </select>
@@ -1223,6 +1223,10 @@ async function saveFU(){
   if(!g('fu_id')){msgFu('⚠️ Vyplňte ID výkonu','#b45309');return;}
   if(saveFU._busy)return;saveFU._busy=true;   // ochrana pred dvojklikom
   const _fb=document.querySelector('button[onclick="saveFU()"]');if(_fb)_fb.disabled=true;
+  // preklep v ID výkonu → follow-up by sa nikdy nezobrazil pri výkone (kontrola existencie)
+  try{const _exr=await fetch(SB_URL+'/rest/v1/cas_vykony?vykon_id=eq.'+encodeURIComponent(g('fu_id'))+'&select=id',{headers:sbHeaders()});
+    if(_exr.ok&&!(await _exr.json()).length&&!confirm('Výkon '+g('fu_id')+' sa v databáze nenašiel (preklep v ID?). Uložiť follow-up aj tak?')){saveFU._busy=false;if(_fb)_fb.disabled=false;msgFu('','#374151');return;}
+  }catch(e){}
   const _exitus=chk('fu_exitus');
   const data={
     vykon_id:g('fu_id'),datum_kontroly:g('fu_datum'),casovy_bod:g('fu_bod'),zobrazenie:g('fu_zobr'),
@@ -1412,11 +1416,17 @@ async function saveData(){
   try{payload.drg_kody=JSON.stringify(collectDRG());}catch(e){payload.drg_kody=null;}
   msg('Ukladám...','#5a6a8a');
   try{
-    // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort)
-    try{if(window.Pacient){const _pp=await Pacient.paruj(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},g('rodne_cislo'),g('pacient_cislo'),null,payload.pohlavie);if(_pp&&_pp.id){payload.pacient_id=_pp.id;const _pe=document.getElementById('pacient_cislo');if(_pe&&_pp.cislo)_pe.value=_pp.cislo;}else if(_pp&&_pp.error){alert('⚠️ '+_pp.error);}}}catch(e){}
     // zmena ID výkonu = nový pacient (payload má počas úpravy pôvodné vykon_id, preto porovnaj čerstvé)
     const _cerstveId='CAS-'+casYear()+'-'+g('id_suffix');
-    if(window._autoEdit&&window._editVykonId&&_cerstveId!==window._editVykonId){window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;payload.vykon_id=_cerstveId;const _pc=document.getElementById('pacient_cislo');if(_pc)_pc.value='';}
+    if(window._editRecordId&&window._editVykonId&&_cerstveId!==window._editVykonId&&g('id_suffix').trim()){
+      // zmena ID výkonu: v auto-režime nový záznam automaticky; pri úprave zo Záznamov sa spýtaj (inak by PATCH prepísal pôvodný nález!)
+      if(window._autoEdit||confirm('Zmenili ste ID výkonu ('+window._editVykonId+' → '+_cerstveId+').\nOK = uložiť ako NOVÝ záznam, Zrušiť = aktualizovať pôvodný.')){
+        window._editRecordId=null;window._editVykonId=null;window._autoEdit=false;payload.vykon_id=_cerstveId;
+        const _pc=document.getElementById('pacient_cislo');if(_pc)_pc.value='';
+      }
+    }
+    // v2: spáruj/založ pacienta podľa RČ/ID → pacient_id (best-effort; pri úprave bez RČ aj ID sa nevolá – nezakladať duchov)
+    try{if(window.Pacient&&(g('rodne_cislo').trim()||g('pacient_cislo').trim()||!window._editRecordId)){const _pp=await Pacient.paruj(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},g('rodne_cislo'),g('pacient_cislo'),null,payload.pohlavie);if(_pp&&_pp.id){payload.pacient_id=_pp.id;const _pe=document.getElementById('pacient_cislo');if(_pe&&_pp.cislo)_pe.value=_pp.cislo;}else if(_pp&&_pp.error){alert('⚠️ '+_pp.error);}}}catch(e){}
     const _isEdit=!!window._editRecordId;
     if(_isEdit){
       // maž len null/undefined – prázdny reťazec je legitímne "vyčistenie" poľa v DB;
@@ -1505,6 +1515,8 @@ function loadEditRecord(){
     sessionStorage.removeItem('cievny_edit');
     window._editRecordId=record.id;
     window._editVykonId=record.vykon_id;
+    try{const _acc=document.getElementById('drg_stent_acc');if(_acc&&record.drg_kody&&String(record.drg_kody).includes('8r880.05'))_acc.checked=true;}catch(e){}
+    if(record.pacient_id&&window.Pacient&&Pacient.cislo)Pacient.cislo(SB_URL,sbHeaders(),record.pacient_id).then(function(c){const el=document.getElementById('pacient_cislo');if(el&&c!=null)el.value=c;});
     const sv=(id,v)=>{if(v==null||v==='')return;const el=document.getElementById(id);if(el)el.value=v;};
     // Pacient + indikácia
     if(record.vykon_id){const parts=record.vykon_id.split('-');sv('id_suffix',parts[parts.length-1]);}
@@ -1676,7 +1688,7 @@ function loadEditRecord(){
 const ZP_TABLE='zaujimavi_pacienti';
 const ZP_TOOL='CAS';
 let zpRow=null; // existujúci riadok pre aktuálne vykon_id
-function zpVykonId(){if(window._editRecordId&&window._editVykonId)return window._editVykonId;const s=(g('id_suffix')||'').trim();return s?'CAS-'+casYear()+'-'+s:'';}
+function zpVykonId(){const s=(g('id_suffix')||'').trim();const fresh=s?'CAS-'+casYear()+'-'+s:'';if(window._editRecordId&&window._editVykonId){if(window._autoEdit&&fresh&&fresh!==window._editVykonId)return fresh;return window._editVykonId;}return fresh;}
 function zpPopis(){
   const lok=g('lokalizacia');
   return [lok?'ACI '+lok:'',g('klinicky_stav')].filter(Boolean).join(' · ').slice(0,160);
@@ -1761,6 +1773,7 @@ function resetKomor(){
   if(det) det.removeAttribute('open');
   document.querySelectorAll('#komordiv input[type=checkbox]').forEach(cb=>{ cb.checked=false; });
   document.querySelectorAll('.kom-sub').forEach(s=>s.classList.remove('on'));
+  try{gen();}catch(e){}   // text musí zodpovedať odškrtnutým checkboxom (bfcache návrat)
 }
 window.addEventListener('pageshow', resetKomor);
 document.addEventListener('DOMContentLoaded', resetKomor);

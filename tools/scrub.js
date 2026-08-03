@@ -71,7 +71,17 @@
     // prísny režim: každá dvojica Veľké+malé slová = pravdepodobne meno/miesto.
     // Skratky (AAA, CT, AIC) neprejdú – tie nemajú malé písmená po prvom.
     if (aggressive) {
-      P.push({ type: 'meno', ph: '[MENO]',
+      // klinické skratky, ktoré NIE sú priezviská – tie sa nemažú
+      var MED = /^(AAA|TAAA|TAA|EVAR|TEVAR|FEVAR|BEVAR|PEVAR|CHEVAR|ISLF|EVL|CAS|CEA|PTA|POBA|DEB|IVL|CTO|DSA|CTA|CT|MR|MRA|AG|ACI|ACE|ACC|AFS|AFC|APF|AIC|AIE|AII|ATA|ATP|TTF|RAS|IMH|PAU|TASC|GLASS|WIFI|ASA|NOAK|LMWH|DAPT|ICHS|CMP|CKD|CHOCHP|GOLD|NASCET|ESVS|OIRA|OIA|OAIM|KAIM|JIS|USG|ABI|EGFR|CKD-EPI|VSZP|NIS|DRG|ATM|FR)$/i;
+      var bezMed = function (m) {
+        return !m.split(/\s+/).some(function (w) { return MED.test(w.replace(/[,.:;]+$/, '')); });
+      };
+      // priezvisko VERZÁLKAMI + meno („MRKVIČKA Ján"), aj naopak („Anna NOVÁKOVÁ")
+      P.push({ type: 'meno', ph: '[MENO]', keep: bezMed,
+        re: /[A-ZÁ-ŽČŠŽ]{3,}\s+[A-ZÁ-ŽČŠŽ][a-zá-žčšžäôý]{2,}/g });
+      P.push({ type: 'meno', ph: '[MENO]', keep: bezMed,
+        re: /[A-ZÁ-ŽČŠŽ][a-zá-žčšžäôý]{2,}\s+[A-ZÁ-ŽČŠŽ]{3,}(?![a-zá-žčšž])/g });
+      P.push({ type: 'meno', ph: '[MENO]', keep: bezMed,
         re: /[A-ZÁ-ŽČŠŽ][a-zá-žčšžäôý]{2,}\s+[A-ZÁ-ŽČŠŽ][a-zá-žčšžäôý]{2,}/g });
     }
     return P;

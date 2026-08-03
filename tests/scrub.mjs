@@ -54,6 +54,13 @@ obsahuje(r3.clean, '52 mm', 'rozmer ostal v konzervatívnom režime');
 const r4 = scrub('AAA 55 mm, asymptomatická, plán EVAR');
 ok(r4.hits.length === 0, 'čistý klinický text = 0 zásahov');
 
+// ── mená VERZÁLKAMI (bežný formát žiadaniek) ──
+const r6 = scrub('MRKVIČKA Ján, dg. AAA 58 mm, krčok 22 mm');
+ok(!/MRKVIČKA|Ján/.test(r6.clean), 'VERZÁLKOVÉ priezvisko + meno odstránené');
+obsahuje(r6.clean, 'AAA 58 mm', 'klinika pri verzálkach ostala');
+const r7 = scrub('Pacient Anna NOVÁKOVÁ, AAA 51 mm');
+ok(!/NOVÁKOVÁ|Anna/.test(r7.clean), 'meno + VERZÁLKOVÉ priezvisko odstránené');
+
 // ── evidenčné číslo (nie RČ) sa neoznačí ako RČ ──
 const r5 = scrub('Žiadanka č. 993456/2026 na výkon');
 ok(!r5.hits.some(h => h.type === 'rc'), 'evidenčné 993456/2026 nie je RČ (zlý YYMMDD)');

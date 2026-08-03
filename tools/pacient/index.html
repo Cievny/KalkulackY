@@ -73,9 +73,14 @@ const TOOLS=[
 const FU={evk:'evk_followup',cas:'cas_followup',pevar:'pevar_followup',ras:'ras_followup'};
 const LBL={evk:'EVK',cas:'CAS',pevar:'PEVAR',ras:'RAS'};
 
-async function get(path){const r=await fetch(SB_URL+'/rest/v1/'+path,{headers:H()});return r.ok?r.json():[];}
+let GET_CHYBY=0;
+async function get(path){try{const r=await fetch(SB_URL+'/rest/v1/'+path,{headers:H()});if(!r.ok){GET_CHYBY++;return [];}return r.json();}catch(e){GET_CHYBY++;return [];}}
 
 async function hladaj(){
+  if(hladaj._busy)return;hladaj._busy=true;
+  const _btn=document.querySelector('button[onclick="hladaj()"]');if(_btn)_btn.disabled=true;
+  try{
+  GET_CHYBY=0;
   const rc=(document.getElementById('rc').value||'').replace(/\D/g,'');
   document.getElementById('out').innerHTML='';
   if(!rc.length){msg('⚠️ Zadajte rodné číslo alebo Pacient ID.','#b45309');return;}
@@ -91,6 +96,7 @@ async function hladaj(){
     const r=await fetch(SB_URL+'/rest/v1/rpc/najdi_pacienta',{method:'POST',headers:H(),body:JSON.stringify({p_rc:rc})});
     if(r.ok){const v=await r.json();pid=typeof v==='string'?v:(Array.isArray(v)?v[0]:v);}
     else if(r.status===404){msg('❌ Chýba funkcia najdi_pacienta – spustite v2 setup SQL.','#dc2626');return;}
+    else{msg('❌ Vyhľadanie zlyhalo ('+r.status+') – skúste znova.','#dc2626');return;}
   }catch(e){msg('❌ Chyba siete.','#dc2626');return;}
   if(!pid){msg('Pacient s týmto RČ zatiaľ nemá žiadny spárovaný výkon.','#6b7280');return;}
   }
@@ -108,6 +114,8 @@ async function hladaj(){
   events.sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
   let cisloP=null;try{const pr=await get('pacienti?id=eq.'+encodeURIComponent(pid)+'&select=cislo');cisloP=pr.length?pr[0].cislo:null;}catch(e){}
   render(pid,meta,events,cisloP);
+  if(GET_CHYBY)msg('⚠️ Časť dotazov zlyhala ('+GET_CHYBY+') – zoznam výkonov môže byť NEÚPLNÝ, skúste znova.','#b45309');
+  }finally{hladaj._busy=false;const _b2=document.querySelector('button[onclick="hladaj()"]');if(_b2)_b2.disabled=false;}
 }
 
 function render(pid,meta,events,cisloP){

@@ -49,7 +49,15 @@
       }).catch(function () { return null; });
     }).catch(function () { return null; });
   }
-  var API = { id: pacientId, paruj: paruj };
+  // dohľadá krátke číslo pacienta podľa uuid (na zobrazenie pri úprave záznamu)
+  function cisloPodlaId(sbUrl, headers, pacientId) {
+    if (!pacientId) return Promise.resolve(null);
+    return fetch(sbUrl + '/rest/v1/pacienti?id=eq.' + encodeURIComponent(pacientId) + '&select=cislo', { headers: headers })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) { return rows && rows[0] ? rows[0].cislo : null; })
+      .catch(function () { return null; });
+  }
+  var API = { id: pacientId, paruj: paruj, cislo: cisloPodlaId };
   global.Pacient = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -241,12 +241,13 @@
   }
   function setSel(id, pred) {
     var el = document.getElementById(id);
-    if (!el) return;
+    if (!el) return false;
     for (var i = 0; i < el.options.length; i++) {
       if (pred(norm(el.options[i].value || el.options[i].text), el.options[i].text)) {
-        el.value = el.options[i].value; fire(el, 'change'); return;
+        el.value = el.options[i].value; fire(el, 'change'); return true;
       }
     }
+    return false;
   }
 
   function applyPZ(res, ids) {
@@ -255,23 +256,32 @@
       if (ids && ids.indexOf(f.id) < 0) return;
       for (var k in f.patch) d[k] = f.patch[k];
     });
+    // vybrané polia sa zapisujú NAOZAJ (force) – lekár ich v zozname explicitne
+    // odsúhlasil; tiché preskočenie obsadeného poľa viedlo k falošnému „Vyplnené"
     if (d.rc) setVal('af_rodne_cislo', d.rc, true);         // input event doplní ročník + pohlavie
-    if (d.inicialy) setVal('af_inicialy', d.inicialy);
-    if (d.datum_ct) setVal('af_datum_ct', d.datum_ct);
-    if (d.dg) setSel('af_diagnoza', function (v, t) { return t === d.dg; });
+    if (d.inicialy) setVal('af_inicialy', d.inicialy, true);
+    if (d.datum_ct) setVal('af_datum_ct', d.datum_ct, true);
+    if (d.dg) {
+      var dgOk = setSel('af_diagnoza', function (v, t) { return t === d.dg; });
+      if (!dgOk) {
+        // diagnóza mimo ponuky → „vlastné…" + text do af_diagnoza_vl
+        var sel = document.getElementById('af_diagnoza'), vl = document.getElementById('af_diagnoza_vl');
+        if (sel && vl) { sel.value = 'vlastné'; vl.value = d.dg; fire(sel, 'change'); }
+      }
+    }
     if (d.endoleak_typ) setSel('af_endoleak_typ', function (v, t) { return t === 'typ ' + d.endoleak_typ || t.indexOf('typ ' + d.endoleak_typ) === 0; });
     if (d.sympt) setSel('af_symptomy', function (v, t) { return t === d.sympt; });
-    if (d.priemer != null) setVal('af_priemer', d.priemer);
-    if (d.rast != null) setVal('af_rast', d.rast);
-    if (d.krcok_dlzka != null) setVal('af_krcok_dlzka', d.krcok_dlzka);
-    if (d.krcok_priemer != null) setVal('af_krcok_priemer', d.krcok_priemer);
+    if (d.priemer != null) setVal('af_priemer', d.priemer, true);
+    if (d.rast != null) setVal('af_rast', d.rast, true);
+    if (d.krcok_dlzka != null) setVal('af_krcok_dlzka', d.krcok_dlzka, true);
+    if (d.krcok_priemer != null) setVal('af_krcok_priemer', d.krcok_priemer, true);
     if (d.krcok_ang) setSel('af_krcok_angulacia', function (v) { return v.indexOf(d.krcok_ang) === 0; });
-    if (d.aic_dx != null) setVal('sz_AIC_dx_mm', d.aic_dx);
-    if (d.aic_sin != null) setVal('sz_AIC_sin_mm', d.aic_sin);
-    if (d.aie_dx != null) setVal('sz_AIE_dx_mm', d.aie_dx);
-    if (d.aie_sin != null) setVal('sz_AIE_sin_mm', d.aie_sin);
-    if (d.renalne) setVal('af_renalne', d.renalne);
-    if (d.medikacia) setVal('af_medikacia', d.medikacia);
+    if (d.aic_dx != null) setVal('sz_AIC_dx_mm', d.aic_dx, true);
+    if (d.aic_sin != null) setVal('sz_AIC_sin_mm', d.aic_sin, true);
+    if (d.aie_dx != null) setVal('sz_AIE_dx_mm', d.aie_dx, true);
+    if (d.aie_sin != null) setVal('sz_AIE_sin_mm', d.aie_sin, true);
+    if (d.renalne) setVal('af_renalne', d.renalne, true);
+    if (d.medikacia) setVal('af_medikacia', d.medikacia, true);
     if (d.urgencia) setSel('af_urgencia', function (v, t) { return t === d.urgencia; });
     if (d.vykon) setSel('af_vykon_typ', function (v, t) { return t === d.vykon; });
     return true;
