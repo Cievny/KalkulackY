@@ -997,7 +997,9 @@ function addItem(pfx,kind,silent){
   } else if(kind==='balon_ivl'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
       <div class="row r2" style="margin-bottom:6px"><div class="f"><label>Katéter</label><select id="${id}_s" onchange="chkVl('${id}_s');gen()">${selOpts(OPTS.balon_ivl)}</select><input type="text" id="${id}_s_c" placeholder="Vlastný..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Počet pulzov</label><input type="number" id="${id}_u" placeholder="60" oninput="gen()"></div></div>
-      <div class="row r2"><div class="f"><label>Priemer × Dĺžka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="60" oninput="gen()"></div></div><div class="f"></div></div>${lezRow}`;
+      <div class="row r2"><div class="f"><label>Priemer × Dĺžka (mm)</label><div class="px-row"><input type="number" id="${id}_p" placeholder="5" oninput="gen()"><span style="text-align:center;font-weight:700;color:#888">×</span><input type="number" id="${id}_d" placeholder="60" oninput="gen()"></div></div><div class="f"></div></div>${lezRow}
+      <div id="${id}_locs"></div>
+      <button type="button" onclick="addLoc('${id}')" style="margin-top:6px;font-size:11px;padding:3px 9px;border:1px dashed #93c5fd;border-radius:6px;background:#eff6ff;color:#1e40af;cursor:pointer">＋ ten istý katéter v ďalšej cieve</button>`;
   } else if(kind==='reentry'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>
       <div class="row r2" style="margin-bottom:6px">
@@ -1079,7 +1081,8 @@ function collectInterventionItems(){
     const kat=sel?(sel.value==='vlastný'?(g(id+'_s_c')||'IVL katéter'):sel.value):'Shockwave';
     const p=g(id+'_p'),d=g(id+'_d'),u=g(id+'_u');
     let s='IVL '+kat;if(p&&d)s+=' '+p+'×'+d+' mm';if(u)s+=', '+u+' pulzov podľa protokolu';
-    items.push({tp:tp(id),sg:sg(id),desc:s,short:'IVL ('+kat+')',order:4});
+    // jeden IVL katéter môže ošetriť viac ciev (primárna + extra lokality)
+    allLocs(id).forEach(loc=>items.push({tp:loc.tp,sg:loc.sg,desc:s,short:'IVL ('+kat+')',order:4}));
   });}
   if(document.getElementById('c_pta').checked){rows('pta').forEach(row=>{
     const idx=row.dataset.idx,id='pta_'+idx;const sel=document.getElementById(id+'_s');if(!sel)return;
@@ -1296,6 +1299,8 @@ function collectFullData(){
         const ss=document.getElementById(id+'_s');
         item.nazov=ss?(ss.value==='vlastný'?(g(id+'_s_c')||''):ss.value):'';
         item.priemer=g(id+'_p');item.dlzka=g(id+'_d');item.pulzy=g(id+'_u');
+        const eil=extraLocs(id).map(l=>({tepna:l.tp,segment:l.sg}));
+        if(eil.length)item.extra_locs=eil;
       }else{
         const ss=document.getElementById(id+'_s');
         item.nazov=ss?(ss.value==='vlastný'?(g(id+'_s_c')||''):ss.value):'';
@@ -2315,6 +2320,7 @@ function restoreInterventionRows(record){
       }else if(kind==='balon_ivl'){
         setSel(id+'_s',it.nazov);
         sv(id+'_p',dia(it));sv(id+'_d',it.dlzka);sv(id+'_u',it.pulzy);
+        if(Array.isArray(it.extra_locs))it.extra_locs.forEach(l=>{addLoc(id,true);const li=locCnt[id]-1;svTp(id+'_l'+li+'_tp',l.tepna);sv(id+'_l'+li+'_sg',l.segment);});
       }else{
         setSel(id+'_s',it.nazov);
         sv(id+'_p',dia(it));sv(id+'_d',it.dlzka);sv(id+'_i',it.inflacia);sv(id+'_a',it.atm);
@@ -2562,5 +2568,23 @@ try{stagingUpdate();}catch(e){}
 <script src="/tools/gen-actionbar.js"></script>
 <script src="/tools/rc-auto.js"></script>
 <script>RcAuto.bind({rc:'rodne_cislo',pohl:'pohl',muz:'M',zena:'Z',vek:'vek',datum:'datum'});</script>
+<script>
+// Odklik rádio-políčka: druhý klik na už zvolenú možnosť ju zruší
+// (Technický úspech, anamnéza…) – platí pre všetky radio skupiny formulára.
+(function(){
+  document.addEventListener('pointerdown',function(e){
+    const l=e.target.closest&&e.target.closest('label');
+    const r=(e.target&&e.target.type==='radio')?e.target:(l&&l.querySelector('input[type="radio"]'));
+    if(r)r._wasChecked=r.checked;
+  },true);
+  document.addEventListener('click',function(e){
+    const r=e.target;
+    if(r&&r.type==='radio'&&r._wasChecked){
+      r.checked=false;r._wasChecked=false;
+      r.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+  },true);
+})();
+</script>
 </body>
 </html>
