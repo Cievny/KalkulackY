@@ -1513,7 +1513,11 @@ function novyPacient(){
   location.href=location.pathname;
 }
 async function saveToSheets(){
-  if(!g('id_suffix')){msg('cmsg','⚠️ Vyplňte ID výkonu','#b45309');return;}
+  if(!g('id_suffix')){
+    const _n=window.VykonId?await VykonId.next(SB_URL,sbHeaders(),'evk_vykony'):null;
+    if(_n){const _sf=document.getElementById('id_suffix');_sf.value=_n;_sf.dataset.auto='1';_sf.dispatchEvent(new Event('input',{bubbles:true}));}
+    else{msg('cmsg','⚠️ Vyplňte ID výkonu','#b45309');return;}
+  }
   const btn=document.getElementById('btn_save');
   if(btn&&btn.disabled)return;
   if(btn)btn.disabled=true;
@@ -1535,7 +1539,11 @@ async function saveToSheets(){
         const r=await fetch(`${SB_URL}/rest/v1/evk_vykony?vykon_id=eq.${encodeURIComponent(fullData.vykon_id)}&select=id`,{headers:sbHeaders()});
         if(r.ok){
           const rows=await r.json();
-          if(Array.isArray(rows)&&rows.length){msg('cmsg','⚠️ ID '+fullData.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}
+          if(Array.isArray(rows)&&rows.length){
+        const _n2=window.VykonId?await VykonId.next(SB_URL,sbHeaders(),'evk_vykony'):null;
+        if(_n2){const _sf=document.getElementById('id_suffix');_sf.value=_n2;_sf.dataset.auto='1';_sf.dispatchEvent(new Event('input',{bubbles:true}));fullData.vykon_id=VykonId.prefix()+_n2;msg('cmsg','ℹ️ ID bolo medzitým obsadené – pridelené '+fullData.vykon_id,'#1e40af');}
+        else{msg('cmsg','⚠️ ID '+fullData.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}
+      }
         }
       }catch(e){/* kontrola nedostupná – pokračujeme, insert samotný chybu ohlási */}
     }
@@ -2606,6 +2614,8 @@ try{stagingUpdate();}catch(e){}
 <script src="/tools/gen-actionbar.js"></script>
 <script src="/tools/rc-auto.js"></script>
 <script>RcAuto.bind({rc:'rodne_cislo',pohl:'pohl',muz:'M',zena:'Z',vek:'vek',datum:'datum'});</script>
+<script src="/tools/vykon-id.js"></script>
+<script>VykonId.bind({sbUrl:SB_URL,headers:()=>sbHeaders(),table:'evk_vykony',datum:'datum'});</script>
 <script>
 // Odklik rádio-políčka: druhý klik na už zvolenú možnosť ju zruší
 // (Technický úspech, anamnéza…) – platí pre všetky radio skupiny formulára.

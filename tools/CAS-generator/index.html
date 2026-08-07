@@ -1324,7 +1324,11 @@ function novyPacient(){
   location.href=location.pathname;
 }
 async function saveData(){
-  if(!(window._editRecordId&&window._editVykonId)&&!g('id_suffix')){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  if(!(window._editRecordId&&window._editVykonId)&&!g('id_suffix')){
+    const _n=window.VykonId?await VykonId.next(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'cas_vykony'):null;
+    if(_n){const _sf=document.getElementById('id_suffix');_sf.value=_n;_sf.dataset.auto='1';_sf.dispatchEvent(new Event('input',{bubbles:true}));}
+    else{msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  }
   // ochrana pred dvojklikom aj pri volaní mimo tlačidla (sticky lišta) – inak duplicitný záznam
   if(saveData._busy)return;saveData._busy=true;
   const artVal=g('access_art');
@@ -1439,7 +1443,11 @@ async function saveData(){
     else{
       // Kontrola duplicitného ID pred INSERTom
       const _dup=await fetch(SB_URL+'/rest/v1/cas_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
-      if(_dup.ok&&(await _dup.json()).length){msg('⚠️ ID '+payload.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}
+      if(_dup.ok&&(await _dup.json()).length){
+        const _n2=window.VykonId?await VykonId.next(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'cas_vykony'):null;
+        if(_n2){const _sf=document.getElementById('id_suffix');_sf.value=_n2;_sf.dataset.auto='1';_sf.dispatchEvent(new Event('input',{bubbles:true}));payload.vykon_id='CAS-'+casYear()+'-'+_n2;msg('ℹ️ ID bolo medzitým obsadené – pridelené '+payload.vykon_id,'#1e40af');}
+        else{msg('⚠️ ID '+payload.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}
+      }
     }
     const _url=SB_URL+'/rest/v1/cas_vykony'+(_isEdit?'?id=eq.'+window._editRecordId:'');
     const _send=()=>fetch(_url,{
@@ -1783,5 +1791,7 @@ window.addEventListener('beforeunload',e=>{if(window._dirty){e.preventDefault();
 <script src="/tools/gen-actionbar.js"></script>
 <script src="/tools/rc-auto.js"></script>
 <script>RcAuto.bind({rc:'rodne_cislo',pohl:'pohlavie',muz:'Muž',zena:'Žena',vek:'vek',datum:'datum_zaznamu'});</script>
+<script src="/tools/vykon-id.js"></script>
+<script>VykonId.bind({sbUrl:SB_URL,headers:()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}),table:'cas_vykony',datum:'datum_zaznamu'});</script>
 </body>
 </html>

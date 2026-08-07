@@ -1571,7 +1571,11 @@ function novyPacient(){
   location.href=location.pathname;
 }
 async function saveToSupabase(){
-  if(!g('id_suffix').trim()){msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  if(!g('id_suffix').trim()){
+    const _n=window.VykonId?await VykonId.next(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'pevar_vykony'):null;
+    if(_n){const _sf=document.getElementById('id_suffix');_sf.value=_n;_sf.dataset.auto='1';_sf.dispatchEvent(new Event('input',{bubbles:true}));}
+    else{msg('⚠️ Vyplňte ID výkonu','#b45309');return;}
+  }
   // ochrana pred dvojklikom aj pri volaní mimo tlačidla (sticky lišta) – inak duplicitný záznam
   if(saveToSupabase._busy)return;saveToSupabase._busy=true;
   const pristupVal=g('pristup_strana').split('|');
@@ -1704,7 +1708,11 @@ async function saveToSupabase(){
       const _dupR=await fetch(SB_URL+'/rest/v1/pevar_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
       if(_dupR.ok){
         const _dup=await _dupR.json();
-        if(Array.isArray(_dup)&&_dup.length){msg('⚠️ ID '+payload.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}
+        if(Array.isArray(_dup)&&_dup.length){
+        const _n2=window.VykonId?await VykonId.next(SB_URL,{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()},'pevar_vykony'):null;
+        if(_n2){const _sf=document.getElementById('id_suffix');_sf.value=_n2;_sf.dataset.auto='1';_sf.dispatchEvent(new Event('input',{bubbles:true}));payload.vykon_id='PEVAR-'+pevarYear()+'-'+_n2;msg('ℹ️ ID bolo medzitým obsadené – pridelené '+payload.vykon_id,'#1e40af');}
+        else{msg('⚠️ ID '+payload.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}
+      }
       }
     }
     if(_isEdit){
@@ -2111,5 +2119,7 @@ window.addEventListener('beforeunload',e=>{if(window._dirty){e.preventDefault();
 <script src="/tools/gen-actionbar.js"></script>
 <script src="/tools/rc-auto.js"></script>
 <script>RcAuto.bind({rc:'rodne_cislo',pohl:'pohlavie',muz:'Muž',zena:'Žena',vek:'vek',datum:'datum_zaznamu'});</script>
+<script src="/tools/vykon-id.js"></script>
+<script>VykonId.bind({sbUrl:SB_URL,headers:()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}),table:'pevar_vykony',datum:'datum_zaznamu'});</script>
 </body>
 </html>

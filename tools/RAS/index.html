@@ -303,6 +303,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <script src="/tools/gen-actionbar.js"></script>
 <script src="/tools/rc-auto.js"></script>
 <script>RcAuto.bind({rc:'rodne_cislo',pohl:'pohl',muz:'M',zena:'Z',vek:'vek',datum:'datum'});</script>
+<script src="/tools/vykon-id.js"></script>
 <script>
 const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
@@ -580,13 +581,17 @@ function novyPacient(){
   location.href=location.pathname;
 }
 async function saveRAS(){
-  if(!g('id_suffix').trim()){msg('cmsg','⚠️ Vyplňte ID výkonu','#b45309');return;}
+  if(!g('id_suffix').trim()){
+    const _n=window.VykonId?await VykonId.next(SB_URL,H(),'ras_vykony'):null;
+    if(_n){const _sf=document.getElementById('id_suffix');_sf.value=_n;_sf.dataset.auto='1';_sf.dispatchEvent(new Event('input',{bubbles:true}));}
+    else{msg('cmsg','⚠️ Vyplňte ID výkonu','#b45309');return;}
+  }
   const btn=document.getElementById('btn_save');
   if(btn.disabled)return;btn.disabled=true;
   try{
     const payload=collectPayload();
     // v2: spáruj/založ pacienta podľa RČ → pacient_id (best-effort, nikdy nezhodí uloženie)
-    const _vykonId=payload.vykon_id;
+    let _vykonId=payload.vykon_id;
     if(window._editRecordId&&window._editVykonId&&payload.vykon_id!==window._editVykonId&&g('id_suffix').trim()){
       // zmena ID výkonu: v auto-režime nový záznam automaticky; pri úprave zo Záznamov sa spýtaj (inak by PATCH prepísal pôvodný nález!)
       if(window._autoEdit||confirm('Zmenili ste ID výkonu ('+window._editVykonId+' → '+payload.vykon_id+').\nOK = uložiť ako NOVÝ záznam, Zrušiť = aktualizovať pôvodný.')){
@@ -598,7 +603,11 @@ async function saveRAS(){
     const _isEdit=!!window._editRecordId;
     if(!_isEdit){
       const dupR=await fetch(SB_URL+'/rest/v1/ras_vykony?vykon_id=eq.'+encodeURIComponent(payload.vykon_id)+'&select=id',{headers:H()});
-      if(dupR.ok){const dup=await dupR.json();if(Array.isArray(dup)&&dup.length){msg('cmsg','⚠️ ID '+payload.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}}
+      if(dupR.ok){const dup=await dupR.json();if(Array.isArray(dup)&&dup.length){
+        const _n2=window.VykonId?await VykonId.next(SB_URL,H(),'ras_vykony'):null;
+        if(_n2){const _sf=document.getElementById('id_suffix');_sf.value=_n2;_sf.dataset.auto='1';_sf.dispatchEvent(new Event('input',{bubbles:true}));payload.vykon_id='RAS-'+rasYear()+'-'+_n2;msg('cmsg','ℹ️ ID bolo medzitým obsadené – pridelené '+payload.vykon_id,'#1e40af');_vykonId=payload.vykon_id;}
+        else{msg('cmsg','⚠️ ID '+payload.vykon_id+' už existuje – zvoľte iné číslo','#b45309');return;}
+      }}
     }
     if(_isEdit){
       // pri edite ponechať null v poliach typu výkonu – zmena stenting↔POBA/DEB musí staré hodnoty vymazať
@@ -714,5 +723,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   gen();
 });
 </script>
+<script>VykonId.bind({sbUrl:SB_URL,headers:()=>H(),table:'ras_vykony',datum:'datum'});</script>
 </body>
 </html>
