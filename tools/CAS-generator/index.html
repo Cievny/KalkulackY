@@ -631,7 +631,18 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
         </select>
       </div>
     </div>
-    <div class="f"><label>Emboloprotekcia</label><input type="text" id="emboloprotekcia" value="6mm (Spider Fx)" oninput="gen()"></div>
+    <div class="f"><label>Emboloprotekcia</label>
+      <div class="row r2" style="margin-bottom:0">
+        <select id="embolo_material" onchange="document.getElementById('embolo_material_c').style.display=this.value==='vlastný'?'':'none';gen()">
+          <option>Spider FX</option>
+          <option>Emboshield NAV6</option>
+          <option value="vlastný">vlastný…</option>
+          <option value="">bez emboloprotekcie</option>
+        </select>
+        <input type="text" id="embolo_rozmer" value="6 mm" placeholder="napr. 6 mm" oninput="gen()">
+      </div>
+      <input type="text" id="embolo_material_c" placeholder="Vlastný systém…" style="display:none;margin-top:4px" oninput="gen()">
+    </div>
   </div>
 
   <div class="tog">
@@ -1063,7 +1074,9 @@ function gen(){
     L.push('INTERVENCIA:');
     const shInterv=`${g('sheath_intervencny_fr')} ${g('sheath_intervencny_dlzka')} (${g('sheath_intervencny_znacka')})`;
     const vodic=`${g('vodic_intervencny_spec')} (${g('vodic_intervencny_brand')})`;
-    const embolo=g('emboloprotekcia');
+    // emboloprotekcia: rozmer + materiál → jeden text v doterajšom formáte „6 mm (Spider FX)"
+    const emboloText=()=>{const m=g('embolo_material')==='vlastný'?(g('embolo_material_c')||'vlastný systém'):g('embolo_material');if(!m)return '';const r=g('embolo_rozmer');return (r?r+' ':'')+'('+m+')';};
+    const embolo=emboloText();window._emboloText=emboloText;
     const stent=g('stent_velkost')?`${withMM(g('stent_velkost'))} (${g('stent_znacka')})`:g('stent_znacka');
     let intervParts=[];
     if(chk('vykonat_predilataciu')){
@@ -1075,7 +1088,7 @@ function gen(){
       impl+=` a k domodelovaniu pomocou PTA balóna ${withMM(g('balon_domodelovanie_velkost'))} (${g('balon_domodelovanie_znacka')})`;
     }
     intervParts.push(impl);
-    L.push(`Zavádzame Storq vodič do ${ace}, vymieňame sheath za ${shInterv}, pomocou ${vodic} vodiča katetrizujeme ${aci} a zavádzame distálnu emboloprotekciu ${embolo}.`);
+    L.push(`Zavádzame Storq vodič do ${ace}, vymieňame sheath za ${shInterv}, pomocou ${vodic} vodiča katetrizujeme ${aci}`+(embolo?` a zavádzame distálnu emboloprotekciu ${embolo}`:'')+`.`);
     L.push(intervParts.join(', ')+'.');
     if(g('vysledok'))L.push('Výsledný angiografický obraz '+g('vysledok')+'.');
   } else {
@@ -1158,7 +1171,7 @@ function collectDRGCasSections(){
   const codes=[],supp=[];
   if(interv){
     codes.push({code:acc?'8r880.05':'8r880.04',desc:'Perkutánna transluminálna implantácia stentu neuvoľňujúceho lieky, 1 stent do a. carotis interna extrakraniálne'+(acc?' s a. carotis communis':'')+' – '+(g('stent_znacka')||'stent')+' '+(g('stent_velkost')||'')+' ('+lok+')'});
-    if(g('emboloprotekcia'))codes.push({code:'8r870.0',desc:'Perkutánna transluminálna intervencia, použitie 1 emboloprotekčného systému ('+g('emboloprotekcia')+')'});
+    {const _em=window._emboloText?window._emboloText():'';if(_em)codes.push({code:'8r870.0',desc:'Perkutánna transluminálna intervencia, použitie 1 emboloprotekčného systému ('+_em+')'});}
     const bal=[];
     if(document.getElementById('vykonat_predilataciu')?.checked)bal.push('predilatácia');
     if(document.getElementById('vykonat_domodelovanie')?.checked)bal.push('domodelovanie');
@@ -1379,7 +1392,7 @@ async function saveData(){
     interv_vodic:isInterv?`${g('vodic_intervencny_spec')} (${g('vodic_intervencny_brand')})`:'',
     interv_vodic_spec:isInterv?g('vodic_intervencny_spec'):'',
     interv_vodic_znacka:isInterv?g('vodic_intervencny_brand'):'',
-    emboloprotekcia:isInterv?g('emboloprotekcia'):'',
+    emboloprotekcia:isInterv?(window._emboloText?window._emboloText():''):'',
     predilatacia_vykonana:isInterv&&chk('vykonat_predilataciu')?'Ano':'Nie',
     predilatacny_balon:isInterv&&chk('vykonat_predilataciu')?`${g('balon_predilatacia_velkost')} (${g('balon_predilatacia_znacka')})`:'',
     predilatacny_balon_velkost:isInterv&&chk('vykonat_predilataciu')?g('balon_predilatacia_velkost'):'',
@@ -1614,7 +1627,17 @@ function loadEditRecord(){
     // Materiály
     sv('stent_znacka',record.stent_znacka);
     sv('stent_velkost',record.stent_velkost);
-    sv('emboloprotekcia',record.emboloprotekcia);
+    {const _ev=record.emboloprotekcia||'';const _mm=/^(.*?)\s*\(([^)]+)\)\s*$/.exec(_ev);
+     const _sel=document.getElementById('embolo_material'),_roz=document.getElementById('embolo_rozmer'),_cst=document.getElementById('embolo_material_c');
+     if(_sel){
+       if(!_ev){_sel.value='';}
+       else if(_mm){
+         const _mat=_mm[2].trim();
+         const _hit=[...(_sel.options)].find(o=>o.value.toLowerCase()===_mat.toLowerCase()||o.text.toLowerCase()===_mat.toLowerCase());
+         if(_hit)_sel.value=_hit.value;else{_sel.value='vlastný';if(_cst){_cst.value=_mat;_cst.style.display='';}}
+         if(_roz)_roz.value=_mm[1].trim();
+       }else{_sel.value='vlastný';if(_cst){_cst.value=_ev;_cst.style.display='';}if(_roz)_roz.value='';}
+     }}
     // Procedúra + uzáver
     sv('anes',record.anestazia);
     sv('uzatvaraci_system',record.uzatvaraci_system);
