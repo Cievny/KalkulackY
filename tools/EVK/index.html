@@ -1851,6 +1851,14 @@ function collectDRGSections(){
       if(!alreadyAdded)add('8r800.'+s,'Balónová angioplastika (PTA): '+SL[s]);
     });
   }
+  // Postdilatácia po stentingu → tiež balónová angioplastika 8r800
+  if(document.getElementById('c_stent').checked&&document.getElementById('c_post').checked){
+    [...new Set(drgListSuffixes('post'))].forEach(s=>{
+      // rovnaký suffix už mohol prísť z predilatácie/PTA – ten istý kód nevykazuj dvakrát
+      const alreadyAdded=codes.some(c=>c.code==='8r800.'+s);
+      if(!alreadyAdded)add('8r800.'+s,'Balónová angioplastika – postdilatácia stentu: '+SL[s]);
+    });
+  }
   // DEB PTA
   if(document.getElementById('c_deb').checked){
     [...new Set(drgListSuffixes('deb'))].forEach(s=>add('8r801.'+s,'DEB PTA (balón uvoľňujúci lieky): '+SL[s]));
