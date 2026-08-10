@@ -215,6 +215,7 @@
     ]},
     {href:'/tools/kontroly/',label:'🩺 Kontroly'},
     {href:'/tools/pacient/',label:'🧍 Cesta pacienta'},
+    {href:'/tools/suhlasy/',label:'📄 Súhlasy'},
     {href:'/tools/kalendar/',label:'📆 Kalendár'},
     {href:'/tools/oznamy/',label:'📢 Oznamy'},
     {href:'/tools/ideas/',label:'💡 Nápady'},

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Informované súhlasy – cievny.sk</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f7;min-height:100vh;color:#1a2745;}
+.wrap{max-width:900px;margin:0 auto;padding:20px;}
+h1{font-size:18px;font-weight:700;}
+.page-sub{font-size:13px;color:#6b7280;margin:4px 0 16px;}
+.searchbar{background:#fff;border-radius:10px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;}
+.searchbar input{flex:1;min-width:200px;padding:9px 12px;border:1.5px solid #dde1ea;border-radius:8px;font-size:14px;font-family:inherit;outline:none;}
+.searchbar input:focus{border-color:#3b82f6;}
+.grp{font-size:11px;font-weight:800;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;}
+.doc{display:flex;align-items:center;gap:12px;background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:8px;text-decoration:none;color:#1a2745;border-left:4px solid #3b82f6;}
+.doc:hover{background:#f8faff;}
+.doc .ico{font-size:20px;}
+.doc .nm{flex:1;font-size:14px;font-weight:600;line-height:1.35;}
+.doc .dl{font-size:12px;font-weight:700;color:#1e40af;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:7px;padding:6px 12px;white-space:nowrap;}
+.empty{text-align:center;padding:30px;color:#9ca3af;font-size:14px;}
+.hint{font-size:12px;color:#6b7280;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;margin-bottom:14px;}
+@media(max-width:700px){.wrap{padding:12px;}.doc{padding:12px;}.doc .dl{padding:8px 12px;}}
+</style>
+</head>
+<body>
+<script src="/tools/auth.js"></script>
+<script>checkAuth();</script>
+
+<div class="wrap">
+  <h1>📄 Informované súhlasy (NÚSCH)</h1>
+  <p class="page-sub">Oficiálne šablóny na stiahnutie a tlač – netreba ich hľadať po diskoch. Súbory sú Word (.docx), po stiahnutí sa dajú rovno vytlačiť alebo doplniť.</p>
+  <div class="searchbar"><input type="text" id="q" placeholder="Hľadať… (napr. EVAR, stenting, trombektómia)" oninput="render()"></div>
+  <div id="list"></div>
+</div>
+
+<script>
+const DIR='/tools/suhlasy/docs/';
+// [súbor, zobrazovaný názov, skupina]
+const DOCS=[
+ ['01_EVAR - Endovaskulárna oprava aneuryzmy aorty.docx','EVAR – endovaskulárna oprava aneuryzmy aorty','Aorta'],
+ ['02_TEVAR - Endovaskulárna oprava aneuryzmy hrudnej aorty.docx','TEVAR – endovaskulárna oprava aneuryzmy hrudnej aorty','Aorta'],
+ ['10_FEVAR - Fenestrovaná endovaskulárna oprava aneuryzmy aorty.docx','FEVAR – fenestrovaná endovaskulárna oprava aneuryzmy aorty','Aorta'],
+ ['11_BEVAR - Branched Endovascular Aneurysm Repair.docx','BEVAR – branched endovascular aneurysm repair','Aorta'],
+ ['03_Angioplastika periférnych tepien.docx','Angioplastika periférnych tepien (PTA)','Periférne tepny'],
+ ['04_Arteriálny stenting.docx','Arteriálny stenting','Periférne tepny'],
+ ['05_Trombektómia pri akútnej končatinovej ischémii.docx','Trombektómia pri akútnej končatinovej ischémii','Periférne tepny'],
+ ['17_Orbitálna aterektómia.docx','Orbitálna aterektómia','Periférne tepny'],
+ ['08_Karotický stenting.docx','Karotický stenting (CAS)','Karotídy a neuro'],
+ ['06_Mechanická trombektómia pri cievnej mozgovej príhode.docx','Mechanická trombektómia pri cievnej mozgovej príhode','Karotídy a neuro'],
+ ['16_Endovaskulárne ošetrenie intrakraniálnej aneuryzmy.docx','Endovaskulárne ošetrenie intrakraniálnej aneuryzmy','Karotídy a neuro'],
+ ['09_Endovaskulárna liečba aneuryzmy viscerálnych tepien.docx','Endovaskulárna liečba aneuryzmy viscerálnych tepien','Renálne a viscerálne'],
+ ['13_Renálna denervácia pri rezistentnej hypertenzii.docx','Renálna denervácia pri rezistentnej hypertenzii','Renálne a viscerálne'],
+ ['14_Sampling renálnych a suprarenálnych žíl.docx','Sampling renálnych a suprarenálnych žíl','Renálne a viscerálne'],
+ ['07_Endovaskulárne ošetrenie stenózy AV fistuly.docx','Endovaskulárne ošetrenie stenózy AV fistuly','Žily a AV prístupy'],
+ ['12_Mechanická trombektómia pri extenzívnej žilovej trombóze.docx','Mechanická trombektómia pri extenzívnej žilovej trombóze','Žily a AV prístupy'],
+ ['18_Kazuistický report - Súhlas so zverejnením na sociálnych sieťach .docx','Kazuistický report – súhlas so zverejnením (soc. siete)','Ostatné'],
+];
+function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function norm(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();}
+function render(){
+  const q=norm(document.getElementById('q').value);
+  const el=document.getElementById('list');
+  const rows=DOCS.filter(d=>!q||norm(d[1]+' '+d[0]+' '+d[2]).includes(q));
+  if(!rows.length){el.innerHTML='<div class="empty">Nič sa nenašlo.</div>';return;}
+  let h='',grp='';
+  rows.forEach(d=>{
+    if(d[2]!==grp){grp=d[2];h+='<div class="grp">'+esc(grp)+'</div>';}
+    h+='<a class="doc" href="'+DIR+encodeURIComponent(d[0])+'" download>'+
+       '<span class="ico">📄</span><span class="nm">'+esc(d[1])+'</span><span class="dl">⬇ Stiahnuť</span></a>';
+  });
+  el.innerHTML=h;
+}
+render();
+</script>
+</body>
+</html>
