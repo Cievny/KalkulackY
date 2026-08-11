@@ -1092,9 +1092,9 @@ sk:{
  tvyk:'Typ výkonu, n (%)',
  etio:'Etiológia, n (%)',etio_aneuryzma:'aneuryzma',etio_disekcia_B:'disekcia typu B',etio_IMH:'intramurálny hematóm (IMH)',etio_PAU:'penetrujúci aortálny vred (PAU)',etio_trauma:'trauma',etio_ine:'iné',
  spinDren:'Spinálna drenáž, n (%)',
- lsa:'LSA manažment, n (%)',lsa_neprekryta:'neprekrytá',lsa_prekryta:'prekrytá',lsa_revask_bypass:'revaskularizácia – bypass',lsa_revask_transpozicia:'revaskularizácia – transpozícia',lsa_chimney:'chimney',lsa_islf:'ISLF',
+ lsa:'LSA manažment, n (%)',lsa_neprekryta:'neprekrytá',lsa_prekryta:'prekrytá',lsa_revask_bypass:'revaskularizácia – bypass',lsa_revask_transpozicia:'revaskularizácia – transpozícia',lsa_chimney:'chimney',lsa_islf:'ISLF',lsa_isf:'in-situ fenestrácia',
  tv:'Vetvy a fenestrácie',tvN:'Cieľové cievy spolu, n',tvTyp:'Typ zabezpečenia, n (%)',tvCieva:'Cieľová cieva, n (%)',tvCann:'Technická úspešnosť kanylácie, n/N (%)',tvBridging:'Bridging stentgrafty (top 5), n',
- tvt_fenestracia:'fenestrácia',tvt_vetva:'vetva',tvt_chimney:'chimney',tvt_periscope:'periscope',tvt_islf:'ISLF',tvt_debranching:'debranching',
+ tvt_fenestracia:'fenestrácia',tvt_vetva:'vetva',tvt_chimney:'chimney',tvt_periscope:'periscope',tvt_islf:'ISLF',tvt_isf:'in-situ fenestrácia',tvt_debranching:'debranching',
  tvc_LSA:'LSA',tvc_ACC_sin:'ľavá ACC',tvc_TC:'truncus coeliacus',tvc_AMS:'AMS',tvc_RA_dx:'pravá renálna artéria',tvc_RA_sin:'ľavá renálna artéria',tvc_AII_dx:'pravá AII',tvc_AII_sin:'ľavá AII',tvc_ine:'iné',
  tvPat:'Priechodnosť cieľových ciev, n (%)',tvPatOpen:'priechodná',tvPatSten:'stenóza',tvPatOcc:'oklúzia',
  flT:'Trombóza falošného lúmenu, n (%)',fl_kompletna:'kompletná',fl_parcialna:'parciálna',fl_ziadna:'žiadna',
@@ -1157,9 +1157,9 @@ en:{
  tvyk:'Procedure type, n (%)',
  etio:'Aetiology, n (%)',etio_aneuryzma:'aneurysm',etio_disekcia_B:'type B dissection',etio_IMH:'intramural haematoma (IMH)',etio_PAU:'penetrating aortic ulcer (PAU)',etio_trauma:'trauma',etio_ine:'other',
  spinDren:'Spinal drainage, n (%)',
- lsa:'LSA management, n (%)',lsa_neprekryta:'not covered',lsa_prekryta:'covered',lsa_revask_bypass:'revascularisation – bypass',lsa_revask_transpozicia:'revascularisation – transposition',lsa_chimney:'chimney',lsa_islf:'in-situ laser fenestration',
+ lsa:'LSA management, n (%)',lsa_neprekryta:'not covered',lsa_prekryta:'covered',lsa_revask_bypass:'revascularisation – bypass',lsa_revask_transpozicia:'revascularisation – transposition',lsa_chimney:'chimney',lsa_islf:'in-situ laser fenestration',lsa_isf:'in-situ needle fenestration',
  tv:'Target vessels',tvN:'Target vessels total, n',tvTyp:'Type of incorporation, n (%)',tvCieva:'Target vessel, n (%)',tvCann:'Technical success of cannulation, n/N (%)',tvBridging:'Bridging stent-grafts (top 5), n',
- tvt_fenestracia:'fenestration',tvt_vetva:'directional branch',tvt_chimney:'chimney',tvt_periscope:'periscope',tvt_islf:'in-situ laser fenestration',tvt_debranching:'debranching',
+ tvt_fenestracia:'fenestration',tvt_vetva:'directional branch',tvt_chimney:'chimney',tvt_periscope:'periscope',tvt_islf:'in-situ laser fenestration',tvt_isf:'in-situ needle fenestration',tvt_debranching:'debranching',
  tvc_LSA:'LSA',tvc_ACC_sin:'left CCA',tvc_TC:'coeliac trunk',tvc_AMS:'SMA',tvc_RA_dx:'right renal artery',tvc_RA_sin:'left renal artery',tvc_AII_dx:'right IIA',tvc_AII_sin:'left IIA',tvc_ine:'other',
  tvPat:'Target vessel patency, n (%)',tvPatOpen:'patent',tvPatSten:'stenosis',tvPatOcc:'occlusion',
  flT:'False lumen thrombosis, n (%)',fl_kompletna:'complete',fl_parcialna:'partial',fl_ziadna:'none',
@@ -1255,7 +1255,7 @@ const PUB_TVYK=['EVAR','FEVAR','BEVAR','TEVAR','ChEVAR','HYBRID'];
 const PUB_TVYK_CANON={EVAR:'EVAR',FEVAR:'FEVAR',BEVAR:'BEVAR',TEVAR:'TEVAR',CHEVAR:'ChEVAR',HYBRID:'HYBRID'};
 function pubTypVykonu(r){const v=(r&&r.typ_vykonu!=null?''+r.typ_vykonu:'').trim().toUpperCase();return PUB_TVYK_CANON[v]||'EVAR';} // chýbajúci typ = EVAR (staré záznamy)
 function pubJsonArr(v){if(v==null||v==='')return[];if(typeof v==='string'){try{v=JSON.parse(v);}catch(e){return[];}}return Array.isArray(v)?v:[];}
-const PUB_TV_TYP=['fenestracia','vetva','chimney','periscope','islf','debranching'];
+const PUB_TV_TYP=['fenestracia','vetva','chimney','periscope','islf','isf','debranching'];
 const PUB_TV_CIEVA=['LSA','ACC_sin','TC','AMS','RA_dx','RA_sin','AII_dx','AII_sin','ine'];
 function pubLV(prefix,v){const k=prefix+v,d=PUB_L[PUB.lang]||PUB_L.sk;if(k in d)return d[k];if(k in PUB_L.sk)return PUB_L.sk[k];return v||'–';}
 function pubVessels(rows){ // cieľové cievy z vetvy_detail (JSON, chránený parse)

@@ -251,6 +251,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
         <option value="revask_transpozicia">transpozícia</option>
         <option value="chimney">chimney</option>
         <option value="islf">in-situ laserová fenestrácia</option>
+        <option value="isf">in-situ fenestrácia (ihlová)</option>
       </select>
     </div>
     <div class="f" style="display:flex;align-items:center;padding-top:20px"><label class="ck"><input type="checkbox" id="spinalna_drenaz" onchange="gen()"> Spinálna drenáž</label></div>
@@ -960,7 +961,7 @@ function typVykonuChanged(){
 // ── Vetvy / fenestrácie ─────────────────────────────────────
 let vetvaCnt=0;
 const CIEVA_OPTS=[['LSA','ľavá a. subclavia'],['ACC_sin','ľavá ACC'],['TC','truncus coeliacus'],['AMS','AMS'],['RA_dx','pravá renálna'],['RA_sin','ľavá renálna'],['AII_dx','pravá AII'],['AII_sin','ľavá AII'],['ine','iná…']];
-const VTYP_OPTS=[['fenestracia','výrobná fenestrácia'],['vetva','smerovaná vetva'],['chimney','chimney'],['periscope','periscope'],['islf','in-situ laserová fenestrácia (ISLF)'],['debranching','debranching bypass']];
+const VTYP_OPTS=[['fenestracia','výrobná fenestrácia'],['vetva','smerovaná vetva'],['chimney','chimney'],['periscope','periscope'],['islf','in-situ laserová fenestrácia (ISLF)'],['isf','in-situ fenestrácia (ihlová)'],['debranching','debranching bypass']];
 const cievaOptsHtml=()=>CIEVA_OPTS.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join('');
 function addVetva(){
   const idx=vetvaCnt++;
@@ -1000,7 +1001,8 @@ const LSA_TEXT={
   revask_bypass:'Ľavá a. subclavia revaskularizovaná karotído-subklaviálnym bypassom.',
   revask_transpozicia:'Ľavá a. subclavia revaskularizovaná transpozíciou.',
   chimney:'Ľavá a. subclavia zabezpečená chimney technikou.',
-  islf:'Ľavá a. subclavia zabezpečená in-situ laserovou fenestráciou.'
+  islf:'Ľavá a. subclavia zabezpečená in-situ laserovou fenestráciou.',
+  isf:'Ľavá a. subclavia zabezpečená in-situ fenestráciou (ihlovou).'
 };
 const ETIO_TEXT={aneuryzma:'aneuryzma',disekcia_B:'disekcia typu B',IMH:'intramurálny hematóm (IMH)',PAU:'penetrujúci aortálny vred (PAU)',trauma:'trauma',ine:'iná etiológia'};
 function vetaVetvy(v){
@@ -1012,6 +1014,7 @@ function vetaVetvy(v){
   else if(v.typ==='chimney')s='Chimney technikou zabezpečujeme '+c+impl;
   else if(v.typ==='periscope')s='Periscope technikou zabezpečujeme '+c+impl;
   else if(v.typ==='islf')s='In-situ laserovou fenestráciou perforujeme graft pre '+c+impl;
+  else if(v.typ==='isf')s='In-situ fenestráciou (ihlovou) perforujeme graft pre '+c+impl;
   else s='Debranching bypassom zabezpečujeme '+c;
   if(v.kanylacia==='uspesna')s+=' – kanylácia úspešná';
   else if(v.kanylacia==='neuspesna')s+=' – kanylácia neúspešná';
@@ -1307,7 +1310,7 @@ function drgAuto(extN){
   const typV=typVykonu();
   const v=getVetvy().filter(x=>x.cieva);
   const nFen=v.filter(x=>x.typ==='fenestracia').length;
-  const nIslf=v.filter(x=>x.typ==='islf').length;
+  const nIslf=v.filter(x=>x.typ==='islf'||x.typ==='isf').length;   // ISLF aj ihlová in-situ = fenestrácia
   const nBranch=v.filter(x=>x.typ==='vetva').length;
   const nChim=v.filter(x=>x.typ==='chimney'||x.typ==='periscope').length;
   const fenTotal=nFen+nIslf;
