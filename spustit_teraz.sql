@@ -359,3 +359,10 @@ CREATE POLICY "anon insert ideas schranka" ON ideas
 --   1. nájdite ich:  SELECT id, vykon_id, datum FROM evk_vykony WHERE vykon_id='EVK-2026-001';
 --   2. premenujte:   UPDATE evk_vykony SET vykon_id='EVK-2026-001b' WHERE id='<uuid>';
 --   3. spustite tento skript znova (vytvorí unikátny index).
+
+-- ── 3r · PEVAR: embolizácia pri EVAR/TEVAR (špirály/plug, DRG 8r8x9) ──
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS embolizacia boolean;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS embolizacia_ciel text;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS embolizacia_material text;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS embolizacia_pocet int;
+ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS embolizacia_pozn text;

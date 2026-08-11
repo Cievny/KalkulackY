@@ -685,6 +685,35 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   </div>
 </div>
 
+<div class="tog">
+  <label class="thdr"><input type="checkbox" id="c_emb" onchange="tB('emb');gen()"><span>Embolizácia (špirály / plug)</span></label>
+  <div class="tbody" id="b_emb">
+    <div class="row r3">
+      <div class="f"><label>Cieľová cieva</label>
+        <select id="emb_cieva" onchange="embIne();gen()">
+          <option>a. iliaca interna l.dx.</option>
+          <option>a. iliaca interna l.sin.</option>
+          <option>a. mesenterica inferior</option>
+          <option>lumbálne tepny</option>
+          <option>vak aneuryzmy</option>
+          <option value="ine">iná…</option>
+        </select>
+        <input type="text" id="emb_cieva_ine" placeholder="iná cieva…" style="display:none;margin-top:4px" oninput="gen()">
+      </div>
+      <div class="f"><label>Materiál</label>
+        <select id="emb_material" onchange="embIne();gen()">
+          <option value="embolizačné špirály">embolizačné špirály (coils)</option>
+          <option value="vascular plug">vascular plug (Amplatzer)</option>
+          <option value="ine">iný…</option>
+        </select>
+        <input type="text" id="emb_material_ine" placeholder="iný materiál…" style="display:none;margin-top:4px" oninput="gen()">
+      </div>
+      <div class="f"><label>Počet (ks)</label><input type="number" id="emb_pocet" min="1" max="30" value="1" oninput="gen()"></div>
+    </div>
+    <div class="f" style="margin-bottom:0"><label>Typ / poznámka</label><input type="text" id="emb_pozn" placeholder="napr. Concerto 6×20, Ruby…" oninput="gen()"></div>
+  </div>
+</div>
+
 <div class="f" style="margin-top:6px">
   <label class="ck"><input type="checkbox" id="komponenty_ok" checked onchange="gen()"><span>Všetky komponenty dobre rozvinuté, bez stenózy.</span></label>
 </div>
@@ -982,6 +1011,7 @@ function addVetva(){
   cont.appendChild(div);gen();
 }
 function delVetva(idx){const r=document.querySelector('#vetvy_list [data-idx="'+idx+'"]');if(r)r.remove();gen();}
+function embIne(){const c=document.getElementById('emb_cieva'),ci=document.getElementById('emb_cieva_ine');if(c&&ci)ci.style.display=c.value==='ine'?'':'none';const m=document.getElementById('emb_material'),mi=document.getElementById('emb_material_ine');if(m&&mi)mi.style.display=m.value==='ine'?'':'none';}
 function vetvaCievaIne(idx){const s=document.getElementById('vetva_'+idx+'_cieva'),c=document.getElementById('vetva_'+idx+'_cieva_ine');if(s&&c)c.style.display=s.value==='ine'?'':'none';}
 function getVetvy(){
   const rows=[];
@@ -1139,6 +1169,13 @@ function gen(){
     modParts.push('v oblasti extenzií pomocou '+g('modelovanie_extenzie_balon')+' balónu'+(r?' veľkosti '+r:''));
   }
   const modText=modParts.length?'Kritické miesta stentgraftu domodelované '+modParts.join(' a ')+'.':'';
+  let embText='';
+  if(chk('c_emb')){
+    const _ec=g('emb_cieva')==='ine'?(g('emb_cieva_ine')||'cieľovej cievy'):g('emb_cieva');
+    const _em=g('emb_material')==='ine'?(g('emb_material_ine')||'embolizačný materiál'):g('emb_material');
+    const _en=Math.max(1,parseInt(g('emb_pocet'))||1);
+    embText='Vykonaná embolizácia '+_ec+' – '+_en+'× '+_em+(g('emb_pozn')?' ('+g('emb_pozn')+')':'')+'.';
+  }
 
   const segAo=g('segment_aorty')||'abdominalna';
   const _aoTxt=segAo==='torakalna'?'hrudnej aorty':(segAo==='torakoabdominalna'?'torakoabdominálnej aorty':'AAA');
@@ -1203,7 +1240,7 @@ function gen(){
   // ── VÝKON ──
   L.push('VÝKON:');
   katLines.forEach(l=>L.push(l));
-  const dsaLine=[modText,...agParts].filter(Boolean).join(' ');
+  const dsaLine=[embText,modText,...agParts].filter(Boolean).join(' ');
   if(dsaLine)L.push(dsaLine);
 
   // ── UZÁVER ──
@@ -1371,6 +1408,12 @@ function collectDRGPevarSections(){
   if(document.getElementById('modelovanie_telo')?.checked)bal.push('telo SG');
   if(document.getElementById('modelovanie_extenzie')?.checked)bal.push('extenzie');
   if(bal.length)supp.push({code:'8r8x0.'+(bal.length-1),desc:'Počet balónikových katétrov: '+bal.length+' (domodelovanie – '+bal.join(' + ')+')'});
+  if(document.getElementById('c_emb')?.checked){
+    const _en=Math.max(1,parseInt(g('emb_pocet'))||1);
+    const _em=g('emb_material')==='ine'?(g('emb_material_ine')||'embolizačný materiál'):g('emb_material');
+    const _ec=g('emb_cieva')==='ine'?(g('emb_cieva_ine')||''):g('emb_cieva');
+    supp.push({code:'8r8x9.'+Math.min(_en-1,9),desc:'Embolizácia ('+_em+(_ec?', '+_ec:'')+'): '+_en+' ks'});
+  }
   return {dsa,main,supp,warns,seg};
 }
 // Fakturovateľné výkonové kódy pre uloženie so záznamom – bez warn/'?' riadkov a informatívnej F51 skupiny
@@ -1632,6 +1675,11 @@ async function saveToSupabase(){
     modelovanie_extenzie:chk('modelovanie_extenzie'),
     modelovanie_extenzie_balon:chk('modelovanie_extenzie')?g('modelovanie_extenzie_balon'):'',
     modelovanie_extenzie_rozmer:chk('modelovanie_extenzie')?g('modelovanie_extenzie_rozmer'):'',
+    embolizacia:chk('c_emb'),
+    embolizacia_ciel:chk('c_emb')?(g('emb_cieva')==='ine'?g('emb_cieva_ine'):g('emb_cieva')):'',
+    embolizacia_material:chk('c_emb')?(g('emb_material')==='ine'?g('emb_material_ine'):g('emb_material')):'',
+    embolizacia_pocet:chk('c_emb')?(parseInt(g('emb_pocet'))||1):null,
+    embolizacia_pozn:chk('c_emb')?g('emb_pozn'):'',
     endoleak:chk('endoleak_check'),
     endoleak_typ:chk('endoleak_check')?g('endoleak_typ'):'',
     endoleak_zdroj:chk('endoleak_check')?g('endoleak_typ2_zdroj'):'',
@@ -1750,6 +1798,11 @@ async function saveToSupabase(){
     if(!r.ok&&r.status===400&&('pacient_id' in payload)){
       const _etxt5=await r.clone().text();
       if(_etxt5.includes('pacient_id')){delete payload.pacient_id;r=await _send();}
+    }
+    // stĺpce embolizácie ešte nemusia existovať (setup SQL 3r)
+    if(!r.ok&&r.status===400&&('embolizacia' in payload)){
+      const _etxt6=await r.clone().text();
+      if(_etxt6.includes('embolizacia')){delete payload.embolizacia;delete payload.embolizacia_ciel;delete payload.embolizacia_material;delete payload.embolizacia_pocet;delete payload.embolizacia_pozn;r=await _send();}
     }
     // stĺpce sac_fill_* ešte nemusia existovať (setup SQL 3k)
     if(!r.ok&&r.status===400&&('sac_fill_pocet' in payload)){
@@ -1906,6 +1959,23 @@ function loadEditRecord(){
       if(cb){cb.checked=true;const b=document.getElementById('b_endoleak');if(b)b.classList.add('on');}
       sv('endoleak_typ',record.endoleak_typ);
       sv('endoleak_typ2_zdroj',record.endoleak_zdroj);
+    }
+    if(record.embolizacia){
+      const eb=document.getElementById('c_emb');
+      if(eb){eb.checked=true;const bb=document.getElementById('b_emb');if(bb)bb.classList.add('on');}
+      const _sel=document.getElementById('emb_cieva');
+      if(_sel&&record.embolizacia_ciel){
+        if([...(_sel.options)].some(o=>o.value===record.embolizacia_ciel||o.text===record.embolizacia_ciel))_sel.value=record.embolizacia_ciel;
+        else{_sel.value='ine';sv('emb_cieva_ine',record.embolizacia_ciel);}
+      }
+      const _mat=document.getElementById('emb_material');
+      if(_mat&&record.embolizacia_material){
+        if([...(_mat.options)].some(o=>o.value===record.embolizacia_material))_mat.value=record.embolizacia_material;
+        else{_mat.value='ine';sv('emb_material_ine',record.embolizacia_material);}
+      }
+      sv('emb_pocet',record.embolizacia_pocet);
+      sv('emb_pozn',record.embolizacia_pozn);
+      if(typeof embIne==='function')embIne();
     }
     if(record.extenzie_detail){
       try{
