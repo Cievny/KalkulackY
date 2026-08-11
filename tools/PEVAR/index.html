@@ -1509,6 +1509,9 @@ function copyOut(){
   };
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok).catch(fallback);
   else fallback();
+  // Kopírovať = zároveň uložiť (nález ide do NIS, tak nech je aj v databáze)
+  if(g('rodne_cislo').trim()||g('pacient_cislo').trim()){try{saveToSupabase();}catch(e){}}
+  else setTimeout(()=>msg('ℹ️ Skopírované BEZ uloženia – doplňte RČ a stlačte Uložiť','#b45309'),600);   // až po hláške „Skopírované“, nech ju neprepíše
 }
 
 function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',3000);}

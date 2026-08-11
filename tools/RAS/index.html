@@ -496,6 +496,9 @@ function copyTxt(){
   navigator.clipboard.writeText(txt).then(()=>msg('cmsg','✅ Skopírované','#1d6f42')).catch(()=>{
     const o=document.getElementById('out');o.select();document.execCommand('copy');msg('cmsg','✅ Skopírované','#1d6f42');
   });
+  // Kopírovať = zároveň uložiť (nález ide do NIS, tak nech je aj v databáze)
+  if(g('rodne_cislo').trim()||g('pacient_cislo').trim()){try{saveRAS();}catch(e){}}
+  else setTimeout(()=>msg('cmsg','ℹ️ Skopírované BEZ uloženia – doplňte RČ a stlačte Uložiť','#b45309'),600);   // až po hláške „Skopírované“, nech ju neprepíše
 }
 
 function collectPayload(){
