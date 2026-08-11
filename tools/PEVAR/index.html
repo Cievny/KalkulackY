@@ -1408,11 +1408,21 @@ function collectDRGPevarSections(){
   if(document.getElementById('modelovanie_telo')?.checked)bal.push('telo SG');
   if(document.getElementById('modelovanie_extenzie')?.checked)bal.push('extenzie');
   if(bal.length)supp.push({code:'8r8x0.'+(bal.length-1),desc:'Počet balónikových katétrov: '+bal.length+' (domodelovanie – '+bal.join(' + ')+')'});
-  if(document.getElementById('c_emb')?.checked){
-    const _en=Math.max(1,parseInt(g('emb_pocet'))||1);
-    const _em=g('emb_material')==='ine'?(g('emb_material_ine')||'embolizačný materiál'):g('emb_material');
-    const _ec=g('emb_cieva')==='ine'?(g('emb_cieva_ine')||''):g('emb_cieva');
-    supp.push({code:'8r8x9.'+Math.min(_en-1,9),desc:'Embolizácia ('+_em+(_ec?', '+_ec:'')+'): '+_en+' ks'});
+  {
+    // 8r8x9 = embolizačný materiál spolu: cielená embolizácia (špirály/plug) + sac filling plugy
+    const _embN=document.getElementById('c_emb')?.checked?Math.max(1,parseInt(g('emb_pocet'))||1):0;
+    const _sfN=(document.getElementById('c_sacfill')?.checked&&g('sacfill_pocet'))?(parseInt(g('sacfill_pocet'))||0):0;
+    if(_embN+_sfN>0){
+      const _parts=[];
+      if(_embN){
+        const _em=g('emb_material')==='ine'?(g('emb_material_ine')||'embolizačný materiál'):g('emb_material');
+        const _ec=g('emb_cieva')==='ine'?(g('emb_cieva_ine')||''):g('emb_cieva');
+        _parts.push(_em+(_ec?' – '+_ec:'')+': '+_embN+' ks');
+      }
+      if(_sfN)_parts.push('sac filling plugy: '+_sfN+' ks');
+      const _tot=_embN+_sfN;
+      supp.push({code:'8r8x9.'+Math.min(_tot-1,9),desc:'Embolizačný materiál spolu '+_tot+' ks ('+_parts.join('; ')+')'});
+    }
   }
   return {dsa,main,supp,warns,seg};
 }
