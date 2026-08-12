@@ -210,8 +210,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 </div>
 
 <div class="card">
-<div class="st">DRG kódy <span style="font-weight:400;color:#9ca3af;text-transform:none;letter-spacing:0">(voliteľné – pre výkaz; jeden na riadok: „KÓD popis")</span> <button type="button" onclick="drgNavrh()" style="margin-left:6px;font-size:10px;padding:2px 7px;border:1px solid #c7d2fe;background:#eef2ff;color:#3730a3;border-radius:4px;cursor:pointer;font-weight:600">🔄 Navrhnúť z intervencií</button></div>
-<div class="f"><textarea id="drg_manual" rows="3" placeholder="napr.:&#10;8r800.x  PTA AV fistuly&#10;8r801.x  DEB PTA AV fistuly" oninput="gen()" style="font-family:monospace;font-size:12px"></textarea></div>
+<div class="st">DRG kódy <span style="font-weight:400;color:#9ca3af;text-transform:none;letter-spacing:0">(auto z intervencií, sufix .x = iné cievy; ručná úprava auto vypne)</span> <button type="button" onclick="drgNavrh()" style="margin-left:6px;font-size:10px;padding:2px 7px;border:1px solid #dde1ea;border-radius:4px;background:#f7f8fc;cursor:pointer;color:#5a6a8a;font-weight:600">🔄 Auto</button></div>
+<div class="f"><textarea id="drg_manual" rows="4" placeholder="doplní sa automaticky z intervencií" oninput="drgManualEdited=true;gen()" style="font-family:monospace;font-size:12px"></textarea></div>
 </div>
 
 <div class="card">
@@ -395,22 +395,37 @@ function drgManual(){
   t.split(/\r?\n/).forEach(l=>{l=l.trim();if(!l)return;const m=l.match(/^(\S+)\s*(.*)$/);if(m)out.push({code:m[1],desc:(m[2]||'').trim()});});
   return out.length?JSON.stringify(out):null;
 }
-function drgNavrh(){
+// DRG plne automaticky ako v EVK; lokalita AVF/HK ciev = sufix „x" (iné cievy)
+let drgManualEdited=false;
+function drgAuto(){
   const rows=ivList();
-  if(!rows.length){msg('cmsg','⚠️ Najprv pridajte intervencie','#b45309');return;}
-  const ta=document.getElementById('drg_manual');
-  if(ta.value.trim()&&!confirm('Prepísať existujúce DRG kódy návrhom z intervencií?'))return;
-  const STEM={'PTA':'8r800','vysokotlaková PTA':'8r800','DEB PTA':'8r801','cutting PTA':'8r802','implantácia stentgraftu':'8r880'};
-  const LBL={'8r800':'Balónová angioplastika (PTA) AVF','8r801':'DEB PTA (balón uvoľňujúci lieky) AVF','8r802':'Cutting/scoring PTA AVF','8r880':'Implantácia stentgraftu AVF'};
-  const seen=new Map();
-  rows.forEach(r=>{const s=STEM[r.typ];if(!s)return;if(!seen.has(s))seen.set(s,new Set());seen.get(s).add(r.lok);});
-  const lines=[...seen].map(([s,loks])=>s+'.? '+LBL[s]+' – '+[...loks].join(', '));
+  if(!rows.length)return [];
+  const S='x';
+  const lines=[];
+  const fam=[
+    ['8r800.'+S,r=>r.typ==='PTA'||r.typ==='vysokotlaková PTA','Balónová angioplastika (PTA), iné cievy – AVF'],
+    ['8r801.'+S,r=>r.typ==='DEB PTA','DEB PTA (balón uvoľňujúci lieky), iné cievy – AVF'],
+    ['8r802.'+S,r=>r.typ==='cutting PTA','Cutting/scoring PTA, iné cievy – AVF']
+  ];
+  fam.forEach(([code,test,lbl])=>{
+    const sel=rows.filter(test);
+    if(!sel.length)return;
+    lines.push(code+' '+lbl+' ('+[...new Set(sel.map(r=>r.lok))].join(', ')+')');
+  });
+  const sg=rows.filter(r=>/stentgraft/.test(r.typ)).length;
+  if(sg)lines.push('8r886.0'+S+' Stentgraft, '+(sg>1?sg+' ks – skontrolujte kód pre viac kusov':'1 kus')+', iné cievy – AVF');
+  // materiálové kódy – počty kusov (ako 8r8x0/8r8x1/8r8x2 v EVK)
+  const cnt=n=>Math.min(n-1,4);
+  const nP=rows.filter(r=>r.typ==='PTA'||r.typ==='vysokotlaková PTA').length;
+  const nD=rows.filter(r=>r.typ==='DEB PTA').length;
+  const nC=rows.filter(r=>r.typ==='cutting PTA').length;
+  if(nP)lines.push('8r8x0.'+cnt(nP)+' Počet plain balónov: '+(nP>=5?'5 a viac':nP)+' ks');
+  if(nD)lines.push('8r8x1.0'+cnt(nD)+' Počet DEB balónov: '+(nD>=5?'5 a viac':nD)+' ks');
+  if(nC)lines.push('8r8x2.'+cnt(nC)+' Počet cutting/scoring katétrov: '+(nC>=5?'5 a viac':nC)+' ks');
   rows.filter(r=>/trombekt|trombol/.test(r.typ)).forEach(r=>{const l='????? '+r.typ+' AVF – doplňte kód';if(!lines.includes(l))lines.push(l);});
-  ta.value=lines.join('\n');
-  ta.dispatchEvent(new Event('input',{bubbles:true}));
-  msg('cmsg','ℹ️ Sufix lokality „.?" doplňte podľa výkazu','#1e40af');
-  gen();
+  return lines;
 }
+function drgNavrh(){drgManualEdited=false;gen();msg('cmsg','ℹ️ DRG naplnené automaticky (sufix .x – iné cievy)','#1e40af');}
 
 function buildAutoZaver(){
   const rows=ivList();
@@ -435,6 +450,7 @@ function buildAutoZaver(){
 function gen(){
   updateIdPrefix();
   if(!zaverManual)document.getElementById('zaver').value=buildAutoZaver()||'';
+  if(!drgManualEdited)document.getElementById('drg_manual').value=drgAuto().join('\n');
   const L=[];
   L.push('SPRÁVA Z ENDOVASKULÁRNEHO VÝKONU ('+('AVF-'+avfYear()+'-'+(g('id_suffix')||'???'))+')');
   L.push('Dátum: '+(fmtD(g('datum'))||'—')+'   Operatér: '+g('operator'));
@@ -753,7 +769,7 @@ function loadEditRecord(){
     sv('komp_text',record.komplikacie_text);
     sv('st_clavien',record.clavien_dindo);
     sv('kontrast_ml',record.kontrast_ml);sv('fluoro_min',record.fluoro_time_min);sv('dap',record.dap);
-    try{const dk=typeof record.drg_kody==='string'?JSON.parse(record.drg_kody):record.drg_kody;if(Array.isArray(dk)&&dk.length)sv('drg_manual',dk.map(x=>[x.code,x.desc].filter(Boolean).join(' ')).join('\n'));}catch(e){}
+    try{const dk=typeof record.drg_kody==='string'?JSON.parse(record.drg_kody):record.drg_kody;if(Array.isArray(dk)&&dk.length){sv('drg_manual',dk.map(x=>[x.code,x.desc].filter(Boolean).join(' ')).join('\n'));drgManualEdited=true;}}catch(e){}
     if(record.zaver){document.getElementById('zaver').value=record.zaver;zaverManual=true;}
   }catch(e){}
 }
