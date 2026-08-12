@@ -305,17 +305,37 @@ function fmtD(iso){if(!iso)return '';const p=iso.slice(0,10).split('-');return p
 function acc(m){return ({'odvodná véna':'odvodnú vénu','v. femoralis':'v. femoralis'})[m]||m;}
 
 /* ── dynamické riadky intervencií ── */
+// katalógy materiálu prebraté z EVK (OPTS) – ponuka sa mení podľa typu výkonu
+const MAT_OPTS={
+  'PTA':['Jade','Armada','Passeo','CrossTella'],
+  'vysokotlaková PTA':['Jade','Armada','Passeo','CrossTella'],
+  'DEB PTA':['MagicTouch','Elutax','Selution SLR','IN.PACT'],
+  'cutting PTA':['Chocolate','Cutting balloon','AngioSculpt','Spur','Wolverine']
+};
+function ivTypZmena(sel){
+  const row=sel.closest('.ivrow');
+  const opts=MAT_OPTS[sel.value]||null;
+  const ms=row.querySelector('.iv_nazov_sel'),mc=row.querySelector('.iv_nazov_c');
+  if(opts){
+    const cur=ms.value;
+    ms.innerHTML='<option value="">– bez názvu –</option>'+opts.map(o=>'<option>'+o+'</option>').join('')+'<option value="vlastný">vlastný…</option>';
+    ms.value=[...ms.options].some(o=>o.value===cur)?cur:'';
+    ms.style.display='';
+    mc.style.display=ms.value==='vlastný'?'':'none';
+  }else{ms.style.display='none';mc.style.display='';}
+}
+function ivMatVl(sel){const c=sel.closest('.f').querySelector('.iv_nazov_c');if(c)c.style.display=sel.value==='vlastný'?'':'none';}
 function ivAdd(pre){
   const d=document.createElement('div');
   d.className='ivrow';
   d.innerHTML=`
    <div class="row" style="grid-template-columns:1.2fr 1.2fr auto;margin-bottom:0">
-     <div class="f"><label>Výkon</label><select class="iv_typ" onchange="gen()"><option>PTA</option><option>DEB PTA</option><option>cutting PTA</option><option>vysokotlaková PTA</option><option>implantácia stentgraftu</option><option>trombektómia</option><option>lokálna trombolýza</option></select></div>
+     <div class="f"><label>Výkon</label><select class="iv_typ" onchange="ivTypZmena(this);gen()"><option>PTA</option><option>DEB PTA</option><option>cutting PTA</option><option>vysokotlaková PTA</option><option>implantácia stentgraftu</option><option>trombektómia</option><option>lokálna trombolýza</option></select></div>
      <div class="f"><label>Lokalita</label><select class="iv_lok" onchange="ivVl(this);gen()"><option value="anastomózy">anastomóza</option><option value="JAS">JAS</option><option value="odvodnej vény">odvodná véna</option><option value="centrálnej vény">centrálna véna</option><option value="AV graftu">AV graft</option><option value="vlastná">vlastná…</option></select><input type="text" class="iv_lok_c" style="display:none;margin-top:4px" placeholder="lokalita (genitív)" oninput="gen()"></div>
      <button type="button" class="ivx" onclick="this.closest('.ivrow').remove();gen()" title="Odstrániť výkon">✕</button>
    </div>
    <div class="row" style="grid-template-columns:1.4fr .7fr .7fr .7fr">
-     <div class="f"><label>Balón / materiál <span style="font-weight:400;color:#9ca3af">(voliteľné)</span></label><input type="text" class="iv_nazov" placeholder="napr. Lutonix / UltraScore" oninput="gen()"></div>
+     <div class="f"><label>Balón / materiál <span style="font-weight:400;color:#9ca3af">(voliteľné)</span></label><select class="iv_nazov_sel" onchange="ivMatVl(this);gen()"></select><input type="text" class="iv_nazov_c" style="display:none;margin-top:4px" placeholder="názov materiálu…" oninput="gen()"></div>
      <div class="f"><label>Ø (mm)</label><input type="number" step="0.5" class="iv_p" placeholder="6" oninput="gen()"></div>
      <div class="f"><label>Dĺžka (mm)</label><input type="number" class="iv_d" placeholder="40" oninput="gen()"></div>
      <div class="f"><label>Tlak (atm)</label><input type="number" class="iv_atm" placeholder="14" oninput="gen()"></div>
@@ -326,10 +346,16 @@ function ivAdd(pre){
     const lk=d.querySelector('.iv_lok');
     if(pre.lok&&[...lk.options].some(o=>o.value===pre.lok))lk.value=pre.lok;
     else if(pre.lok){lk.value='vlastná';const c=d.querySelector('.iv_lok_c');c.value=pre.lok;c.style.display='';}
-    d.querySelector('.iv_nazov').value=pre.nazov||'';
     d.querySelector('.iv_p').value=pre.p||'';
     d.querySelector('.iv_d').value=pre.d||'';
     d.querySelector('.iv_atm').value=pre.atm||'';
+  }
+  ivTypZmena(d.querySelector('.iv_typ'));
+  if(pre&&pre.nazov){
+    const ms=d.querySelector('.iv_nazov_sel'),mc=d.querySelector('.iv_nazov_c');
+    if(ms.style.display!=='none'&&[...ms.options].some(o=>o.value===pre.nazov))ms.value=pre.nazov;
+    else if(ms.style.display!=='none'){ms.value='vlastný';mc.value=pre.nazov;mc.style.display='';}
+    else mc.value=pre.nazov;
   }
   return d;
 }
@@ -337,10 +363,12 @@ function ivVl(sel){const c=sel.closest('.f').querySelector('.iv_lok_c');if(c)c.s
 function ivList(){
   return [...document.querySelectorAll('#iv_rows .ivrow')].map(d=>{
     const lk=d.querySelector('.iv_lok').value;
+    const ms=d.querySelector('.iv_nazov_sel'),mc=d.querySelector('.iv_nazov_c');
+    const nazov=ms.style.display!=='none'?(ms.value==='vlastný'?mc.value.trim():ms.value):mc.value.trim();
     return{
       typ:d.querySelector('.iv_typ').value,
       lok:lk==='vlastná'?(d.querySelector('.iv_lok_c').value.trim()||'lézie'):lk,
-      nazov:d.querySelector('.iv_nazov').value.trim(),
+      nazov,
       p:d.querySelector('.iv_p').value,
       d:d.querySelector('.iv_d').value,
       atm:d.querySelector('.iv_atm').value
@@ -568,9 +596,9 @@ function materialRows(p){
   let iv=[];try{iv=JSON.parse(p.intervencie)||[];}catch(e){}
   iv.forEach(r=>{
     if(!r.nazov)return;
-    const kat=r.typ==='DEB PTA'?'DEB':/stentgraft/.test(r.typ)?'stentgraft':'balón';
+    const kat=r.typ==='DEB PTA'?'DEB':r.typ==='cutting PTA'?'vessel prep balón':/stentgraft/.test(r.typ)?'stentgraft':'balón';
     const kn=MaterialKatalog.normalizuj(r.nazov,kat)||{};
-    rows.push({kategoria:kat,nazov:kn.nazov||r.nazov,vyrobca:kn.vyrobca||'',priemer_mm:parseFloat(r.p)||null,dlzka_mm:parseFloat(r.d)||null,pocet:1,tepna:'AVF – '+r.lok});
+    rows.push({kategoria:kn.kategoria||kat,nazov:kn.nazov||r.nazov,vyrobca:kn.vyrobca||'',priemer_mm:parseFloat(r.p)||null,dlzka_mm:parseFloat(r.d)||null,pocet:1,tepna:'AVF – '+r.lok});
   });
   return rows;
 }
