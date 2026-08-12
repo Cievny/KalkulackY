@@ -30,9 +30,9 @@ REVOKE ALL ON SCHEMA archiv FROM PUBLIC, anon, authenticated;
 DO $$
 DECLARE t text;
   tabulky text[] := ARRAY[
-    'evk_vykony','cas_vykony','pevar_vykony','ras_vykony',
+    'evk_vykony','cas_vykony','pevar_vykony','ras_vykony','avf_vykony',
     'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony',
-    'evk_followup','cas_followup','pevar_followup','ras_followup',
+    'evk_followup','cas_followup','pevar_followup','ras_followup','avf_followup',
     'cz_evk_followup','cz_cas_followup','cz_pevar_followup',
     'zaujimavi_pacienti','cz_zaujimavi_pacienti',
     'material_pouzitie','pacient_rc','pacienti'
@@ -57,6 +57,11 @@ DELETE FROM cas_vykony   WHERE vykon_id IS NULL OR vykon_id NOT IN
 DELETE FROM pevar_vykony WHERE vykon_id IS NULL OR vykon_id NOT IN
   (SELECT vykon_id FROM zaujimavi_pacienti WHERE tool='PEVAR' AND vykon_id IS NOT NULL);
 DELETE FROM ras_vykony;
+-- AVF (hviezdičku nemá → maže sa celý; tabuľka nemusí ešte existovať)
+DO $$ BEGIN
+  IF to_regclass('public.avf_vykony') IS NOT NULL THEN DELETE FROM avf_vykony; END IF;
+  IF to_regclass('public.avf_followup') IS NOT NULL THEN DELETE FROM avf_followup; END IF;
+END $$;
 
 DELETE FROM cz_evk_vykony   WHERE vykon_id IS NULL OR vykon_id NOT IN
   (SELECT vykon_id FROM cz_zaujimavi_pacienti WHERE tool='EVK'   AND vykon_id IS NOT NULL);

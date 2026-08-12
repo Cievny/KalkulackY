@@ -366,3 +366,60 @@ ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS embolizacia_ciel text;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS embolizacia_material text;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS embolizacia_pocet int;
 ALTER TABLE pevar_vykony ADD COLUMN IF NOT EXISTS embolizacia_pozn text;
+
+-- ── 3s · AVF: endovaskulárne ošetrenie AV fistuly (nový popisovač + follow-up) ──
+CREATE TABLE IF NOT EXISTS avf_vykony (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  vykon_id TEXT UNIQUE,
+  datum_zaznamu TEXT,
+  operator TEXT, vek INT, pohlavie TEXT, rodne_cislo TEXT,
+  pacient_id uuid,
+  typ_avf TEXT, avf_strana TEXT, avf_rok INT, faza TEXT,
+  lezia_typ TEXT, lezia_lokalita TEXT, hd_zavazna BOOLEAN,
+  indikacie TEXT, qa_pred NUMERIC, indikacia_text TEXT,
+  pristup_miesto TEXT, pristup_strana TEXT, pristup_vztah TEXT,
+  pristup_smer TEXT, pristup_sposob TEXT, pristup_anes TEXT,
+  pristup_nav TEXT, pristup_sheath TEXT, pristup_uzaver TEXT,
+  pristup2 BOOLEAN, pristup2_miesto TEXT, pristup2_smer TEXT,
+  pristup2_sheath TEXT, pristup2_uzaver TEXT,
+  dsa_anastomoza BOOLEAN, dsa_jas BOOLEAN, dsa_vena TEXT, dsa_kolateraly TEXT,
+  dsa_aneuryzma BOOLEAN, dsa_tromboza BOOLEAN, dsa_centralna TEXT, dsa_text TEXT,
+  vodic TEXT, intervencie TEXT, vymena_sheath TEXT, vymena_dovod TEXT, intervencia_pozn TEXT,
+  vysledok TEXT, rezidualna_stenoza TEXT, thrill BOOLEAN, hemostaza TEXT,
+  komplikacie TEXT, komplikacie_struct TEXT, komplikacie_text TEXT, clavien_dindo TEXT,
+  kontrast_ml INT, fluoro_time_min NUMERIC, dap NUMERIC,
+  drg_kody TEXT, zaver TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS avf_followup (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  vykon_id TEXT, datum_kontroly TEXT, casovy_bod TEXT,
+  funkcia TEXT, qa NUMERIC, duplex_restenoza TEXT,
+  reintervencia BOOLEAN, reintervencia_detail TEXT,
+  poznamka TEXT, exitus BOOLEAN, exitus_datum TEXT, exitus_suvis TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_avf_vykony_pacient ON avf_vykony(pacient_id);
+-- FK na pacienti len ak entita už existuje (pacient_entita.sql)
+DO $avffk$
+BEGIN
+  IF to_regclass('public.pacienti') IS NOT NULL
+     AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='avf_vykony_pacient_id_fkey') THEN
+    ALTER TABLE avf_vykony ADD CONSTRAINT avf_vykony_pacient_id_fkey
+      FOREIGN KEY (pacient_id) REFERENCES pacienti(id) ON DELETE SET NULL;
+  END IF;
+END $avffk$;
+DO $avf$
+DECLARE t text; pol record;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY['avf_vykony','avf_followup']) LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+    FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename=t LOOP
+      EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, t);
+    END LOOP;
+    EXECUTE format('CREATE POLICY "pov sel %1$s" ON public.%1$I FOR SELECT TO authenticated USING (je_povoleny())', t);
+    EXECUTE format('CREATE POLICY "pov ins %1$s" ON public.%1$I FOR INSERT TO authenticated WITH CHECK (je_povoleny() AND NOT je_tv())', t);
+    EXECUTE format('CREATE POLICY "pov upd %1$s" ON public.%1$I FOR UPDATE TO authenticated USING (je_povoleny() AND NOT je_tv()) WITH CHECK (je_povoleny() AND NOT je_tv())', t);
+    EXECUTE format('CREATE POLICY "pov del %1$s" ON public.%1$I FOR DELETE TO authenticated USING (je_povoleny() AND NOT je_tv())', t);
+  END LOOP;
+END $avf$;

@@ -211,6 +211,7 @@
       {href:'/tools/CAS-generator/',label:'CAS – karotídy'},
       {href:'/tools/PEVAR/',label:'PEVAR – aortálne stentgrafty'},
       {href:'/tools/RAS/',label:'RAS – renálny stenting'},
+      {href:'/tools/AVF/',label:'AVF – dialyzačné fistuly'},
       {href:'/tools/zaznamy/',label:'📁 Záznamy výkonov'},
     ]},
     {href:'/tools/kontroly/',label:'🩺 Kontroly'},
