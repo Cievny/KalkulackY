@@ -31,6 +31,7 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
 .tag-evk{background:#dbeafe;color:#1e40af;}
 .tag-ras{background:#ede9fe;color:#5b21b6;}
 .tag-avf{background:#dcfce7;color:#166534;}
+.tag-vis{background:#ffedd5;color:#9a3412;}
 .tag-cas{background:#fef3c7;color:#b45309;}
 .tag-pevar{background:#dcfce7;color:#166534;}
 .tag-aorta{background:#ede9fe;color:#6d28d9;}
@@ -72,6 +73,7 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
       <option value="pevar">PEVAR</option>
       <option value="ras">RAS</option>
       <option value="avf">AVF</option>
+      <option value="vis">VIS</option>
       <option value="aorta">Aorta</option>
     </select>
     <select id="f_stav" onchange="render()">
@@ -107,8 +109,9 @@ const VYKONY=[
   {typ:'pevar',table:'pevar_vykony',fu:'pevar_followup'},
   {typ:'ras',  table:'ras_vykony',  fu:'ras_followup'},
   {typ:'avf',  table:'avf_vykony',  fu:'avf_followup'},
+  {typ:'vis',  table:'vis_vykony',  fu:'vis_followup'},
 ];
-const TYP_LABEL={evk:'EVK',cas:'CAS',pevar:'PEVAR',ras:'RAS',avf:'AVF',aorta:'Aorta'};
+const TYP_LABEL={evk:'EVK',cas:'CAS',pevar:'PEVAR',ras:'RAS',avf:'AVF',vis:'VIS',aorta:'Aorta'};
 const BODY={'1M':1,'3M':3,'6M':6,'12M':12};     // očakávané kontroly po výkone
 const EXPECTED=['1M','6M','12M'];
 const STAV_LABEL={done:'✅ splnená',wait:'🟡 čaká',late:'🔴 mešká',exitus:'✝ exitus'};

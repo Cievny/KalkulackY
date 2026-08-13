@@ -423,3 +423,60 @@ BEGIN
     EXECUTE format('CREATE POLICY "pov del %1$s" ON public.%1$I FOR DELETE TO authenticated USING (je_povoleny() AND NOT je_tv())', t);
   END LOOP;
 END $avf$;
+
+-- ── 3t · VIS: stenting / PTA / rekanalizácia viscerálnych tepien (CMI, AMI) ──
+CREATE TABLE IF NOT EXISTS vis_vykony (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  vykon_id TEXT UNIQUE,
+  datum_zaznamu TEXT,
+  operator TEXT, vek INT, pohlavie TEXT, rodne_cislo TEXT,
+  pacient_id uuid,
+  typ_vykonu TEXT DEFAULT 'stenting',
+  diagnoza TEXT, diagnoza_text TEXT,
+  tepna TEXT, lezia TEXT, stenoza_pct INT, lokalizacia TEXT, etiologia TEXT,
+  symptomy TEXT, ubytok_kg NUMERIC, laktat NUMERIC, crp NUMERIC, pred_pozn TEXT,
+  komorbidity TEXT, antitrombotika TEXT,
+  pristup_arteria TEXT, sheath TEXT, guiding TEXT, heparin_iu INT, pristup_dalsi TEXT,
+  rekanalizacia BOOLEAN, rekan_technika TEXT, rekan_vodic TEXT,
+  reentry BOOLEAN, reentry_nazov TEXT,
+  trombektomia BOOLEAN, trombektomia_druh TEXT, trombektomia_detail TEXT,
+  predilatacia BOOLEAN, predil_balon TEXT, predil_rozmer TEXT,
+  stent_typ TEXT, stent_nazov TEXT, stent_priemer NUMERIC, stent_dlzka NUMERIC, stent_tlak_atm INT,
+  dilat_balon TEXT, dilat_priemer NUMERIC, dilat_dlzka NUMERIC, dilat_tlak_atm INT, dilat_inflacia_s INT,
+  postdilatacia BOOLEAN, rezidualna_stenoza TEXT,
+  komplikacie TEXT, komplikacie_struct TEXT, komplikacie_text TEXT, clavien_dindo TEXT,
+  uzaver TEXT, kontrast_ml INT, fluoro_time_min NUMERIC, dap NUMERIC,
+  drg_kody TEXT, zaver TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS vis_followup (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  vykon_id TEXT, datum_kontroly TEXT, casovy_bod TEXT,
+  symptomy TEXT, hmotnost NUMERIC, duplex_restenoza TEXT,
+  reintervencia BOOLEAN, reintervencia_detail TEXT,
+  poznamka TEXT, exitus BOOLEAN, exitus_datum TEXT, exitus_suvis TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_vis_vykony_pacient ON vis_vykony(pacient_id);
+DO $visfk$
+BEGIN
+  IF to_regclass('public.pacienti') IS NOT NULL
+     AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='vis_vykony_pacient_id_fkey') THEN
+    ALTER TABLE vis_vykony ADD CONSTRAINT vis_vykony_pacient_id_fkey
+      FOREIGN KEY (pacient_id) REFERENCES pacienti(id) ON DELETE SET NULL;
+  END IF;
+END $visfk$;
+DO $vis$
+DECLARE t text; pol record;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY['vis_vykony','vis_followup']) LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+    FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename=t LOOP
+      EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, t);
+    END LOOP;
+    EXECUTE format('CREATE POLICY "pov sel %1$s" ON public.%1$I FOR SELECT TO authenticated USING (je_povoleny())', t);
+    EXECUTE format('CREATE POLICY "pov ins %1$s" ON public.%1$I FOR INSERT TO authenticated WITH CHECK (je_povoleny() AND NOT je_tv())', t);
+    EXECUTE format('CREATE POLICY "pov upd %1$s" ON public.%1$I FOR UPDATE TO authenticated USING (je_povoleny() AND NOT je_tv()) WITH CHECK (je_povoleny() AND NOT je_tv())', t);
+    EXECUTE format('CREATE POLICY "pov del %1$s" ON public.%1$I FOR DELETE TO authenticated USING (je_povoleny() AND NOT je_tv())', t);
+  END LOOP;
+END $vis$;

@@ -27,6 +27,7 @@ tr.row:hover{background:#f8faff;cursor:pointer;}
 .tag-pevar{background:#dcfce7;color:#166534;}
 .tag-ras{background:#fae8ff;color:#86198f;}
 .tag-avf{background:#dcfce7;color:#166534;}
+.tag-vis{background:#ffedd5;color:#9a3412;}
 .st-ok{color:#16a34a;font-weight:700;}
 .st-miss{color:#dc2626;font-weight:700;}
 .empty{text-align:center;padding:30px;color:#9ca3af;font-size:14px;}
@@ -87,6 +88,7 @@ table{min-width:560px;}
       <option value="pevar">PEVAR</option>
       <option value="ras">RAS</option>
       <option value="avf">AVF</option>
+      <option value="vis">VIS</option>
     </select>
     <input type="text" id="f_search" placeholder="Hľadať ID / operatéra..." oninput="render()">
     <label class="chk"><input type="checkbox" id="f_miss" onchange="render()"> Len nedoplnené komplikácie</label>
@@ -124,8 +126,8 @@ table{min-width:560px;}
 const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
 const SB_KEY='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
 const SB_HEAD=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
-const TABLES={evk:'evk_vykony',cas:'cas_vykony',pevar:'pevar_vykony',ras:'ras_vykony',avf:'avf_vykony'};
-const TOOL_LABEL={evk:'EVK',cas:'CAS',pevar:'PEVAR',ras:'RAS',avf:'AVF'};
+const TABLES={evk:'evk_vykony',cas:'cas_vykony',pevar:'pevar_vykony',ras:'ras_vykony',avf:'avf_vykony',vis:'vis_vykony'};
+const TOOL_LABEL={evk:'EVK',cas:'CAS',pevar:'PEVAR',ras:'RAS',avf:'AVF',vis:'VIS'};
 // stĺpce, ktoré sa needitujú
 const READONLY=['id','created_at'];
 // stĺpce súvisiace s komplikáciami (pre status + zvýraznenie sekcie)
@@ -303,7 +305,7 @@ async function delRecord(){
       // uprac naviazané dáta (best-effort) – inak ostanú osirelé follow-upy/materiál/hviezdička
       const _vid=CURRENT.data.vykon_id;
       if(_vid){
-        const FU={evk:'evk_followup',cas:'cas_followup',pevar:'pevar_followup',ras:'ras_followup',avf:'avf_followup'}[CURRENT.tool];
+        const FU={evk:'evk_followup',cas:'cas_followup',pevar:'pevar_followup',ras:'ras_followup',avf:'avf_followup',vis:'vis_followup'}[CURRENT.tool];
         const _enc=encodeURIComponent(_vid);
         if(FU)fetch(`${SB_URL}/rest/v1/${FU}?vykon_id=eq.${_enc}`,{method:'DELETE',headers:SB_HEAD()}).catch(()=>{});
         fetch(`${SB_URL}/rest/v1/material_pouzitie?vykon_id=eq.${_enc}`,{method:'DELETE',headers:SB_HEAD()}).catch(()=>{});
@@ -320,7 +322,7 @@ document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==
 
 function openInForm(tool,record){
   sessionStorage.setItem('cievny_edit',JSON.stringify({tool,record}));
-  const urls={EVK:'/tools/EVK/',CAS:'/tools/CAS-generator/',PEVAR:'/tools/PEVAR/',RAS:'/tools/RAS/',AVF:'/tools/AVF/'};
+  const urls={EVK:'/tools/EVK/',CAS:'/tools/CAS-generator/',PEVAR:'/tools/PEVAR/',RAS:'/tools/RAS/',AVF:'/tools/AVF/',VIS:'/tools/VIS/'};
   window.location.href=urls[tool]||'/tools/EVK/';
 }
 
