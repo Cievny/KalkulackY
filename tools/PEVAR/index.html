@@ -550,23 +550,10 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     </div>
   </div>
 </div>
-<label class="ck" style="margin-top:8px"><input type="checkbox" id="c_pristup2" onchange="p2Toggle();gen()"> ➕ Ďalší prístup (napr. brachiálny)</label>
+<label class="ck" style="margin-top:8px"><input type="checkbox" id="c_pristup2" onchange="p2Toggle();gen()"> ➕ Ďalšie prístupy (napr. brachiálny)</label>
 <div id="b_pristup2" style="display:none">
-  <div class="row r3">
-    <div class="f"><label>Tepna</label><select id="p2_art" onchange="p2Vl();gen()"><option>a. brachialis</option><option>a. radialis</option><option>a. axillaris</option><option>AFC</option><option value="vlastna">vlastná</option></select><input type="text" id="p2_art_c" placeholder="tepna…" oninput="gen()" style="display:none;margin-top:5px"></div>
-    <div class="f"><label>Strana</label><select id="p2_strana" onchange="gen()"><option>l.sin.</option><option>l.dx.</option></select></div>
-    <div class="f"><label>Technika</label><select id="p2_tech" onchange="gen()"><option>retrográdne</option><option>prográdne</option></select></div>
-  </div>
-  <div class="row r3">
-    <div class="f"><label>Spôsob</label><select id="p2_spos" onchange="gen()"><option>perkutánne</option><option>chirurgický cut-down</option></select></div>
-    <div class="f"><label>Navigácia</label><select id="p2_nav" onchange="gen()"><option>USG</option><option>XA</option><option>USG/XA</option></select></div>
-    <div class="f"><label>Sheath</label><select id="p2_sheath" onchange="gen()"><option value="">–</option><option>4 Fr</option><option>5 Fr</option><option>6 Fr</option><option>7 Fr</option><option>8 Fr</option><option>9 Fr</option><option>10 Fr</option><option>11 Fr</option><option>12 Fr</option></select></div>
-  </div>
-  <div class="row r3">
-    <div class="f"><label>Dĺžka sheatu</label><select id="p2_sheathdlz" onchange="gen()"><option value="">–</option><option>10 cm</option><option>25 cm</option><option>45 cm</option><option>55 cm</option><option>90 cm</option><option>110 cm</option></select></div>
-    <div class="f"><label>Uzáver vpichu</label><select id="p2_uzaver" onchange="gen()"><option value="">–</option><option>manuálna kompresia</option><option>Angio-Seal</option><option>ProGlide</option><option>FemoSeal</option><option>TR band</option></select></div>
-    <div class="f"><label>Účel / poznámka</label><input type="text" id="p2_pozn" placeholder="napr. pre kontralaterálnu intervenciu" oninput="gen()"></div>
-  </div>
+  <div id="p2_list"></div>
+  <button type="button" onclick="p2AddRow();gen()" style="border:1.5px dashed #93c5fd;background:#f0f7ff;color:#1e40af;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:600;padding:7px 12px;width:100%">＋ Pridať ďalší vpich</button>
 </div>
 </div>
 
@@ -1235,7 +1222,7 @@ function gen(){
 
   // ── PRÍSTUP ──
   L.push('PRÍSTUP: '+pristupText);
-  const p2t=p2Text();if(p2t)L.push('ĎALŠÍ PRÍSTUP: '+p2t);
+  const p2t=p2Text();if(p2t)L.push((p2Rows().filter(r=>p2RowArt(r)).length>1?'ĎALŠIE PRÍSTUPY: ':'ĎALŠÍ PRÍSTUP: ')+p2t);
 
   // ── VÝKON ──
   L.push('VÝKON:');
@@ -1569,56 +1556,91 @@ function copyOut(){
 
 function msg(t,c){const el=document.getElementById('cmsg');el.style.color=c;el.textContent=t;setTimeout(()=>el.textContent='',3000);}
 
-// ── Ďalší prístup (druhá punkcia, plnohodnotný popis) ──
-function p2Toggle(){const b=document.getElementById('b_pristup2');if(b)b.style.display=document.getElementById('c_pristup2').checked?'':'none';}
-function p2Vl(){document.getElementById('p2_art_c').style.display=document.getElementById('p2_art').value==='vlastna'?'':'none';}
-function p2Art(){const a=document.getElementById('p2_art');return a.value==='vlastna'?(document.getElementById('p2_art_c').value||'').trim():a.value;}
-function p2V(id){const el=document.getElementById(id);return el?el.value:'';}
-// kanonický zápis do DB (deterministické segmenty, spätne rozparsovateľné)
-function p2Data(){
-  if(!document.getElementById('c_pristup2')?.checked)return '';
-  const a=p2Art();if(!a)return '';
-  const seg=[a+' '+p2V('p2_strana'),p2V('p2_tech'),p2V('p2_spos')].filter(Boolean);
-  if(p2V('p2_nav'))seg.push('nav: '+p2V('p2_nav'));
-  if(p2V('p2_sheath'))seg.push('sheath '+p2V('p2_sheath')+(p2V('p2_sheathdlz')?' ('+p2V('p2_sheathdlz')+')':''));
-  if(p2V('p2_uzaver'))seg.push('uzáver: '+p2V('p2_uzaver'));
-  if(p2V('p2_pozn').trim())seg.push('pozn.: '+p2V('p2_pozn').trim());
-  return seg.join(', ');
+// ── Ďalšie prístupy (ľubovoľný počet punkcií, plnohodnotný popis) ──
+function p2Toggle(){
+  const b=document.getElementById('b_pristup2');if(!b)return;
+  const on=document.getElementById('c_pristup2').checked;
+  b.style.display=on?'':'none';
+  if(on&&!document.querySelector('#p2_list .p2row'))p2AddRow();
 }
-// veta do nálezu
+function p2AddRow(){
+  const d=document.createElement('div');
+  d.className='p2row';
+  d.style.cssText='border:1.5px solid #eef0f5;border-radius:7px;padding:10px 10px 2px;margin-bottom:8px;position:relative';
+  d.innerHTML=`
+  <button type="button" onclick="this.closest('.p2row').remove();gen()" title="Odstrániť vpich" style="position:absolute;top:6px;right:6px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;border-radius:6px;cursor:pointer;font-size:11px;padding:2px 7px">✕</button>
+  <div class="row r3">
+    <div class="f"><label>Tepna</label><select class="p2_art" onchange="p2Vl(this);gen()"><option>a. brachialis</option><option>a. radialis</option><option>a. axillaris</option><option>AFC</option><option value="vlastna">vlastná</option></select><input type="text" class="p2_art_c" placeholder="tepna…" oninput="gen()" style="display:none;margin-top:5px"></div>
+    <div class="f"><label>Strana</label><select class="p2_strana" onchange="gen()"><option>l.sin.</option><option>l.dx.</option></select></div>
+    <div class="f"><label>Technika</label><select class="p2_tech" onchange="gen()"><option>retrográdne</option><option>prográdne</option></select></div>
+  </div>
+  <div class="row r3">
+    <div class="f"><label>Spôsob</label><select class="p2_spos" onchange="gen()"><option>perkutánne</option><option>chirurgický cut-down</option></select></div>
+    <div class="f"><label>Navigácia</label><select class="p2_nav" onchange="gen()"><option>USG</option><option>XA</option><option>USG/XA</option></select></div>
+    <div class="f"><label>Sheath</label><select class="p2_sheath" onchange="gen()"><option value="">–</option><option>4 Fr</option><option>5 Fr</option><option>6 Fr</option><option>7 Fr</option><option>8 Fr</option><option>9 Fr</option><option>10 Fr</option><option>11 Fr</option><option>12 Fr</option></select></div>
+  </div>
+  <div class="row r3">
+    <div class="f"><label>Dĺžka sheatu</label><select class="p2_sheathdlz" onchange="gen()"><option value="">–</option><option>10 cm</option><option>25 cm</option><option>45 cm</option><option>55 cm</option><option>90 cm</option><option>110 cm</option></select></div>
+    <div class="f"><label>Uzáver vpichu</label><select class="p2_uzaver" onchange="gen()"><option value="">–</option><option>manuálna kompresia</option><option>Angio-Seal</option><option>ProGlide</option><option>FemoSeal</option><option>TR band</option></select></div>
+    <div class="f"><label>Účel / poznámka</label><input type="text" class="p2_pozn" placeholder="napr. pre kontralaterálnu intervenciu" oninput="gen()"></div>
+  </div>`;
+  document.getElementById('p2_list').appendChild(d);
+  return d;
+}
+function p2Vl(sel){const c=sel.closest('.f').querySelector('.p2_art_c');if(c)c.style.display=sel.value==='vlastna'?'':'none';}
+function p2Rows(){return document.getElementById('c_pristup2')?.checked?[...document.querySelectorAll('#p2_list .p2row')]:[];}
+const p2RV=(row,cls)=>{const el=row.querySelector('.'+cls);return el?el.value:'';};
+function p2RowArt(row){const a=row.querySelector('.p2_art');return a.value==='vlastna'?(row.querySelector('.p2_art_c').value||'').trim():a.value;}
+// kanonický zápis do DB (deterministické segmenty, spätne rozparsovateľné; 1 vpich = 1 riadok)
+function p2Data(){
+  return p2Rows().map(row=>{
+    const a=p2RowArt(row);if(!a)return '';
+    const seg=[a+' '+p2RV(row,'p2_strana'),p2RV(row,'p2_tech'),p2RV(row,'p2_spos')].filter(Boolean);
+    if(p2RV(row,'p2_nav'))seg.push('nav: '+p2RV(row,'p2_nav'));
+    if(p2RV(row,'p2_sheath'))seg.push('sheath '+p2RV(row,'p2_sheath')+(p2RV(row,'p2_sheathdlz')?' ('+p2RV(row,'p2_sheathdlz')+')':''));
+    if(p2RV(row,'p2_uzaver'))seg.push('uzáver: '+p2RV(row,'p2_uzaver'));
+    if(p2RV(row,'p2_pozn').trim())seg.push('pozn.: '+p2RV(row,'p2_pozn').trim());
+    return seg.join(', ');
+  }).filter(Boolean).join('\n');
+}
+// vety do nálezu
 function p2Text(){
-  if(!document.getElementById('c_pristup2')?.checked)return '';
-  const a=p2Art();if(!a)return '';
-  const casti=['punkcia '+a+' '+p2V('p2_strana'),p2V('p2_tech'),p2V('p2_spos')];
-  if(p2V('p2_nav'))casti.push('pod '+p2V('p2_nav')+' navigáciou');
-  if(p2V('p2_sheath'))casti.push('zavedený sheath '+p2V('p2_sheath')+(p2V('p2_sheathdlz')?' dĺžky '+p2V('p2_sheathdlz'):''));
-  let t=casti.filter(Boolean).join(', ')+'.';
-  if(p2V('p2_uzaver'))t+=' Uzáver vpichu: '+p2V('p2_uzaver')+'.';
-  if(p2V('p2_pozn').trim())t+=' Účel: '+p2V('p2_pozn').trim()+'.';
-  return t;
+  return p2Rows().map(row=>{
+    const a=p2RowArt(row);if(!a)return '';
+    const casti=['punkcia '+a+' '+p2RV(row,'p2_strana'),p2RV(row,'p2_tech'),p2RV(row,'p2_spos')];
+    if(p2RV(row,'p2_nav'))casti.push('pod '+p2RV(row,'p2_nav')+' navigáciou');
+    if(p2RV(row,'p2_sheath'))casti.push('zavedený sheath '+p2RV(row,'p2_sheath')+(p2RV(row,'p2_sheathdlz')?' dĺžky '+p2RV(row,'p2_sheathdlz'):''));
+    let t=casti.filter(Boolean).join(', ')+'.';
+    if(p2RV(row,'p2_uzaver'))t+=' Uzáver vpichu: '+p2RV(row,'p2_uzaver')+'.';
+    if(p2RV(row,'p2_pozn').trim())t+=' Účel: '+p2RV(row,'p2_pozn').trim()+'.';
+    return t;
+  }).filter(Boolean).join(' ');
 }
 function p2Restore(t){
   const c=document.getElementById('c_pristup2');if(!c||!t)return;
-  c.checked=true;p2Toggle();
-  let raw=String(t).trim(),pozn='';
-  const pi=raw.indexOf('pozn.: ');
-  if(pi>=0){pozn=raw.slice(pi+7).trim();raw=raw.slice(0,pi).replace(/[,\s]+$/,'');}
-  const segs=raw.split(', ');
-  const first=segs.shift()||'';
-  const m=/^(.*?)\s+(l\.dx\.|l\.sin\.)(?:\s+\((.+?)\))?$/.exec(first);
-  const art=document.getElementById('p2_art'),ac=document.getElementById('p2_art_c');
-  const sv2=(id,val)=>{const el=document.getElementById(id);if(el&&val&&[...el.options].some(o=>o.value===val))el.value=val;};
-  if(m&&[...art.options].some(o=>o.value===m[1])){art.value=m[1];}
-  else{art.value='vlastna';ac.value=m?m[1]:first;ac.style.display='';}
-  if(m){sv2('p2_strana',m[2]);if(m[3])sv2('p2_sheath',m[3]);} // m[3] = starý krátky formát „(5 Fr)"
-  segs.forEach(s=>{
-    let mm;
-    if((mm=/^sheath\s+(.+?Fr)(?:\s+\((.+?)\))?$/.exec(s))){sv2('p2_sheath',mm[1]);if(mm[2])sv2('p2_sheathdlz',mm[2]);}
-    else if((mm=/^nav:\s*(.+)$/.exec(s))){sv2('p2_nav',mm[1]);}
-    else if((mm=/^uz[áa]v[eě]r:\s*(.+)$/.exec(s))){sv2('p2_uzaver',mm[1]);}
-    else{sv2('p2_tech',s);sv2('p2_spos',s);}
+  c.checked=true;document.getElementById('b_pristup2').style.display='';
+  String(t).split(/\n/).map(s=>s.trim()).filter(Boolean).forEach(line=>{
+    const row=p2AddRow();
+    let raw=line,pozn='';
+    const pi=raw.indexOf('pozn.: ');
+    if(pi>=0){pozn=raw.slice(pi+7).trim();raw=raw.slice(0,pi).replace(/[,\s]+$/,'');}
+    const segs=raw.split(', ');
+    const first=segs.shift()||'';
+    const m=/^(.*?)\s+(l\.dx\.|l\.sin\.)(?:\s+\((.+?)\))?$/.exec(first);
+    const art=row.querySelector('.p2_art'),ac=row.querySelector('.p2_art_c');
+    const sv2=(cls,val)=>{const el=row.querySelector('.'+cls);if(el&&val&&[...el.options].some(o=>o.value===val))el.value=val;};
+    if(m&&[...art.options].some(o=>o.value===m[1])){art.value=m[1];}
+    else{art.value='vlastna';ac.value=m?m[1]:first;ac.style.display='';}
+    if(m){sv2('p2_strana',m[2]);if(m[3])sv2('p2_sheath',m[3]);} // m[3] = starý krátky formát „(5 Fr)"
+    segs.forEach(s=>{
+      let mm;
+      if((mm=/^sheath\s+(.+?Fr)(?:\s+\((.+?)\))?$/.exec(s))){sv2('p2_sheath',mm[1]);if(mm[2])sv2('p2_sheathdlz',mm[2]);}
+      else if((mm=/^nav:\s*(.+)$/.exec(s))){sv2('p2_nav',mm[1]);}
+      else if((mm=/^uz[áa]v[eě]r:\s*(.+)$/.exec(s))){sv2('p2_uzaver',mm[1]);}
+      else{sv2('p2_tech',s);sv2('p2_spos',s);}
+    });
+    if(pozn){const el=row.querySelector('.p2_pozn');if(el)el.value=pozn;}
   });
-  if(pozn){const el=document.getElementById('p2_pozn');if(el)el.value=pozn;}
 }
 
 
