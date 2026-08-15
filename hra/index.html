@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Kocka Obby – hra v štýle Roblox</title>
+<style>
+    html, body {
+        margin: 0; padding: 0; overflow: hidden;
+        width: 100%; height: 100%;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        background: #87ceeb;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    #hud {
+        position: fixed; top: 12px; left: 12px; z-index: 10;
+        display: flex; gap: 10px; flex-wrap: wrap;
+        pointer-events: none;
+    }
+    .hud-box {
+        background: rgba(0,0,0,0.55); color: #fff;
+        padding: 8px 14px; border-radius: 10px;
+        font-size: 16px; font-weight: 600;
+        backdrop-filter: blur(4px);
+    }
+    #msg {
+        position: fixed; top: 18%; left: 50%; transform: translateX(-50%);
+        z-index: 20; text-align: center; pointer-events: none;
+        color: #fff; font-size: 28px; font-weight: 800;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        opacity: 0; transition: opacity 0.4s;
+    }
+    #msg.show { opacity: 1; }
+    #help {
+        position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+        z-index: 10; pointer-events: none;
+        background: rgba(0,0,0,0.45); color: #eee;
+        padding: 6px 14px; border-radius: 10px; font-size: 13px;
+        white-space: nowrap;
+    }
+    /* Mobilné ovládanie */
+    #joystick {
+        position: fixed; bottom: 30px; left: 30px; z-index: 15;
+        width: 120px; height: 120px; border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+        border: 2px solid rgba(255,255,255,0.4);
+        display: none;
+    }
+    #stick {
+        position: absolute; left: 35px; top: 35px;
+        width: 50px; height: 50px; border-radius: 50%;
+        background: rgba(255,255,255,0.55);
+    }
+    #jumpBtn {
+        position: fixed; bottom: 45px; right: 35px; z-index: 15;
+        width: 90px; height: 90px; border-radius: 50%;
+        background: rgba(46,131,57,0.65);
+        border: 2px solid rgba(255,255,255,0.5);
+        color: #fff; font-size: 15px; font-weight: 700;
+        display: none; align-items: center; justify-content: center;
+    }
+    @media (pointer: coarse) {
+        #joystick { display: block; }
+        #jumpBtn { display: flex; }
+        #help { display: none; }
+    }
+</style>
+</head>
+<body>
+<div id="hud">
+    <div class="hud-box">🪙 <span id="coins">0</span>/<span id="coinsTotal">0</span></div>
+    <div class="hud-box">💀 <span id="deaths">0</span></div>
+    <div class="hud-box">⏱️ <span id="timer">0:00</span></div>
+</div>
+<div id="msg"></div>
+<div id="help">WASD / šípky – pohyb &nbsp;•&nbsp; Medzerník – skok &nbsp;•&nbsp; Myš (ťahaj) – kamera &nbsp;•&nbsp; R – reštart na checkpoint</div>
+<div id="joystick"><div id="stick"></div></div>
+<div id="jumpBtn">SKOK</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ---------- Scéna ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.Fog(0x87ceeb, 60, 160);
+
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 500);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.position.set(30, 50, 20);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -60; sun.shadow.camera.right = 60;
+sun.shadow.camera.top = 60; sun.shadow.camera.bottom = -60;
+sun.shadow.camera.far = 150;
+scene.add(sun);
+scene.add(new THREE.AmbientLight(0xbfd9ff, 0.8));
+
+// ---------- Pomocníci na stavbu sveta ----------
+const platforms = [];   // statické aj pohyblivé kolízne bloky
+const killBricks = [];  // láva – reset na checkpoint
+const checkpoints = []; // zelené pady
+const coins = [];       // mince
+const movers = [];      // pohyblivé plošiny
+
+function box(x, y, z, w, h, d, color, opts = {}) {
+    const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshLambertMaterial({ color })
+    );
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+    const entry = { mesh, w, h, d, ...opts };
+    if (opts.kill) killBricks.push(entry);
+    else platforms.push(entry);
+    return entry;
+}
+
+function movingBox(x, y, z, w, h, d, color, axis, range, speed, phase = 0) {
+    const entry = box(x, y, z, w, h, d, color);
+    entry.origin = new THREE.Vector3(x, y, z);
+    entry.axis = axis; entry.range = range; entry.speed = speed; entry.phase = phase;
+    entry.prevPos = entry.mesh.position.clone();
+    entry.delta = new THREE.Vector3();
+    movers.push(entry);
+    return entry;
+}
+
+function checkpoint(x, y, z, w = 4, d = 4) {
+    const entry = box(x, y, z, w, 0.4, d, 0x2ecc71);
+    entry.checkpoint = new THREE.Vector3(x, y + 1.6, z);
+    checkpoints.push(entry);
+    return entry;
+}
+
+function coin(x, y, z) {
+    const mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.45, 0.45, 0.12, 24),
+        new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.7, roughness: 0.25 })
+    );
+    mesh.rotation.z = Math.PI / 2;
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    scene.add(mesh);
+    coins.push({ mesh, taken: false, baseY: y });
+}
+
+// ---------- Level (obby dráha) ----------
+// Štart
+box(0, -0.5, 0, 12, 1, 12, 0x8e9aaf);
+checkpoint(0, 0.2, 0, 5, 5);
+
+// Prvé skoky
+box(0, -0.5, -9, 3, 1, 3, 0xe07a5f);
+box(2.5, -0.5, -14, 3, 1, 3, 0x3d8bfd);
+box(-1, 0.2, -19, 3, 1, 3, 0xe07a5f);
+coin(2.5, 1, -14);
+
+// Lávové pole s ostrovčekmi
+box(0, -0.6, -30, 16, 0.6, 14, 0xd63031, { kill: true });
+box(-4, 0.1, -26, 2.4, 0.8, 2.4, 0x8e9aaf);
+box(0, 0.5, -30, 2.4, 0.8, 2.4, 0x8e9aaf);
+box(4, 0.9, -34, 2.4, 0.8, 2.4, 0x8e9aaf);
+coin(0, 1.8, -30);
+
+// Checkpoint 2
+box(0, 0, -41, 8, 1, 6, 0x8e9aaf);
+checkpoint(0, 0.7, -41);
+
+// Pohyblivé plošiny nad priepasťou
+movingBox(0, 0.3, -49, 3, 0.6, 3, 0x9b59b6, 'x', 5, 1.2);
+movingBox(0, 0.9, -55.5, 3, 0.6, 3, 0x9b59b6, 'x', 5, 1.5, Math.PI);
+coin(0, 2.2, -55.5);
+
+// Checkpoint 3 + veža (výstup hore)
+box(0, 0.5, -61, 9, 1, 7, 0x8e9aaf);
+checkpoint(0, 1.2, -61);
+box(3, 1.8, -66, 2.6, 0.6, 2.6, 0xf4a261);
+box(0, 3.1, -68.5, 2.6, 0.6, 2.6, 0xf4a261);
+box(-3, 4.4, -66, 2.6, 0.6, 2.6, 0xf4a261);
+box(0, 5.7, -63.5, 2.6, 0.6, 2.6, 0xf4a261);
+coin(0, 6.8, -63.5);
+
+// Výťah hore-dole (nastúp z vrcholu veže, keď je dole)
+movingBox(0, 6.5, -69, 3, 0.6, 3, 0x1abc9c, 'y', 2, 1.0);
+
+// Finálna rovinka vo výške
+box(0, 8, -75, 4, 0.6, 8, 0x8e9aaf);
+box(0, 8, -83, 3, 0.6, 3, 0x3d8bfd);
+coin(0, 9.2, -83);
+
+// Cieľ
+const goal = box(0, 8.2, -90, 6, 0.8, 6, 0xffd700);
+const flagPole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 4),
+    new THREE.MeshLambertMaterial({ color: 0xffffff })
+);
+flagPole.position.set(0, 10.6, -90);
+scene.add(flagPole);
+const flag = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.4, 0.9),
+    new THREE.MeshLambertMaterial({ color: 0xd63031, side: THREE.DoubleSide })
+);
+flag.position.set(0.75, 12, -90);
+scene.add(flag);
+
+// ---------- Postavička (kockatý avatar) ----------
+function limb(w, h, d, color, x, y, z) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color }));
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    return m;
+}
+const player = new THREE.Group();
+const body = limb(0.8, 1.0, 0.45, 0x3d8bfd, 0, 1.0, 0);      // trup
+const head = limb(0.6, 0.6, 0.6, 0xffd166, 0, 1.85, 0);      // hlava
+// tvár
+const faceTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = '#ffd166'; g.fillRect(0, 0, 64, 64);
+    g.fillStyle = '#222';
+    g.beginPath(); g.arc(20, 26, 5, 0, 7); g.fill();
+    g.beginPath(); g.arc(44, 26, 5, 0, 7); g.fill();
+    g.strokeStyle = '#222'; g.lineWidth = 3;
+    g.beginPath(); g.arc(32, 38, 12, 0.2, Math.PI - 0.2); g.stroke();
+    return new THREE.CanvasTexture(c);
+})();
+head.material = [
+    head.material, head.material, head.material, head.material,
+    new THREE.MeshLambertMaterial({ map: faceTex }), head.material
+];
+const armL = limb(0.25, 0.9, 0.25, 0xffd166, -0.55, 1.05, 0);
+const armR = limb(0.25, 0.9, 0.25, 0xffd166, 0.55, 1.05, 0);
+const legL = limb(0.3, 0.9, 0.3, 0x2e8339, -0.2, 0.05, 0);
+const legR = limb(0.3, 0.9, 0.3, 0x2e8339, 0.2, 0.05, 0);
+player.add(body, head, armL, armR, legL, legR);
+scene.add(player);
+
+// Fyzikálny stav hráča (AABB: šírka 0.8, výška ~2.2, stred v player.position)
+const P = {
+    pos: new THREE.Vector3(0, 1.0, 0),
+    vel: new THREE.Vector3(),
+    onGround: false,
+    groundMover: null,
+    spawn: new THREE.Vector3(0, 1.6, 0),
+    halfW: 0.4, height: 2.35, feet: 0.4 // pos.y je stred nôh - feet offset
+};
+
+// ---------- Vstupy ----------
+const keys = {};
+addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'KeyR') respawn();
+    if (['Space','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault();
+});
+addEventListener('keyup', e => keys[e.code] = false);
+
+// Kamera – orbit ťahaním
+let camYaw = 0, camPitch = 0.35, camDist = 9;
+let dragging = false, lastX = 0, lastY = 0;
+renderer.domElement.addEventListener('pointerdown', e => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+});
+addEventListener('pointerup', () => dragging = false);
+addEventListener('pointermove', e => {
+    if (!dragging) return;
+    camYaw   -= (e.clientX - lastX) * 0.005;
+    camPitch += (e.clientY - lastY) * 0.005;
+    camPitch = Math.max(-0.1, Math.min(1.2, camPitch));
+    lastX = e.clientX; lastY = e.clientY;
+});
+addEventListener('wheel', e => {
+    camDist = Math.max(4, Math.min(18, camDist + e.deltaY * 0.01));
+});
+
+// Mobilný joystick
+const joy = { x: 0, y: 0, active: false };
+const joyEl = document.getElementById('joystick');
+const stickEl = document.getElementById('stick');
+joyEl.addEventListener('touchstart', handleJoy, { passive: false });
+joyEl.addEventListener('touchmove', handleJoy, { passive: false });
+joyEl.addEventListener('touchend', () => {
+    joy.x = joy.y = 0; joy.active = false;
+    stickEl.style.left = '35px'; stickEl.style.top = '35px';
+});
+function handleJoy(e) {
+    e.preventDefault();
+    const t = e.touches[0];
+    const r = joyEl.getBoundingClientRect();
+    let dx = t.clientX - (r.left + 60), dy = t.clientY - (r.top + 60);
+    const len = Math.hypot(dx, dy);
+    if (len > 45) { dx *= 45 / len; dy *= 45 / len; }
+    joy.x = dx / 45; joy.y = dy / 45; joy.active = true;
+    stickEl.style.left = (35 + dx) + 'px';
+    stickEl.style.top = (35 + dy) + 'px';
+}
+let jumpTouch = false;
+const jumpBtn = document.getElementById('jumpBtn');
+jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); jumpTouch = true; }, { passive: false });
+jumpBtn.addEventListener('touchend', () => jumpTouch = false);
+// otáčanie kamery ťahaním po pravej strane obrazovky (mimo joysticku)
+renderer.domElement.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    if (t.clientX > innerWidth / 2) { dragging = true; lastX = t.clientX; lastY = t.clientY; }
+}, { passive: true });
+renderer.domElement.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    camYaw   -= (t.clientX - lastX) * 0.006;
+    camPitch += (t.clientY - lastY) * 0.006;
+    camPitch = Math.max(-0.1, Math.min(1.2, camPitch));
+    lastX = t.clientX; lastY = t.clientY;
+}, { passive: true });
+renderer.domElement.addEventListener('touchend', () => dragging = false);
+
+// ---------- HUD ----------
+const $ = id => document.getElementById(id);
+let coinCount = 0, deathCount = 0, startTime = performance.now(), finished = false;
+$('coinsTotal').textContent = coins.length;
+function showMsg(text, ms = 1800) {
+    const m = $('msg');
+    m.innerHTML = text;
+    m.classList.add('show');
+    if (ms) setTimeout(() => m.classList.remove('show'), ms);
+}
+
+function respawn() {
+    P.pos.copy(P.spawn);
+    P.vel.set(0, 0, 0);
+}
+function die() {
+    deathCount++;
+    $('deaths').textContent = deathCount;
+    showMsg('💀 Ups! Skús to znova.', 1200);
+    respawn();
+}
+
+// ---------- Fyzika ----------
+const GRAVITY = -28, MOVE_SPEED = 6.5, JUMP_SPEED = 10.5;
+
+function collideAABB(entry, pos, margin = 0) {
+    // vráti prienik hráča (AABB) s blokom, alebo null
+    // margin > 0 rozšíri blok – na detekciu dotyku (checkpoint, cieľ),
+    // ktorá musí fungovať aj po kolíznej korekcii (prienik je vtedy 0)
+    const m = entry.mesh.position;
+    const px = pos.x, py = pos.y + P.height / 2 - P.feet, pz = pos.z;
+    const hw = P.halfW, hh = P.height / 2;
+    const ox = (entry.w / 2 + hw + margin) - Math.abs(px - m.x);
+    const oy = (entry.h / 2 + hh + margin) - Math.abs(py - m.y);
+    const oz = (entry.d / 2 + hw + margin) - Math.abs(pz - m.z);
+    if (ox > 0 && oy > 0 && oz > 0) return { ox, oy, oz, m };
+    return null;
+}
+
+function physics(dt) {
+    // pohyblivé plošiny
+    const t = performance.now() / 1000;
+    for (const mv of movers) {
+        mv.prevPos.copy(mv.mesh.position);
+        const offset = Math.sin(t * mv.speed + mv.phase) * mv.range;
+        mv.mesh.position.copy(mv.origin);
+        mv.mesh.position[mv.axis] += offset;
+        mv.delta.subVectors(mv.mesh.position, mv.prevPos);
+    }
+    // ak hráč stojí na pohyblivej plošine, nesie ho so sebou
+    if (P.onGround && P.groundMover) P.pos.add(P.groundMover.delta);
+
+    // smer pohybu podľa kamery
+    let ix = 0, iz = 0;
+    if (keys['KeyW'] || keys['ArrowUp']) iz -= 1;
+    if (keys['KeyS'] || keys['ArrowDown']) iz += 1;
+    if (keys['KeyA'] || keys['ArrowLeft']) ix -= 1;
+    if (keys['KeyD'] || keys['ArrowRight']) ix += 1;
+    if (joy.active) { ix = joy.x; iz = joy.y; }
+    const len = Math.hypot(ix, iz);
+    if (len > 1) { ix /= len; iz /= len; }
+
+    const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
+    const moveX = (ix * cos - iz * sin) * MOVE_SPEED;
+    const moveZ = (ix * sin + iz * cos) * MOVE_SPEED;
+    P.vel.x = moveX;
+    P.vel.z = moveZ;
+
+    if ((keys['Space'] || jumpTouch) && P.onGround) {
+        P.vel.y = JUMP_SPEED;
+        P.onGround = false;
+        P.groundMover = null;
+    }
+    P.vel.y += GRAVITY * dt;
+
+    // posun + kolízie po osiach
+    P.onGround = false;
+    const prevMover = P.groundMover;
+    P.groundMover = null;
+
+    // Y
+    P.pos.y += P.vel.y * dt;
+    for (const pl of platforms) {
+        const c = collideAABB(pl, P.pos);
+        if (!c) continue;
+        if (c.oy <= c.ox && c.oy <= c.oz) {
+            const py = P.pos.y + P.height / 2 - P.feet;
+            if (py > c.m.y) {
+                P.pos.y += c.oy;
+                if (P.vel.y < 0) { P.onGround = true; P.groundMover = movers.includes(pl) ? pl : null; }
+                P.vel.y = Math.max(0, P.vel.y);
+            } else {
+                P.pos.y -= c.oy;
+                P.vel.y = Math.min(0, P.vel.y);
+            }
+        }
+    }
+    // X
+    P.pos.x += P.vel.x * dt;
+    for (const pl of platforms) {
+        const c = collideAABB(pl, P.pos);
+        if (!c) continue;
+        if (c.ox <= c.oy && c.ox <= c.oz) {
+            P.pos.x += (P.pos.x > c.m.x ? c.ox : -c.ox);
+        }
+    }
+    // Z
+    P.pos.z += P.vel.z * dt;
+    for (const pl of platforms) {
+        const c = collideAABB(pl, P.pos);
+        if (!c) continue;
+        if (c.oz <= c.ox && c.oz <= c.oy) {
+            P.pos.z += (P.pos.z > c.m.z ? c.oz : -c.oz);
+        }
+    }
+
+    // láva
+    for (const kb of killBricks) {
+        if (collideAABB(kb, P.pos)) { die(); return; }
+    }
+    // pád do priepasti
+    if (P.pos.y < -12) { die(); return; }
+
+    // checkpointy
+    for (const cp of checkpoints) {
+        if (collideAABB(cp, P.pos, 0.15) && !P.spawn.equals(cp.checkpoint)) {
+            P.spawn.copy(cp.checkpoint);
+            showMsg('✅ Checkpoint!', 1000);
+        }
+    }
+    // mince
+    for (const cn of coins) {
+        if (cn.taken) continue;
+        if (P.pos.distanceTo(cn.mesh.position) < 1.1) {
+            cn.taken = true;
+            cn.mesh.visible = false;
+            coinCount++;
+            $('coins').textContent = coinCount;
+        }
+    }
+    // cieľ
+    if (!finished && collideAABB(goal, P.pos, 0.15)) {
+        finished = true;
+        const secs = Math.floor((performance.now() - startTime) / 1000);
+        showMsg(`🏆 VÝHRA!<br>Čas: ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')} • Mince: ${coinCount}/${coins.length}<br><small>Stlač R pre novú hru</small>`, 0);
+    }
+}
+
+// ---------- Animácia postavičky ----------
+let walkPhase = 0;
+function animatePlayer(dt) {
+    player.position.copy(P.pos);
+    player.position.y -= P.feet + 0.05;
+
+    const speed = Math.hypot(P.vel.x, P.vel.z);
+    if (speed > 0.5) {
+        player.rotation.y = Math.atan2(P.vel.x, P.vel.z);
+        walkPhase += dt * speed * 1.8;
+        const swing = Math.sin(walkPhase) * 0.7;
+        armL.rotation.x = swing; armR.rotation.x = -swing;
+        legL.rotation.x = -swing; legR.rotation.x = swing;
+    } else {
+        armL.rotation.x *= 0.8; armR.rotation.x *= 0.8;
+        legL.rotation.x *= 0.8; legR.rotation.x *= 0.8;
+    }
+    if (!P.onGround) {
+        armL.rotation.x = armR.rotation.x = -2.6; // ruky hore pri skoku
+    }
+}
+
+// ---------- Slučka ----------
+let lastT = performance.now();
+function loop() {
+    requestAnimationFrame(loop);
+    const now = performance.now();
+    const dt = Math.min((now - lastT) / 1000, 0.05);
+    lastT = now;
+
+    if (!finished) physics(dt);
+    animatePlayer(dt);
+
+    // rotácia mincí + vlajka
+    const t = now / 1000;
+    for (const cn of coins) {
+        if (cn.taken) continue;
+        cn.mesh.rotation.y = t * 3;
+        cn.mesh.position.y = cn.baseY + Math.sin(t * 2) * 0.15;
+    }
+    flag.rotation.y = Math.sin(t * 1.5) * 0.3;
+
+    // kamera
+    const target = new THREE.Vector3().copy(P.pos).add(new THREE.Vector3(0, 1.6, 0));
+    const camOff = new THREE.Vector3(
+        Math.sin(camYaw) * Math.cos(camPitch),
+        Math.sin(camPitch),
+        Math.cos(camYaw) * Math.cos(camPitch)
+    ).multiplyScalar(camDist);
+    camera.position.copy(target).add(camOff);
+    camera.lookAt(target);
+
+    // slnko sleduje hráča (kvôli tieňom)
+    sun.position.set(P.pos.x + 30, P.pos.y + 50, P.pos.z + 20);
+    sun.target.position.copy(P.pos);
+    sun.target.updateMatrixWorld();
+
+    // časomiera
+    if (!finished) {
+        const secs = Math.floor((now - startTime) / 1000);
+        $('timer').textContent = `${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
+    }
+
+    renderer.render(scene, camera);
+}
+
+addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+});
+
+// R po výhre = úplný reštart
+addEventListener('keydown', e => {
+    if (e.code === 'KeyR' && finished) location.reload();
+});
+
+// diagnostika pre automatizované testy (bez vplyvu na hru)
+window.__dbg = { P, coins, checkpoints, movers };
+
+showMsg('🎮 Kocka Obby<br><small>Dostaň sa k zlatej vlajke!</small>', 2500);
+respawn();
+loop();
+</script>
+</body>
+</html>
