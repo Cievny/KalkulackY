@@ -9,36 +9,85 @@
         margin: 0; padding: 0; overflow: hidden;
         width: 100%; height: 100%;
         font-family: 'Segoe UI', system-ui, sans-serif;
-        background: #87ceeb;
+        background: #aec9a0;
         touch-action: none;
         user-select: none;
         -webkit-user-select: none;
     }
     #hud {
         position: fixed; top: 12px; left: 12px; z-index: 10;
-        display: flex; gap: 10px; flex-wrap: wrap;
-        pointer-events: none;
+        display: flex; gap: 8px; flex-wrap: wrap;
+        pointer-events: none; max-width: calc(100vw - 90px);
     }
     .hud-box {
         background: rgba(0,0,0,0.55); color: #fff;
-        padding: 8px 14px; border-radius: 10px;
-        font-size: 16px; font-weight: 600;
+        padding: 7px 12px; border-radius: 10px;
+        font-size: 15px; font-weight: 600;
         backdrop-filter: blur(4px);
     }
+    #xpbarWrap {
+        display: inline-block; width: 64px; height: 8px;
+        background: rgba(255,255,255,0.25); border-radius: 4px;
+        margin-left: 6px; vertical-align: middle; overflow: hidden;
+    }
+    #xpbar { height: 100%; width: 0%; background: #ffd700; border-radius: 4px; }
     #msg {
         position: fixed; top: 18%; left: 50%; transform: translateX(-50%);
         z-index: 20; text-align: center; pointer-events: none;
         color: #fff; font-size: 28px; font-weight: 800;
         text-shadow: 0 2px 8px rgba(0,0,0,0.6);
-        opacity: 0; transition: opacity 0.4s;
+        opacity: 0; transition: opacity 0.4s; width: 90vw;
     }
     #msg.show { opacity: 1; }
+    #toasts {
+        position: fixed; left: 12px; bottom: 60px; z-index: 18;
+        pointer-events: none; display: flex; flex-direction: column-reverse; gap: 4px;
+    }
+    .toast {
+        background: rgba(0,0,0,0.6); color: #ffd700;
+        padding: 4px 10px; border-radius: 8px; font-size: 14px; font-weight: 600;
+        opacity: 1; transition: opacity 0.6s;
+    }
     #help {
         position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
         z-index: 10; pointer-events: none;
         background: rgba(0,0,0,0.45); color: #eee;
         padding: 6px 14px; border-radius: 10px; font-size: 13px;
         white-space: nowrap;
+    }
+    #shopBtn {
+        position: fixed; top: 12px; right: 12px; z-index: 15;
+        width: 46px; height: 46px; border-radius: 12px;
+        background: rgba(0,0,0,0.55); color: #fff;
+        font-size: 24px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; border: 1px solid rgba(255,255,255,0.25);
+    }
+    #shop {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+        z-index: 30; width: min(400px, 92vw);
+        background: rgba(18,28,16,0.94); color: #fff;
+        border: 1px solid rgba(255,215,0,0.35);
+        border-radius: 14px; padding: 18px 20px;
+        backdrop-filter: blur(6px);
+    }
+    #shop h2 { margin: 0 0 6px; font-size: 20px; color: #ffd700; }
+    #shopRes { font-size: 15px; margin-bottom: 12px; opacity: 0.9; }
+    .shop-item {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 9px 0; border-top: 1px solid rgba(255,255,255,0.12);
+    }
+    .shop-item .info { font-size: 14px; }
+    .shop-item .info small { opacity: 0.7; display: block; }
+    .shop-item button {
+        background: #2e8339; color: #fff; border: none;
+        padding: 8px 12px; border-radius: 8px; font-weight: 700;
+        font-size: 13px; cursor: pointer; white-space: nowrap;
+    }
+    .shop-item button:disabled { background: #555; opacity: 0.6; cursor: default; }
+    #shopFoot { display: flex; justify-content: space-between; margin-top: 12px; }
+    #shopFoot button {
+        background: rgba(255,255,255,0.15); color: #fff; border: none;
+        padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer;
     }
     /* Mobilné ovládanie */
     #joystick {
@@ -61,9 +110,18 @@
         color: #fff; font-size: 15px; font-weight: 700;
         display: none; align-items: center; justify-content: center;
     }
+    #stunBtn {
+        position: fixed; bottom: 150px; right: 45px; z-index: 15;
+        width: 64px; height: 64px; border-radius: 50%;
+        background: rgba(90,60,160,0.65);
+        border: 2px solid rgba(255,255,255,0.5);
+        color: #fff; font-size: 26px;
+        display: none; align-items: center; justify-content: center;
+    }
     @media (pointer: coarse) {
         #joystick { display: block; }
         #jumpBtn { display: flex; }
+        #stunBtn { display: flex; }
         #help { display: none; }
     }
 </style>
@@ -73,17 +131,79 @@
     <div class="hud-box">🥚 <span id="coins">0</span>/<span id="coinsTotal">0</span></div>
     <div class="hud-box">🦖 <span id="deaths">0</span></div>
     <div class="hud-box">⏱️ <span id="timer">0:00</span></div>
+    <div class="hud-box">🪵 <span id="wood">0</span></div>
+    <div class="hud-box">🪨 <span id="stone">0</span></div>
+    <div class="hud-box">⭐ LV <span id="lvl">1</span><span id="xpbarWrap"><span id="xpbar" style="display:block"></span></span></div>
+    <div class="hud-box" id="stunHud" style="display:none">💤 –</div>
 </div>
 <div id="msg"></div>
-<div id="help">WASD / šípky – pohyb &nbsp;•&nbsp; Medzerník – skok &nbsp;•&nbsp; Myš (ťahaj) – kamera &nbsp;•&nbsp; R – reštart na checkpoint</div>
+<div id="toasts"></div>
+<div id="help">WASD – pohyb • Medzerník – skok • Myš – kamera • U – dielňa • F – uspávač • R – checkpoint</div>
+<div id="shopBtn" title="Dielňa (U)">🛠️</div>
+<div id="shop" hidden>
+    <h2>🛠️ Dielňa rangera</h2>
+    <div id="shopRes"></div>
+    <div id="shopItems"></div>
+    <div id="shopFoot">
+        <button id="resetSave">🗑️ Vynulovať postup</button>
+        <button id="closeShop">Zavrieť (U)</button>
+    </div>
+</div>
 <div id="joystick"><div id="stick"></div></div>
 <div id="jumpBtn">SKOK</div>
+<div id="stunBtn">💤</div>
 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
 <script type="module">
 import * as THREE from 'three';
+
+const $ = id => document.getElementById(id);
+
+// ---------- Uložený postup (XP, suroviny, nástroje) ----------
+const SAVE_KEY = 'jurskyObby.save';
+const save = { xp: 0, level: 1, wood: 0, stone: 0, boots: 0, speed: 0, stun: 0 };
+try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (e) {}
+function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+
+const TOOLS = {
+    boots: { name: '🥾 Čižmy', desc: 'vyšší skok', max: 3, cost: l => ({ wood: 2 * l, stone: 2 * l - 1 }) },
+    speed: { name: '👟 Tenisky', desc: 'rýchlejší beh', max: 3, cost: l => ({ wood: 2 * l, stone: 2 * l - 1 }) },
+    stun:  { name: '💤 Uspávač', desc: 'uspí mäsožravca (F)', max: 3, cost: l => ({ wood: l + 2, stone: l + 1 }) },
+};
+const PERKS = {
+    2: '🦘 Dvojskok odomknutý! Stlač skok aj vo vzduchu.',
+    3: '🏃 +15 % rýchlosť behu!',
+    4: '👑 Zlatý klobúk!',
+    5: '🎖️ Elitný ranger – nový oblek!',
+};
+const STUN_CFG = [null, { dur: 4, cd: 10 }, { dur: 6, cd: 8 }, { dur: 8, cd: 6 }];
+
+const moveSpeed = () => (6.5 + save.speed * 0.7) * (save.level >= 3 ? 1.15 : 1);
+const jumpSpeed = () => 10.5 + save.boots * 0.8;
+const maxJumps = () => (save.level >= 2 ? 2 : 1);
+
+function toast(text) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = text;
+    $('toasts').appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; }, 1900);
+    setTimeout(() => el.remove(), 2600);
+}
+
+function addXP(n, label) {
+    save.xp += n;
+    toast(`+${n} XP – ${label}`);
+    while (save.xp >= save.level * 100) {
+        save.xp -= save.level * 100;
+        save.level++;
+        showMsg(`⭐ LEVEL ${save.level}!<br><small>${PERKS[save.level] || 'Pokračuj v prieskume parku!'}</small>`, 2800);
+        applyPerks();
+    }
+    persist();
+}
 
 // ---------- Scéna ----------
 const scene = new THREE.Scene();
@@ -110,10 +230,12 @@ scene.add(new THREE.AmbientLight(0xcfe0b8, 0.8));
 
 // ---------- Pomocníci na stavbu sveta ----------
 const platforms = [];   // statické aj pohyblivé kolízne bloky
-const killBricks = [];  // láva – reset na checkpoint
+const killBricks = [];  // smrteľné zóny – reset na checkpoint
 const checkpoints = []; // zelené pady
-const coins = [];       // mince
+const coins = [];       // dino vajcia
 const movers = [];      // pohyblivé plošiny
+const pickups = [];     // suroviny (drevo, kameň)
+const dinos = [];       // dinosaury s vlastným správaním
 
 function box(x, y, z, w, h, d, color, opts = {}) {
     const mesh = new THREE.Mesh(
@@ -160,6 +282,25 @@ function coin(x, y, z) {
     coins.push({ mesh, taken: false, baseY: y });
 }
 
+function pickup(type, x, y, z) {
+    let mesh;
+    if (type === 'wood') {
+        mesh = new THREE.Mesh(
+            new THREE.BoxGeometry(0.55, 0.32, 0.32),
+            new THREE.MeshLambertMaterial({ color: 0x8a5a2b })
+        );
+    } else {
+        mesh = new THREE.Mesh(
+            new THREE.IcosahedronGeometry(0.3, 0),
+            new THREE.MeshLambertMaterial({ color: 0x9a9a9a })
+        );
+    }
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    scene.add(mesh);
+    pickups.push({ mesh, type, taken: false, baseY: y });
+}
+
 // ---------- Scenéria džungle ----------
 function deco(geom, color, x, y, z) {
     const m = new THREE.Mesh(geom, new THREE.MeshLambertMaterial({ color }));
@@ -179,13 +320,24 @@ function fern(x, y, z) {
     deco(new THREE.BoxGeometry(0.35, 0.5, 1.1), 0x2e8339, x, y + 0.55, z);
 }
 function island(x, y, z, w, d, withPalm = true) {
-    // dekoračný ostrovček mimo dráhy (bez kolízií)
     deco(new THREE.BoxGeometry(w, 1, d), 0x5d6b4a, x, y, z);
     if (withPalm) palm(x, y + 0.5, z);
     fern(x + w / 4, y + 0.5, z + d / 4);
 }
 
-// Kockatý dinosaurus (raptor) – vráti skupinu s animovateľnými nohami
+function makeZzz() {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    g.font = '44px serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('💤', 32, 34);
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true }));
+    sprite.scale.set(1.4, 1.4, 1);
+    sprite.position.set(0, 3, 0);
+    sprite.visible = false;
+    return sprite;
+}
+
+// Kockatý raptor (mäsožravec)
 function makeRaptor(color = 0x5a7d3a) {
     const g = new THREE.Group();
     const mat = c => new THREE.MeshLambertMaterial({ color: c });
@@ -210,6 +362,47 @@ function makeRaptor(color = 0x5a7d3a) {
     return g;
 }
 
+// Mäsožravec: hliadkuje, a keď si blízko, naháňa ťa v rámci svojho územia
+function addCarnivore(x, y, z, bounds, axis, range, speed, aggro = 6.5) {
+    const group = makeRaptor();
+    group.position.set(x, y, z);
+    scene.add(group);
+    const zzz = makeZzz();
+    group.add(zzz);
+    const hit = { mesh: group, w: 1.2, h: 2.2, d: 3.0, kill: true, reason: 'dino', sleeping: false };
+    killBricks.push(hit);
+    const dino = {
+        type: 'carnivore', group, hit, zzz, baseY: y, bounds, axis, range,
+        speed, aggro, phase: 0, origin: { x, z }, sleepUntil: 0, walk: 0,
+    };
+    hit.dino = dino;
+    dinos.push(dino);
+    return group;
+}
+
+// Bylinožravý triceratops – neškodný, dá sa mu vyliezť na chrbát a povozí ťa
+function makeTrike(color = 0x9aa77c) {
+    const g = new THREE.Group();
+    const mat = c => new THREE.MeshLambertMaterial({ color: c });
+    const part = (w, h, d, x, y, z, c = color) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
+        m.position.set(x, y, z); m.castShadow = true; g.add(m); return m;
+    };
+    part(1.8, 1.4, 2.8, 0, 1.7, -0.2);              // telo
+    part(1.0, 0.9, 0.8, 0, 1.6, 1.6);               // hlava
+    part(1.7, 1.5, 0.25, 0, 2.0, 1.15);             // golier
+    part(0.12, 0.12, 0.6, -0.3, 1.9, 2.1, 0xf3ecd8); // rohy
+    part(0.12, 0.12, 0.6, 0.3, 1.9, 2.1, 0xf3ecd8);
+    part(0.12, 0.35, 0.12, 0, 1.35, 2.0, 0xf3ecd8);  // nosový roh
+    part(0.45, 0.4, 0.3, 0, 1.25, 2.05, 0x7c8a63);   // zobák
+    part(0.5, 1.0, 0.5, -0.6, 0.5, 0.8);
+    part(0.5, 1.0, 0.5, 0.6, 0.5, 0.8);
+    part(0.5, 1.0, 0.5, -0.6, 0.5, -1.1);
+    part(0.5, 1.0, 0.5, 0.6, 0.5, -1.1);
+    part(0.6, 0.6, 1.2, 0, 1.6, -1.9);              // chvost
+    return g;
+}
+
 // Obrí dekoračný brachiosaurus v pozadí
 function makeBrachio(x, y, z) {
     const g = new THREE.Group();
@@ -218,14 +411,14 @@ function makeBrachio(x, y, z) {
         const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
         m.position.set(px, py, pz); g.add(m); return m;
     };
-    part(4, 4, 8, 0, 5, 0);          // telo
-    part(1.8, 8, 1.8, 0, 10, 3.5);   // krk
-    part(1.6, 1.4, 2.6, 0, 14.4, 4.2); // hlava
+    part(4, 4, 8, 0, 5, 0);
+    part(1.8, 8, 1.8, 0, 10, 3.5);
+    part(1.6, 1.4, 2.6, 0, 14.4, 4.2);
     part(1.4, 4, 1.4, -1.2, 1.5, 2.5);
     part(1.4, 4, 1.4, 1.2, 1.5, 2.5);
     part(1.4, 4, 1.4, -1.2, 1.5, -2.5);
     part(1.4, 4, 1.4, 1.2, 1.5, -2.5);
-    part(1.2, 1.2, 6, 0, 5.5, -6.5); // chvost
+    part(1.2, 1.2, 6, 0, 5.5, -6.5);
     g.position.set(x, y, z);
     scene.add(g);
     return g;
@@ -237,12 +430,15 @@ box(0, -0.5, 0, 12, 1, 12, 0x5d6b4a);
 checkpoint(0, 0.2, 0, 5, 5);
 palm(-4.5, 0, -4.5); palm(4.5, 0, 4);
 fern(-4, 0, 3); fern(4.5, 0, -3.5);
+pickup('wood', 3, 0.7, -3.5);
+pickup('stone', -3, 0.7, 2.5);
 
 // Prvé skoky po skalách
 box(0, -0.5, -9, 3, 1, 3, 0x7d8471);
 box(2.5, -0.5, -14, 3, 1, 3, 0x8a7f66);
 box(-1, 0.2, -19, 3, 1, 3, 0x7d8471);
 coin(2.5, 1, -14);
+pickup('wood', -1, 1.1, -19);
 
 // Močiar s ostrovčekmi (zožerie ťa!)
 box(0, -0.6, -30, 16, 0.6, 14, 0x36452a, { kill: true, reason: 'swamp' });
@@ -250,16 +446,33 @@ box(-4, 0.1, -26, 2.4, 0.8, 2.4, 0x7d8471);
 box(0, 0.5, -30, 2.4, 0.8, 2.4, 0x7d8471);
 box(4, 0.9, -34, 2.4, 0.8, 2.4, 0x7d8471);
 coin(0, 1.8, -30);
+pickup('stone', -4, 1.0, -26);
+pickup('wood', 4, 1.8, -34);
 
-// Checkpoint 2 – brod cez rieku
+// Checkpoint 2 – výbeh triceratopsa
 box(0, 0, -41, 8, 1, 6, 0x5d6b4a);
-checkpoint(0, 0.7, -41);
-fern(3, 0.5, -42.5);
+checkpoint(0, 0.7, -42.5);
+fern(3.2, 0.5, -43);
+
+// Triceratops: neviditeľný pohyblivý blok nesie kolízie, model ho sleduje
+const trikeBox = movingBox(0, 1.45, -39.5, 2.0, 1.9, 3.0, 0x000000, 'x', 2.5, 0.5);
+trikeBox.mesh.visible = false;
+const trikeGroup = makeTrike();
+scene.add(trikeGroup);
+let trikePetted = false;
+
+// Bonusová rímsa – dostaneš sa na ňu z chrbta triceratopsa
+box(7.5, 2.9, -41, 3, 0.6, 3, 0x8a7f66);
+coin(7.5, 4.0, -41);
+pickup('wood', 6.9, 3.8, -40.2);
+pickup('wood', 8.1, 3.8, -41.8);
+pickup('stone', 7.5, 3.8, -42.3);
 
 // Plávajúce kmene nad roklinou
 movingBox(0, 0.3, -49, 3, 0.6, 3, 0x6d4c33, 'x', 5, 1.2);
 movingBox(0, 0.9, -55.5, 3, 0.6, 3, 0x6d4c33, 'x', 5, 1.5, Math.PI);
 coin(0, 2.2, -55.5);
+pickup('stone', 0, 2.0, -45.5);
 
 // Checkpoint 3 – raptorí výbeh + veža (výstup hore)
 box(0, 0.5, -61, 9, 1, 7, 0x5d6b4a);
@@ -269,27 +482,28 @@ box(0, 3.1, -68.5, 2.6, 0.6, 2.6, 0x8a7f66);
 box(-3, 4.4, -66, 2.6, 0.6, 2.6, 0x8a7f66);
 box(0, 5.7, -63.5, 2.6, 0.6, 2.6, 0x8a7f66);
 coin(0, 6.8, -63.5);
+pickup('wood', 1.2, 7.2, -63.5);
 
-// Hliadkujúci raptor na plošine checkpointu 3
-const raptor = makeRaptor();
-raptor.position.set(0, 1.0, -62);
-scene.add(raptor);
-const raptorHit = { mesh: raptor, w: 1.2, h: 2.2, d: 3.0, kill: true, reason: 'dino' };
-killBricks.push(raptorHit);
+// Raptor hliadkujúci na plošine checkpointu 3
+addCarnivore(0, 1.0, -62, { x1: -3.6, x2: 3.6, z1: -63.8, z2: -58.2 }, 'x', 3, 0.9);
 
 // Skalný výťah hore-dole (nastúp z vrcholu veže, keď je dole)
 movingBox(0, 6.5, -69, 3, 0.6, 3, 0x7d8471, 'y', 2, 1.0);
 
-// Finálna rovinka vo výške
+// Finálna rovinka vo výške – stráži ju druhý raptor
 box(0, 8, -75, 4, 0.6, 8, 0x5d6b4a);
+addCarnivore(0, 8.3, -76.5, { x1: -1.3, x2: 1.3, z1: -78.2, z2: -71.8 }, 'z', 2.2, 0.7, 5);
+pickup('wood', 1.4, 8.9, -77.5);
+pickup('stone', -1.4, 8.9, -72.5);
 box(0, 8, -83, 3, 0.6, 3, 0x6b8e23);
 coin(0, 9.2, -83);
+pickup('stone', 0, 9.3, -85.5);
 
 // Cieľ – brána Jurského parku
 const goal = box(0, 8.2, -90, 8, 0.8, 6, 0x8a7f66);
 palm(-3.2, 8.6, -91.5, 3); palm(3.2, 8.6, -91.5, 3);
-const pillarL = deco(new THREE.BoxGeometry(1.1, 6, 1.1), 0x6d5c43, -2.6, 11.6, -90);
-const pillarR = deco(new THREE.BoxGeometry(1.1, 6, 1.1), 0x6d5c43, 2.6, 11.6, -90);
+deco(new THREE.BoxGeometry(1.1, 6, 1.1), 0x6d5c43, -2.6, 11.6, -90);
+deco(new THREE.BoxGeometry(1.1, 6, 1.1), 0x6d5c43, 2.6, 11.6, -90);
 deco(new THREE.BoxGeometry(0.9, 0.9, 0.9), 0xd4a017, -2.6, 14.9, -90); // fakle
 deco(new THREE.BoxGeometry(0.9, 0.9, 0.9), 0xd4a017, 2.6, 14.9, -90);
 const signTex = (() => {
@@ -319,7 +533,7 @@ island(-11, 0, -50, 5, 6);
 island(10, 3, -60, 5, 5);
 island(-9, 6.5, -80, 6, 5);
 
-// ---------- Postavička (kockatý avatar) ----------
+// ---------- Postavička (ranger) ----------
 function limb(w, h, d, color, x, y, z) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color }));
     m.position.set(x, y, z);
@@ -329,7 +543,6 @@ function limb(w, h, d, color, x, y, z) {
 const player = new THREE.Group();
 const body = limb(0.8, 1.0, 0.45, 0xc2a35d, 0, 1.0, 0);      // trup (khaki košeľa rangera)
 const head = limb(0.6, 0.6, 0.6, 0xffd166, 0, 1.85, 0);      // hlava
-// tvár
 const faceTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
     const g = c.getContext('2d');
@@ -354,14 +567,30 @@ const hatTop = limb(0.5, 0.3, 0.5, 0x8a6d3b, 0, 2.32, 0);
 player.add(body, head, armL, armR, legL, legR, hatBrim, hatTop);
 scene.add(player);
 
+function applyPerks() {
+    if (save.level >= 4) {
+        hatBrim.material.color.set(0xffd700);
+        hatTop.material.color.set(0xffd700);
+    }
+    if (save.level >= 5) {
+        body.material.color.set(0x2e5e2e);
+        armL.material.color.set(0x2e5e2e);
+        armR.material.color.set(0x2e5e2e);
+    }
+}
+applyPerks();
+
 // Fyzikálny stav hráča (AABB: šírka 0.8, výška ~2.2, stred v player.position)
 const P = {
     pos: new THREE.Vector3(0, 1.0, 0),
     vel: new THREE.Vector3(),
     onGround: false,
     groundMover: null,
-    spawn: new THREE.Vector3(0, 1.6, 0),
-    halfW: 0.4, height: 2.35, feet: 0.4 // pos.y je stred nôh - feet offset
+    jumps: 0,
+    prevJump: false,
+    invulnUntil: 0,
+    spawn: new THREE.Vector3(0, 1.8, 0),
+    halfW: 0.4, height: 2.35, feet: 0.4
 };
 
 // ---------- Vstupy ----------
@@ -369,6 +598,8 @@ const keys = {};
 addEventListener('keydown', e => {
     keys[e.code] = true;
     if (e.code === 'KeyR') respawn();
+    if (e.code === 'KeyU') toggleShop();
+    if (e.code === 'KeyF') tryStun();
     if (['Space','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault();
 });
 addEventListener('keyup', e => keys[e.code] = false);
@@ -393,8 +624,8 @@ addEventListener('wheel', e => {
 
 // Mobilný joystick
 const joy = { x: 0, y: 0, active: false };
-const joyEl = document.getElementById('joystick');
-const stickEl = document.getElementById('stick');
+const joyEl = $('joystick');
+const stickEl = $('stick');
 joyEl.addEventListener('touchstart', handleJoy, { passive: false });
 joyEl.addEventListener('touchmove', handleJoy, { passive: false });
 joyEl.addEventListener('touchend', () => {
@@ -413,10 +644,11 @@ function handleJoy(e) {
     stickEl.style.top = (35 + dy) + 'px';
 }
 let jumpTouch = false;
-const jumpBtn = document.getElementById('jumpBtn');
+const jumpBtn = $('jumpBtn');
 jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); jumpTouch = true; }, { passive: false });
 jumpBtn.addEventListener('touchend', () => jumpTouch = false);
-// otáčanie kamery ťahaním po pravej strane obrazovky (mimo joysticku)
+$('stunBtn').addEventListener('touchstart', e => { e.preventDefault(); tryStun(); }, { passive: false });
+$('stunBtn').addEventListener('click', () => tryStun());
 renderer.domElement.addEventListener('touchstart', e => {
     const t = e.touches[0];
     if (t.clientX > innerWidth / 2) { dragging = true; lastX = t.clientX; lastY = t.clientY; }
@@ -431,10 +663,24 @@ renderer.domElement.addEventListener('touchmove', e => {
 }, { passive: true });
 renderer.domElement.addEventListener('touchend', () => dragging = false);
 
-// ---------- HUD ----------
-const $ = id => document.getElementById(id);
+// ---------- HUD a stav hry ----------
 let coinCount = 0, deathCount = 0, startTime = performance.now(), finished = false;
+let stunReadyAt = 0;
 $('coinsTotal').textContent = coins.length;
+
+function updateHud() {
+    $('wood').textContent = save.wood;
+    $('stone').textContent = save.stone;
+    $('lvl').textContent = save.level;
+    $('xpbar').style.width = Math.min(100, save.xp / (save.level * 100) * 100) + '%';
+    const sh = $('stunHud');
+    if (save.stun > 0) {
+        sh.style.display = '';
+        const left = (stunReadyAt - performance.now()) / 1000;
+        sh.textContent = left > 0 ? `💤 ${Math.ceil(left)}s` : '💤 pripravený';
+    } else sh.style.display = 'none';
+}
+
 function showMsg(text, ms = 1800) {
     const m = $('msg');
     m.innerHTML = text;
@@ -455,11 +701,82 @@ function die(reason) {
     deathCount++;
     $('deaths').textContent = deathCount;
     showMsg(DEATH_MSG[reason] || '💀 Ups! Skús to znova.', 1200);
+    P.invulnUntil = performance.now() + 2000; // krátka nesmrteľnosť proti opakovanému zabitiu
     respawn();
 }
 
+// ---------- Dielňa (obchod s vylepšeniami) ----------
+let shopOpen = false, shopOpenedAt = 0;
+function toggleShop() {
+    shopOpen = !shopOpen;
+    $('shop').hidden = !shopOpen;
+    if (shopOpen) { shopOpenedAt = performance.now(); renderShop(); }
+    else startTime += performance.now() - shopOpenedAt; // pauza časomiery
+}
+$('shopBtn').addEventListener('click', toggleShop);
+$('closeShop').addEventListener('click', toggleShop);
+$('resetSave').addEventListener('click', () => {
+    if (!confirm('Naozaj vynulovať všetok postup (XP, suroviny, nástroje)?')) return;
+    Object.assign(save, { xp: 0, level: 1, wood: 0, stone: 0, boots: 0, speed: 0, stun: 0 });
+    persist(); renderShop(); toast('Postup vynulovaný');
+});
+
+function renderShop() {
+    $('shopRes').innerHTML = `Suroviny: 🪵 ${save.wood} &nbsp; 🪨 ${save.stone} &nbsp; ⭐ LV ${save.level}`;
+    const wrap = $('shopItems');
+    wrap.innerHTML = '';
+    for (const [key, t] of Object.entries(TOOLS)) {
+        const lvl = save[key];
+        const row = document.createElement('div');
+        row.className = 'shop-item';
+        const info = document.createElement('div');
+        info.className = 'info';
+        info.innerHTML = `<b>${t.name}</b> Lv ${lvl}/${t.max}<small>${t.desc}</small>`;
+        const btn = document.createElement('button');
+        if (lvl >= t.max) {
+            btn.textContent = 'MAX';
+            btn.disabled = true;
+        } else {
+            const c = t.cost(lvl + 1);
+            btn.textContent = `Vylepšiť (🪵${c.wood} 🪨${c.stone})`;
+            btn.disabled = save.wood < c.wood || save.stone < c.stone;
+            btn.addEventListener('click', () => {
+                save.wood -= c.wood; save.stone -= c.stone;
+                save[key]++;
+                persist(); renderShop(); updateHud();
+                toast(`${t.name} vylepšené na Lv ${save[key]}!`);
+            });
+        }
+        row.append(info, btn);
+        wrap.appendChild(row);
+    }
+}
+
+// ---------- Uspávač (interakcia s mäsožravcami) ----------
+function tryStun() {
+    if (shopOpen) return;
+    if (!save.stun) { toast('Najprv si kúp Uspávač v dielni (U)'); return; }
+    const now = performance.now();
+    if (now < stunReadyAt) { toast('⏳ Uspávač sa nabíja…'); return; }
+    const cfg = STUN_CFG[save.stun];
+    let hitAny = false;
+    for (const d of dinos) {
+        if (d.type !== 'carnivore') continue;
+        if (P.pos.distanceTo(d.group.position) < 8) {
+            d.sleepUntil = now + cfg.dur * 1000;
+            hitAny = true;
+        }
+    }
+    if (hitAny) {
+        stunReadyAt = now + cfg.cd * 1000;
+        addXP(20, 'uspaný raptor');
+    } else {
+        toast('Žiadny dravec nablízku');
+    }
+}
+
 // ---------- Fyzika ----------
-const GRAVITY = -28, MOVE_SPEED = 6.5, JUMP_SPEED = 10.5;
+const GRAVITY = -28;
 
 function collideAABB(entry, pos, margin = 0) {
     // vráti prienik hráča (AABB) s blokom, alebo null
@@ -475,9 +792,51 @@ function collideAABB(entry, pos, margin = 0) {
     return null;
 }
 
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+// Správanie dinosaurov: mäsožravce hliadkujú/naháňajú, spia po uspávači
+function updateDinos(dt, now) {
+    for (const d of dinos) {
+        const g = d.group;
+        const sleeping = now < d.sleepUntil;
+        d.hit.sleeping = sleeping;
+        d.zzz.visible = sleeping;
+        if (sleeping) continue;
+
+        const distXZ = Math.hypot(P.pos.x - g.position.x, P.pos.z - g.position.z);
+        const near = distXZ < d.aggro && Math.abs(P.pos.y - d.baseY) < 3.5;
+        let mx = 0, mz = 0;
+        if (near) {
+            const s = 3.2 * dt / Math.max(distXZ, 0.001);
+            mx = (P.pos.x - g.position.x) * s;
+            mz = (P.pos.z - g.position.z) * s;
+        } else {
+            d.phase += dt * d.speed;
+            const tx = d.origin.x + (d.axis === 'x' ? Math.sin(d.phase) * d.range : 0);
+            const tz = d.origin.z + (d.axis === 'z' ? Math.sin(d.phase) * d.range : 0);
+            const f = Math.min(1, dt * 3);
+            mx = (tx - g.position.x) * f;
+            mz = (tz - g.position.z) * f;
+        }
+        g.position.x = clamp(g.position.x + mx, d.bounds.x1, d.bounds.x2);
+        g.position.z = clamp(g.position.z + mz, d.bounds.z1, d.bounds.z2);
+        const moving = Math.hypot(mx, mz) > 0.003;
+        if (moving) {
+            g.rotation.y = Math.atan2(mx, mz);
+            d.walk += dt * (near ? 11 : 7);
+            const swing = Math.sin(d.walk) * 0.55;
+            d.group.userData.legL.rotation.x = swing;
+            d.group.userData.legR.rotation.x = -swing;
+            d.group.userData.armL.rotation.x = -swing * 0.5;
+            d.group.userData.armR.rotation.x = swing * 0.5;
+        }
+    }
+}
+
 function physics(dt) {
+    const nowMs = performance.now();
     // pohyblivé plošiny
-    const t = performance.now() / 1000;
+    const t = nowMs / 1000;
     for (const mv of movers) {
         mv.prevPos.copy(mv.mesh.position);
         const offset = Math.sin(t * mv.speed + mv.phase) * mv.range;
@@ -485,8 +844,10 @@ function physics(dt) {
         mv.mesh.position[mv.axis] += offset;
         mv.delta.subVectors(mv.mesh.position, mv.prevPos);
     }
-    // ak hráč stojí na pohyblivej plošine, nesie ho so sebou
+    // ak hráč stojí na pohyblivej plošine (alebo triceratopsovi), nesie ho
     if (P.onGround && P.groundMover) P.pos.add(P.groundMover.delta);
+
+    updateDinos(dt, nowMs);
 
     // smer pohybu podľa kamery
     let ix = 0, iz = 0;
@@ -499,21 +860,26 @@ function physics(dt) {
     if (len > 1) { ix /= len; iz /= len; }
 
     const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
-    const moveX = (ix * cos - iz * sin) * MOVE_SPEED;
-    const moveZ = (ix * sin + iz * cos) * MOVE_SPEED;
-    P.vel.x = moveX;
-    P.vel.z = moveZ;
+    const spd = moveSpeed();
+    P.vel.x = (ix * cos - iz * sin) * spd;
+    P.vel.z = (ix * sin + iz * cos) * spd;
 
-    if ((keys['Space'] || jumpTouch) && P.onGround) {
-        P.vel.y = JUMP_SPEED;
+    // skok: zo zeme aj podržaním; dvojskok (LV2+) len čerstvým stlačením
+    const jumpPressed = keys['Space'] || jumpTouch;
+    if (jumpPressed && P.onGround) {
+        P.vel.y = jumpSpeed();
         P.onGround = false;
         P.groundMover = null;
+        P.jumps = 1;
+    } else if (jumpPressed && !P.prevJump && !P.onGround && P.jumps < maxJumps()) {
+        P.vel.y = jumpSpeed() * 0.95;
+        P.jumps++;
     }
+    P.prevJump = jumpPressed;
     P.vel.y += GRAVITY * dt;
 
     // posun + kolízie po osiach
     P.onGround = false;
-    const prevMover = P.groundMover;
     P.groundMover = null;
 
     // Y
@@ -525,7 +891,11 @@ function physics(dt) {
             const py = P.pos.y + P.height / 2 - P.feet;
             if (py > c.m.y) {
                 P.pos.y += c.oy;
-                if (P.vel.y < 0) { P.onGround = true; P.groundMover = movers.includes(pl) ? pl : null; }
+                if (P.vel.y < 0) {
+                    P.onGround = true;
+                    P.jumps = 0;
+                    P.groundMover = movers.includes(pl) ? pl : null;
+                }
                 P.vel.y = Math.max(0, P.vel.y);
             } else {
                 P.pos.y -= c.oy;
@@ -552,21 +922,39 @@ function physics(dt) {
         }
     }
 
-    // močiar a dinosaury
-    for (const kb of killBricks) {
-        if (collideAABB(kb, P.pos)) { die(kb.reason); return; }
+    // močiar a mäsožravce (spiace neublížia; po smrti chvíľa nesmrteľnosti)
+    if (nowMs >= P.invulnUntil) {
+        for (const kb of killBricks) {
+            if (kb.sleeping) continue;
+            if (collideAABB(kb, P.pos)) {
+                // dravec sa po úlovku vráti na začiatok hliadky
+                if (kb.dino) {
+                    kb.dino.group.position.set(kb.dino.origin.x, kb.dino.baseY, kb.dino.origin.z);
+                    kb.dino.phase = 0;
+                }
+                die(kb.reason);
+                return;
+            }
+        }
     }
     // pád do priepasti
     if (P.pos.y < -12) { die('fall'); return; }
+
+    // bylinožravec: prvé pohladkanie dáva XP
+    if (!trikePetted && collideAABB(trikeBox, P.pos, 0.3)) {
+        trikePetted = true;
+        addXP(10, '🦕 triceratops ťa má rád');
+    }
 
     // checkpointy
     for (const cp of checkpoints) {
         if (collideAABB(cp, P.pos, 0.15) && !P.spawn.equals(cp.checkpoint)) {
             P.spawn.copy(cp.checkpoint);
             showMsg('✅ Checkpoint!', 1000);
+            addXP(15, 'checkpoint');
         }
     }
-    // mince
+    // vajcia
     for (const cn of coins) {
         if (cn.taken) continue;
         if (P.pos.distanceTo(cn.mesh.position) < 1.1) {
@@ -574,13 +962,25 @@ function physics(dt) {
             cn.mesh.visible = false;
             coinCount++;
             $('coins').textContent = coinCount;
+            addXP(25, 'dino vajce');
+        }
+    }
+    // suroviny
+    for (const pk of pickups) {
+        if (pk.taken) continue;
+        if (P.pos.distanceTo(pk.mesh.position) < 1.0) {
+            pk.taken = true;
+            pk.mesh.visible = false;
+            save[pk.type]++;
+            addXP(5, pk.type === 'wood' ? '🪵 drevo +1' : '🪨 kameň +1');
         }
     }
     // cieľ
     if (!finished && collideAABB(goal, P.pos, 0.15)) {
         finished = true;
+        addXP(100, 'únik z parku');
         const secs = Math.floor((performance.now() - startTime) / 1000);
-        showMsg(`🏆 UNIKOL SI Z PARKU!<br>Čas: ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')} • Vajcia: ${coinCount}/${coins.length}<br><small>Stlač R pre novú hru</small>`, 0);
+        showMsg(`🏆 UNIKOL SI Z PARKU!<br>Čas: ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')} • Vajcia: ${coinCount}/${coins.length}<br><small>Stlač R pre novú hru – postup a nástroje ti ostávajú</small>`, 0);
     }
 }
 
@@ -604,6 +1004,9 @@ function animatePlayer(dt) {
     if (!P.onGround) {
         armL.rotation.x = armR.rotation.x = -2.6; // ruky hore pri skoku
     }
+    // blikanie počas nesmrteľnosti po smrti
+    const nowMs = performance.now();
+    player.visible = nowMs >= P.invulnUntil || Math.floor(nowMs / 120) % 2 === 0;
 }
 
 // ---------- Slučka ----------
@@ -614,23 +1017,26 @@ function loop() {
     const dt = Math.min((now - lastT) / 1000, 0.05);
     lastT = now;
 
-    if (!finished) physics(dt);
+    if (!finished && !shopOpen) physics(dt);
     animatePlayer(dt);
 
-    // vajcia sa vznášajú + raptor hliadkuje
+    // vajcia a suroviny sa vznášajú
     const t = now / 1000;
     for (const cn of coins) {
         if (cn.taken) continue;
         cn.mesh.rotation.y = t * 1.5;
         cn.mesh.position.y = cn.baseY + Math.sin(t * 2) * 0.15;
     }
-    raptor.position.x = Math.sin(t * 0.9) * 3;
-    raptor.rotation.y = Math.cos(t * 0.9) > 0 ? Math.PI / 2 : -Math.PI / 2;
-    const rSwing = Math.sin(t * 9) * 0.5;
-    raptor.userData.legL.rotation.x = rSwing;
-    raptor.userData.legR.rotation.x = -rSwing;
-    raptor.userData.armL.rotation.x = -rSwing * 0.5;
-    raptor.userData.armR.rotation.x = rSwing * 0.5;
+    for (const pk of pickups) {
+        if (pk.taken) continue;
+        pk.mesh.rotation.y = t * 2;
+        pk.mesh.position.y = pk.baseY + Math.sin(t * 2.4 + pk.mesh.position.x) * 0.1;
+    }
+
+    // triceratops sleduje svoj neviditeľný kolízny blok
+    const tb = trikeBox.mesh.position;
+    trikeGroup.position.set(tb.x, tb.y - 0.95, tb.z);
+    trikeGroup.rotation.y = trikeBox.delta.x >= 0 ? Math.PI / 2 : -Math.PI / 2;
 
     // kamera
     const target = new THREE.Vector3().copy(P.pos).add(new THREE.Vector3(0, 1.6, 0));
@@ -647,11 +1053,12 @@ function loop() {
     sun.target.position.copy(P.pos);
     sun.target.updateMatrixWorld();
 
-    // časomiera
-    if (!finished) {
+    // časomiera + HUD
+    if (!finished && !shopOpen) {
         const secs = Math.floor((now - startTime) / 1000);
         $('timer').textContent = `${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
     }
+    updateHud();
 
     renderer.render(scene, camera);
 }
@@ -662,15 +1069,15 @@ addEventListener('resize', () => {
     renderer.setSize(innerWidth, innerHeight);
 });
 
-// R po výhre = úplný reštart
+// R po výhre = úplný reštart (postup ostáva uložený)
 addEventListener('keydown', e => {
     if (e.code === 'KeyR' && finished) location.reload();
 });
 
 // diagnostika pre automatizované testy (bez vplyvu na hru)
-window.__dbg = { P, coins, checkpoints, movers };
+window.__dbg = { P, coins, checkpoints, movers, pickups, dinos, save, trikeBox, tryStun, addXP, toggleShop };
 
-showMsg('🦖 Jurský Obby<br><small>Uteč cez džungľu k bráne parku!</small>', 2500);
+showMsg('🦖 Jurský Obby<br><small>Uteč cez džungľu k bráne parku!<br>Zbieraj suroviny a vylepšuj nástroje v dielni (U).</small>', 3200);
 respawn();
 loop();
 </script>
