@@ -100,6 +100,24 @@
     .mini-btn.buy { background: var(--wine); }
     .mini-btn:disabled { filter: grayscale(0.9) brightness(0.65); cursor: not-allowed; }
 
+    /* skiny — chalani vľavo, dievčatá vpravo */
+    .skin-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+    .skin-col h3 { margin-bottom: 10px; font-size: 1.05rem; }
+    .skin-col.boys h3 { color: #8ecbff; }
+    .skin-col.girls h3 { color: #ff9ec4; }
+    .skin-card { background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.1);
+                 border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; text-align: left;
+                 display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .skin-card.sel { border-color: var(--gold); background: rgba(246,185,59,0.12); }
+    .skin-card.locked { opacity: 0.45; cursor: not-allowed; }
+    .skin-face { font-size: 1.7rem; line-height: 1; }
+    .skin-info { flex: 1; min-width: 0; }
+    .skin-nm { font-weight: 800; font-size: 0.95rem; }
+    .skin-req { font-size: 0.75rem; color: #aebfd4; }
+    .skin-chips { display: flex; gap: 4px; margin-top: 4px; }
+    .chip { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.4); }
+    @media (max-width: 560px) { .skin-cols { grid-template-columns: 1fr; } }
+
     /* levely */
     .level-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
     .lvl { aspect-ratio: 1; border-radius: 14px; display: flex; align-items: center; justify-content: center;
@@ -146,6 +164,7 @@
         <button class="btn" id="btnPlay">▶ Hrať</button><br>
         <button class="btn alt" id="btnGarage">🔧 Garáž</button>
         <button class="btn alt" id="btnLevels">🗺️ Levely</button>
+        <button class="btn alt" id="btnSkins">👕 Skiny</button>
         <p class="sub" style="margin-top:18px; margin-bottom:0;">
             💻 <b>S / medzerník</b> = skok · <b>K / šípka hore</b> = trik ·
             <b>D</b> = drift (drž a pusti = BOOST!)<br>
@@ -162,6 +181,19 @@
         <div class="coin-wallet" id="garageCoins">🪙 0</div>
         <div class="bike-list" id="bikeList"></div>
         <button class="btn" id="btnGarageBack">← Späť</button>
+    </div>
+</div>
+
+<!-- SKINY -->
+<div class="overlay" id="skinsScr">
+    <div class="panel" style="max-width: 720px;">
+        <h2>👕 Skiny</h2>
+        <p class="sub" style="margin-bottom:12px;">Nové skiny sa odomykajú za dokončené levely!</p>
+        <div class="skin-cols">
+            <div class="skin-col boys"><h3>👦 Chalani</h3><div id="skinBoys"></div></div>
+            <div class="skin-col girls"><h3>👧 Dievčatá</h3><div id="skinGirls"></div></div>
+        </div>
+        <button class="btn" id="btnSkinsBack">← Späť</button>
     </div>
 </div>
 
@@ -185,6 +217,7 @@
             <tr><td>🎁 Bonus za level</td><td id="doneBonus">0</td></tr>
             <tr><td>💰 Spolu</td><td id="doneTotal">0</td></tr>
         </table>
+        <div id="doneSkin" style="color: var(--gold); font-weight: 800; margin-bottom: 12px;"></div>
         <button class="btn" id="btnNext">▶ Ďalší level</button>
         <button class="btn alt" id="btnDoneGarage">🔧 Garáž</button>
         <button class="btn alt" id="btnDoneMenu">🏠 Menu</button>
@@ -236,13 +269,28 @@ const UPGRADES = [
     { id: 'power', name: 'Powerupy', emoji: '🔋' },
 ];
 const MAX_UP = 5;
-const NUM_LEVELS = 10;
+const NUM_LEVELS = 14;
+
+/* Skiny jazdca — chalanské a dievčenské; req = koľko dokončených levelov ich odomkne */
+const SKINS = [
+    { id: 'misko',    name: 'Miško',        emoji: '🚴', g: 'ch', req: 0, skin: '#e8a87c', shirt: '#e05c3a', pants: '#26415e', helmet: '#2E8339' },
+    { id: 'kubo',     name: 'Kubo',         emoji: '🧢', g: 'ch', req: 2, skin: '#e8a87c', shirt: '#2980ff', pants: '#333a44', helmet: '#222222' },
+    { id: 'ninja',    name: 'Ninja',        emoji: '🥷', g: 'ch', req: 5, skin: '#e8a87c', shirt: '#20242c', pants: '#20242c', helmet: '#20242c', mask: true },
+    { id: 'robo',     name: 'Robo',         emoji: '🤖', g: 'ch', req: 8, skin: '#aab6c2', shirt: '#7c8a99', pants: '#5a6672', helmet: '#e05c3a', antenna: true },
+    { id: 'ema',      name: 'Ema',          emoji: '👧', g: 'd',  req: 0, skin: '#f2c29b', shirt: '#ff7bac', pants: '#7c5cd6', helmet: '#ff9ec4', hair: '#f2d16b' },
+    { id: 'laura',    name: 'Laura',        emoji: '😎', g: 'd',  req: 2, skin: '#d9a066', shirt: '#9b59d0', pants: '#26415e', helmet: '#6A1B42', hair: '#5a3a22' },
+    { id: 'princezna',name: 'Princezná',    emoji: '👑', g: 'd',  req: 5, skin: '#f2c29b', shirt: '#ff9ec4', pants: '#e8e0f0', hair: '#c98850', crown: true },
+    { id: 'unicorn',  name: 'Jednorožkárka',emoji: '🦄', g: 'd',  req: 8, skin: '#f2c29b', shirt: '#8ecbff', pants: '#b58ee8', helmet: '#ffffff', horn: true, hair: '#ff9ec4' },
+];
+function skinDef() { return SKINS.find(s => s.id === save.skin) || SKINS[0]; }
+function skinUnlocked(s) { return save.done.length >= s.req; }
 
 let save = {
     coins: 0,
     unlocked: 1,           // najvyšší odomknutý level
     done: [],              // dokončené levely
     selected: 'bmx',
+    skin: 'misko',
     bikes: { bmx: { owned: true, up: { speed: 0, jump: 0, power: 0 } } },
 };
 try {
@@ -327,6 +375,10 @@ const THEMES = [
     { name: 'Zimná dedina',   emoji: '❄️', back: 'winter',    sky: ['#9fc4de', '#d5e6f0', '#f0f6fa'], sun: 'sun',    clouds: true,  grass: '#eef4f8', road: '#b8c4cc', dash: '#ffffff' },
     { name: 'Hory',           emoji: '⛰️', back: 'mountains', sky: ['#7ec2ef', '#cde7f5', '#ecf6fb'], sun: 'sun',    clouds: true,  grass: '#5f9b58', road: '#6e6558', dash: '#e5d9c0' },
     { name: 'Pláž',           emoji: '🏖️', back: 'beach',     sky: ['#6ec4f5', '#bfe6fa', '#f5efdc'], sun: 'sun',    clouds: true,  grass: '#ecd9a0', road: '#c9b284', dash: '#ffffff' },
+    { name: 'V dome',         emoji: '🛋️', back: 'interior',  sky: ['#f2e4cf', '#eeddc4', '#e8d4b8'], sun: 'none',   clouds: false, grass: '#c9995c', road: '#8a5a32', dash: '#d9b98a' },
+    { name: 'Žlté mestečko',  emoji: '🍩', back: 'yellow',    sky: ['#4aa8ff', '#8fd0ff', '#d8f0ff'], sun: 'sun',    clouds: true,  grass: '#7cc95f', road: '#5c554e', dash: '#f2e6c9' },
+    { name: 'Temný svet',     emoji: '🙃', back: 'upside',    sky: ['#0a0d18', '#1a1030', '#33122e'], sun: 'none',   clouds: false, grass: '#2a2438', road: '#1d1826', dash: '#7a4a8a' },
+    { name: 'Kockový svet',   emoji: '⛏️', back: 'blocky',    sky: ['#7ab8e8', '#a8d5f2', '#cfe9fa'], sun: 'blocksun', clouds: false, grass: '#6dbf4e', road: '#8a8a8a', dash: '#a8a8a8' },
 ];
 function themeFor(n) { return THEMES[((n - 1) % THEMES.length + THEMES.length) % THEMES.length]; }
 /* deterministická pseudo-náhoda pre variácie kulís */
@@ -628,7 +680,12 @@ function finishLevel() {
     const bonus = 25 + G.n * 15;
     const total = G.coins + bonus;
     save.coins += total;
+    const prevDone = save.done.length;
     if (!save.done.includes(G.n)) save.done.push(G.n);
+    const newSkins = SKINS.filter(s => s.req > prevDone && s.req <= save.done.length);
+    document.getElementById('doneSkin').textContent = newSkins.length
+        ? `🎉 Nový skin: ${newSkins.map(s => `${s.emoji} ${s.name}`).join(' + ')}!`
+        : '';
     if (G.n >= save.unlocked && G.n < NUM_LEVELS) save.unlocked = G.n + 1;
     persist();
     document.getElementById('doneTitle').textContent = `Level ${G.n} hotový!`;
@@ -707,6 +764,11 @@ function drawSky(th, gy) {
         ctx.beginPath(); ctx.arc(W * 0.5, gy - 10, 130, 0, TAU); ctx.fill();
         ctx.fillStyle = '#ffce6b';
         ctx.beginPath(); ctx.arc(W * 0.5, gy - 10, 55, Math.PI, 0); ctx.fill();
+    } else if (th.sun === 'blocksun') {
+        ctx.fillStyle = '#f2e35c';
+        ctx.fillRect(W * 0.8 - 34, H * 0.14 - 34, 68, 68);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.fillRect(W * 0.8 - 34, H * 0.14 - 34, 68, 14);
     } else if (th.sun === 'moon') {
         ctx.fillStyle = '#e8ecf5';
         ctx.beginPath(); ctx.arc(W * 0.8, H * 0.15, 34, 0, TAU); ctx.fill();
@@ -755,6 +817,72 @@ function drawScenery(th, camX, gy) {
             });
             break;
         }
+        case 'interior':
+            // tapeta s pruhmi a lišta
+            rep(camX, 110, 0.2, x => {
+                ctx.fillStyle = 'rgba(160,120,80,0.10)';
+                ctx.fillRect(x, 0, 44, gy);
+            });
+            ctx.fillStyle = 'rgba(120,85,50,0.35)';
+            ctx.fillRect(0, gy - 46, W, 8);
+            break;
+        case 'yellow':
+            // zelené kopce a chladiace veže elektrárne v diaľke
+            hills(camX * 0.25, gy, '#9cd47f', 0.5);
+            rep(camX, 900, 0.18, (x, i) => {
+                if (sv(i, 30) < 0.5) return;
+                for (const off of [0, 95]) {
+                    ctx.fillStyle = '#b8bfc6';
+                    ctx.beginPath();
+                    ctx.moveTo(x + off, gy); ctx.lineTo(x + off + 14, gy - 150);
+                    ctx.lineTo(x + off + 58, gy - 150); ctx.lineTo(x + off + 72, gy);
+                    ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = '#e02d2d';
+                    ctx.fillRect(x + off + 14, gy - 150, 44, 10);
+                    ctx.fillStyle = 'rgba(230,230,230,0.6)';
+                    const t2 = performance.now() * 0.001;
+                    for (let p2 = 0; p2 < 3; p2++)
+                        ctx.beginPath(), ctx.arc(x + off + 36 + Math.sin(t2 + p2 + i) * 8, gy - 165 - p2 * 20, 10 + p2 * 4, 0, TAU), ctx.fill();
+                }
+            });
+            break;
+        case 'upside': {
+            // červená žiara na obzore a lietajúce spóry
+            const glow = ctx.createLinearGradient(0, gy - 160, 0, gy);
+            glow.addColorStop(0, 'rgba(200,40,60,0)'); glow.addColorStop(1, 'rgba(200,40,60,0.22)');
+            ctx.fillStyle = glow; ctx.fillRect(0, gy - 160, W, 160);
+            // mŕtve stromy v diaľke
+            rep(camX, 260, 0.3, (x, i) => {
+                ctx.strokeStyle = '#100c18'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+                const h = 90 + sv(i, 31) * 70;
+                ctx.beginPath(); ctx.moveTo(x + 40, gy); ctx.lineTo(x + 40 + 10, gy - h); ctx.stroke();
+                ctx.lineWidth = 4;
+                for (let b = 0; b < 3; b++) {
+                    const by = gy - h * (0.5 + b * 0.2), dir = b % 2 ? 1 : -1;
+                    ctx.beginPath(); ctx.moveTo(x + 44, by);
+                    ctx.lineTo(x + 44 + dir * (24 + sv(i, 32 + b) * 20), by - 18 - sv(i, 33 + b) * 14);
+                    ctx.stroke();
+                }
+            });
+            break;
+        }
+        case 'blocky':
+            // kockové oblaky a kopce z blokov trávy a hliny
+            rep(camX, 520, 0.12, (x, i) => {
+                ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                ctx.fillRect(x, 70 + (i % 3) * 46, 130, 30);
+                ctx.fillRect(x + 34, 54 + (i % 3) * 46, 66, 16);
+            });
+            rep(camX, 46, 0.3, (x, i) => {
+                const rows = 1 + Math.floor(sv(Math.floor(i / 3), 34) * 4);
+                for (let r = 0; r < rows; r++) {
+                    ctx.fillStyle = r === rows - 1 ? '#5aa845' : '#8a6142';
+                    ctx.fillRect(x, gy - (r + 1) * 40, 46, 40);
+                    ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 2;
+                    ctx.strokeRect(x, gy - (r + 1) * 40, 46, 40);
+                }
+            });
+            break;
         case 'beach': {
             // more s vlnkami a plachetnicou
             const seaTop = gy - 105;
@@ -880,6 +1008,147 @@ function drawScenery(th, camX, gy) {
         case 'mountains':
             rep(camX, 190, 0.5, (x, i) => drawPineBg(x + 40, base, 0.9 + sv(i, 15) * 0.6, false));
             break;
+        case 'interior':
+            rep(camX, 340, 0.5, (x, i) => {
+                const v = sv(i, 36);
+                if (v < 0.3) { // okno so závesmi
+                    ctx.fillStyle = '#fff'; ctx.fillRect(x, base - 190, 110, 130);
+                    ctx.fillStyle = '#bfe0f5'; ctx.fillRect(x + 8, base - 182, 94, 114);
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 6;
+                    ctx.beginPath(); ctx.moveTo(x + 55, base - 182); ctx.lineTo(x + 55, base - 68);
+                    ctx.moveTo(x + 8, base - 125); ctx.lineTo(x + 102, base - 125); ctx.stroke();
+                    ctx.fillStyle = '#e05c3a';
+                    ctx.beginPath(); ctx.moveTo(x - 6, base - 196); ctx.lineTo(x + 30, base - 196); ctx.lineTo(x + 12, base - 60); ctx.lineTo(x - 6, base - 60); ctx.closePath(); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(x + 116, base - 196); ctx.lineTo(x + 80, base - 196); ctx.lineTo(x + 98, base - 60); ctx.lineTo(x + 116, base - 60); ctx.closePath(); ctx.fill();
+                } else if (v < 0.55) { // gauč
+                    ctx.fillStyle = '#6A1B42';
+                    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, base - 74, 150, 74, 12); ctx.fill(); }
+                    else ctx.fillRect(x, base - 74, 150, 74);
+                    ctx.fillStyle = '#8e3563';
+                    ctx.fillRect(x + 10, base - 64, 62, 34); ctx.fillRect(x + 78, base - 64, 62, 34);
+                    ctx.fillStyle = '#5a1638'; ctx.fillRect(x, base - 8, 150, 8);
+                } else if (v < 0.8) { // polička s knihami + obraz
+                    ctx.fillStyle = '#8a5a32'; ctx.fillRect(x, base - 150, 110, 150);
+                    const bc = ['#e05c3a', '#4a90e2', '#4cd07d', '#f6b93b', '#9b59d0'];
+                    for (let sh = 0; sh < 3; sh++) for (let b = 0; b < 5; b++) {
+                        ctx.fillStyle = bc[Math.floor(sv(i * 9 + sh * 5 + b, 37) * bc.length)];
+                        ctx.fillRect(x + 8 + b * 19, base - 140 + sh * 48, 15, 38);
+                    }
+                    ctx.strokeStyle = '#6b4a2b'; ctx.lineWidth = 6; ctx.strokeRect(x + 130, base - 200, 70, 54);
+                    ctx.fillStyle = '#bfe0f5'; ctx.fillRect(x + 133, base - 197, 64, 48);
+                    ctx.fillStyle = '#4e9e44';
+                    ctx.beginPath(); ctx.moveTo(x + 133, base - 149); ctx.lineTo(x + 160, base - 180); ctx.lineTo(x + 197, base - 149); ctx.closePath(); ctx.fill();
+                } else { // stojacia lampa
+                    ctx.strokeStyle = '#555'; ctx.lineWidth = 5;
+                    ctx.beginPath(); ctx.moveTo(x + 40, base); ctx.lineTo(x + 40, base - 150); ctx.stroke();
+                    ctx.fillStyle = '#f6b93b';
+                    ctx.beginPath(); ctx.moveTo(x + 16, base - 150); ctx.lineTo(x + 64, base - 150); ctx.lineTo(x + 54, base - 186); ctx.lineTo(x + 26, base - 186); ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = 'rgba(255,230,150,0.25)';
+                    ctx.beginPath(); ctx.arc(x + 40, base - 140, 46, 0, TAU); ctx.fill();
+                }
+            });
+            break;
+        case 'yellow':
+            rep(camX, 330, 0.5, (x, i) => {
+                const v = sv(i, 38);
+                if (v < 0.6) { // pastelové domčeky
+                    const cols = ['#f2a7c9', '#e8a25c', '#8ecbff', '#c9e87c'];
+                    const w2 = 130, h2 = 88;
+                    ctx.fillStyle = cols[Math.floor(sv(i, 39) * cols.length)];
+                    ctx.fillRect(x, base - h2, w2, h2);
+                    ctx.fillStyle = '#8a5a72';
+                    ctx.beginPath(); ctx.moveTo(x - 10, base - h2); ctx.lineTo(x + w2 / 2, base - h2 - 40); ctx.lineTo(x + w2 + 10, base - h2); ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = '#7ec8ff'; ctx.fillRect(x + 16, base - h2 + 20, 28, 24);
+                    ctx.fillStyle = '#6b4a2b'; ctx.fillRect(x + w2 - 44, base - 36, 26, 36);
+                    // garáž
+                    ctx.fillStyle = '#e8e0d0'; ctx.fillRect(x + w2, base - 54, 56, 54);
+                    ctx.fillStyle = '#b8b0a0'; ctx.fillRect(x + w2 + 6, base - 44, 44, 44);
+                } else { // stánok s donutmi 🍩
+                    ctx.fillStyle = '#8a5a32'; ctx.fillRect(x + 52, base - 120, 10, 120);
+                    ctx.fillStyle = '#f2a7c9';
+                    ctx.beginPath(); ctx.arc(x + 57, base - 150, 42, 0, TAU); ctx.fill();
+                    ctx.fillStyle = th.sky[1];
+                    ctx.beginPath(); ctx.arc(x + 57, base - 150, 16, 0, TAU); ctx.fill();
+                    const sc = ['#fff', '#f6b93b', '#4cd07d', '#4a90e2'];
+                    for (let sp = 0; sp < 10; sp++) {
+                        const a = sp / 10 * TAU;
+                        ctx.fillStyle = sc[sp % sc.length];
+                        ctx.fillRect(x + 57 + Math.cos(a) * 28 - 2, base - 150 + Math.sin(a) * 28 - 4, 5, 9);
+                    }
+                }
+            });
+            break;
+        case 'upside': {
+            const t2 = performance.now() * 0.001;
+            // úponky a šľahúne
+            rep(camX, 200, 0.5, (x, i) => {
+                ctx.strokeStyle = '#2e1f3d'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+                const h2 = 60 + sv(i, 40) * 90;
+                ctx.beginPath(); ctx.moveTo(x + 30, base);
+                ctx.quadraticCurveTo(x + 30 + Math.sin(i) * 26, base - h2 * 0.6, x + 30 + Math.sin(t2 * 0.7 + i) * 14, base - h2);
+                ctx.stroke();
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(x + 30, base - h2 * 0.5);
+                ctx.quadraticCurveTo(x + 60, base - h2 * 0.5 - 16, x + 74, base - h2 * 0.5 + 8);
+                ctx.stroke();
+            });
+            // šnúra vianočných svetielok na tyčiach
+            rep(camX, 420, 0.55, (x, i) => {
+                ctx.strokeStyle = '#3d3348'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(x, base); ctx.lineTo(x, base - 130); ctx.stroke();
+                ctx.strokeStyle = '#221c30'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(x, base - 128);
+                ctx.quadraticCurveTo(x + 210, base - 92, x + 420, base - 128);
+                ctx.stroke();
+                const lc = ['#ff5c3a', '#4cd07d', '#4a90e2', '#f6b93b', '#ff7bac'];
+                for (let b = 0; b < 8; b++) {
+                    const tt = (b + 1) / 9;
+                    const bx2 = x + tt * 420;
+                    const by2 = base - 128 + (1 - Math.abs(tt * 2 - 1) ** 2) * 34 + 8;
+                    const blink = Math.sin(t2 * 3 + b * 1.7 + i) > -0.2;
+                    ctx.fillStyle = lc[b % lc.length];
+                    ctx.globalAlpha = blink ? 1 : 0.25;
+                    ctx.beginPath(); ctx.arc(bx2, by2, 5, 0, TAU); ctx.fill();
+                    if (blink) {
+                        ctx.globalAlpha = 0.25;
+                        ctx.beginPath(); ctx.arc(bx2, by2, 11, 0, TAU); ctx.fill();
+                    }
+                }
+                ctx.globalAlpha = 1;
+            });
+            // spóry stúpajúce hore
+            ctx.fillStyle = 'rgba(220,215,230,0.6)';
+            for (let i = 0; i < 50; i++) {
+                const x = ((sv(i, 41) * W + Math.sin(t2 * 0.6 + i) * 40 - camX * 0.2) % W + W) % W;
+                const y = gy - ((sv(i, 42) * H + t2 * (18 + sv(i, 43) * 30)) % gy);
+                ctx.beginPath(); ctx.arc(x, y, 1.5 + sv(i, 44) * 2, 0, TAU); ctx.fill();
+            }
+            break;
+        }
+        case 'blocky':
+            rep(camX, 280, 0.5, (x, i) => {
+                const v = sv(i, 45);
+                if (v < 0.55) { // kockový strom
+                    ctx.fillStyle = '#6b4a2b';
+                    ctx.fillRect(x + 46, base - 80, 36, 80);
+                    ctx.fillStyle = '#3d8a30';
+                    ctx.fillRect(x, base - 160, 128, 84);
+                    ctx.fillRect(x + 28, base - 196, 72, 40);
+                    ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 2;
+                    for (let gx = 0; gx < 3; gx++) for (let gy2 = 0; gy2 < 2; gy2++)
+                        ctx.strokeRect(x + gx * 43, base - 160 + gy2 * 42, 43, 42);
+                } else { // zelený kockáč 😱
+                    ctx.fillStyle = '#4cd07d';
+                    ctx.fillRect(x + 30, base - 64, 64, 64);
+                    ctx.fillStyle = '#1d5a26';
+                    ctx.fillRect(x + 42, base - 50, 12, 12);
+                    ctx.fillRect(x + 70, base - 50, 12, 12);
+                    ctx.fillRect(x + 54, base - 36, 16, 20);
+                    ctx.fillRect(x + 46, base - 28, 8, 12);
+                    ctx.fillRect(x + 70, base - 28, 8, 12);
+                }
+            });
+            break;
         case 'beach':
             rep(camX, 300, 0.5, (x, i) => {
                 // palma
@@ -925,6 +1194,17 @@ function drawScenery(th, camX, gy) {
     for (let i = -1; i < W / 70 + 1; i++) {
         const dx = i * 70 - (camX % 70);
         ctx.fillRect(dx, gy + 11, 34, 4);
+    }
+    if (th.back === 'blocky') { // kamenné bloky cesty
+        ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 2;
+        for (let i = -1; i < W / 34 + 1; i++) ctx.strokeRect(i * 34 - (camX % 34), gy, 34, 26);
+    }
+    if (th.back === 'interior') { // parkety
+        ctx.strokeStyle = 'rgba(80,50,20,0.35)'; ctx.lineWidth = 2;
+        for (let i = -1; i < W / 90 + 1; i++) {
+            const dx = i * 90 - (camX % 90);
+            ctx.beginPath(); ctx.moveTo(dx, gy); ctx.lineTo(dx, gy + 26); ctx.stroke();
+        }
     }
 }
 
@@ -1213,24 +1493,57 @@ function drawBike(color, wheelSpin, pedal, tilt, ups, rider = true) {
         ctx.fillText('⚡', -10 + bw / 2, -9.7);
     }
     if (!rider) { ctx.restore(); return; }
-    // jazdec
+    // jazdec — farby a doplnky podľa vybraného skinu
+    const sk = skinDef();
     const hipX = -9, hipY = -33;
     const kneeX = -2 + Math.cos(pa) * 4, kneeY = -18 + Math.sin(pa) * 3;
     const footX = 2 + Math.cos(pa) * 9, footY = -2 + Math.sin(pa) * 9;
-    ctx.strokeStyle = '#26415e'; ctx.lineWidth = 5.5; ctx.lineCap = 'round';
+    ctx.strokeStyle = sk.pants; ctx.lineWidth = 5.5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(kneeX, kneeY); ctx.lineTo(footX, footY); ctx.stroke(); // noha
-    ctx.strokeStyle = '#37516f';
+    ctx.strokeStyle = sk.pants;
     ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(hipX + 4, hipY - 16); ctx.stroke();                    // trup dolná časť
-    ctx.strokeStyle = '#e05c3a'; ctx.lineWidth = 6;
+    ctx.strokeStyle = sk.shirt; ctx.lineWidth = 6;
     ctx.beginPath(); ctx.moveTo(hipX + 2, hipY - 10); ctx.lineTo(hipX + 12, hipY - 24); ctx.stroke();          // trup
-    ctx.strokeStyle = '#e8a87c'; ctx.lineWidth = 4.5;
+    ctx.strokeStyle = sk.skin; ctx.lineWidth = 4.5;
     ctx.beginPath(); ctx.moveTo(hipX + 10, hipY - 22); ctx.lineTo(hipX + 22, hipY - 12); ctx.lineTo(29, -34); ctx.stroke(); // ruka
-    // hlava + prilba
+    // hlava
     const hx = hipX + 16, hy = hipY - 30;
-    ctx.fillStyle = '#e8a87c';
+    if (sk.hair) { // vlasy / vrkoč vejúci dozadu
+        ctx.strokeStyle = sk.hair; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(hx - 5, hy - 2);
+        ctx.quadraticCurveTo(hx - 14, hy + 2, hx - 17, hy + 10); ctx.stroke();
+        ctx.beginPath(); ctx.arc(hx - 17, hy + 12, 3, 0, TAU);
+        ctx.fillStyle = sk.hair; ctx.fill();
+    }
+    ctx.fillStyle = sk.skin;
     ctx.beginPath(); ctx.arc(hx, hy, 6.5, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#2E8339';
-    ctx.beginPath(); ctx.arc(hx, hy - 2, 7, Math.PI, 0); ctx.fill();
+    if (sk.mask) { // ninja maska s očným priezorom
+        ctx.fillStyle = sk.helmet;
+        ctx.beginPath(); ctx.arc(hx, hy, 6.5, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#f5e8d0';
+        ctx.fillRect(hx - 1, hy - 3, 8, 3.4);
+    }
+    if (sk.crown) { // korunka namiesto prilby
+        ctx.fillStyle = '#f6b93b';
+        ctx.beginPath();
+        ctx.moveTo(hx - 6, hy - 5); ctx.lineTo(hx - 6, hy - 12); ctx.lineTo(hx - 3, hy - 8);
+        ctx.lineTo(hx, hy - 13); ctx.lineTo(hx + 3, hy - 8); ctx.lineTo(hx + 6, hy - 12);
+        ctx.lineTo(hx + 6, hy - 5); ctx.closePath(); ctx.fill();
+    } else if (sk.helmet) {
+        ctx.fillStyle = sk.helmet;
+        ctx.beginPath(); ctx.arc(hx, hy - 2, 7, Math.PI, 0); ctx.fill();
+    }
+    if (sk.horn) { // roh jednorožca + hrivová farba
+        ctx.fillStyle = '#f6b93b';
+        ctx.beginPath(); ctx.moveTo(hx + 3, hy - 8); ctx.lineTo(hx + 11, hy - 15); ctx.lineTo(hx + 6, hy - 6);
+        ctx.closePath(); ctx.fill();
+    }
+    if (sk.antenna) { // robo anténka
+        ctx.strokeStyle = '#555'; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.moveTo(hx, hy - 9); ctx.lineTo(hx, hy - 14); ctx.stroke();
+        ctx.fillStyle = '#ff5c3a';
+        ctx.beginPath(); ctx.arc(hx, hy - 15, 2, 0, TAU); ctx.fill();
+    }
     ctx.restore();
 }
 
@@ -1409,7 +1722,7 @@ function updateHUD() {
 
 /* ---------------- Obrazovky ---------------- */
 function showOverlays() {
-    for (const id of ['menu', 'garage', 'levels', 'levelDone', 'crashed'])
+    for (const id of ['menu', 'garage', 'levels', 'levelDone', 'crashed', 'skinsScr'])
         document.getElementById(id).classList.remove('show');
     document.getElementById('hud').classList.toggle('show', S.screen === 'play');
     document.getElementById('touchCtl').classList.toggle('show', S.screen === 'play');
@@ -1418,6 +1731,32 @@ function showOverlays() {
     if (S.screen === 'levels') { renderLevels(); document.getElementById('levels').classList.add('show'); }
     if (S.screen === 'done') document.getElementById('levelDone').classList.add('show');
     if (S.screen === 'crashed') document.getElementById('crashed').classList.add('show');
+    if (S.screen === 'skins') { renderSkins(); document.getElementById('skinsScr').classList.add('show'); }
+}
+
+function renderSkins() {
+    for (const [g2, elId] of [['ch', 'skinBoys'], ['d', 'skinGirls']]) {
+        const el = document.getElementById(elId);
+        el.innerHTML = '';
+        for (const s of SKINS.filter(x => x.g === g2)) {
+            const unlocked = skinUnlocked(s);
+            const card = document.createElement('div');
+            card.className = 'skin-card' + (save.skin === s.id ? ' sel' : '') + (unlocked ? '' : ' locked');
+            card.innerHTML = `
+                <div class="skin-face">${unlocked ? s.emoji : '🔒'}</div>
+                <div class="skin-info">
+                    <div class="skin-nm">${s.name}${save.skin === s.id ? ' ✅' : ''}</div>
+                    <div class="skin-req">${unlocked ? (save.skin === s.id ? 'Vybraný' : 'Klikni a vyber') : `Dokonči ${s.req} levelov (máš ${save.done.length})`}</div>
+                    <div class="skin-chips">
+                        <div class="chip" style="background:${s.shirt}"></div>
+                        <div class="chip" style="background:${s.pants}"></div>
+                        <div class="chip" style="background:${s.helmet || s.hair || s.shirt}"></div>
+                    </div>
+                </div>`;
+            if (unlocked) card.addEventListener('click', () => { save.skin = s.id; persist(); renderSkins(); });
+            el.appendChild(card);
+        }
+    }
 }
 
 function renderGarage() {
@@ -1499,6 +1838,8 @@ function renderLevels() {
 document.getElementById('btnPlay').addEventListener('click', () => startLevel(Math.min(save.unlocked, NUM_LEVELS)));
 document.getElementById('btnGarage').addEventListener('click', () => { S.screen = 'garage'; showOverlays(); });
 document.getElementById('btnLevels').addEventListener('click', () => { S.screen = 'levels'; showOverlays(); });
+document.getElementById('btnSkins').addEventListener('click', () => { S.screen = 'skins'; showOverlays(); });
+document.getElementById('btnSkinsBack').addEventListener('click', () => { S.screen = 'menu'; showOverlays(); });
 document.getElementById('btnGarageBack').addEventListener('click', () => { S.screen = 'menu'; showOverlays(); });
 document.getElementById('btnLevelsBack').addEventListener('click', () => { S.screen = 'menu'; showOverlays(); });
 document.getElementById('btnNext').addEventListener('click', () => startLevel(Math.min(G.n + 1, NUM_LEVELS)));
