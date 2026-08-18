@@ -535,6 +535,21 @@ sign.position.set(0, 14.2, -90);
 sign.castShadow = true;
 scene.add(sign);
 
+// Skalné podložie pod každou statickou plošinou – stupňovito sa zužuje
+// nadol ako korene lietajúceho ostrova, aby svet nevisel vo vzduchu
+for (const pl of platforms) {
+    if (movers.includes(pl) || checkpoints.includes(pl)) continue;
+    const m = pl.mesh.position;
+    const h1 = 1.2 + Math.min(pl.w, pl.d) * 0.3;
+    const h2 = h1 * 0.75;
+    deco(new THREE.BoxGeometry(pl.w * 0.72, h1, pl.d * 0.72), 0x6e685c,
+        m.x + pl.w * 0.04, m.y - pl.h / 2 - h1 / 2 + 0.05, m.z - pl.d * 0.04);
+    deco(new THREE.BoxGeometry(pl.w * 0.45, h2, pl.d * 0.45), 0x5f5a4f,
+        m.x - pl.w * 0.05, m.y - pl.h / 2 - h1 - h2 / 2 + 0.15, m.z + pl.d * 0.05);
+    deco(new THREE.BoxGeometry(pl.w * 0.22, h2 * 0.7, pl.d * 0.22), 0x554f45,
+        m.x, m.y - pl.h / 2 - h1 - h2 * 1.35 + 0.25, m.z);
+}
+
 // Skaly v priepasti – vypĺňajú hlbinu pod dráhou
 rockSpire(-6, -12, -5, 0.9);
 rockSpire(7, -17, -6);
