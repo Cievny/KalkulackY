@@ -742,6 +742,10 @@ const caveSign = new THREE.Mesh(
 caveSign.position.set(10.2, 3.3, 0);
 scene.add(caveSign);
 portal(10.2, 0.2, 0, new THREE.Vector3(300, 2.5, -12), '🕳️ Vstupuješ do jaskyne… V tme pomôže Lampáš!');
+// kryštály pred jaskyňou – na Lampáš Lv1 netreba chodiť do tmy
+pickup('crystal', 7.3, 0.8, -1.4);
+pickup('crystal', 9.3, 0.8, 1.4);
+pickup('crystal', -3, 1.3, -39.5); // pri výbehu triceratopsa
 
 // Jaskynný kameň
 const CAVE_ROCK = 0x3a3228, CAVE_DARK = 0x241c14;
