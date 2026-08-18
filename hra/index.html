@@ -244,6 +244,11 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
+// poistka: keď prehliadač zahodí WebGL kontext (slabšie mobily), obnov stránku
+renderer.domElement.addEventListener('webglcontextlost', e => {
+    e.preventDefault();
+    location.reload();
+});
 
 const sun = new THREE.DirectionalLight(0xfff3d6, 2.2);
 sun.position.set(30, 50, 20);
@@ -751,18 +756,19 @@ pickup('crystal', -3, 1.3, -39.5); // pri výbehu triceratopsa
 const CAVE_ROCK = 0x3a3228, CAVE_DARK = 0x241c14;
 
 // Obal jaskyne: strop, steny a smrtiace dno so stalagmitmi
-deco(new THREE.BoxGeometry(80, 1, 92), CAVE_DARK, 300, 13.5, -50);
-deco(new THREE.BoxGeometry(1.5, 17, 92), CAVE_DARK, 282, 5, -50);
-deco(new THREE.BoxGeometry(1.5, 17, 92), CAVE_DARK, 318, 5, -50);
-deco(new THREE.BoxGeometry(38, 17, 1.5), CAVE_DARK, 300, 5, -95);
-deco(new THREE.BoxGeometry(38, 17, 1.5), CAVE_DARK, 300, 5, -5);
+// (strop dosť vysoko, aby ním kamera pri skoku neprešla)
+deco(new THREE.BoxGeometry(80, 1, 92), CAVE_DARK, 300, 20, -50);
+deco(new THREE.BoxGeometry(1.5, 26, 92), CAVE_DARK, 282, 7, -50);
+deco(new THREE.BoxGeometry(1.5, 26, 92), CAVE_DARK, 318, 7, -50);
+deco(new THREE.BoxGeometry(38, 26, 1.5), CAVE_DARK, 300, 7, -95);
+deco(new THREE.BoxGeometry(38, 26, 1.5), CAVE_DARK, 300, 7, -5);
 box(300, -2.5, -50, 80, 1, 92, 0x171310, { kill: true, reason: 'spikes' });
 // stalagmity (výstraha na dne) a stalaktity zo stropu
 for (const [sx, sz, sh] of [[295,-20,2.4],[306,-27,3],[298,-36,2.2],[309,-44,2.6],[294,-52,3],[303,-63,2.4],[296,-70,2.8],[305,-78,2.2],[300,-88,2.6]]) {
     deco(new THREE.BoxGeometry(1.0, sh, 1.0), 0x2e261c, sx, -2 + sh / 2, sz);
 }
 for (const [sx, sz, sh] of [[297,-16,2.6],[304,-24,3.2],[300,-33,2.2],[308,-40,2.8],[293,-47,3],[301,-58,2.6],[306,-68,3.2],[297,-80,2.4],[302,-86,2.8]]) {
-    deco(new THREE.BoxGeometry(0.9, sh, 0.9), 0x2e261c, sx, 13 - sh / 2, sz);
+    deco(new THREE.BoxGeometry(0.9, sh * 1.6, 0.9), 0x2e261c, sx, 19.5 - sh * 0.8, sz);
 }
 
 // Vstupná sieň jaskyne
@@ -1462,6 +1468,12 @@ function loop() {
         Math.cos(camYaw) * Math.cos(camPitch)
     ).multiplyScalar(camDist);
     camera.position.copy(target).add(camOff);
+    // v jaskyni drž kameru vnútri – inak by prešla stenou/stropom a obraz „zmizne"
+    if (inCave) {
+        camera.position.x = clamp(camera.position.x, 284, 316);
+        camera.position.y = Math.min(camera.position.y, 18.5);
+        camera.position.z = clamp(camera.position.z, -93, -7);
+    }
     camera.lookAt(target);
 
     // slnko sleduje hráča (kvôli tieňom)
