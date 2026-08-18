@@ -129,7 +129,10 @@
 <div id="trickToast"></div>
 
 <div id="touchCtl">
-    <div class="tbtn" id="btnTrick"><span>🔄</span>TRIK</div>
+    <div style="display:flex; gap:14px;">
+        <div class="tbtn" id="btnDrift"><span>🔥</span>DRIFT</div>
+        <div class="tbtn" id="btnTrick"><span>🔄</span>TRIK</div>
+    </div>
     <div class="tbtn" id="btnJump"><span>⬆️</span>SKOK</div>
 </div>
 
@@ -144,7 +147,8 @@
         <button class="btn alt" id="btnGarage">🔧 Garáž</button>
         <button class="btn alt" id="btnLevels">🗺️ Levely</button>
         <p class="sub" style="margin-top:18px; margin-bottom:0;">
-            💻 <b>Medzerník</b> = skok, <b>šípka hore / K</b> = trik (salto)<br>
+            💻 <b>S / medzerník</b> = skok · <b>K / šípka hore</b> = trik ·
+            <b>D</b> = drift (drž a pusti = BOOST!)<br>
             📱 dotykové tlačidlá na obrazovke
         </p>
     </div>
@@ -261,9 +265,9 @@ function upCost(bike, kind) {
 }
 
 /* ---------------- Vstupy ---------------- */
-const input = { jump: false, trick: false };
+const input = { jump: false, trick: false, drift: false, jumpBuf: 0 };
 function bindPress(el, key) {
-    const on = e => { e.preventDefault(); input[key] = true; };
+    const on = e => { e.preventDefault(); input[key] = true; if (key === 'jump') input.jumpBuf = 0.15; };
     const off = e => { e.preventDefault(); input[key] = false; };
     el.addEventListener('touchstart', on, { passive: false });
     el.addEventListener('touchend', off);
@@ -274,14 +278,17 @@ function bindPress(el, key) {
 }
 bindPress(document.getElementById('btnJump'), 'jump');
 bindPress(document.getElementById('btnTrick'), 'trick');
+bindPress(document.getElementById('btnDrift'), 'drift');
 window.addEventListener('keydown', e => {
     if (e.repeat) return;
-    if (e.code === 'Space') { e.preventDefault(); input.jump = true; }
+    if (e.code === 'Space' || e.code === 'KeyS') { e.preventDefault(); input.jump = true; input.jumpBuf = 0.15; }
     if (e.code === 'ArrowUp' || e.code === 'KeyK') { e.preventDefault(); input.trick = true; }
+    if (e.code === 'KeyD' || e.code === 'ArrowDown') { e.preventDefault(); input.drift = true; }
 });
 window.addEventListener('keyup', e => {
-    if (e.code === 'Space') input.jump = false;
+    if (e.code === 'Space' || e.code === 'KeyS') input.jump = false;
     if (e.code === 'ArrowUp' || e.code === 'KeyK') input.trick = false;
+    if (e.code === 'KeyD' || e.code === 'ArrowDown') input.drift = false;
 });
 
 /* ---------------- Pomocníci ---------------- */
@@ -307,6 +314,30 @@ const POWERUPS = {
     turbo:  { emoji: '⚡', name: 'Turbo',   dur: 5 },
     x2:     { emoji: '✖️2', name: '2× mince', dur: 8 },
 };
+
+/* Prostredia levelov — každý level sa hrá inde */
+const THEMES = [
+    { name: 'Doma na dvore',  emoji: '🏠', back: 'houses',    sky: ['#7ec8ff', '#cfe9ff', '#eef7ff'], sun: 'sun',    clouds: true,  grass: '#6da65f', road: '#5c554e', dash: '#f2e6c9' },
+    { name: 'Dedina',         emoji: '🏡', back: 'village',   sky: ['#8fd0ff', '#d8eeff', '#f2f9ee'], sun: 'sun',    clouds: true,  grass: '#7cb35f', road: '#8a7a5c', dash: '#e0d0a8' },
+    { name: 'Park',           emoji: '🌳', back: 'park',      sky: ['#79c9f2', '#d3ecdf', '#eaf6e6'], sun: 'sun',    clouds: true,  grass: '#5aa04e', road: '#c2a276', dash: '#efe3c4' },
+    { name: 'Sídlisko',       emoji: '🏢', back: 'blocks',    sky: ['#86b9e8', '#c8dcf0', '#e8eef5'], sun: 'sun',    clouds: true,  grass: '#79a06a', road: '#565b63', dash: '#e8e8e8' },
+    { name: 'Mesto',          emoji: '🏙️', back: 'city',      sky: ['#79b7e8', '#cfe2f2', '#eef3f8'], sun: 'sun',    clouds: true,  grass: '#7f9b8a', road: '#4c5158', dash: '#f2f2f2' },
+    { name: 'Večerné mesto',  emoji: '🌇', back: 'city',      sky: ['#2e3a6e', '#c86b4a', '#f2b25c'], sun: 'sunset', clouds: false, grass: '#6b6a52', road: '#3f4147', dash: '#e8c98a', dusk: true },
+    { name: 'Nočné mesto',    emoji: '🌃', back: 'night',     sky: ['#0c1230', '#1a2447', '#2a3560'], sun: 'moon',   clouds: false, stars: true, grass: '#2e4636', road: '#23262e', dash: '#aab6d0' },
+    { name: 'Zimná dedina',   emoji: '❄️', back: 'winter',    sky: ['#9fc4de', '#d5e6f0', '#f0f6fa'], sun: 'sun',    clouds: true,  grass: '#eef4f8', road: '#b8c4cc', dash: '#ffffff' },
+    { name: 'Hory',           emoji: '⛰️', back: 'mountains', sky: ['#7ec2ef', '#cde7f5', '#ecf6fb'], sun: 'sun',    clouds: true,  grass: '#5f9b58', road: '#6e6558', dash: '#e5d9c0' },
+    { name: 'Pláž',           emoji: '🏖️', back: 'beach',     sky: ['#6ec4f5', '#bfe6fa', '#f5efdc'], sun: 'sun',    clouds: true,  grass: '#ecd9a0', road: '#c9b284', dash: '#ffffff' },
+];
+function themeFor(n) { return THEMES[((n - 1) % THEMES.length + THEMES.length) % THEMES.length]; }
+/* deterministická pseudo-náhoda pre variácie kulís */
+function sv(i, salt) { const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5; return x - Math.floor(x); }
+/* opakovanie kulís s parallaxou: fn(screenX, index) */
+function rep(camX, spacing, par, fn) {
+    const off = camX * par;
+    const start = Math.floor(off / spacing) - 1;
+    const count = Math.ceil(W / spacing) + 3;
+    for (let i = start; i < start + count; i++) fn(i * spacing - off, i);
+}
 
 function groundY() { return H - Math.max(70, H * 0.13); }
 
@@ -371,12 +402,16 @@ function startLevel(n) {
         rot: 0, rotV: 0, flips: 0, airborne: false,
         coins: 0, tricks: 0, trickCombo: 0,
         wheelSpin: 0, pedal: 0,
+        drifting: false, driftT: 0, boostT: 0,
         active: {},                  // aktívne powerupy {kind: zostávajúci čas}
         particles: [], floats: [],
-        shake: 0, time: 0, finished: false, dead: false,
+        shake: 0, time: 0, finished: false,
+        dead: false, deadT: 0, amb: null, loaded: false,
     };
     S.screen = 'play';
     showOverlays();
+    const th = themeFor(n);
+    toast(`${th.emoji} ${th.name}`);
 }
 
 /* ---------------- Logika behu ---------------- */
@@ -388,9 +423,49 @@ function update(dt) {
     const g = G, L = g.level, gy = groundYSaved;
     g.time += dt;
 
-    // rýchlosť (turbo); po páde sa jazdec zastaví
+    if (g.dead) { g.deadT += dt; if (g.amb) updateAmbulance(g, dt); }
+
+    // --- drift (drž D na zemi, pusti = BOOST) ---
+    if (input.drift && g.onGround && !g.dead && g.speed > 120) {
+        g.drifting = true;
+        g.driftT = Math.min(g.driftT + dt, 1.8);
+        // dym spod zadného kolesa
+        if (Math.random() < 0.85) g.particles.push({
+            x: g.px - 30 + Math.random() * 14, y: g.py - 4,
+            vx: -g.speed * 0.4 - Math.random() * 60, vy: -30 - Math.random() * 60,
+            t: 0, life: 0.6, size: 8 + Math.random() * 6, grav: -140,
+            color: 'rgba(180,180,180,0.7)',
+        });
+        // iskry pri dlhom drifte
+        if (g.driftT > 0.5 && Math.random() < 0.6) g.particles.push({
+            x: g.px - 26, y: g.py - 2,
+            vx: -120 - Math.random() * 180, vy: -60 - Math.random() * 120,
+            t: 0, life: 0.4, size: 4, grav: 900,
+            color: g.driftT > 1.2 ? '#ff5c3a' : '#ffd166',
+        });
+    } else if (g.drifting) {
+        g.drifting = false;
+        if (g.driftT > 0.35 && !g.dead) {
+            g.boostT = 0.7 + g.driftT;
+            const bonus = Math.floor(g.driftT * 8) * (g.active.x2 > 0 ? 2 : 1);
+            g.coins += bonus;
+            toast(`🔥 DRIFT BOOST! +${bonus} 🪙`);
+        }
+        g.driftT = 0;
+    }
+    if (g.boostT > 0) {
+        g.boostT -= dt;
+        if (Math.random() < 0.5) g.particles.push({
+            x: g.px - 40, y: g.py - 10 - Math.random() * 14,
+            vx: -g.speed * 0.5, vy: (Math.random() - 0.5) * 60,
+            t: 0, life: 0.35, size: 6, grav: 0, color: '#ff8e3c',
+        });
+    }
+
+    // rýchlosť (turbo / drift / boost); po páde sa jazdec zastaví
     const turbo = g.active.turbo > 0 ? 1.55 : 1;
-    g.speed = lerp(g.speed, g.dead ? 0 : g.baseSpeed * turbo, dt * 2.5);
+    const mult = turbo * (g.boostT > 0 ? 1.5 : 1) * (g.drifting ? 0.78 : 1);
+    g.speed = lerp(g.speed, g.dead ? 0 : g.baseSpeed * mult, dt * (g.boostT > 0 ? 6 : 2.5));
     g.px += g.speed * dt;
     g.camX = g.px - Math.min(220, W * 0.24);
 
@@ -421,12 +496,14 @@ function update(dt) {
         g.onRamp = onRampNow;
     }
 
-    // --- skok ---
-    if (input.jump && g.onGround && !g.dead) {
+    // --- skok (aj krátke ťuknutie vďaka bufferu) ---
+    if ((input.jump || input.jumpBuf > 0) && g.onGround && !g.dead) {
         g.vy = -jumpPower();
         g.onGround = false; g.airborne = true; g.onRamp = false;
+        input.jumpBuf = 0;
         spawnBurst(g.px, gy, '#ffffff', 6);
     }
+    input.jumpBuf = Math.max(0, input.jumpBuf - dt);
 
     // --- fyzika vo vzduchu ---
     if (!g.onGround) {
@@ -504,8 +581,11 @@ function update(dt) {
     if (g.px >= L.len && !g.finished && !g.dead) { g.finished = true; finishLevel(); return; }
 
     // častice a plávajúce texty
-    for (const p of g.particles) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 900 * dt; }
-    g.particles = g.particles.filter(p => p.t < 0.8);
+    for (const p of g.particles) {
+        p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt;
+        p.vy += (p.grav === undefined ? 900 : p.grav) * dt;
+    }
+    g.particles = g.particles.filter(p => p.t < (p.life || 0.8));
     for (const f of g.floats) { f.t += dt; f.y -= 50 * dt; }
     g.floats = g.floats.filter(f => f.t < 1);
     if (g.shake > 0) g.shake = Math.max(0, g.shake - dt * 30);
@@ -532,12 +612,16 @@ function toast(txt) {
 
 function crash(msg) {
     G.dead = true; G.shake = 14;
+    G.drifting = false; G.driftT = 0; G.boostT = 0;
     spawnBurst(G.px, G.py - 30, '#ff6b6b', 24);
+    // sanitka vyrazí spoza ľavého okraja obrazovky
+    G.amb = { x: G.px - Math.max(W, 800), phase: 'arrive', t: 0, wheel: 0 };
+    toast('🚑 Ide sanitka!');
     const kept = Math.floor(G.coins / 2);
     save.coins += kept; persist();
     document.getElementById('crashInfo').textContent =
-        `${msg} Zachránil si ${kept} 🪙 z ${G.coins}.`;
-    setTimeout(() => { S.screen = 'crashed'; showOverlays(); }, 700);
+        `${msg} Sanitka ťa odviezla — zachránil si ${kept} 🪙 z ${G.coins}.`;
+    setTimeout(() => { if (G && G.dead) { S.screen = 'crashed'; showOverlays(); } }, 3200);
 }
 
 function finishLevel() {
@@ -560,53 +644,29 @@ function finishLevel() {
 /* ---------------- Kreslenie ---------------- */
 function draw() {
     if (S.screen === 'garage') { drawGarage(); return; }
+    const inGame = G && S.screen !== 'menu';
+    const th = themeFor(inGame ? G.n : Math.min(save.unlocked, NUM_LEVELS));
     const gy = S.screen === 'play' && G ? groundYSaved : groundY();
-    const camX = G && S.screen !== 'menu' ? G.camX : performance.now() * 0.04;
+    const camX = inGame ? G.camX : performance.now() * 0.04;
     const shakeX = G && G.shake ? (Math.random() - 0.5) * G.shake : 0;
     const shakeY = G && G.shake ? (Math.random() - 0.5) * G.shake : 0;
 
-    // obloha
-    const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, '#7ec8ff'); sky.addColorStop(0.65, '#cfe9ff'); sky.addColorStop(1, '#eef7ff');
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
-
-    // slnko
-    ctx.fillStyle = 'rgba(255,220,120,0.95)';
-    ctx.beginPath(); ctx.arc(W * 0.82, H * 0.16, 42, 0, TAU); ctx.fill();
+    drawSky(th, gy);
 
     ctx.save();
     ctx.translate(shakeX, shakeY);
+    drawScenery(th, camX, gy);
 
-    // oblaky (parallax)
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    for (let i = 0; i < 6; i++) {
-        const cx = ((i * 420 + 100 - camX * 0.15) % (W + 400) + W + 400) % (W + 400) - 200;
-        const cy = 60 + (i % 3) * 55;
-        cloud(cx, cy, 1 + (i % 2) * 0.4);
-    }
-    // kopce (parallax)
-    hills(camX * 0.3, gy, '#a8d5a2', 0.55);
-    hills(camX * 0.55 + 900, gy, '#7cbf78', 0.8);
-
-    // zem / cesta
-    ctx.fillStyle = '#6da65f';
-    ctx.fillRect(0, gy, W, H - gy);
-    ctx.fillStyle = '#5c554e';
-    ctx.fillRect(0, gy, W, 26);
-    ctx.fillStyle = '#f2e6c9';
-    for (let i = -1; i < W / 70 + 1; i++) {
-        const dx = i * 70 - (camX % 70);
-        ctx.fillRect(dx, gy + 11, 34, 4);
-    }
-
-    if (G && S.screen !== 'menu') {
+    if (inGame) {
         drawTrack(camX, gy);
         drawPlayer(camX, gy);
+        if (G.amb) drawAmbulance(G.amb, camX, gy);
         // častice a texty
         for (const p of G.particles) {
-            ctx.globalAlpha = 1 - p.t / 0.8;
+            const life = p.life || 0.8, sz = p.size || 6;
+            ctx.globalAlpha = Math.max(0, 1 - p.t / life);
             ctx.fillStyle = p.color;
-            ctx.fillRect(p.x - camX - 3, p.y - 3, 6, 6);
+            ctx.fillRect(p.x - camX - sz / 2, p.y - sz / 2, sz, sz);
         }
         ctx.globalAlpha = 1;
         ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
@@ -620,6 +680,367 @@ function draw() {
         drawMenuRider(gy);
     }
     ctx.restore();
+}
+
+function drawSky(th, gy) {
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, th.sky[0]); sky.addColorStop(0.65, th.sky[1]); sky.addColorStop(1, th.sky[2]);
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+    if (th.stars) {
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        for (let i = 0; i < 70; i++) {
+            const x = sv(i, 1) * W, y = sv(i, 2) * gy * 0.75;
+            const tw = 0.5 + Math.sin(performance.now() * 0.002 + i) * 0.5;
+            ctx.globalAlpha = 0.3 + tw * 0.6;
+            ctx.fillRect(x, y, 2, 2);
+        }
+        ctx.globalAlpha = 1;
+    }
+    if (th.sun === 'sun') {
+        ctx.fillStyle = 'rgba(255,220,120,0.95)';
+        ctx.beginPath(); ctx.arc(W * 0.82, H * 0.16, 42, 0, TAU); ctx.fill();
+    } else if (th.sun === 'sunset') {
+        const g2 = ctx.createRadialGradient(W * 0.5, gy - 10, 10, W * 0.5, gy - 10, 130);
+        g2.addColorStop(0, 'rgba(255,200,90,1)'); g2.addColorStop(1, 'rgba(255,140,60,0)');
+        ctx.fillStyle = g2;
+        ctx.beginPath(); ctx.arc(W * 0.5, gy - 10, 130, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#ffce6b';
+        ctx.beginPath(); ctx.arc(W * 0.5, gy - 10, 55, Math.PI, 0); ctx.fill();
+    } else if (th.sun === 'moon') {
+        ctx.fillStyle = '#e8ecf5';
+        ctx.beginPath(); ctx.arc(W * 0.8, H * 0.15, 34, 0, TAU); ctx.fill();
+        ctx.fillStyle = 'rgba(160,170,190,0.5)';
+        ctx.beginPath(); ctx.arc(W * 0.8 - 10, H * 0.15 - 6, 7, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(W * 0.8 + 8, H * 0.15 + 10, 5, 0, TAU); ctx.fill();
+    }
+}
+
+function drawScenery(th, camX, gy) {
+    // oblaky
+    if (th.clouds) {
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        for (let i = 0; i < 6; i++) {
+            const cx = ((i * 420 + 100 - camX * 0.15) % (W + 400) + W + 400) % (W + 400) - 200;
+            const cy = 60 + (i % 3) * 55;
+            cloud(cx, cy, 1 + (i % 2) * 0.4);
+        }
+    }
+
+    // vzdialená vrstva
+    switch (th.back) {
+        case 'houses': case 'village': case 'park':
+            hills(camX * 0.3, gy, th.back === 'park' ? '#8fc98a' : '#a8d5a2', 0.55);
+            break;
+        case 'winter':
+            hills(camX * 0.3, gy, '#dde9f2', 0.55);
+            break;
+        case 'mountains':
+            rep(camX, 340, 0.18, (x, i) => {
+                const h = 160 + sv(i, 3) * 130;
+                ctx.fillStyle = '#8aa8c2';
+                ctx.beginPath(); ctx.moveTo(x - 60, gy); ctx.lineTo(x + 110, gy - h); ctx.lineTo(x + 300, gy); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = '#f2f7fb'; // snehová čiapka
+                ctx.beginPath(); ctx.moveTo(x + 74, gy - h + 46); ctx.lineTo(x + 110, gy - h); ctx.lineTo(x + 148, gy - h + 46);
+                ctx.lineTo(x + 130, gy - h + 36); ctx.lineTo(x + 112, gy - h + 50); ctx.lineTo(x + 92, gy - h + 36);
+                ctx.closePath(); ctx.fill();
+            });
+            break;
+        case 'city': case 'night': {
+            const far = th.back === 'night' ? '#141c38' : (th.dusk ? '#4a3a55' : '#9db4c9');
+            rep(camX, 190, 0.25, (x, i) => {
+                const h = 120 + sv(i, 4) * 150;
+                ctx.fillStyle = far;
+                ctx.fillRect(x, gy - h, 150, h);
+            });
+            break;
+        }
+        case 'beach': {
+            // more s vlnkami a plachetnicou
+            const seaTop = gy - 105;
+            const sea = ctx.createLinearGradient(0, seaTop, 0, gy);
+            sea.addColorStop(0, '#3f8fd4'); sea.addColorStop(1, '#2a6faf');
+            ctx.fillStyle = sea; ctx.fillRect(0, seaTop, W, gy - seaTop);
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                const wy = seaTop + 22 + i * 18;
+                ctx.beginPath();
+                for (let x = 0; x <= W; x += 26)
+                    ctx.lineTo(x, wy + Math.sin((x + camX * 0.2) * 0.05 + i) * 3);
+                ctx.stroke();
+            }
+            const bx = ((W * 0.6 - camX * 0.1) % (W + 200) + W + 200) % (W + 200) - 100;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.moveTo(bx, seaTop + 26); ctx.lineTo(bx, seaTop + 2); ctx.lineTo(bx + 22, seaTop + 26); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#8a5a32';
+            ctx.fillRect(bx - 12, seaTop + 26, 44, 6);
+            break;
+        }
+    }
+
+    // zem
+    ctx.fillStyle = th.grass;
+    ctx.fillRect(0, gy, W, H - gy);
+
+    // blízka vrstva kulís (základňa tesne pod gy, cesta ju prekryje)
+    const base = gy + 8;
+    switch (th.back) {
+        case 'houses':
+            rep(camX, 300, 0.5, (x, i) => drawHouseBg(x, base, i, false));
+            break;
+        case 'village':
+            rep(camX, 320, 0.5, (x, i) => {
+                const v = sv(i, 5);
+                if (v < 0.55) drawHouseBg(x, base, i, false);
+                else if (v < 0.8) { // kopa sena
+                    ctx.fillStyle = '#d9b25c';
+                    ctx.beginPath(); ctx.arc(x + 60, base, 42, Math.PI, 0); ctx.fill();
+                    ctx.strokeStyle = '#b8933f';
+                    ctx.beginPath(); ctx.moveTo(x + 60, base - 40); ctx.lineTo(x + 60, base); ctx.stroke();
+                } else { // kostolík
+                    ctx.fillStyle = '#e8e0d0';
+                    ctx.fillRect(x + 30, base - 120, 46, 120);
+                    ctx.fillStyle = '#8a5a32';
+                    ctx.beginPath(); ctx.moveTo(x + 24, base - 120); ctx.lineTo(x + 53, base - 165); ctx.lineTo(x + 82, base - 120); ctx.closePath(); ctx.fill();
+                    ctx.strokeStyle = '#6b4a2b'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(x + 53, base - 165); ctx.lineTo(x + 53, base - 178); ctx.moveTo(x + 46, base - 172); ctx.lineTo(x + 60, base - 172); ctx.stroke();
+                    ctx.fillStyle = '#7ec8ff';
+                    ctx.beginPath(); ctx.arc(x + 53, base - 95, 8, 0, TAU); ctx.fill();
+                }
+                // plot medzi domami
+                ctx.strokeStyle = '#9a7b4f'; ctx.lineWidth = 3;
+                for (let f = 0; f < 5; f++) { ctx.beginPath(); ctx.moveTo(x + 150 + f * 14, base); ctx.lineTo(x + 150 + f * 14, base - 22); ctx.stroke(); }
+                ctx.beginPath(); ctx.moveTo(x + 146, base - 14); ctx.lineTo(x + 212, base - 14); ctx.stroke();
+            });
+            break;
+        case 'park':
+            rep(camX, 210, 0.5, (x, i) => {
+                const v = sv(i, 6);
+                if (v < 0.7) drawTreeBg(x + 40, base, 1 + sv(i, 7) * 0.5);
+                else { // krík + lavička
+                    ctx.fillStyle = '#4e8f44';
+                    ctx.beginPath(); ctx.arc(x + 30, base - 14, 20, 0, TAU); ctx.arc(x + 56, base - 12, 16, 0, TAU); ctx.fill();
+                    ctx.fillStyle = '#8a5a32';
+                    ctx.fillRect(x + 90, base - 26, 52, 6);
+                    ctx.fillRect(x + 94, base - 20, 6, 20); ctx.fillRect(x + 132, base - 20, 6, 20);
+                    ctx.fillRect(x + 90, base - 44, 52, 5);
+                }
+            });
+            break;
+        case 'blocks':
+            rep(camX, 260, 0.45, (x, i) => {
+                const h = 170 + sv(i, 8) * 120;
+                const cols = ['#c9c2b8', '#b8c0c9', '#cbb9ad', '#bfc9b8'];
+                ctx.fillStyle = cols[Math.floor(sv(i, 9) * cols.length)];
+                ctx.fillRect(x, base - h, 190, h);
+                ctx.fillStyle = '#8a9099';
+                ctx.fillRect(x, base - h - 8, 190, 8);
+                // okná bytovky
+                ctx.fillStyle = 'rgba(80,110,150,0.75)';
+                for (let r = 0; r < Math.floor(h / 34); r++)
+                    for (let c = 0; c < 4; c++)
+                        ctx.fillRect(x + 14 + c * 44, base - h + 14 + r * 34, 26, 18);
+                // anténa
+                ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(x + 30, base - h - 8); ctx.lineTo(x + 30, base - h - 30); ctx.stroke();
+            });
+            break;
+        case 'city': {
+            rep(camX, 230, 0.55, (x, i) => {
+                const h = 200 + sv(i, 10) * 170;
+                const col = th.dusk ? '#2e2a3d' : '#6e8299';
+                ctx.fillStyle = col;
+                ctx.fillRect(x, base - h, 160, h);
+                ctx.fillStyle = th.dusk ? 'rgba(255,205,110,0.9)' : 'rgba(210,230,250,0.8)';
+                for (let r = 0; r < Math.floor(h / 30); r++)
+                    for (let c = 0; c < 3; c++)
+                        if (sv(i * 31 + r * 7 + c, 11) > (th.dusk ? 0.45 : 0.25))
+                            ctx.fillRect(x + 16 + c * 48, base - h + 12 + r * 30, 24, 14);
+            });
+            break;
+        }
+        case 'night':
+            rep(camX, 230, 0.55, (x, i) => {
+                const h = 200 + sv(i, 12) * 170;
+                ctx.fillStyle = '#1d2747';
+                ctx.fillRect(x, base - h, 160, h);
+                ctx.fillStyle = 'rgba(255,209,102,0.95)';
+                for (let r = 0; r < Math.floor(h / 30); r++)
+                    for (let c = 0; c < 3; c++)
+                        if (sv(i * 31 + r * 7 + c, 13) > 0.6)
+                            ctx.fillRect(x + 16 + c * 48, base - h + 12 + r * 30, 24, 14);
+            });
+            break;
+        case 'winter':
+            rep(camX, 270, 0.5, (x, i) => {
+                if (sv(i, 14) < 0.5) drawHouseBg(x, base, i, true);
+                else { drawPineBg(x + 40, base, 1.1, true); drawPineBg(x + 110, base, 0.85, true); }
+            });
+            break;
+        case 'mountains':
+            rep(camX, 190, 0.5, (x, i) => drawPineBg(x + 40, base, 0.9 + sv(i, 15) * 0.6, false));
+            break;
+        case 'beach':
+            rep(camX, 300, 0.5, (x, i) => {
+                // palma
+                const px2 = x + 60, s2 = 0.9 + sv(i, 16) * 0.4;
+                ctx.strokeStyle = '#9a6b3f'; ctx.lineWidth = 9 * s2; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(px2, base);
+                ctx.quadraticCurveTo(px2 + 14 * s2, base - 60 * s2, px2 + 34 * s2, base - 96 * s2);
+                ctx.stroke();
+                ctx.strokeStyle = '#3f9e4d'; ctx.lineWidth = 7 * s2;
+                for (let l = 0; l < 5; l++) {
+                    const a = -0.4 - l * 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(px2 + 34 * s2, base - 96 * s2);
+                    ctx.quadraticCurveTo(px2 + 34 * s2 + Math.cos(a) * 40 * s2, base - 96 * s2 + Math.sin(a) * 40 * s2 - 12,
+                                         px2 + 34 * s2 + Math.cos(a) * 62 * s2, base - 96 * s2 + Math.sin(a) * 56 * s2);
+                    ctx.stroke();
+                }
+                if (sv(i, 17) > 0.6) { // slnečník
+                    ctx.strokeStyle = '#666'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(x + 190, base); ctx.lineTo(x + 190, base - 48); ctx.stroke();
+                    ctx.fillStyle = sv(i, 18) > 0.5 ? '#e05c3a' : '#4a90e2';
+                    ctx.beginPath(); ctx.arc(x + 190, base - 46, 30, Math.PI, 0); ctx.fill();
+                }
+            });
+            break;
+    }
+
+    // sneženie
+    if (th.back === 'winter') {
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        const t = performance.now() * 0.001;
+        for (let i = 0; i < 70; i++) {
+            const x = ((sv(i, 19) * W + Math.sin(t + i) * 30 - camX * 0.1) % W + W) % W;
+            const y = (sv(i, 20) * H + t * (35 + sv(i, 21) * 45)) % gy;
+            ctx.fillRect(x, y, 3, 3);
+        }
+    }
+
+    // cesta
+    ctx.fillStyle = th.road;
+    ctx.fillRect(0, gy, W, 26);
+    ctx.fillStyle = th.dash;
+    for (let i = -1; i < W / 70 + 1; i++) {
+        const dx = i * 70 - (camX % 70);
+        ctx.fillRect(dx, gy + 11, 34, 4);
+    }
+}
+
+function drawHouseBg(x, base, i, snow) {
+    const cols = ['#e8c9a0', '#d9a7a0', '#c9d8b5', '#e6dfc8', '#cbb8d9'];
+    const w = 120, h = 78 + Math.floor(sv(i, 22) * 3) * 14;
+    ctx.fillStyle = cols[Math.floor(sv(i, 23) * cols.length)];
+    ctx.fillRect(x, base - h, w, h);
+    ctx.fillStyle = snow ? '#f0f6fa' : '#a0522d';
+    ctx.beginPath(); ctx.moveTo(x - 10, base - h); ctx.lineTo(x + w / 2, base - h - 44); ctx.lineTo(x + w + 10, base - h); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = snow ? '#ffd166' : '#7ec8ff'; // v zime svietia okná
+    ctx.fillRect(x + 14, base - h + 18, 26, 24);
+    ctx.fillRect(x + w - 40, base - h + 18, 26, 24);
+    ctx.fillStyle = '#6b4a2b';
+    ctx.fillRect(x + w / 2 - 12, base - 34, 24, 34);
+    if (snow) { // komín s dymom
+        ctx.fillStyle = '#8a5a32'; ctx.fillRect(x + w - 34, base - h - 32, 12, 24);
+        ctx.fillStyle = 'rgba(220,220,220,0.5)';
+        const t = performance.now() * 0.001;
+        for (let s2 = 0; s2 < 3; s2++)
+            ctx.beginPath(), ctx.arc(x + w - 28 + Math.sin(t + s2) * 5, base - h - 40 - s2 * 14, 6 + s2 * 2, 0, TAU), ctx.fill();
+    }
+}
+function drawTreeBg(x, base, s2) {
+    ctx.fillStyle = '#8a5a32';
+    ctx.fillRect(x - 6 * s2, base - 46 * s2, 12 * s2, 46 * s2);
+    ctx.fillStyle = '#4e9e44';
+    ctx.beginPath();
+    ctx.arc(x, base - 62 * s2, 26 * s2, 0, TAU);
+    ctx.arc(x - 20 * s2, base - 46 * s2, 20 * s2, 0, TAU);
+    ctx.arc(x + 20 * s2, base - 46 * s2, 20 * s2, 0, TAU);
+    ctx.fill();
+}
+function drawPineBg(x, base, s2, snow) {
+    ctx.fillStyle = '#6b4a2b';
+    ctx.fillRect(x - 5 * s2, base - 16 * s2, 10 * s2, 16 * s2);
+    ctx.fillStyle = '#2d6e3e';
+    for (let l = 0; l < 3; l++) {
+        const ly = base - (16 + l * 26) * s2, lw = (46 - l * 10) * s2;
+        ctx.beginPath(); ctx.moveTo(x - lw, ly); ctx.lineTo(x, ly - 34 * s2); ctx.lineTo(x + lw, ly); ctx.closePath(); ctx.fill();
+    }
+    if (snow) {
+        ctx.fillStyle = '#f0f6fa';
+        for (let l = 0; l < 3; l++) {
+            const ly = base - (16 + l * 26) * s2, lw = (40 - l * 9) * s2;
+            ctx.fillRect(x - lw * 0.6, ly - 6 * s2, lw * 1.2, 4 * s2);
+        }
+    }
+}
+
+/* sanitka 🚑 — prichádza po páde a odvezie jazdca */
+function drawAmbulance(a, camX, gy) {
+    const x = a.x - camX;
+    if (x < -260 || x > W + 260) return;
+    ctx.save();
+    ctx.translate(x, gy);
+    // majákové svetlo (blikanie)
+    const on = Math.floor(performance.now() / 170) % 2 === 0;
+    ctx.fillStyle = on ? 'rgba(45,108,255,0.28)' : 'rgba(224,45,45,0.28)';
+    ctx.beginPath(); ctx.arc(52, -88, 30, 0, TAU); ctx.fill();
+    // kolesá
+    for (const wx of [24, 100]) {
+        ctx.fillStyle = '#222';
+        ctx.beginPath(); ctx.arc(wx, -14, 14, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#9aa7b5';
+        ctx.beginPath(); ctx.arc(wx, -14, 6, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#666'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(wx, -14); ctx.lineTo(wx + Math.cos(a.wheel) * 11, -14 + Math.sin(a.wheel) * 11); ctx.stroke();
+    }
+    // karoséria (predok vpravo)
+    ctx.fillStyle = '#f5f7fa';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(0, -80, 94, 66, 6); else ctx.rect(0, -80, 94, 66);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(94, -72); ctx.lineTo(108, -72); ctx.lineTo(124, -46); ctx.lineTo(124, -14); ctx.lineTo(94, -14);
+    ctx.closePath(); ctx.fill();
+    // okno kabíny
+    ctx.fillStyle = '#8ecbff';
+    ctx.beginPath();
+    ctx.moveTo(97, -68); ctx.lineTo(106, -68); ctx.lineTo(119, -48); ctx.lineTo(97, -48);
+    ctx.closePath(); ctx.fill();
+    // červený pruh + kríž + nápis
+    ctx.fillStyle = '#e02d2d';
+    ctx.fillRect(0, -44, 124, 10);
+    ctx.fillRect(70, -76, 8, 24);
+    ctx.fillRect(62, -68, 24, 8);
+    ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('SANITKA', 6, -58);
+    // maják
+    ctx.fillStyle = on ? '#2d6cff' : '#e02d2d';
+    ctx.fillRect(44, -88, 16, 8);
+    // zadné dvere otvorené počas nakladania
+    if (a.phase === 'load') {
+        ctx.strokeStyle = '#c9ced6'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(0, -78); ctx.lineTo(-26, -66); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(-26, -30); ctx.stroke();
+    }
+    ctx.restore();
+}
+
+function updateAmbulance(g, dt) {
+    const a = g.amb;
+    a.t += dt;
+    if (a.phase === 'arrive') {
+        const target = g.px - 160;
+        const dx = target - a.x;
+        const step = clamp(dx * 2.2, 90, 950) * dt;
+        a.x += step; a.wheel += step / 13;
+        if (dx < 10) { a.phase = 'load'; a.t = 0; }
+    } else if (a.phase === 'load') {
+        if (a.t > 1.0) { a.phase = 'go'; a.t = 0; g.loaded = true; }
+    } else {
+        const step = (220 + a.t * 900) * dt;
+        a.x += step; a.wheel += step / 13;
+    }
 }
 
 function cloud(x, y, s) {
@@ -815,15 +1236,18 @@ function drawBike(color, wheelSpin, pedal, tilt, ups, rider = true) {
 
 function drawPlayer(camX, gy) {
     const g = G;
+    if (g.loaded) return; // jazdec už je v sanitke
     const x = g.px - camX;
     ctx.save();
     ctx.translate(x, g.py - 17);
-    // náklon na rampe / rotácia trikov
+    // náklon na rampe / rotácia trikov / drift
     let tilt = 0;
     if (g.onGround && g.onRamp) {
         for (const r of g.level.ramps) if (g.px >= r.x && g.px <= r.x + r.w) tilt = -Math.atan2(r.h, r.w);
     } else if (!g.onGround) {
         tilt = g.rot !== 0 ? g.rot : clamp(g.vy / 2200, -0.35, 0.4);
+    } else if (g.drifting) {
+        tilt = -0.24 - Math.min(g.driftT, 1) * 0.1; // šmyk na zadnom kolese
     }
     // aura štítu / turba
     if (g.active.shield > 0) {
@@ -832,11 +1256,11 @@ function drawPlayer(camX, gy) {
         ctx.fillStyle = 'rgba(120,190,255,0.12)';
         ctx.beginPath(); ctx.arc(0, -12, 46, 0, TAU); ctx.fill();
     }
-    if (g.active.turbo > 0) {
+    if (g.active.turbo > 0 || g.boostT > 0) {
         ctx.fillStyle = 'rgba(255,140,40,0.5)';
         for (let i = 0; i < 3; i++) ctx.fillRect(-50 - i * 14, -20 + i * 6 - 6, 12, 5);
     }
-    if (g.dead) tilt = g.time * 6;
+    if (g.dead) tilt = Math.min(g.deadT * 5, Math.PI * 0.52); // prevráti sa a ostane ležať
     drawBike(bikeDef().color, g.wheelSpin, g.pedal, tilt, bikeSave().up);
     ctx.restore();
     // magnetový efekt
@@ -974,7 +1398,7 @@ function drawGarage() {
 /* ---------------- HUD ---------------- */
 function updateHUD() {
     if (!G) return;
-    document.getElementById('hudLevel').textContent = `Level ${G.n}`;
+    document.getElementById('hudLevel').textContent = `Level ${G.n} ${themeFor(G.n).emoji}`;
     document.getElementById('hudCoins').textContent = `🪙 ${G.coins}`;
     document.getElementById('hudTricks').textContent = `🤸 ${G.tricks}`;
     document.getElementById('progressBar').style.width = clamp(G.px / G.level.len * 100, 0, 100) + '%';
@@ -1058,9 +1482,15 @@ function renderLevels() {
     for (let i = 1; i <= NUM_LEVELS; i++) {
         const d = document.createElement('div');
         const locked = i > save.unlocked;
+        const th = themeFor(i);
         d.className = 'lvl' + (save.done.includes(i) ? ' done' : '') + (locked ? ' locked' : '');
-        d.textContent = locked ? '🔒' : (save.done.includes(i) ? '⭐' : i);
-        if (!locked) { d.title = `Level ${i}`; d.addEventListener('click', () => startLevel(i)); }
+        d.innerHTML = locked
+            ? '🔒'
+            : `<div style="display:flex;flex-direction:column;align-items:center;line-height:1.15;">
+                 <span>${save.done.includes(i) ? '⭐' : i}</span>
+                 <span style="font-size:0.8rem;">${th.emoji}</span>
+               </div>`;
+        if (!locked) { d.title = `Level ${i} – ${th.name}`; d.addEventListener('click', () => startLevel(i)); }
         grid.appendChild(d);
     }
 }
