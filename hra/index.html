@@ -62,15 +62,31 @@
         font-size: 24px; display: flex; align-items: center; justify-content: center;
         cursor: pointer; border: 1px solid rgba(255,255,255,0.25);
     }
-    #shop {
+    #shop, #levels {
         position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
         z-index: 30; width: min(400px, 92vw);
+        max-height: 86vh; overflow-y: auto;
         background: rgba(18,28,16,0.94); color: #fff;
         border: 1px solid rgba(255,215,0,0.35);
         border-radius: 14px; padding: 18px 20px;
         backdrop-filter: blur(6px);
     }
-    #shop h2 { margin: 0 0 6px; font-size: 20px; color: #ffd700; }
+    #shop h2, #levels h2 { margin: 0 0 6px; font-size: 20px; color: #ffd700; }
+    #levels .hint { font-size: 12px; opacity: 0.65; margin-bottom: 10px; }
+    .lvl-item {
+        display: block; width: 100%; text-align: left;
+        background: rgba(255,255,255,0.08); color: #fff; border: none;
+        padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 600;
+        cursor: pointer; margin-top: 6px;
+    }
+    .lvl-item:hover { background: rgba(255,255,255,0.18); }
+    #lvlBtn {
+        position: fixed; top: 66px; right: 12px; z-index: 15;
+        width: 46px; height: 46px; border-radius: 12px;
+        background: rgba(0,0,0,0.55); color: #fff;
+        font-size: 24px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; border: 1px solid rgba(255,255,255,0.25);
+    }
     #shopRes { font-size: 15px; margin-bottom: 12px; opacity: 0.9; }
     .shop-item {
         display: flex; align-items: center; justify-content: space-between;
@@ -140,8 +156,15 @@
 </div>
 <div id="msg"></div>
 <div id="toasts"></div>
-<div id="help">WASD – pohyb • Medzerník – skok • Myš – kamera • U – dielňa • F – uspávač • R – checkpoint</div>
+<div id="help">WASD – pohyb • Medzerník – skok • Myš – kamera • U – dielňa • F – uspávač • L – levely • R – checkpoint</div>
 <div id="shopBtn" title="Dielňa (U)">🛠️</div>
+<div id="lvlBtn" title="Výber levelu (L)">🗺️</div>
+<div id="levels" hidden>
+    <h2>🗺️ Výber levelu</h2>
+    <div class="hint">Testovací režim – teleport nastaví aj checkpoint a doplní srdcia.</div>
+    <div id="levelItems"></div>
+    <button id="closeLevels" class="lvl-item" style="text-align:center;margin-top:12px">Zavrieť (L)</button>
+</div>
 <div id="shop" hidden>
     <h2>🛠️ Dielňa rangera</h2>
     <div id="shopRes"></div>
@@ -863,6 +886,7 @@ addEventListener('keydown', e => {
     keys[e.code] = true;
     if (e.code === 'KeyR') respawn();
     if (e.code === 'KeyU') toggleShop();
+    if (e.code === 'KeyL') toggleLevels();
     if (e.code === 'KeyF') tryStun();
     if (['Space','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault();
 });
@@ -1021,6 +1045,43 @@ function renderShop() {
         wrap.appendChild(row);
     }
 }
+
+// ---------- Testovací výber levelov ----------
+const LEVEL_SPOTS = [
+    { name: '🌿 Džungľa · Štart', pos: [0, 1.8, 3] },
+    { name: '🌿 Džungľa · Močiar (checkpoint)', pos: [4, 3.1, -34] },
+    { name: '🌿 Džungľa · Triceratops', pos: [0, 2.3, -42.5] },
+    { name: '🌿 Džungľa · Raptorí výbeh', pos: [0, 2.8, -59] },
+    { name: '🌿 Džungľa · Finálna rovinka', pos: [0, 10.1, -72] },
+    { name: '🕳️ Jaskyňa · Vstup', pos: [300, 2.8, -12] },
+    { name: '🕳️ Jaskyňa · Sieň velociraptora', pos: [302, 4.0, -41] },
+    { name: '🕳️ Jaskyňa · Horná sieň', pos: [300, 9.3, -77] },
+];
+let levelsOpen = false, levelsOpenedAt = 0;
+function toggleLevels() {
+    levelsOpen = !levelsOpen;
+    $('levels').hidden = !levelsOpen;
+    if (levelsOpen) levelsOpenedAt = performance.now();
+    else startTime += performance.now() - levelsOpenedAt; // pauza časomiery
+}
+function gotoSpot(s) {
+    P.pos.set(s.pos[0], s.pos[1], s.pos[2]);
+    P.vel.set(0, 0, 0);
+    P.spawn.set(s.pos[0], s.pos[1], s.pos[2]);
+    P.hp = MAX_HP;
+    portalLockUntil = performance.now() + 1500;
+    if (levelsOpen) toggleLevels();
+    showMsg(`🗺️ ${s.name}`, 1300);
+}
+for (const s of LEVEL_SPOTS) {
+    const btn = document.createElement('button');
+    btn.className = 'lvl-item';
+    btn.textContent = s.name;
+    btn.addEventListener('click', () => gotoSpot(s));
+    $('levelItems').appendChild(btn);
+}
+$('lvlBtn').addEventListener('click', toggleLevels);
+$('closeLevels').addEventListener('click', toggleLevels);
 
 // ---------- Uspávač (interakcia s mäsožravcami) ----------
 function tryStun() {
@@ -1335,7 +1396,7 @@ function loop() {
     const dt = Math.min((now - lastT) / 1000, 0.05);
     lastT = now;
 
-    if (!finished && !shopOpen) physics(dt);
+    if (!finished && !shopOpen && !levelsOpen) physics(dt);
     animatePlayer(dt);
 
     // vajcia a suroviny sa vznášajú
@@ -1404,7 +1465,7 @@ function loop() {
     sun.target.updateMatrixWorld();
 
     // časomiera + HUD
-    if (!finished && !shopOpen) {
+    if (!finished && !shopOpen && !levelsOpen) {
         const secs = Math.floor((now - startTime) / 1000);
         $('timer').textContent = `${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
     }
@@ -1425,7 +1486,7 @@ addEventListener('keydown', e => {
 });
 
 // diagnostika pre automatizované testy (bez vplyvu na hru)
-window.__dbg = { P, coins, checkpoints, movers, pickups, dinos, save, trikeBox, mosa, portals, tryStun, addXP, toggleShop };
+window.__dbg = { P, coins, checkpoints, movers, pickups, dinos, save, trikeBox, mosa, portals, LEVEL_SPOTS, gotoSpot, tryStun, addXP, toggleShop, toggleLevels };
 
 showMsg('🦖 Jurský Obby<br><small>Uteč cez džungľu k bráne parku!<br>Zbieraj suroviny a vylepšuj nástroje v dielni (U).</small>', 3200);
 respawn();
