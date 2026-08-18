@@ -134,6 +134,7 @@
     <div class="hud-box">⏱️ <span id="timer">0:00</span></div>
     <div class="hud-box">🪵 <span id="wood">0</span></div>
     <div class="hud-box">🪨 <span id="stone">0</span></div>
+    <div class="hud-box">💎 <span id="crystal">0</span></div>
     <div class="hud-box">⭐ LV <span id="lvl">1</span><span id="xpbarWrap"><span id="xpbar" style="display:block"></span></span></div>
     <div class="hud-box" id="stunHud" style="display:none">💤 –</div>
 </div>
@@ -164,7 +165,7 @@ const $ = id => document.getElementById(id);
 
 // ---------- Uložený postup (XP, suroviny, nástroje) ----------
 const SAVE_KEY = 'jurskyObby.save';
-const save = { xp: 0, level: 1, wood: 0, stone: 0, boots: 0, speed: 0, stun: 0 };
+const save = { xp: 0, level: 1, wood: 0, stone: 0, crystal: 0, boots: 0, speed: 0, stun: 0, lantern: 0 };
 try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (e) {}
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
 
@@ -172,7 +173,9 @@ const TOOLS = {
     boots: { name: '🥾 Čižmy', desc: 'vyšší skok', max: 3, cost: l => ({ wood: 2 * l, stone: 2 * l - 1 }) },
     speed: { name: '👟 Tenisky', desc: 'rýchlejší beh', max: 3, cost: l => ({ wood: 2 * l, stone: 2 * l - 1 }) },
     stun:  { name: '💤 Uspávač', desc: 'uspí mäsožravca (F)', max: 3, cost: l => ({ wood: l + 2, stone: l + 1 }) },
+    lantern: { name: '🔦 Lampáš', desc: 'svetlo do jaskyne', max: 3, cost: l => ({ crystal: 2 * l, wood: l + 1 }) },
 };
+const RES_ICON = { wood: '🪵', stone: '🪨', crystal: '💎' };
 const PERKS = {
     2: '🦘 Dvojskok odomknutý! Stlač skok aj vo vzduchu.',
     3: '🏃 +15 % rýchlosť behu!',
@@ -227,7 +230,8 @@ sun.shadow.camera.left = -60; sun.shadow.camera.right = 60;
 sun.shadow.camera.top = 60; sun.shadow.camera.bottom = -60;
 sun.shadow.camera.far = 150;
 scene.add(sun);
-scene.add(new THREE.AmbientLight(0xcfe0b8, 0.8));
+const ambient = new THREE.AmbientLight(0xcfe0b8, 0.8);
+scene.add(ambient);
 
 // ---------- Pomocníci na stavbu sveta ----------
 const platforms = [];   // statické aj pohyblivé kolízne bloky
@@ -289,6 +293,12 @@ function pickup(type, x, y, z) {
         mesh = new THREE.Mesh(
             new THREE.BoxGeometry(0.55, 0.32, 0.32),
             new THREE.MeshLambertMaterial({ color: 0x8a5a2b })
+        );
+    } else if (type === 'crystal') {
+        // svetliaci kryštál – žiari aj v tme jaskyne
+        mesh = new THREE.Mesh(
+            new THREE.IcosahedronGeometry(0.34, 0),
+            new THREE.MeshStandardMaterial({ color: 0x9fe8ff, emissive: 0x4fc3f7, emissiveIntensity: 1.3 })
         );
     } else {
         mesh = new THREE.Mesh(
@@ -376,9 +386,10 @@ function makeRaptor(color = 0x5a7d3a) {
     return g;
 }
 
-// Mäsožravec: hliadkuje, a keď si blízko, naháňa ťa v rámci svojho územia
-function addCarnivore(x, y, z, bounds, axis, range, speed, aggro = 6.5) {
-    const group = makeRaptor();
+// Mäsožravec: hliadkuje (alebo číha na mieste), a keď si blízko,
+// naháňa ťa v rámci svojho územia
+function addCarnivore(x, y, z, bounds, axis, range, speed, aggro = 6.5, opts = {}) {
+    const group = makeRaptor(opts.color);
     group.position.set(x, y, z);
     scene.add(group);
     const zzz = makeZzz();
@@ -387,7 +398,8 @@ function addCarnivore(x, y, z, bounds, axis, range, speed, aggro = 6.5) {
     killBricks.push(hit);
     const dino = {
         type: 'carnivore', group, hit, zzz, baseY: y, bounds, axis, range,
-        speed, aggro, phase: 0, origin: { x, z }, sleepUntil: 0, walk: 0,
+        speed, aggro, chase: opts.chase || 3.2,
+        phase: 0, origin: { x, z }, sleepUntil: 0, walk: 0,
     };
     hit.dino = dino;
     dinos.push(dino);
@@ -674,6 +686,111 @@ island(-11, 0, -50, 5, 6);
 island(10, 3, -60, 5, 5);
 island(-9, 6.5, -80, 6, 5);
 
+// ---------- LEVEL 2: Jaskyňa (x okolo 300) ----------
+// Portály – svietiace pady, ktoré teleportujú medzi svetmi
+const portals = [];
+function portal(x, y, z, dest, label) {
+    const entry = box(x, y, z, 1.9, 0.4, 1.9, 0x7b5cd6);
+    entry.mesh.material = new THREE.MeshStandardMaterial({
+        color: 0x7b5cd6, emissive: 0x5a3bd0, emissiveIntensity: 0.8
+    });
+    portals.push({ entry, dest, label });
+    return entry;
+}
+
+// Vchod do jaskyne pri štarte v džungli
+box(8.7, -0.5, 0, 5, 1, 4, 0x7d8471); // mostík zo štartu
+deco(new THREE.BoxGeometry(0.7, 3, 0.7), 0x4a4238, 10.2, 1.5, -1.6);
+deco(new THREE.BoxGeometry(0.7, 3, 0.7), 0x4a4238, 10.2, 1.5, 1.6);
+const caveSignTex = (() => {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = '#2a2118'; g.fillRect(0, 0, 256, 64);
+    g.strokeStyle = '#9fe8ff'; g.lineWidth = 4; g.strokeRect(4, 4, 248, 56);
+    g.fillStyle = '#e8f4f8'; g.font = 'bold 34px Georgia, serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('JASKYŇA', 128, 34);
+    return new THREE.CanvasTexture(c);
+})();
+const caveSign = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, 1.0, 3.6),
+    new THREE.MeshLambertMaterial({ map: caveSignTex })
+);
+caveSign.position.set(10.2, 3.3, 0);
+scene.add(caveSign);
+portal(10.2, 0.2, 0, new THREE.Vector3(300, 2.5, -12), '🕳️ Vstupuješ do jaskyne… V tme pomôže Lampáš!');
+
+// Jaskynný kameň
+const CAVE_ROCK = 0x3a3228, CAVE_DARK = 0x241c14;
+
+// Obal jaskyne: strop, steny a smrtiace dno so stalagmitmi
+deco(new THREE.BoxGeometry(80, 1, 92), CAVE_DARK, 300, 13.5, -50);
+deco(new THREE.BoxGeometry(1.5, 17, 92), CAVE_DARK, 282, 5, -50);
+deco(new THREE.BoxGeometry(1.5, 17, 92), CAVE_DARK, 318, 5, -50);
+deco(new THREE.BoxGeometry(38, 17, 1.5), CAVE_DARK, 300, 5, -95);
+deco(new THREE.BoxGeometry(38, 17, 1.5), CAVE_DARK, 300, 5, -5);
+box(300, -2.5, -50, 80, 1, 92, 0x171310, { kill: true, reason: 'spikes' });
+// stalagmity (výstraha na dne) a stalaktity zo stropu
+for (const [sx, sz, sh] of [[295,-20,2.4],[306,-27,3],[298,-36,2.2],[309,-44,2.6],[294,-52,3],[303,-63,2.4],[296,-70,2.8],[305,-78,2.2],[300,-88,2.6]]) {
+    deco(new THREE.BoxGeometry(1.0, sh, 1.0), 0x2e261c, sx, -2 + sh / 2, sz);
+}
+for (const [sx, sz, sh] of [[297,-16,2.6],[304,-24,3.2],[300,-33,2.2],[308,-40,2.8],[293,-47,3],[301,-58,2.6],[306,-68,3.2],[297,-80,2.4],[302,-86,2.8]]) {
+    deco(new THREE.BoxGeometry(0.9, sh, 0.9), 0x2e261c, sx, 13 - sh / 2, sz);
+}
+
+// Vstupná sieň jaskyne
+box(300, 0.5, -12, 6, 1, 6, CAVE_ROCK);
+checkpoint(300, 1.2, -12, 3, 3);
+portal(297.9, 1.2, -10.2, new THREE.Vector3(0, 1.8, 3), '🌿 Späť v džungli!');
+pickup('crystal', 302, 2.0, -13.5);
+pickup('crystal', 298, 2.0, -13.5);
+
+// Ťažký parkúr 1: malé kamene a kladina nad stalagmitmi
+box(300, 0.5, -18.5, 2, 1, 2, CAVE_ROCK);
+box(302.5, 1.1, -23, 2, 1, 2, CAVE_ROCK);
+box(299.5, 1.7, -27.5, 1.8, 1, 1.8, CAVE_ROCK);
+box(300.5, 1.7, -33, 0.9, 1, 7, 0x4a4238); // úzka kladina
+pickup('crystal', 300.5, 2.9, -33);
+
+// Sieň s prvým velociraptorom (číha v tme!)
+box(302, 1.7, -41, 5, 1, 5, CAVE_ROCK);
+checkpoint(302, 2.4, -41, 3, 3);
+box(305, 1.7, -48.5, 9, 1, 8, CAVE_ROCK);
+addCarnivore(305, 2.2, -48.5, { x1: 301.2, x2: 308.8, z1: -52, z2: -45 }, 'x', 0, 0, 8,
+    { color: 0x8a4b2a, chase: 4.3 });
+pickup('crystal', 303, 3.2, -46);
+pickup('crystal', 307.5, 3.2, -51.5);
+coin(307.5, 3.4, -45.5);
+pickup('wood', 301.5, 3.0, -51.5);
+
+// Ťažký parkúr 2: rýchle pohyblivé plošiny
+movingBox(302, 2.4, -56.5, 2.4, 0.6, 2.4, 0x4a4238, 'x', 4, 2.0);
+movingBox(299, 3.6, -61.5, 2.4, 0.6, 2.4, 0x4a4238, 'y', 2, 1.6);
+pickup('crystal', 299, 6.4, -61.5);
+
+// Výstup po malých blokoch
+box(300, 4.6, -66, 1.8, 0.8, 1.8, CAVE_ROCK);
+box(302, 5.6, -69, 1.8, 0.8, 1.8, CAVE_ROCK);
+box(299.5, 6.6, -72, 1.8, 0.8, 1.8, CAVE_ROCK);
+
+// Horná sieň s druhým velociraptorom
+box(300, 7, -77, 5, 1, 5, CAVE_ROCK);
+checkpoint(300, 7.7, -77, 3, 3);
+box(300, 7, -84, 9, 1, 6, CAVE_ROCK);
+addCarnivore(300, 7.5, -84, { x1: 296, x2: 304, z1: -86.5, z2: -81.5 }, 'z', 0, 0, 7.5,
+    { color: 0x8a4b2a, chase: 4.3 });
+pickup('crystal', 297, 8.5, -85.5);
+pickup('crystal', 303, 8.5, -82.5);
+coin(300, 8.7, -86.2);
+
+// Východ z jaskyne – zlatý pad s odmenou
+box(300, 7, -90.5, 4, 1, 4, CAVE_ROCK);
+const caveGoal = box(300, 7.9, -90.5, 2.2, 0.4, 2.2, 0xffd700);
+caveGoal.mesh.material = new THREE.MeshStandardMaterial({
+    color: 0xffd700, emissive: 0xcc9900, emissiveIntensity: 0.6
+});
+let caveDone = false;
+
 // ---------- Postavička (ranger) ----------
 function limb(w, h, d, color, x, y, z) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color }));
@@ -706,6 +823,10 @@ const legR = limb(0.3, 0.9, 0.3, 0x6d4c33, 0.2, 0.05, 0);
 const hatBrim = limb(0.85, 0.1, 0.85, 0x8a6d3b, 0, 2.15, 0);  // rangerský klobúk
 const hatTop = limb(0.5, 0.3, 0.5, 0x8a6d3b, 0, 2.32, 0);
 player.add(body, head, armL, armR, legL, legR, hatBrim, hatTop);
+// lampáš – svetlo okolo hráča, sila podľa vylepšenia v dielni
+const lantern = new THREE.PointLight(0xffd9a0, 0, 8);
+lantern.position.set(0, 1.6, 0);
+player.add(lantern);
 scene.add(player);
 
 function applyPerks() {
@@ -815,6 +936,7 @@ function updateHud() {
     $('hp').textContent = '❤️'.repeat(P.hp) + '🖤'.repeat(MAX_HP - P.hp);
     $('wood').textContent = save.wood;
     $('stone').textContent = save.stone;
+    $('crystal').textContent = save.crystal;
     $('lvl').textContent = save.level;
     $('xpbar').style.width = Math.min(100, save.xp / (save.level * 100) * 100) + '%';
     const sh = $('stunHud');
@@ -841,6 +963,7 @@ const DEATH_MSG = {
     dino: '🦖 Raptor ťa dolapil!',
     fall: '💀 Spadol si z výšky do údolia!',
     trike: '🦕 Triceratops ťa udupal!',
+    spikes: '🗡️ Stalagmity v tme! Au!',
 };
 function die(reason) {
     deathCount++;
@@ -863,12 +986,12 @@ $('shopBtn').addEventListener('click', toggleShop);
 $('closeShop').addEventListener('click', toggleShop);
 $('resetSave').addEventListener('click', () => {
     if (!confirm('Naozaj vynulovať všetok postup (XP, suroviny, nástroje)?')) return;
-    Object.assign(save, { xp: 0, level: 1, wood: 0, stone: 0, boots: 0, speed: 0, stun: 0 });
+    Object.assign(save, { xp: 0, level: 1, wood: 0, stone: 0, crystal: 0, boots: 0, speed: 0, stun: 0, lantern: 0 });
     persist(); renderShop(); toast('Postup vynulovaný');
 });
 
 function renderShop() {
-    $('shopRes').innerHTML = `Suroviny: 🪵 ${save.wood} &nbsp; 🪨 ${save.stone} &nbsp; ⭐ LV ${save.level}`;
+    $('shopRes').innerHTML = `Suroviny: 🪵 ${save.wood} &nbsp; 🪨 ${save.stone} &nbsp; 💎 ${save.crystal} &nbsp; ⭐ LV ${save.level}`;
     const wrap = $('shopItems');
     wrap.innerHTML = '';
     for (const [key, t] of Object.entries(TOOLS)) {
@@ -884,10 +1007,11 @@ function renderShop() {
             btn.disabled = true;
         } else {
             const c = t.cost(lvl + 1);
-            btn.textContent = `Vylepšiť (🪵${c.wood} 🪨${c.stone})`;
-            btn.disabled = save.wood < c.wood || save.stone < c.stone;
+            const costTxt = Object.entries(c).map(([k, v]) => `${RES_ICON[k]}${v}`).join(' ');
+            btn.textContent = `Vylepšiť (${costTxt})`;
+            btn.disabled = !Object.entries(c).every(([k, v]) => save[k] >= v);
             btn.addEventListener('click', () => {
-                save.wood -= c.wood; save.stone -= c.stone;
+                for (const [k, v] of Object.entries(c)) save[k] -= v;
                 save[key]++;
                 persist(); renderShop(); updateHud();
                 toast(`${t.name} vylepšené na Lv ${save[key]}!`);
@@ -923,6 +1047,7 @@ function tryStun() {
 
 // ---------- Fyzika ----------
 const GRAVITY = -28;
+let portalLockUntil = 0;
 
 function collideAABB(entry, pos, margin = 0) {
     // vráti prienik hráča (AABB) s blokom, alebo null
@@ -953,7 +1078,7 @@ function updateDinos(dt, now) {
         const near = distXZ < d.aggro && Math.abs(P.pos.y - d.baseY) < 3.5;
         let mx = 0, mz = 0;
         if (near) {
-            const s = 3.2 * dt / Math.max(distXZ, 0.001);
+            const s = d.chase * dt / Math.max(distXZ, 0.001);
             mx = (P.pos.x - g.position.x) * s;
             mz = (P.pos.z - g.position.z) * s;
         } else {
@@ -1137,8 +1262,34 @@ function physics(dt) {
             pk.taken = true;
             pk.mesh.visible = false;
             save[pk.type]++;
-            addXP(5, pk.type === 'wood' ? '🪵 drevo +1' : '🪨 kameň +1');
+            addXP(5, pk.type === 'wood' ? '🪵 drevo +1' : pk.type === 'crystal' ? '💎 kryštál +1' : '🪨 kameň +1');
         }
+    }
+    // portály medzi džungľou a jaskyňou
+    if (nowMs >= portalLockUntil) {
+        for (const pt of portals) {
+            if (collideAABB(pt.entry, P.pos, 0.15)) {
+                portalLockUntil = nowMs + 1500;
+                P.pos.copy(pt.dest);
+                P.vel.set(0, 0, 0);
+                P.spawn.copy(pt.dest);
+                P.hp = MAX_HP;
+                showMsg(pt.label, 1800);
+                break;
+            }
+        }
+    }
+    // východ z jaskyne – odmena a návrat do džungle
+    if (collideAABB(caveGoal, P.pos, 0.2)) {
+        if (!caveDone) {
+            caveDone = true;
+            addXP(150, 'jaskyňa zdolaná');
+        }
+        showMsg('🏆 Prešiel si jaskyňu!<br><small>Návrat do džungle…</small>', 2500);
+        P.pos.set(0, 1.8, 3);
+        P.vel.set(0, 0, 0);
+        P.spawn.set(0, 1.8, 3);
+        P.hp = MAX_HP;
     }
     // cieľ
     if (!finished && collideAABB(goal, P.pos, 0.15)) {
@@ -1175,6 +1326,8 @@ function animatePlayer(dt) {
 }
 
 // ---------- Slučka ----------
+const CAVE_FOG_COLOR = new THREE.Color(0x0b0806);
+const JUNGLE_FOG_COLOR = new THREE.Color(0xaec9a0);
 let lastT = performance.now();
 function loop() {
     requestAnimationFrame(loop);
@@ -1218,6 +1371,23 @@ function loop() {
     mu.finBL.rotation.z = Math.sin(t * 1.8 + 0.7) * 0.2;
     mu.finBR.rotation.z = -Math.sin(t * 1.8 + 0.7) * 0.2;
 
+    // atmosféra: v jaskyni tma (lampáš ju prežiari), v džungli denné svetlo
+    const inCave = P.pos.x > 150;
+    const ak = 0.08;
+    const tgtSun = inCave ? 0.3 : 2.2;
+    const tgtAmb = inCave ? 0.16 + save.lantern * 0.05 : 0.8;
+    const tgtFogN = inCave ? 7 : 45;
+    const tgtFogF = inCave ? 30 + save.lantern * 14 : 130;
+    sun.intensity += (tgtSun - sun.intensity) * ak;
+    ambient.intensity += (tgtAmb - ambient.intensity) * ak;
+    scene.fog.near += (tgtFogN - scene.fog.near) * ak;
+    scene.fog.far += (tgtFogF - scene.fog.far) * ak;
+    const tgtCol = inCave ? CAVE_FOG_COLOR : JUNGLE_FOG_COLOR;
+    scene.fog.color.lerp(tgtCol, ak);
+    scene.background.lerp(tgtCol, ak);
+    lantern.intensity = save.lantern * 2.6;
+    lantern.distance = 5 + save.lantern * 4;
+
     // kamera
     const target = new THREE.Vector3().copy(P.pos).add(new THREE.Vector3(0, 1.6, 0));
     const camOff = new THREE.Vector3(
@@ -1255,7 +1425,7 @@ addEventListener('keydown', e => {
 });
 
 // diagnostika pre automatizované testy (bez vplyvu na hru)
-window.__dbg = { P, coins, checkpoints, movers, pickups, dinos, save, trikeBox, mosa, tryStun, addXP, toggleShop };
+window.__dbg = { P, coins, checkpoints, movers, pickups, dinos, save, trikeBox, mosa, portals, tryStun, addXP, toggleShop };
 
 showMsg('🦖 Jurský Obby<br><small>Uteč cez džungľu k bráne parku!<br>Zbieraj suroviny a vylepšuj nástroje v dielni (U).</small>', 3200);
 respawn();
