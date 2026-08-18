@@ -852,6 +852,7 @@ const hatTop = limb(0.5, 0.3, 0.5, 0x8a6d3b, 0, 2.32, 0);
 player.add(body, head, armL, armR, legL, legR, hatBrim, hatTop);
 // lampáš – svetlo okolo hráča, sila podľa vylepšenia v dielni
 const lantern = new THREE.PointLight(0xffd9a0, 0, 8);
+lantern.decay = 1.3; // miernejší útlm = svetlo dosiahne ďalej
 lantern.position.set(0, 1.6, 0);
 player.add(lantern);
 scene.add(player);
@@ -1440,9 +1441,9 @@ function loop() {
     const inCave = P.pos.x > 150;
     const ak = 0.08;
     const tgtSun = inCave ? 0.3 : 2.2;
-    const tgtAmb = inCave ? 0.16 + save.lantern * 0.05 : 0.8;
-    const tgtFogN = inCave ? 7 : 45;
-    const tgtFogF = inCave ? 30 + save.lantern * 14 : 130;
+    const tgtAmb = inCave ? 0.16 + save.lantern * 0.11 : 0.8;
+    const tgtFogN = inCave ? 7 + save.lantern * 3 : 45;
+    const tgtFogF = inCave ? 32 + save.lantern * 24 : 130;
     sun.intensity += (tgtSun - sun.intensity) * ak;
     ambient.intensity += (tgtAmb - ambient.intensity) * ak;
     scene.fog.near += (tgtFogN - scene.fog.near) * ak;
@@ -1450,8 +1451,8 @@ function loop() {
     const tgtCol = inCave ? CAVE_FOG_COLOR : JUNGLE_FOG_COLOR;
     scene.fog.color.lerp(tgtCol, ak);
     scene.background.lerp(tgtCol, ak);
-    lantern.intensity = save.lantern * 2.6;
-    lantern.distance = 5 + save.lantern * 4;
+    lantern.intensity = save.lantern * 5.5;
+    lantern.distance = 8 + save.lantern * 7;
 
     // kamera
     const target = new THREE.Vector3().copy(P.pos).add(new THREE.Vector3(0, 1.6, 0));
