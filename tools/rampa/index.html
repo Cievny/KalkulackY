@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Skoč na rampu 🚴</title>
+<style>
+    :root {
+        --wine: #6A1B42;
+        --green: #2E8339;
+        --beige: #F8F5F2;
+        --dark: #1b2733;
+        --gold: #f6b93b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--dark); touch-action: manipulation; }
+    #game { display: block; width: 100vw; height: 100vh; }
+
+    .overlay {
+        position: fixed; inset: 0; display: none; flex-direction: column;
+        align-items: center; justify-content: center; z-index: 10;
+        background: rgba(16, 28, 44, 0.82); backdrop-filter: blur(6px);
+        color: #fff; text-align: center; padding: 16px; overflow-y: auto;
+    }
+    .overlay.show { display: flex; }
+    .panel {
+        background: linear-gradient(160deg, #223449, #17263a);
+        border: 2px solid rgba(255,255,255,0.12); border-radius: 22px;
+        padding: 26px 30px; max-width: 640px; width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5); margin: auto;
+    }
+    h1 { font-size: clamp(1.8rem, 6vw, 3rem); letter-spacing: 1px; margin-bottom: 6px;
+         background: linear-gradient(90deg, #ffd166, #f6b93b, #ff8e3c);
+         -webkit-background-clip: text; background-clip: text; color: transparent; }
+    h2 { font-size: 1.5rem; margin-bottom: 14px; }
+    .sub { color: #aebfd4; margin-bottom: 20px; font-size: 0.95rem; }
+    .btn {
+        display: inline-block; border: none; cursor: pointer; user-select: none;
+        font-size: 1.05rem; font-weight: 700; color: #fff;
+        background: linear-gradient(180deg, #3fa14c, var(--green));
+        padding: 13px 30px; border-radius: 14px; margin: 6px;
+        box-shadow: 0 5px 0 #1d5a26, 0 8px 18px rgba(0,0,0,0.35);
+        transition: transform 0.08s ease;
+    }
+    .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #1d5a26; }
+    .btn.alt { background: linear-gradient(180deg, #8e3563, var(--wine)); box-shadow: 0 5px 0 #47122c, 0 8px 18px rgba(0,0,0,0.35); }
+    .btn.alt:active { box-shadow: 0 2px 0 #47122c; }
+    .btn.gold { background: linear-gradient(180deg, #ffd166, #e8a020); color: #4a3000; box-shadow: 0 5px 0 #9c6b0e, 0 8px 18px rgba(0,0,0,0.35); }
+    .btn.gold:active { box-shadow: 0 2px 0 #9c6b0e; }
+    .btn:disabled { filter: grayscale(0.9) brightness(0.7); cursor: not-allowed; }
+    .coin-wallet { font-size: 1.2rem; font-weight: 800; color: var(--gold); margin-bottom: 14px; }
+
+    /* HUD */
+    #hud { position: fixed; top: 0; left: 0; right: 0; z-index: 5; display: none;
+           padding: calc(10px + env(safe-area-inset-top)) 14px 0; pointer-events: none;
+           color: #fff; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    #hud.show { display: block; }
+    #hudTop { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .hud-pill { background: rgba(10,20,35,0.55); border-radius: 999px; padding: 6px 14px; font-size: 1rem; white-space: nowrap; }
+    #progressWrap { margin: 8px auto 0; max-width: 420px; height: 12px; background: rgba(10,20,35,0.55); border-radius: 999px; overflow: hidden; }
+    #progressBar { height: 100%; width: 0%; background: linear-gradient(90deg, #ffd166, #ff8e3c); border-radius: 999px; transition: width 0.2s linear; }
+    #powerups { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+    .pw { background: rgba(10,20,35,0.6); border-radius: 999px; padding: 4px 12px; font-size: 0.9rem; }
+    #trickToast { position: fixed; top: 30%; left: 0; right: 0; text-align: center; z-index: 6;
+                  font-size: 2rem; font-weight: 900; color: #ffd166; pointer-events: none;
+                  text-shadow: 0 3px 8px rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.2s, transform 0.4s; }
+
+    /* dotykové ovládanie */
+    #touchCtl { position: fixed; bottom: 0; left: 0; right: 0; z-index: 5; display: none;
+                justify-content: space-between; padding: 0 18px calc(18px + env(safe-area-inset-bottom)); pointer-events: none; }
+    #touchCtl.show { display: flex; }
+    .tbtn { pointer-events: auto; width: 84px; height: 84px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.35);
+            background: rgba(20,35,55,0.55); color: #fff; font-size: 0.85rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; flex-direction: column; user-select: none; }
+    .tbtn span { font-size: 1.6rem; line-height: 1; }
+    .tbtn:active { background: rgba(60,110,80,0.7); }
+
+    /* garáž */
+    .bike-list { display: grid; gap: 12px; margin-bottom: 10px; }
+    .bike-card { background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.1);
+                 border-radius: 16px; padding: 14px 16px; text-align: left; }
+    .bike-card.sel { border-color: var(--gold); background: rgba(246,185,59,0.1); }
+    .bike-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .bike-name { font-weight: 800; font-size: 1.1rem; }
+    .stat-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 0.85rem; color: #cdd9e8; flex-wrap: wrap; }
+    .stat-bar { flex: 1 1 90px; height: 8px; background: rgba(255,255,255,0.12); border-radius: 99px; overflow: hidden; min-width: 70px; }
+    .stat-fill { height: 100%; background: linear-gradient(90deg, #4cd07d, #2E8339); border-radius: 99px; }
+    .mini-btn { border: none; cursor: pointer; font-weight: 700; color: #fff; font-size: 0.8rem;
+                background: var(--green); padding: 7px 12px; border-radius: 10px; }
+    .mini-btn.buy { background: var(--wine); }
+    .mini-btn:disabled { filter: grayscale(0.9) brightness(0.65); cursor: not-allowed; }
+
+    /* levely */
+    .level-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+    .lvl { aspect-ratio: 1; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+           font-size: 1.2rem; font-weight: 800; cursor: pointer; border: 2px solid rgba(255,255,255,0.15);
+           background: rgba(255,255,255,0.07); color: #fff; }
+    .lvl.done { background: rgba(46,131,57,0.4); border-color: #4cd07d; }
+    .lvl.locked { opacity: 0.35; cursor: not-allowed; }
+    .big-emoji { font-size: 3.2rem; margin-bottom: 8px; }
+    table.stats { margin: 0 auto 16px; border-collapse: collapse; font-size: 1rem; }
+    table.stats td { padding: 4px 12px; text-align: left; }
+    table.stats td:last-child { text-align: right; font-weight: 800; color: var(--gold); }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+    <div id="hudTop">
+        <div class="hud-pill" id="hudLevel">Level 1</div>
+        <div class="hud-pill" style="color: var(--gold);" id="hudCoins">🪙 0</div>
+        <div class="hud-pill" id="hudTricks">🤸 0</div>
+    </div>
+    <div id="progressWrap"><div id="progressBar"></div></div>
+    <div id="powerups"></div>
+</div>
+<div id="trickToast"></div>
+
+<div id="touchCtl">
+    <div class="tbtn" id="btnTrick"><span>🔄</span>TRIK</div>
+    <div class="tbtn" id="btnJump"><span>⬆️</span>SKOK</div>
+</div>
+
+<!-- MENU -->
+<div class="overlay show" id="menu">
+    <div class="panel">
+        <div class="big-emoji">🚴💨</div>
+        <h1>SKOČ NA RAMPU</h1>
+        <p class="sub">Jazdi, zbieraj mince, skáč cez rampy, rob triky a vylepšuj si bicykle!</p>
+        <div class="coin-wallet" id="menuCoins">🪙 0</div>
+        <button class="btn" id="btnPlay">▶ Hrať</button><br>
+        <button class="btn alt" id="btnGarage">🔧 Garáž</button>
+        <button class="btn alt" id="btnLevels">🗺️ Levely</button>
+        <p class="sub" style="margin-top:18px; margin-bottom:0;">
+            💻 <b>Medzerník</b> = skok, <b>šípka hore / K</b> = trik (salto)<br>
+            📱 dotykové tlačidlá na obrazovke
+        </p>
+    </div>
+</div>
+
+<!-- GARÁŽ -->
+<div class="overlay" id="garage">
+    <div class="panel">
+        <h2>🔧 Garáž</h2>
+        <div class="coin-wallet" id="garageCoins">🪙 0</div>
+        <div class="bike-list" id="bikeList"></div>
+        <button class="btn" id="btnGarageBack">← Späť</button>
+    </div>
+</div>
+
+<!-- LEVELY -->
+<div class="overlay" id="levels">
+    <div class="panel">
+        <h2>🗺️ Vyber level</h2>
+        <div class="level-grid" id="levelGrid"></div>
+        <button class="btn" id="btnLevelsBack">← Späť</button>
+    </div>
+</div>
+
+<!-- KONIEC LEVELU -->
+<div class="overlay" id="levelDone">
+    <div class="panel">
+        <div class="big-emoji">🏁🎉</div>
+        <h2 id="doneTitle">Level 1 hotový!</h2>
+        <table class="stats">
+            <tr><td>🪙 Nazbierané mince</td><td id="doneCoins">0</td></tr>
+            <tr><td>🤸 Triky</td><td id="doneTricks">0</td></tr>
+            <tr><td>🎁 Bonus za level</td><td id="doneBonus">0</td></tr>
+            <tr><td>💰 Spolu</td><td id="doneTotal">0</td></tr>
+        </table>
+        <button class="btn" id="btnNext">▶ Ďalší level</button>
+        <button class="btn alt" id="btnDoneGarage">🔧 Garáž</button>
+        <button class="btn alt" id="btnDoneMenu">🏠 Menu</button>
+    </div>
+</div>
+
+<!-- PÁD -->
+<div class="overlay" id="crashed">
+    <div class="panel">
+        <div class="big-emoji">💥🚑</div>
+        <h2>Au! To bol pád...</h2>
+        <p class="sub" id="crashInfo">Zachránil si polovicu mincí.</p>
+        <button class="btn" id="btnRetry">🔁 Skúsiť znova</button>
+        <button class="btn alt" id="btnCrashMenu">🏠 Menu</button>
+    </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   SKOČ NA RAMPU — animovaná arkáda: cyklista skáče cez rampy,
+   zbiera mince, robí triky, používa powerupy, prechádza levely
+   a vylepšuje si bicykle v garáži.
+   ============================================================ */
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ---------------- Uložený postup ---------------- */
+const SAVE_KEY = 'skocNaRampu_v1';
+const BIKES = [
+    { id: 'bmx',    name: 'BMX Klasik',     emoji: '🚲', price: 0,    color: '#e74c3c', speed: 1, jump: 1, power: 1 },
+    { id: 'horsky', name: 'Horský Drak',    emoji: '🚵', price: 300,  color: '#27ae60', speed: 2, jump: 2, power: 1 },
+    { id: 'cestny', name: 'Cestný Blesk',   emoji: '🚴', price: 800,  color: '#2980ff', speed: 3, jump: 2, power: 2 },
+    { id: 'moto',   name: 'Elektro Turbo',  emoji: '⚡', price: 2000, color: '#f39c12', speed: 4, jump: 3, power: 3 },
+];
+const UPGRADES = [
+    { id: 'speed', name: 'Rýchlosť', emoji: '💨' },
+    { id: 'jump',  name: 'Výskok',   emoji: '🦘' },
+    { id: 'power', name: 'Powerupy', emoji: '🔋' },
+];
+const MAX_UP = 5;
+const NUM_LEVELS = 10;
+
+let save = {
+    coins: 0,
+    unlocked: 1,           // najvyšší odomknutý level
+    done: [],              // dokončené levely
+    selected: 'bmx',
+    bikes: { bmx: { owned: true, up: { speed: 0, jump: 0, power: 0 } } },
+};
+try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) save = Object.assign(save, JSON.parse(raw));
+} catch (e) { /* čistý štart */ }
+function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+
+function bikeDef() { return BIKES.find(b => b.id === save.selected) || BIKES[0]; }
+function bikeSave() {
+    if (!save.bikes[save.selected]) save.selected = 'bmx';
+    return save.bikes[save.selected];
+}
+function stat(kind) { // 1..~9 podľa bicykla + vylepšení
+    return bikeDef()[kind] + (bikeSave().up[kind] || 0);
+}
+function upCost(bike, kind) {
+    const lvl = (save.bikes[bike.id]?.up[kind] || 0);
+    return Math.round((60 + bike.price * 0.15) * (lvl + 1));
+}
+
+/* ---------------- Vstupy ---------------- */
+const input = { jump: false, trick: false };
+function bindPress(el, key) {
+    const on = e => { e.preventDefault(); input[key] = true; };
+    const off = e => { e.preventDefault(); input[key] = false; };
+    el.addEventListener('touchstart', on, { passive: false });
+    el.addEventListener('touchend', off);
+    el.addEventListener('touchcancel', off);
+    el.addEventListener('mousedown', on);
+    el.addEventListener('mouseup', off);
+    el.addEventListener('mouseleave', off);
+}
+bindPress(document.getElementById('btnJump'), 'jump');
+bindPress(document.getElementById('btnTrick'), 'trick');
+window.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (e.code === 'Space') { e.preventDefault(); input.jump = true; }
+    if (e.code === 'ArrowUp' || e.code === 'KeyK') { e.preventDefault(); input.trick = true; }
+});
+window.addEventListener('keyup', e => {
+    if (e.code === 'Space') input.jump = false;
+    if (e.code === 'ArrowUp' || e.code === 'KeyK') input.trick = false;
+});
+
+/* ---------------- Pomocníci ---------------- */
+function mulberry32(a) { // deterministický generátor pre levely
+    return function () {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+
+/* ---------------- Stav hry ---------------- */
+const S = { screen: 'menu' }; // menu | play | done | crashed
+let G = null;                 // aktuálny beh levelu
+
+const POWERUPS = {
+    magnet: { emoji: '🧲', name: 'Magnet',  dur: 7 },
+    shield: { emoji: '🛡️', name: 'Štít',    dur: 12 },
+    turbo:  { emoji: '⚡', name: 'Turbo',   dur: 5 },
+    x2:     { emoji: '✖️2', name: '2× mince', dur: 8 },
+};
+
+function groundY() { return H - Math.max(70, H * 0.13); }
+
+/* ---------------- Generovanie levelu ---------------- */
+function buildLevel(n) {
+    const rng = mulberry32(1234 + n * 77);
+    const len = 3600 + n * 900;                 // dĺžka trate v px
+    const ramps = [], coins = [], obstacles = [], pups = [];
+    let x = 900;
+    const pupKeys = Object.keys(POWERUPS);
+    while (x < len - 700) {
+        const roll = rng();
+        if (roll < 0.34) {
+            // RAMPA + oblúk mincí za ňou
+            const w = 150 + rng() * 110, h = 70 + rng() * 60 + n * 4;
+            ramps.push({ x, w, h });
+            const arcN = 6 + Math.floor(rng() * 4);
+            for (let i = 0; i < arcN; i++) {
+                const t = i / (arcN - 1);
+                coins.push({
+                    x: x + w + 40 + t * (240 + h * 2.2),
+                    y: groundYSaved - h - 60 - Math.sin(t * Math.PI) * (90 + h * 0.8),
+                    taken: false,
+                });
+            }
+            if (rng() < 0.4) { // občas prekážka hneď za rampou → treba preletieť
+                obstacles.push({ x: x + w + 120 + rng() * 80, type: rng() < 0.5 ? 'rock' : 'cone' });
+            }
+            x += w + 470 + rng() * 220;
+        } else if (roll < 0.62) {
+            // PREKÁŽKA (treba preskočiť)
+            obstacles.push({ x, type: rng() < 0.5 ? 'rock' : 'cone' });
+            if (n > 3 && rng() < 0.35) obstacles.push({ x: x + 46, type: 'cone' });
+            x += 420 + rng() * 260 - Math.min(n * 12, 140);
+        } else if (roll < 0.85) {
+            // RAD MINCÍ na zemi / nízko
+            const cN = 5 + Math.floor(rng() * 4);
+            const cy = groundYSaved - 60 - rng() * 40;
+            for (let i = 0; i < cN; i++) coins.push({ x: x + i * 46, y: cy, taken: false });
+            x += cN * 46 + 320 + rng() * 200;
+        } else {
+            // POWERUP
+            pups.push({ x, y: groundYSaved - 90 - rng() * 60, kind: pupKeys[Math.floor(rng() * pupKeys.length)], taken: false });
+            x += 430 + rng() * 200;
+        }
+    }
+    return { n, len, ramps, coins, obstacles, pups };
+}
+let groundYSaved = groundY(); // fixované pri štarte levelu (build používa túto hodnotu)
+
+function startLevel(n) {
+    groundYSaved = groundY();
+    const L = buildLevel(n);
+    G = {
+        level: L, n,
+        camX: 0,
+        speed: 0,
+        baseSpeed: 330 + n * 22 + stat('speed') * 26,
+        px: 0,                       // pozícia hráča na trati
+        py: groundYSaved, vy: 0,
+        onGround: true, onRamp: false,
+        rot: 0, rotV: 0, flips: 0, airborne: false,
+        coins: 0, tricks: 0, trickCombo: 0,
+        wheelSpin: 0, pedal: 0,
+        active: {},                  // aktívne powerupy {kind: zostávajúci čas}
+        particles: [], floats: [],
+        shake: 0, time: 0, finished: false, dead: false,
+    };
+    S.screen = 'play';
+    showOverlays();
+}
+
+/* ---------------- Logika behu ---------------- */
+function jumpPower() { return 620 + stat('jump') * 45; }
+const GRAV = 1750;
+
+function update(dt) {
+    if (!G || S.screen !== 'play') return;
+    const g = G, L = g.level, gy = groundYSaved;
+    g.time += dt;
+
+    // rýchlosť (turbo); po páde sa jazdec zastaví
+    const turbo = g.active.turbo > 0 ? 1.55 : 1;
+    g.speed = lerp(g.speed, g.dead ? 0 : g.baseSpeed * turbo, dt * 2.5);
+    g.px += g.speed * dt;
+    g.camX = g.px - Math.min(220, W * 0.24);
+
+    // časovače powerupov
+    for (const k in g.active) { g.active[k] -= dt; if (g.active[k] <= 0) delete g.active[k]; }
+
+    // animácie kolies a pedálov
+    g.wheelSpin += g.speed * dt / 22;
+    g.pedal += g.speed * dt / 46;
+
+    // --- rampy: nábeh po šikmej ploche + vystrelenie ---
+    let surfaceY = gy, onRampNow = false;
+    for (const r of L.ramps) {
+        if (g.px >= r.x && g.px <= r.x + r.w) {
+            const t = (g.px - r.x) / r.w;
+            surfaceY = gy - r.h * t;
+            onRampNow = true;
+        }
+    }
+    if (g.onGround) {
+        if (onRampNow || surfaceY >= g.py - 40) g.py = surfaceY;
+        // koniec rampy → automatické vystrelenie do vzduchu
+        if (g.onRamp && !onRampNow) {
+            g.vy = -(jumpPower() * 0.9 + g.speed * 0.55);
+            g.onGround = false; g.airborne = true;
+            spawnBurst(g.px, g.py, '#ffd166', 12);
+        }
+        g.onRamp = onRampNow;
+    }
+
+    // --- skok ---
+    if (input.jump && g.onGround && !g.dead) {
+        g.vy = -jumpPower();
+        g.onGround = false; g.airborne = true; g.onRamp = false;
+        spawnBurst(g.px, gy, '#ffffff', 6);
+    }
+
+    // --- fyzika vo vzduchu ---
+    if (!g.onGround) {
+        g.vy += GRAV * dt;
+        g.py += g.vy * dt;
+
+        // triky: salto dozadu
+        if (input.trick && g.rotV === 0 && !g.dead) { g.rotV = -10.5; input.trick = false; }
+        if (g.rotV !== 0) {
+            g.rot += g.rotV * dt;
+            if (g.rot <= -TAU * (g.flips + 1)) { // dokončené salto → zastav rotáciu vzpriamene
+                g.flips++;
+                g.rot = -TAU * g.flips;
+                g.rotV = 0;
+                g.trickCombo++;
+                const bonus = 5 * g.trickCombo * (g.active.x2 > 0 ? 2 : 1);
+                g.coins += bonus; g.tricks++;
+                toast(`BACKFLIP ×${g.trickCombo}! +${bonus} 🪙`);
+                spawnBurst(g.px, g.py - 40, '#ffd166', 14);
+            }
+        }
+
+        // pristátie
+        if (g.py >= surfaceY && g.vy > 0) {
+            const partial = Math.abs(g.rot % TAU);
+            const upright = partial < 0.75 || partial > TAU - 0.75;
+            if (!upright && !g.dead) { crash('Zlé pristátie po triku! Dokonči salto skôr, než dopadneš.'); return; }
+            g.py = surfaceY; g.vy = 0; g.onGround = true; g.airborne = false;
+            g.rot = 0; g.rotV = 0; g.flips = 0; g.trickCombo = 0;
+            g.onRamp = onRampNow;
+            spawnBurst(g.px, g.py, '#cfd8e3', 5);
+        }
+    } else if (!onRampNow) {
+        g.py = gy;
+    }
+
+    // --- mince ---
+    const magnet = g.active.magnet > 0;
+    if (!g.dead) for (const c of L.coins) {
+        if (c.taken) continue;
+        let dx = c.x - g.px, dy = c.y - (g.py - 40);
+        if (magnet && Math.hypot(dx, dy) < 210) { c.x -= dx * dt * 7; c.y -= dy * dt * 7; dx = c.x - g.px; dy = c.y - (g.py - 40); }
+        if (Math.abs(dx) < 42 && Math.abs(dy) < 52) {
+            c.taken = true;
+            const v = g.active.x2 > 0 ? 2 : 1;
+            g.coins += v;
+            g.floats.push({ x: c.x, y: c.y, t: 0, txt: `+${v}` });
+            spawnBurst(c.x, c.y, '#ffd166', 5);
+        }
+    }
+
+    // --- powerupy na trati ---
+    for (const p of L.pups) {
+        if (p.taken) continue;
+        if (Math.abs(p.x - g.px) < 46 && Math.abs(p.y - (g.py - 40)) < 60) {
+            p.taken = true;
+            const dur = POWERUPS[p.kind].dur * (1 + stat('power') * 0.12);
+            g.active[p.kind] = Math.max(g.active[p.kind] || 0, dur);
+            toast(`${POWERUPS[p.kind].emoji} ${POWERUPS[p.kind].name}!`);
+            spawnBurst(p.x, p.y, '#8ecbff', 12);
+        }
+    }
+
+    // --- prekážky ---
+    if (!g.dead) for (const o of L.obstacles) {
+        const oh = o.type === 'rock' ? 42 : 52, ow = o.type === 'rock' ? 46 : 30;
+        if (Math.abs(o.x - g.px) < (ow + 26) / 2 && g.py > gy - oh - 6) {
+            if (g.active.turbo > 0) { spawnBurst(o.x, gy - 20, '#ff8e3c', 16); o.x = -9999; toast('⚡ PREBÚRANÉ!'); }
+            else if (g.active.shield > 0) { delete g.active.shield; spawnBurst(o.x, gy - 20, '#8ecbff', 16); o.x = -9999; toast('🛡️ Štít ťa zachránil!'); }
+            else { crash(o.type === 'rock' ? 'Narazil si do skaly! Nabudúce skoč skôr.' : 'Zrazil si kužeľ! Nabudúce skoč skôr.'); return; }
+        }
+    }
+
+    // --- cieľ ---
+    if (g.px >= L.len && !g.finished && !g.dead) { g.finished = true; finishLevel(); return; }
+
+    // častice a plávajúce texty
+    for (const p of g.particles) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 900 * dt; }
+    g.particles = g.particles.filter(p => p.t < 0.8);
+    for (const f of g.floats) { f.t += dt; f.y -= 50 * dt; }
+    g.floats = g.floats.filter(f => f.t < 1);
+    if (g.shake > 0) g.shake = Math.max(0, g.shake - dt * 30);
+
+    input.trick = false; // trik je jednorazové stlačenie
+    updateHUD();
+}
+
+function spawnBurst(x, y, color, n) {
+    for (let i = 0; i < n; i++) {
+        const a = Math.random() * TAU, sp = 120 + Math.random() * 260;
+        G.particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 150, t: 0, color });
+    }
+}
+
+let toastTimer = null;
+function toast(txt) {
+    const el = document.getElementById('trickToast');
+    el.textContent = txt;
+    el.style.opacity = 1; el.style.transform = 'scale(1.1)';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.style.opacity = 0; el.style.transform = 'scale(1)'; }, 1100);
+}
+
+function crash(msg) {
+    G.dead = true; G.shake = 14;
+    spawnBurst(G.px, G.py - 30, '#ff6b6b', 24);
+    const kept = Math.floor(G.coins / 2);
+    save.coins += kept; persist();
+    document.getElementById('crashInfo').textContent =
+        `${msg} Zachránil si ${kept} 🪙 z ${G.coins}.`;
+    setTimeout(() => { S.screen = 'crashed'; showOverlays(); }, 700);
+}
+
+function finishLevel() {
+    const bonus = 25 + G.n * 15;
+    const total = G.coins + bonus;
+    save.coins += total;
+    if (!save.done.includes(G.n)) save.done.push(G.n);
+    if (G.n >= save.unlocked && G.n < NUM_LEVELS) save.unlocked = G.n + 1;
+    persist();
+    document.getElementById('doneTitle').textContent = `Level ${G.n} hotový!`;
+    document.getElementById('doneCoins').textContent = G.coins;
+    document.getElementById('doneTricks').textContent = G.tricks;
+    document.getElementById('doneBonus').textContent = bonus;
+    document.getElementById('doneTotal').textContent = total + ' 🪙';
+    document.getElementById('btnNext').style.display = G.n < NUM_LEVELS ? '' : 'none';
+    S.screen = 'done';
+    showOverlays();
+}
+
+/* ---------------- Kreslenie ---------------- */
+function draw() {
+    const gy = S.screen === 'play' && G ? groundYSaved : groundY();
+    const camX = G && S.screen !== 'menu' ? G.camX : performance.now() * 0.04;
+    const shakeX = G && G.shake ? (Math.random() - 0.5) * G.shake : 0;
+    const shakeY = G && G.shake ? (Math.random() - 0.5) * G.shake : 0;
+
+    // obloha
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#7ec8ff'); sky.addColorStop(0.65, '#cfe9ff'); sky.addColorStop(1, '#eef7ff');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+    // slnko
+    ctx.fillStyle = 'rgba(255,220,120,0.95)';
+    ctx.beginPath(); ctx.arc(W * 0.82, H * 0.16, 42, 0, TAU); ctx.fill();
+
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+
+    // oblaky (parallax)
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    for (let i = 0; i < 6; i++) {
+        const cx = ((i * 420 + 100 - camX * 0.15) % (W + 400) + W + 400) % (W + 400) - 200;
+        const cy = 60 + (i % 3) * 55;
+        cloud(cx, cy, 1 + (i % 2) * 0.4);
+    }
+    // kopce (parallax)
+    hills(camX * 0.3, gy, '#a8d5a2', 0.55);
+    hills(camX * 0.55 + 900, gy, '#7cbf78', 0.8);
+
+    // zem / cesta
+    ctx.fillStyle = '#6da65f';
+    ctx.fillRect(0, gy, W, H - gy);
+    ctx.fillStyle = '#5c554e';
+    ctx.fillRect(0, gy, W, 26);
+    ctx.fillStyle = '#f2e6c9';
+    for (let i = -1; i < W / 70 + 1; i++) {
+        const dx = i * 70 - (camX % 70);
+        ctx.fillRect(dx, gy + 11, 34, 4);
+    }
+
+    if (G && S.screen !== 'menu') {
+        drawTrack(camX, gy);
+        drawPlayer(camX, gy);
+        // častice a texty
+        for (const p of G.particles) {
+            ctx.globalAlpha = 1 - p.t / 0.8;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x - camX - 3, p.y - 3, 6, 6);
+        }
+        ctx.globalAlpha = 1;
+        ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+        for (const f of G.floats) {
+            ctx.globalAlpha = 1 - f.t;
+            ctx.fillStyle = '#b8860b';
+            ctx.fillText(f.txt, f.x - camX, f.y);
+        }
+        ctx.globalAlpha = 1;
+    } else {
+        drawMenuRider(gy);
+    }
+    ctx.restore();
+}
+
+function cloud(x, y, s) {
+    ctx.beginPath();
+    ctx.arc(x, y, 22 * s, 0, TAU);
+    ctx.arc(x + 24 * s, y - 10 * s, 26 * s, 0, TAU);
+    ctx.arc(x + 52 * s, y, 20 * s, 0, TAU);
+    ctx.fill();
+}
+function hills(off, gy, color, hs) {
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(0, gy);
+    for (let x = 0; x <= W; x += 8) {
+        const t = (x + off) * 0.004;
+        ctx.lineTo(x, gy - (Math.sin(t) * 40 + Math.sin(t * 2.7) * 22 + 60) * hs);
+    }
+    ctx.lineTo(W, gy); ctx.closePath(); ctx.fill();
+}
+
+function drawTrack(camX, gy) {
+    const L = G.level;
+    // rampy
+    for (const r of L.ramps) {
+        const x = r.x - camX;
+        if (x + r.w < -50 || x > W + 50) continue;
+        const grad = ctx.createLinearGradient(x, gy - r.h, x, gy);
+        grad.addColorStop(0, '#c98850'); grad.addColorStop(1, '#8a5a32');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(x, gy); ctx.lineTo(x + r.w, gy - r.h); ctx.lineTo(x + r.w, gy);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#5f3d20'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + r.w, gy - r.h); ctx.stroke();
+        // vzpery
+        ctx.strokeStyle = 'rgba(95,61,32,0.55)'; ctx.lineWidth = 2;
+        for (let i = 1; i < 4; i++) {
+            const sx = x + r.w * i / 4;
+            ctx.beginPath(); ctx.moveTo(sx, gy); ctx.lineTo(sx, gy - r.h * i / 4); ctx.stroke();
+        }
+    }
+    // cieľ
+    const fx = L.len - camX;
+    if (fx > -80 && fx < W + 80) {
+        ctx.fillStyle = '#333';
+        ctx.fillRect(fx, gy - 150, 6, 150);
+        for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) {
+            ctx.fillStyle = (r + c) % 2 ? '#fff' : '#222';
+            ctx.fillRect(fx + 6 + c * 14, gy - 150 + r * 14, 14, 14);
+        }
+    }
+    // prekážky
+    for (const o of L.obstacles) {
+        const x = o.x - camX;
+        if (x < -60 || x > W + 60) continue;
+        if (o.type === 'rock') {
+            ctx.fillStyle = '#7d8894';
+            ctx.beginPath();
+            ctx.moveTo(x - 23, gy); ctx.lineTo(x - 12, gy - 34); ctx.lineTo(x + 4, gy - 42);
+            ctx.lineTo(x + 20, gy - 26); ctx.lineTo(x + 23, gy);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.25)';
+            ctx.beginPath(); ctx.moveTo(x - 12, gy - 34); ctx.lineTo(x + 4, gy - 42); ctx.lineTo(x + 2, gy - 26); ctx.closePath(); ctx.fill();
+        } else {
+            ctx.fillStyle = '#ff7043';
+            ctx.beginPath(); ctx.moveTo(x - 15, gy); ctx.lineTo(x, gy - 52); ctx.lineTo(x + 15, gy); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.moveTo(x - 9, gy - 18); ctx.lineTo(x + 9, gy - 18); ctx.lineTo(x + 6, gy - 30); ctx.lineTo(x - 6, gy - 30); ctx.closePath(); ctx.fill();
+        }
+    }
+    // mince (rotujúce)
+    const spin = performance.now() * 0.006;
+    for (const c of L.coins) {
+        if (c.taken) continue;
+        const x = c.x - camX;
+        if (x < -40 || x > W + 40) continue;
+        const sq = Math.abs(Math.sin(spin + c.x * 0.05));
+        ctx.save();
+        ctx.translate(x, c.y);
+        ctx.scale(Math.max(0.15, sq), 1);
+        ctx.fillStyle = '#f6b93b';
+        ctx.beginPath(); ctx.arc(0, 0, 14, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#ffd97a';
+        ctx.beginPath(); ctx.arc(0, 0, 9, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#b8860b';
+        ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('★', 0, 1);
+        ctx.restore();
+    }
+    // powerupy (levitujúce)
+    for (const p of L.pups) {
+        if (p.taken) continue;
+        const x = p.x - camX;
+        if (x < -50 || x > W + 50) continue;
+        const bob = Math.sin(performance.now() * 0.004 + p.x) * 7;
+        ctx.fillStyle = 'rgba(60,120,220,0.25)';
+        ctx.beginPath(); ctx.arc(x, p.y + bob, 26, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#4a90e2'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(x, p.y + bob, 26, 0, TAU); ctx.stroke();
+        ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(POWERUPS[p.kind].emoji, x, p.y + bob + 1);
+    }
+}
+
+/* nakreslí bicykel + jazdca; stred = os medzi kolesami na (0,0) */
+function drawBike(color, wheelSpin, pedal, tilt) {
+    ctx.save();
+    ctx.rotate(tilt);
+    const wr = 17; // polomer kolesa
+    // kolesá so špicami
+    for (const wx of [-26, 26]) {
+        ctx.strokeStyle = '#222'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(wx, 0, wr, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = '#9aa7b5'; ctx.lineWidth = 1.6;
+        for (let i = 0; i < 5; i++) {
+            const a = wheelSpin + i * TAU / 5;
+            ctx.beginPath(); ctx.moveTo(wx, 0);
+            ctx.lineTo(wx + Math.cos(a) * wr * 0.9, Math.sin(a) * wr * 0.9);
+            ctx.stroke();
+        }
+    }
+    // rám
+    ctx.strokeStyle = color; ctx.lineWidth = 4.5; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-26, 0); ctx.lineTo(-6, -22); ctx.lineTo(20, -22);   // horná rúra
+    ctx.moveTo(-6, -22); ctx.lineTo(2, -2);                          // sedlovka
+    ctx.moveTo(-26, 0); ctx.lineTo(2, -2); ctx.lineTo(20, -22);      // spodný trojuholník
+    ctx.moveTo(26, 0); ctx.lineTo(20, -22);                          // vidlica
+    ctx.stroke();
+    // riadidlá + sedadlo
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(20, -22); ctx.lineTo(24, -32); ctx.lineTo(31, -34); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-6, -22); ctx.lineTo(-9, -30); ctx.stroke();
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-16, -33, 14, 5);
+    // pedále
+    const pa = pedal;
+    ctx.strokeStyle = '#444'; ctx.lineWidth = 3;
+    for (const s of [1, -1]) {
+        const px = 2 + Math.cos(pa) * 9 * s, py = -2 + Math.sin(pa) * 9 * s;
+        ctx.beginPath(); ctx.moveTo(2, -2); ctx.lineTo(px, py); ctx.stroke();
+        ctx.fillStyle = '#222'; ctx.fillRect(px - 5, py - 2, 10, 4);
+    }
+    // jazdec
+    const hipX = -9, hipY = -33;
+    const kneeX = -2 + Math.cos(pa) * 4, kneeY = -18 + Math.sin(pa) * 3;
+    const footX = 2 + Math.cos(pa) * 9, footY = -2 + Math.sin(pa) * 9;
+    ctx.strokeStyle = '#26415e'; ctx.lineWidth = 5.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(kneeX, kneeY); ctx.lineTo(footX, footY); ctx.stroke(); // noha
+    ctx.strokeStyle = '#37516f';
+    ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(hipX + 4, hipY - 16); ctx.stroke();                    // trup dolná časť
+    ctx.strokeStyle = '#e05c3a'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(hipX + 2, hipY - 10); ctx.lineTo(hipX + 12, hipY - 24); ctx.stroke();          // trup
+    ctx.strokeStyle = '#e8a87c'; ctx.lineWidth = 4.5;
+    ctx.beginPath(); ctx.moveTo(hipX + 10, hipY - 22); ctx.lineTo(hipX + 22, hipY - 12); ctx.lineTo(29, -34); ctx.stroke(); // ruka
+    // hlava + prilba
+    const hx = hipX + 16, hy = hipY - 30;
+    ctx.fillStyle = '#e8a87c';
+    ctx.beginPath(); ctx.arc(hx, hy, 6.5, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#2E8339';
+    ctx.beginPath(); ctx.arc(hx, hy - 2, 7, Math.PI, 0); ctx.fill();
+    ctx.restore();
+}
+
+function drawPlayer(camX, gy) {
+    const g = G;
+    const x = g.px - camX;
+    ctx.save();
+    ctx.translate(x, g.py - 17);
+    // náklon na rampe / rotácia trikov
+    let tilt = 0;
+    if (g.onGround && g.onRamp) {
+        for (const r of g.level.ramps) if (g.px >= r.x && g.px <= r.x + r.w) tilt = -Math.atan2(r.h, r.w);
+    } else if (!g.onGround) {
+        tilt = g.rot !== 0 ? g.rot : clamp(g.vy / 2200, -0.35, 0.4);
+    }
+    // aura štítu / turba
+    if (g.active.shield > 0) {
+        ctx.strokeStyle = 'rgba(120,190,255,0.8)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(0, -12, 46, 0, TAU); ctx.stroke();
+        ctx.fillStyle = 'rgba(120,190,255,0.12)';
+        ctx.beginPath(); ctx.arc(0, -12, 46, 0, TAU); ctx.fill();
+    }
+    if (g.active.turbo > 0) {
+        ctx.fillStyle = 'rgba(255,140,40,0.5)';
+        for (let i = 0; i < 3; i++) ctx.fillRect(-50 - i * 14, -20 + i * 6 - 6, 12, 5);
+    }
+    if (g.dead) tilt = g.time * 6;
+    drawBike(bikeDef().color, g.wheelSpin, g.pedal, tilt);
+    ctx.restore();
+    // magnetový efekt
+    if (g.active.magnet > 0) {
+        ctx.strokeStyle = 'rgba(220,60,90,0.35)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(x, g.py - 40, 210, 0, TAU); ctx.stroke();
+    }
+}
+
+function drawMenuRider(gy) {
+    const t = performance.now() * 0.001;
+    ctx.save();
+    ctx.translate(W * 0.5, gy - 17 + Math.sin(t * 2) * 2);
+    drawBike(bikeDef().color, t * 12, t * 6, 0);
+    ctx.restore();
+}
+
+/* ---------------- HUD ---------------- */
+function updateHUD() {
+    if (!G) return;
+    document.getElementById('hudLevel').textContent = `Level ${G.n}`;
+    document.getElementById('hudCoins').textContent = `🪙 ${G.coins}`;
+    document.getElementById('hudTricks').textContent = `🤸 ${G.tricks}`;
+    document.getElementById('progressBar').style.width = clamp(G.px / G.level.len * 100, 0, 100) + '%';
+    const pw = document.getElementById('powerups');
+    pw.innerHTML = Object.entries(G.active)
+        .map(([k, t]) => `<div class="pw">${POWERUPS[k].emoji} ${Math.ceil(t)}s</div>`).join('');
+}
+
+/* ---------------- Obrazovky ---------------- */
+function showOverlays() {
+    for (const id of ['menu', 'garage', 'levels', 'levelDone', 'crashed'])
+        document.getElementById(id).classList.remove('show');
+    document.getElementById('hud').classList.toggle('show', S.screen === 'play');
+    document.getElementById('touchCtl').classList.toggle('show', S.screen === 'play');
+    if (S.screen === 'menu') { document.getElementById('menuCoins').textContent = `🪙 ${save.coins}`; document.getElementById('menu').classList.add('show'); }
+    if (S.screen === 'garage') { renderGarage(); document.getElementById('garage').classList.add('show'); }
+    if (S.screen === 'levels') { renderLevels(); document.getElementById('levels').classList.add('show'); }
+    if (S.screen === 'done') document.getElementById('levelDone').classList.add('show');
+    if (S.screen === 'crashed') document.getElementById('crashed').classList.add('show');
+}
+
+function renderGarage() {
+    document.getElementById('garageCoins').textContent = `🪙 ${save.coins}`;
+    const list = document.getElementById('bikeList');
+    list.innerHTML = '';
+    for (const b of BIKES) {
+        const bs = save.bikes[b.id];
+        const owned = !!bs?.owned;
+        const card = document.createElement('div');
+        card.className = 'bike-card' + (save.selected === b.id ? ' sel' : '');
+        let head = `<div class="bike-head">
+            <div class="bike-name">${b.emoji} ${b.name}${save.selected === b.id ? ' ✅' : ''}</div>`;
+        if (owned) {
+            head += save.selected === b.id
+                ? `<span style="color:#4cd07d;font-weight:700;">Vybraný</span>`
+                : `<button class="mini-btn" data-act="select" data-bike="${b.id}">Vybrať</button>`;
+        } else {
+            head += `<button class="mini-btn buy" data-act="buy" data-bike="${b.id}" ${save.coins < b.price ? 'disabled' : ''}>Kúpiť za ${b.price} 🪙</button>`;
+        }
+        head += `</div>`;
+        let rows = '';
+        for (const u of UPGRADES) {
+            const lvl = bs?.up[u.id] || 0;
+            const val = b[u.id] + lvl;
+            const cost = upCost(b, u.id);
+            rows += `<div class="stat-row">
+                <span style="width:110px;">${u.emoji} ${u.name}</span>
+                <div class="stat-bar"><div class="stat-fill" style="width:${val / 9 * 100}%"></div></div>
+                ${owned
+                    ? (lvl >= MAX_UP
+                        ? `<span style="color:#4cd07d;">MAX</span>`
+                        : `<button class="mini-btn" data-act="up" data-bike="${b.id}" data-up="${u.id}" ${save.coins < cost ? 'disabled' : ''}>+1 (${cost} 🪙)</button>`)
+                    : `<span style="opacity:0.5;">lvl ${val}</span>`}
+            </div>`;
+        }
+        card.innerHTML = head + rows;
+        list.appendChild(card);
+    }
+    list.querySelectorAll('button[data-act]').forEach(btn => btn.addEventListener('click', () => {
+        const { act, bike, up } = btn.dataset;
+        const def = BIKES.find(x => x.id === bike);
+        if (act === 'buy' && save.coins >= def.price) {
+            save.coins -= def.price;
+            save.bikes[bike] = { owned: true, up: { speed: 0, jump: 0, power: 0 } };
+            save.selected = bike;
+        } else if (act === 'select') {
+            save.selected = bike;
+        } else if (act === 'up') {
+            const cost = upCost(def, up);
+            if (save.coins >= cost && save.bikes[bike].up[up] < MAX_UP) {
+                save.coins -= cost; save.bikes[bike].up[up]++;
+            }
+        }
+        persist(); renderGarage();
+    }));
+}
+
+function renderLevels() {
+    const grid = document.getElementById('levelGrid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= NUM_LEVELS; i++) {
+        const d = document.createElement('div');
+        const locked = i > save.unlocked;
+        d.className = 'lvl' + (save.done.includes(i) ? ' done' : '') + (locked ? ' locked' : '');
+        d.textContent = locked ? '🔒' : (save.done.includes(i) ? '⭐' : i);
+        if (!locked) { d.title = `Level ${i}`; d.addEventListener('click', () => startLevel(i)); }
+        grid.appendChild(d);
+    }
+}
+
+/* tlačidlá */
+document.getElementById('btnPlay').addEventListener('click', () => startLevel(Math.min(save.unlocked, NUM_LEVELS)));
+document.getElementById('btnGarage').addEventListener('click', () => { S.screen = 'garage'; showOverlays(); });
+document.getElementById('btnLevels').addEventListener('click', () => { S.screen = 'levels'; showOverlays(); });
+document.getElementById('btnGarageBack').addEventListener('click', () => { S.screen = 'menu'; showOverlays(); });
+document.getElementById('btnLevelsBack').addEventListener('click', () => { S.screen = 'menu'; showOverlays(); });
+document.getElementById('btnNext').addEventListener('click', () => startLevel(Math.min(G.n + 1, NUM_LEVELS)));
+document.getElementById('btnDoneGarage').addEventListener('click', () => { S.screen = 'garage'; showOverlays(); });
+document.getElementById('btnDoneMenu').addEventListener('click', () => { S.screen = 'menu'; showOverlays(); });
+document.getElementById('btnRetry').addEventListener('click', () => startLevel(G.n));
+document.getElementById('btnCrashMenu').addEventListener('click', () => { S.screen = 'menu'; showOverlays(); });
+
+/* ---------------- Hlavná slučka ---------------- */
+let lastT = performance.now();
+function loop(now) {
+    const dt = Math.min((now - lastT) / 1000, 0.05);
+    lastT = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+showOverlays();
+</script>
+</body>
+</html>
