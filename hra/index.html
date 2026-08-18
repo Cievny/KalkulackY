@@ -319,10 +319,15 @@ function fern(x, y, z) {
     deco(new THREE.BoxGeometry(1.1, 0.5, 0.35), 0x3a9c46, x, y + 0.3, z);
     deco(new THREE.BoxGeometry(0.35, 0.5, 1.1), 0x2e8339, x, y + 0.55, z);
 }
+const GROUND_Y = -14; // úroveň dna údolia
+
 function island(x, y, z, w, d, withPalm = true) {
     deco(new THREE.BoxGeometry(w, 1, d), 0x5d6b4a, x, y, z);
     if (withPalm) palm(x, y + 0.5, z);
     fern(x + w / 4, y + 0.5, z + d / 4);
+    // skalný stĺp až na dno údolia
+    const colH = (y - 0.5) - GROUND_Y;
+    if (colH > 1) deco(new THREE.BoxGeometry(w * 0.35, colH, d * 0.35), 0x5f5a4f, x, GROUND_Y + colH / 2, z);
 }
 
 // Skalná veža stúpajúca z hlbín priepasti (len dekorácia, bez kolízií)
@@ -548,7 +553,18 @@ for (const pl of platforms) {
         m.x - pl.w * 0.05, m.y - pl.h / 2 - h1 - h2 / 2 + 0.15, m.z + pl.d * 0.05);
     deco(new THREE.BoxGeometry(pl.w * 0.22, h2 * 0.7, pl.d * 0.22), 0x554f45,
         m.x, m.y - pl.h / 2 - h1 - h2 * 1.35 + 0.25, m.z);
+    // stĺp pokračuje až na dno údolia – plošiny stoja na skalných vežiach
+    const tipBottom = m.y - pl.h / 2 - h1 - h2 * 1.35 + 0.25 - h2 * 0.35;
+    const colH = tipBottom - GROUND_Y;
+    if (colH > 0.5) {
+        deco(new THREE.BoxGeometry(Math.max(pl.w * 0.24, 0.7), colH, Math.max(pl.d * 0.24, 0.7)),
+            0x554f45, m.x, GROUND_Y + colH / 2, m.z);
+    }
 }
+
+// podložie a stĺp aj pod močiarom
+deco(new THREE.BoxGeometry(12, 2.5, 10), 0x6e685c, 0.4, -2.2, -30.4);
+deco(new THREE.BoxGeometry(7, 10.7, 6), 0x5f5a4f, -0.4, -8.7, -29.6);
 
 // Skaly v priepasti – vypĺňajú hlbinu pod dráhou
 rockSpire(-6, -12, -5, 0.9);
@@ -566,9 +582,60 @@ rockSpire(-5, -88, 0);
 rockSpire(-3, -80, -4, 0.7);
 rockSpire(6, -92, 1, 0.9);
 
+// ---------- Údolie pod dráhou: zem, rieka, vegetácia ----------
+const ground = deco(new THREE.BoxGeometry(170, 1, 200), 0x4c5d3d, 0, GROUND_Y - 0.5, -50);
+ground.receiveShadow = true;
+// rieka tečúca údolím s hlinenými brehmi
+deco(new THREE.BoxGeometry(9, 0.5, 200), 0x4a7a8c, 5, GROUND_Y - 0.15, -50);
+deco(new THREE.BoxGeometry(1.8, 0.7, 200), 0x6a5b43, -0.2, GROUND_Y - 0.1, -50);
+deco(new THREE.BoxGeometry(1.8, 0.7, 200), 0x6a5b43, 10.2, GROUND_Y - 0.1, -50);
+// trávnaté fľaky pre pestrosť terénu
+deco(new THREE.BoxGeometry(26, 0.14, 20), 0x55684a, -26, GROUND_Y + 0.07, -28);
+deco(new THREE.BoxGeometry(20, 0.14, 26), 0x435541, 24, GROUND_Y + 0.07, -62);
+deco(new THREE.BoxGeometry(30, 0.14, 22), 0x55684a, -22, GROUND_Y + 0.07, -80);
+deco(new THREE.BoxGeometry(18, 0.14, 16), 0x435541, 20, GROUND_Y + 0.07, -15);
+// vegetácia a balvany v údolí
+palm(-18, GROUND_Y, -20, 5); palm(-30, GROUND_Y, -55, 6); palm(22, GROUND_Y, -40, 5);
+palm(30, GROUND_Y, -85, 6); palm(-20, GROUND_Y, -92, 5); palm(16, GROUND_Y, -8, 5);
+palm(-34, GROUND_Y, -110, 6); palm(26, GROUND_Y, -108, 5);
+fern(-12, GROUND_Y, -35); fern(18, GROUND_Y, -60); fern(-25, GROUND_Y, -72);
+fern(25, GROUND_Y, -22); fern(-15, GROUND_Y, -105); fern(14, GROUND_Y, -88);
+deco(new THREE.BoxGeometry(3, 2, 2.5), 0x7a7466, -35, GROUND_Y + 1, -42);
+deco(new THREE.BoxGeometry(2.2, 1.4, 2), 0x6e685c, 28, GROUND_Y + 0.7, -30);
+deco(new THREE.BoxGeometry(2.6, 1.8, 2.2), 0x7a7466, -28, GROUND_Y + 0.9, -98);
+
+// ---------- Hory na obzore ----------
+function mountain(x, z, h, w) {
+    deco(new THREE.BoxGeometry(w, h, w), 0x66755c, x, GROUND_Y + h / 2, z);
+    deco(new THREE.BoxGeometry(w * 0.62, h * 0.5, w * 0.62), 0x78876e, x + w * 0.05, GROUND_Y + h + h * 0.2, z - w * 0.05);
+    deco(new THREE.BoxGeometry(w * 0.3, h * 0.24, w * 0.3), 0xb8c4b0, x, GROUND_Y + h * 1.45 + h * 0.1, z); // zasnežený vrchol
+}
+mountain(-62, -18, 18, 20);
+mountain(-70, -60, 24, 24);
+mountain(-64, -102, 20, 20);
+mountain(64, -35, 22, 22);
+mountain(72, -78, 26, 24);
+mountain(62, -112, 18, 18);
+mountain(0, -148, 28, 30);
+mountain(-30, -142, 18, 18);
+mountain(34, -140, 20, 20);
+mountain(-64, 26, 16, 16);
+mountain(58, 26, 14, 14);
+
+// ---------- Oblaky ----------
+function cloud(x, y, z, s = 1) {
+    const m = deco(new THREE.BoxGeometry(9 * s, 1.1, 4.5 * s), 0xf6f8f2, x, y, z);
+    m.castShadow = false;
+    const m2 = deco(new THREE.BoxGeometry(5 * s, 1.1, 3 * s), 0xffffff, x + 2.5 * s, y + 0.8, z - 0.8 * s);
+    m2.castShadow = false;
+}
+cloud(-20, 26, -25); cloud(25, 30, -55, 1.3); cloud(-30, 32, -85, 1.1);
+cloud(10, 28, -110, 0.9); cloud(35, 25, -15, 0.8); cloud(-8, 34, -60, 1.2);
+
 // Scenéria okolo dráhy
-makeBrachio(-22, -2, -35).rotation.y = 0.6;
-makeBrachio(20, 4, -75).rotation.y = -2.4;
+makeBrachio(-22, GROUND_Y, -35).rotation.y = 0.6;
+makeBrachio(20, GROUND_Y, -75).rotation.y = -2.4;
+makeBrachio(-14, GROUND_Y, -100).rotation.y = 1.9;
 island(-10, -1, -14, 5, 5);
 island(11, 0.5, -30, 6, 5);
 island(-11, 0, -50, 5, 6);
@@ -737,7 +804,7 @@ function respawn() {
 const DEATH_MSG = {
     swamp: '🐊 Pohltil ťa močiar!',
     dino: '🦖 Raptor ťa dolapil!',
-    fall: '💀 Spadol si do rokliny!',
+    fall: '💀 Spadol si z výšky do údolia!',
 };
 function die(reason) {
     deathCount++;
