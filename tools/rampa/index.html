@@ -75,7 +75,17 @@
     .tbtn span { font-size: 1.6rem; line-height: 1; }
     .tbtn:active { background: rgba(60,110,80,0.7); }
 
-    /* garáž */
+    /* garáž — priehľadný spodný panel, hore vidno scénu s bicyklom */
+    #garage { background: transparent; backdrop-filter: none; justify-content: flex-end; pointer-events: none; padding: 0; }
+    #garage .panel {
+        pointer-events: auto; margin: 0 auto; width: min(680px, 100%);
+        max-height: 46vh; overflow-y: auto;
+        border-radius: 22px 22px 0 0; border-bottom: none;
+        background: rgba(20, 32, 50, 0.94);
+        padding: 18px 22px calc(18px + env(safe-area-inset-bottom));
+    }
+    #garage h2 { margin-bottom: 4px; }
+    #garageHint { color: #aebfd4; font-size: 0.85rem; margin-bottom: 10px; }
     .bike-list { display: grid; gap: 12px; margin-bottom: 10px; }
     .bike-card { background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.1);
                  border-radius: 16px; padding: 14px 16px; text-align: left; }
@@ -144,6 +154,7 @@
 <div class="overlay" id="garage">
     <div class="panel">
         <h2>🔧 Garáž</h2>
+        <div id="garageHint">Vybraný bicykel stojí hore na pódiu — vylepšenia na ňom rovno uvidíš.</div>
         <div class="coin-wallet" id="garageCoins">🪙 0</div>
         <div class="bike-list" id="bikeList"></div>
         <button class="btn" id="btnGarageBack">← Späť</button>
@@ -316,8 +327,8 @@ function buildLevel(n) {
             for (let i = 0; i < arcN; i++) {
                 const t = i / (arcN - 1);
                 coins.push({
-                    x: x + w + 40 + t * (240 + h * 2.2),
-                    y: groundYSaved - h - 60 - Math.sin(t * Math.PI) * (90 + h * 0.8),
+                    x: x + w + 40 + t * (300 + h * 2.4),
+                    y: groundYSaved - h - 90 - Math.sin(t * Math.PI) * (150 + h),
                     taken: false,
                 });
             }
@@ -369,8 +380,8 @@ function startLevel(n) {
 }
 
 /* ---------------- Logika behu ---------------- */
-function jumpPower() { return 620 + stat('jump') * 45; }
-const GRAV = 1750;
+function jumpPower() { return 760 + stat('jump') * 70; }
+const GRAV = 1600;
 
 function update(dt) {
     if (!G || S.screen !== 'play') return;
@@ -403,7 +414,7 @@ function update(dt) {
         if (onRampNow || surfaceY >= g.py - 40) g.py = surfaceY;
         // koniec rampy → automatické vystrelenie do vzduchu
         if (g.onRamp && !onRampNow) {
-            g.vy = -(jumpPower() * 0.9 + g.speed * 0.55);
+            g.vy = -(jumpPower() + g.speed * 0.6);
             g.onGround = false; g.airborne = true;
             spawnBurst(g.px, g.py, '#ffd166', 12);
         }
@@ -548,6 +559,7 @@ function finishLevel() {
 
 /* ---------------- Kreslenie ---------------- */
 function draw() {
+    if (S.screen === 'garage') { drawGarage(); return; }
     const gy = S.screen === 'play' && G ? groundYSaved : groundY();
     const camX = G && S.screen !== 'menu' ? G.camX : performance.now() * 0.04;
     const shakeX = G && G.shake ? (Math.random() - 0.5) * G.shake : 0;
@@ -711,8 +723,11 @@ function drawTrack(camX, gy) {
     }
 }
 
-/* nakreslí bicykel + jazdca; stred = os medzi kolesami na (0,0) */
-function drawBike(color, wheelSpin, pedal, tilt) {
+/* nakreslí bicykel + jazdca; stred = os medzi kolesami na (0,0)
+   ups = úrovne vylepšení {speed, jump, power} → viditeľné doplnky
+   rider = false vykreslí len bicykel (garáž) */
+function drawBike(color, wheelSpin, pedal, tilt, ups, rider = true) {
+    ups = ups || {};
     ctx.save();
     ctx.rotate(tilt);
     const wr = 17; // polomer kolesa
@@ -750,6 +765,33 @@ function drawBike(color, wheelSpin, pedal, tilt) {
         ctx.beginPath(); ctx.moveTo(2, -2); ctx.lineTo(px, py); ctx.stroke();
         ctx.fillStyle = '#222'; ctx.fillRect(px - 5, py - 2, 10, 4);
     }
+    // viditeľné vylepšenia
+    if (ups.speed) { // 💨 zlaté rýchlostné prúžky na hornej rúre
+        ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+        for (let i = 0; i < ups.speed; i++) {
+            const sx = -2 + i * 4.5;
+            ctx.beginPath(); ctx.moveTo(sx, -24.5); ctx.lineTo(sx + 3, -19.5); ctx.stroke();
+        }
+    }
+    if (ups.jump) { // 🦘 odpružená sedlovka — vinutá pružina
+        ctx.strokeStyle = '#8ecbff'; ctx.lineWidth = 1.6;
+        for (let i = 0; i <= ups.jump; i++) {
+            const t = i / MAX_UP;
+            const cx2 = lerp(-6, -8.4, t), cy2 = lerp(-23, -29, t);
+            ctx.beginPath(); ctx.moveTo(cx2 - 3.2, cy2); ctx.lineTo(cx2 + 3.2, cy2 - 1.2); ctx.stroke();
+        }
+    }
+    if (ups.power) { // 🔋 batéria na spodnej rúre
+        const bw = 8 + ups.power * 1.5;
+        ctx.fillStyle = '#4cd07d';
+        ctx.fillRect(-10, -13, bw, 6);
+        ctx.fillStyle = '#1d5a26';
+        ctx.fillRect(-10 + bw, -11.5, 2, 3);
+        ctx.fillStyle = '#eafff0';
+        ctx.font = 'bold 5px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('⚡', -10 + bw / 2, -9.7);
+    }
+    if (!rider) { ctx.restore(); return; }
     // jazdec
     const hipX = -9, hipY = -33;
     const kneeX = -2 + Math.cos(pa) * 4, kneeY = -18 + Math.sin(pa) * 3;
@@ -795,7 +837,7 @@ function drawPlayer(camX, gy) {
         for (let i = 0; i < 3; i++) ctx.fillRect(-50 - i * 14, -20 + i * 6 - 6, 12, 5);
     }
     if (g.dead) tilt = g.time * 6;
-    drawBike(bikeDef().color, g.wheelSpin, g.pedal, tilt);
+    drawBike(bikeDef().color, g.wheelSpin, g.pedal, tilt, bikeSave().up);
     ctx.restore();
     // magnetový efekt
     if (g.active.magnet > 0) {
@@ -808,8 +850,125 @@ function drawMenuRider(gy) {
     const t = performance.now() * 0.001;
     ctx.save();
     ctx.translate(W * 0.5, gy - 17 + Math.sin(t * 2) * 2);
-    drawBike(bikeDef().color, t * 12, t * 6, 0);
+    drawBike(bikeDef().color, t * 12, t * 6, 0, bikeSave().up);
     ctx.restore();
+}
+
+/* ---------------- Garáž — scéna ---------------- */
+function drawGarage() {
+    const t = performance.now() * 0.001;
+    // podlaha tak, aby sa pódium aj menovka zmestili nad spodný panel (46vh)
+    const floorY = Math.max(H * 0.30, H * 0.54 - 110);
+
+    // stena
+    const wall = ctx.createLinearGradient(0, 0, 0, floorY);
+    wall.addColorStop(0, '#3d4655'); wall.addColorStop(1, '#4a5566');
+    ctx.fillStyle = wall; ctx.fillRect(0, 0, W, floorY);
+    // vodorovné škáry panelov
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 2;
+    for (let y = 60; y < floorY; y += 70) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    // podlaha
+    const floor = ctx.createLinearGradient(0, floorY, 0, H);
+    floor.addColorStop(0, '#33383f'); floor.addColorStop(1, '#22262c');
+    ctx.fillStyle = floor; ctx.fillRect(0, floorY, W, H - floorY);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    for (let i = 0; i < 8; i++) { // perspektívne škáry dlažby
+        const x = W / 2 + (i - 3.5) * 130;
+        ctx.beginPath(); ctx.moveTo(W / 2 + (i - 3.5) * 60, floorY); ctx.lineTo(x, H); ctx.stroke();
+    }
+    // výstražný pruh na okraji podlahy
+    ctx.fillStyle = '#f6b93b';
+    ctx.fillRect(0, floorY - 3, W, 6);
+    ctx.fillStyle = '#22262c';
+    for (let x = -20; x < W; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, floorY + 3); ctx.lineTo(x + 20, floorY - 3); ctx.lineTo(x + 32, floorY - 3); ctx.lineTo(x + 12, floorY + 3); ctx.closePath(); ctx.fill();
+    }
+
+    // nástenka s náradím (vľavo)
+    if (W > 560 && floorY > 220) {
+        ctx.fillStyle = '#5b4a35';
+        ctx.fillRect(W * 0.06, 60, 170, 130);
+        ctx.strokeStyle = '#3a2f22'; ctx.lineWidth = 5;
+        ctx.strokeRect(W * 0.06, 60, 170, 130);
+        ctx.font = '30px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🔧', W * 0.06 + 40, 95);
+        ctx.fillText('🔨', W * 0.06 + 90, 95);
+        ctx.fillText('🪛', W * 0.06 + 135, 95);
+        ctx.fillText('⚙️', W * 0.06 + 60, 150);
+        ctx.fillText('🛢️', W * 0.06 + 115, 150);
+        // polička s plechovkami nad nástenkou
+        ctx.fillStyle = '#3a2f22';
+        ctx.fillRect(W * 0.05, 40, 200, 8);
+        const canColors = ['#e05c3a', '#4a90e2', '#4cd07d'];
+        canColors.forEach((c, i) => {
+            ctx.fillStyle = c;
+            ctx.fillRect(W * 0.05 + 24 + i * 46, 14, 26, 26);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.fillRect(W * 0.05 + 24 + i * 46, 14, 26, 6);
+        });
+    }
+    // stoh pneumatík (vpravo)
+    if (W > 560 && floorY > 220) {
+        for (let i = 0; i < 3; i++) {
+            const ty = floorY - 18 - i * 32;
+            ctx.fillStyle = '#1c1f24';
+            ctx.beginPath(); ctx.ellipse(W * 0.91, ty, 52 - i * 4, 20, 0, 0, TAU); ctx.fill();
+            ctx.fillStyle = '#33383f';
+            ctx.beginPath(); ctx.ellipse(W * 0.91, ty, 22, 9, 0, 0, TAU); ctx.fill();
+        }
+        // plagát
+        ctx.fillStyle = '#6A1B42';
+        ctx.fillRect(W * 0.70, 30, 150, 100);
+        ctx.fillStyle = '#ffd166';
+        ctx.font = 'bold 17px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('SKOČ NA', W * 0.70 + 75, 70);
+        ctx.fillText('RAMPU!', W * 0.70 + 75, 92);
+        ctx.font = '24px sans-serif';
+        ctx.fillText('🚴💨', W * 0.70 + 75, 116);
+    }
+
+    // visiaca lampa + kužeľ svetla na pódium
+    const lampX = W / 2, lampY = 26 + Math.sin(t * 0.8) * 3;
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(lampX, 0); ctx.lineTo(lampX, lampY); ctx.stroke();
+    ctx.fillStyle = '#31404f';
+    ctx.beginPath(); ctx.moveTo(lampX - 26, lampY + 18); ctx.lineTo(lampX + 26, lampY + 18); ctx.lineTo(lampX + 12, lampY); ctx.lineTo(lampX - 12, lampY); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffe9a8';
+    ctx.beginPath(); ctx.arc(lampX, lampY + 20, 8, 0, TAU); ctx.fill();
+    const cone = ctx.createLinearGradient(0, lampY, 0, floorY + 40);
+    cone.addColorStop(0, 'rgba(255,235,170,0.30)'); cone.addColorStop(1, 'rgba(255,235,170,0.02)');
+    ctx.fillStyle = cone;
+    ctx.beginPath();
+    ctx.moveTo(lampX - 20, lampY + 18); ctx.lineTo(lampX + 20, lampY + 18);
+    ctx.lineTo(lampX + 190, floorY + 42); ctx.lineTo(lampX - 190, floorY + 42);
+    ctx.closePath(); ctx.fill();
+
+    // pódium
+    ctx.fillStyle = '#171a1f';
+    ctx.beginPath(); ctx.ellipse(W / 2, floorY + 42, 200, 26, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#3d444d';
+    ctx.beginPath(); ctx.ellipse(W / 2, floorY + 34, 190, 24, 0, 0, TAU); ctx.fill();
+
+    // vybraný bicykel na pódiu (pomaly sa točia kolesá, jemné hojdanie)
+    const s = Math.min(clamp(W / 340, 2, 3.4), (floorY - 40) / 60);
+    ctx.save();
+    ctx.translate(W / 2, floorY + 30 - 17 * s + Math.sin(t * 1.6) * 3);
+    ctx.scale(s, s);
+    drawBike(bikeDef().color, t * 1.2, t * 0.7, 0, bikeSave().up, false);
+    ctx.restore();
+
+    // menovka bicykla nad pódiom
+    const bd = bikeDef();
+    ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(10,20,35,0.65)';
+    const label = `${bd.emoji} ${bd.name}`;
+    const tw = ctx.measureText(label).width + 36;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(W / 2 - tw / 2, floorY + 58, tw, 36, 18);
+    else ctx.rect(W / 2 - tw / 2, floorY + 58, tw, 36);
+    ctx.fill();
+    ctx.fillStyle = '#ffd166';
+    ctx.fillText(label, W / 2, floorY + 76);
 }
 
 /* ---------------- HUD ---------------- */
