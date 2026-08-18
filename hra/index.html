@@ -130,6 +130,7 @@
 <div id="hud">
     <div class="hud-box">🥚 <span id="coins">0</span>/<span id="coinsTotal">0</span></div>
     <div class="hud-box">🦖 <span id="deaths">0</span></div>
+    <div class="hud-box"><span id="hp">❤️❤️❤️</span></div>
     <div class="hud-box">⏱️ <span id="timer">0:00</span></div>
     <div class="hud-box">🪵 <span id="wood">0</span></div>
     <div class="hud-box">🪨 <span id="stone">0</span></div>
@@ -721,9 +722,11 @@ function applyPerks() {
 applyPerks();
 
 // Fyzikálny stav hráča (AABB: šírka 0.8, výška ~2.2, stred v player.position)
+const MAX_HP = 3;
 const P = {
     pos: new THREE.Vector3(0, 1.0, 0),
     vel: new THREE.Vector3(),
+    hp: MAX_HP,
     onGround: false,
     groundMover: null,
     jumps: 0,
@@ -809,6 +812,7 @@ let stunReadyAt = 0;
 $('coinsTotal').textContent = coins.length;
 
 function updateHud() {
+    $('hp').textContent = '❤️'.repeat(P.hp) + '🖤'.repeat(MAX_HP - P.hp);
     $('wood').textContent = save.wood;
     $('stone').textContent = save.stone;
     $('lvl').textContent = save.level;
@@ -836,12 +840,14 @@ const DEATH_MSG = {
     swamp: '🐊 Pohltil ťa močiar!',
     dino: '🦖 Raptor ťa dolapil!',
     fall: '💀 Spadol si z výšky do údolia!',
+    trike: '🦕 Triceratops ťa udupal!',
 };
 function die(reason) {
     deathCount++;
     $('deaths').textContent = deathCount;
     showMsg(DEATH_MSG[reason] || '💀 Ups! Skús to znova.', 1200);
     P.invulnUntil = performance.now() + 2000; // krátka nesmrteľnosť proti opakovanému zabitiu
+    P.hp = MAX_HP;
     respawn();
 }
 
@@ -1080,16 +1086,35 @@ function physics(dt) {
     // pád do priepasti
     if (P.pos.y < -12) { die('fall'); return; }
 
-    // bylinožravec: prvé pohladkanie dáva XP
-    if (!trikePetted && collideAABB(trikeBox, P.pos, 0.3)) {
-        trikePetted = true;
-        addXP(10, '🦕 triceratops ťa má rád');
+    // bylinožravec: na chrbte ťa bezpečne povozí, ale bočný dotyk
+    // (rohy!) berie srdce a odhodí ťa
+    if (collideAABB(trikeBox, P.pos, 0.3)) {
+        const boxTop = trikeBox.mesh.position.y + trikeBox.h / 2;
+        const onTop = P.pos.y - P.feet > boxTop - 0.9;
+        if (onTop) {
+            if (!trikePetted) {
+                trikePetted = true;
+                addXP(10, '🦕 jazda na triceratopsovi');
+            }
+        } else if (nowMs >= P.invulnUntil) {
+            P.hp--;
+            if (P.hp <= 0) { die('trike'); return; }
+            P.invulnUntil = nowMs + 1500;
+            showMsg('🦕 Triceratops ťa odhodil! −1 ❤️', 1100);
+            const dx = P.pos.x - trikeBox.mesh.position.x;
+            const dz = P.pos.z - trikeBox.mesh.position.z;
+            const dl = Math.hypot(dx, dz) || 1;
+            P.pos.x += dx / dl * 1.6;
+            P.pos.z += dz / dl * 1.6;
+            P.vel.y = 6;
+        }
     }
 
     // checkpointy
     for (const cp of checkpoints) {
         if (collideAABB(cp, P.pos, 0.15) && !P.spawn.equals(cp.checkpoint)) {
             P.spawn.copy(cp.checkpoint);
+            P.hp = MAX_HP; // checkpoint doplní srdcia
             showMsg('✅ Checkpoint!', 1000);
             addXP(15, 'checkpoint');
         }
