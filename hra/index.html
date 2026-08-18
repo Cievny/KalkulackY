@@ -151,6 +151,9 @@
     <div class="hud-box">🪵 <span id="wood">0</span></div>
     <div class="hud-box">🪨 <span id="stone">0</span></div>
     <div class="hud-box">💎 <span id="crystal">0</span></div>
+    <div class="hud-box" id="goldBox" style="display:none">🥇 <span id="gold">0</span></div>
+    <div class="hud-box" id="ironBox" style="display:none">⚙️ <span id="iron">0</span></div>
+    <div class="hud-box" id="diamondBox" style="display:none">💠 <span id="diamond">0</span></div>
     <div class="hud-box">⭐ LV <span id="lvl">1</span><span id="xpbarWrap"><span id="xpbar" style="display:block"></span></span></div>
     <div class="hud-box" id="stunHud" style="display:none">💤 –</div>
 </div>
@@ -188,24 +191,24 @@ const $ = id => document.getElementById(id);
 
 // ---------- Uložený postup (XP, suroviny, nástroje) ----------
 const SAVE_KEY = 'jurskyObby.save';
-const save = { xp: 0, level: 1, wood: 0, stone: 0, crystal: 0, boots: 0, speed: 0, stun: 0, lantern: 0 };
+const save = { xp: 0, level: 1, wood: 0, stone: 0, crystal: 0, gold: 0, iron: 0, diamond: 0, boots: 0, speed: 0, stun: 0, lantern: 0 };
 try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY)) || {}); } catch (e) {}
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
 
 const TOOLS = {
-    boots: { name: '🥾 Čižmy', desc: 'vyšší skok', max: 3, cost: l => ({ wood: 2 * l, stone: 2 * l - 1 }) },
-    speed: { name: '👟 Tenisky', desc: 'rýchlejší beh', max: 3, cost: l => ({ wood: 2 * l, stone: 2 * l - 1 }) },
-    stun:  { name: '💤 Uspávač', desc: 'uspí mäsožravca (F)', max: 3, cost: l => ({ wood: l + 2, stone: l + 1 }) },
-    lantern: { name: '🔦 Lampáš', desc: 'svetlo do jaskyne', max: 3, cost: l => ({ crystal: 2 * l, wood: l + 1 }) },
+    boots: { name: '🥾 Čižmy', desc: 'vyšší skok', max: 4, cost: l => l === 4 ? { iron: 3, gold: 2 } : { wood: 2 * l, stone: 2 * l - 1 } },
+    speed: { name: '👟 Tenisky', desc: 'rýchlejší beh', max: 4, cost: l => l === 4 ? { iron: 3, gold: 2 } : { wood: 2 * l, stone: 2 * l - 1 } },
+    stun:  { name: '💤 Uspávač', desc: 'uspí mäsožravca (F)', max: 4, cost: l => l === 4 ? { gold: 3, diamond: 1 } : { wood: l + 2, stone: l + 1 } },
+    lantern: { name: '🔦 Lampáš', desc: 'svetlo do jaskyne', max: 4, cost: l => l === 4 ? { diamond: 2, gold: 2 } : { crystal: 2 * l, wood: l + 1 } },
 };
-const RES_ICON = { wood: '🪵', stone: '🪨', crystal: '💎' };
+const RES_ICON = { wood: '🪵', stone: '🪨', crystal: '💎', gold: '🥇', iron: '⚙️', diamond: '💠' };
 const PERKS = {
     2: '🦘 Dvojskok odomknutý! Stlač skok aj vo vzduchu.',
     3: '🏃 +15 % rýchlosť behu!',
     4: '👑 Zlatý klobúk!',
     5: '🎖️ Elitný ranger – nový oblek!',
 };
-const STUN_CFG = [null, { dur: 4, cd: 10 }, { dur: 6, cd: 8 }, { dur: 8, cd: 6 }];
+const STUN_CFG = [null, { dur: 4, cd: 10 }, { dur: 6, cd: 8 }, { dur: 8, cd: 6 }, { dur: 10, cd: 4 }];
 
 const moveSpeed = () => (6.5 + save.speed * 0.7) * (save.level >= 3 ? 1.15 : 1);
 const jumpSpeed = () => 10.5 + save.boots * 0.8;
@@ -328,6 +331,32 @@ function pickup(type, x, y, z) {
             new THREE.IcosahedronGeometry(0.34, 0),
             new THREE.MeshStandardMaterial({ color: 0x9fe8ff, emissive: 0x4fc3f7, emissiveIntensity: 1.3 })
         );
+    } else if (type === 'gold') {
+        mesh = new THREE.Mesh(
+            new THREE.BoxGeometry(0.45, 0.32, 0.45),
+            new THREE.MeshStandardMaterial({ color: 0xffce3d, metalness: 0.85, roughness: 0.25, emissive: 0x4a3300, emissiveIntensity: 0.8 })
+        );
+    } else if (type === 'iron') {
+        mesh = new THREE.Mesh(
+            new THREE.IcosahedronGeometry(0.32, 0),
+            new THREE.MeshStandardMaterial({ color: 0xb8bcc4, metalness: 0.85, roughness: 0.4, emissive: 0x1c2024, emissiveIntensity: 0.8 })
+        );
+    } else if (type === 'diamond') {
+        mesh = new THREE.Mesh(
+            new THREE.OctahedronGeometry(0.38, 0),
+            new THREE.MeshStandardMaterial({ color: 0xd9f4ff, emissive: 0x7fd8f0, emissiveIntensity: 1.5 })
+        );
+    } else if (type === 'amber') {
+        // jantár s pravekou DNA – priesvitný s komárom vnútri
+        mesh = new THREE.Mesh(
+            new THREE.BoxGeometry(0.5, 0.6, 0.4),
+            new THREE.MeshStandardMaterial({ color: 0xf5a623, transparent: true, opacity: 0.85, emissive: 0x8a5200, emissiveIntensity: 0.9 })
+        );
+        const bug = new THREE.Mesh(
+            new THREE.BoxGeometry(0.12, 0.1, 0.16),
+            new THREE.MeshBasicMaterial({ color: 0x2a1a0a })
+        );
+        mesh.add(bug);
     } else {
         mesh = new THREE.Mesh(
             new THREE.IcosahedronGeometry(0.3, 0),
@@ -771,6 +800,53 @@ for (const [sx, sz, sh] of [[297,-16,2.6],[304,-24,3.2],[300,-33,2.2],[308,-40,2
     deco(new THREE.BoxGeometry(0.9, sh * 1.6, 0.9), 0x2e261c, sx, 19.5 - sh * 0.8, sz);
 }
 
+// Kostra T-rexa na dne jaskyne (kosti jemne svetielkujú v tme)
+function makeTrexSkeleton() {
+    const g = new THREE.Group();
+    const boneMat = new THREE.MeshLambertMaterial({ color: 0xd8d2c2, emissive: 0x3a362e });
+    const darkMat = new THREE.MeshLambertMaterial({ color: 0x14100c });
+    const bone = (w, h, d, x, y, z, rz = 0, mat = boneMat) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        m.position.set(x, y, z);
+        m.rotation.z = rz;
+        m.castShadow = true;
+        g.add(m);
+        return m;
+    };
+    // lebka so sánkou, zubami a očnými jamami
+    bone(1.7, 1.3, 2.4, 0, 1.05, 4.4);
+    bone(1.5, 0.45, 2.0, 0, 0.28, 4.2);
+    for (const tx of [-0.55, -0.18, 0.18, 0.55]) bone(0.16, 0.4, 0.16, tx, 0.62, 5.15);
+    bone(0.36, 0.46, 0.3, -0.55, 1.25, 5.35, 0, darkMat);
+    bone(0.36, 0.46, 0.3, 0.55, 1.25, 5.35, 0, darkMat);
+    // chrbtica s miernym oblúkom
+    for (let i = 0; i < 9; i++) {
+        const z = 3.0 - i * 0.85;
+        bone(0.5, 0.5, 0.7, 0, 1.15 + Math.sin(i / 8 * Math.PI) * 0.5, z);
+    }
+    // rebrá (naklonené dnu ako hrudný kôš)
+    for (const rz of [2.2, 1.3, 0.4, -0.5]) {
+        bone(0.18, 1.5, 0.18, -0.95, 0.72, rz, 0.4);
+        bone(0.18, 1.5, 0.18, 0.95, 0.72, rz, -0.4);
+    }
+    // panva a nohy roztiahnuté na zemi
+    bone(1.3, 0.9, 1.1, 0, 1.0, -2.2);
+    bone(0.42, 0.42, 1.7, -1.3, 0.32, -2.7);
+    bone(0.42, 0.42, 1.7, 1.3, 0.32, -2.7);
+    bone(0.3, 0.3, 1.3, -1.75, 0.18, -3.9);
+    bone(0.3, 0.3, 1.3, 1.75, 0.18, -3.9);
+    // chvost do stratena
+    for (let i = 0; i < 5; i++) {
+        const s = 0.42 - i * 0.06;
+        bone(s, s, 0.9, 0.25 * i, 0.85 - i * 0.12, -4.7 - i * 0.85);
+    }
+    return g;
+}
+const trexBones = makeTrexSkeleton();
+trexBones.position.set(296, -2, -36);
+trexBones.rotation.y = 0.7;
+scene.add(trexBones);
+
 // Vstupná sieň jaskyne
 box(300, 0.5, -12, 6, 1, 6, CAVE_ROCK);
 checkpoint(300, 1.2, -12, 3, 3);
@@ -780,10 +856,13 @@ pickup('crystal', 298, 2.0, -13.5);
 
 // Ťažký parkúr 1: malé kamene a kladina nad stalagmitmi
 box(300, 0.5, -18.5, 2, 1, 2, CAVE_ROCK);
+pickup('iron', 300, 2.0, -18.5);
 box(302.5, 1.1, -23, 2, 1, 2, CAVE_ROCK);
+pickup('amber', 302.5, 2.5, -23);
 box(299.5, 1.7, -27.5, 1.8, 1, 1.8, CAVE_ROCK);
 box(300.5, 1.7, -33, 0.9, 1, 7, 0x4a4238); // úzka kladina
 pickup('crystal', 300.5, 2.9, -33);
+pickup('diamond', 300.5, 3.0, -36.2); // na samom konci kladiny
 
 // Sieň s prvým velociraptorom (číha v tme!)
 box(302, 1.7, -41, 5, 1, 5, CAVE_ROCK);
@@ -795,6 +874,10 @@ pickup('crystal', 303, 3.2, -46);
 pickup('crystal', 307.5, 3.2, -51.5);
 coin(307.5, 3.4, -45.5);
 pickup('wood', 301.5, 3.0, -51.5);
+pickup('gold', 305, 3.2, -48.5);      // stred raptorieho revíru!
+pickup('iron', 308.5, 3.2, -45.3);
+pickup('diamond', 308.7, 3.2, -51.8); // najvzdialenejší kút revíru
+pickup('amber', 301.5, 3.3, -45);
 
 // Ťažký parkúr 2: rýchle pohyblivé plošiny
 movingBox(302, 2.4, -56.5, 2.4, 0.6, 2.4, 0x4a4238, 'x', 4, 2.0);
@@ -803,8 +886,11 @@ pickup('crystal', 299, 6.4, -61.5);
 
 // Výstup po malých blokoch
 box(300, 4.6, -66, 1.8, 0.8, 1.8, CAVE_ROCK);
+pickup('gold', 300, 5.9, -66);
 box(302, 5.6, -69, 1.8, 0.8, 1.8, CAVE_ROCK);
+pickup('iron', 302, 6.9, -69);
 box(299.5, 6.6, -72, 1.8, 0.8, 1.8, CAVE_ROCK);
+pickup('amber', 299.5, 7.9, -72);
 
 // Horná sieň s druhým velociraptorom
 box(300, 7, -77, 5, 1, 5, CAVE_ROCK);
@@ -815,6 +901,9 @@ addCarnivore(300, 7.5, -84, { x1: 296, x2: 304, z1: -86.5, z2: -81.5 }, 'z', 0, 
 pickup('crystal', 297, 8.5, -85.5);
 pickup('crystal', 303, 8.5, -82.5);
 coin(300, 8.7, -86.2);
+pickup('gold', 296.5, 8.5, -82.3);
+pickup('diamond', 303.5, 8.6, -86.2); // strážený velociraptorom
+pickup('amber', 300, 8.6, -81.8);
 
 // Východ z jaskyne – zlatý pad s odmenou
 box(300, 7, -90.5, 4, 1, 4, CAVE_ROCK);
@@ -972,6 +1061,10 @@ function updateHud() {
     $('wood').textContent = save.wood;
     $('stone').textContent = save.stone;
     $('crystal').textContent = save.crystal;
+    for (const k of ['gold', 'iron', 'diamond']) {
+        $(k + 'Box').style.display = save[k] > 0 ? '' : 'none';
+        $(k).textContent = save[k];
+    }
     $('lvl').textContent = save.level;
     $('xpbar').style.width = Math.min(100, save.xp / (save.level * 100) * 100) + '%';
     const sh = $('stunHud');
@@ -1021,12 +1114,12 @@ $('shopBtn').addEventListener('click', toggleShop);
 $('closeShop').addEventListener('click', toggleShop);
 $('resetSave').addEventListener('click', () => {
     if (!confirm('Naozaj vynulovať všetok postup (XP, suroviny, nástroje)?')) return;
-    Object.assign(save, { xp: 0, level: 1, wood: 0, stone: 0, crystal: 0, boots: 0, speed: 0, stun: 0, lantern: 0 });
+    Object.assign(save, { xp: 0, level: 1, wood: 0, stone: 0, crystal: 0, gold: 0, iron: 0, diamond: 0, boots: 0, speed: 0, stun: 0, lantern: 0 });
     persist(); renderShop(); toast('Postup vynulovaný');
 });
 
 function renderShop() {
-    $('shopRes').innerHTML = `Suroviny: 🪵 ${save.wood} &nbsp; 🪨 ${save.stone} &nbsp; 💎 ${save.crystal} &nbsp; ⭐ LV ${save.level}`;
+    $('shopRes').innerHTML = `Suroviny: 🪵${save.wood} 🪨${save.stone} 💎${save.crystal} 🥇${save.gold} ⚙️${save.iron} 💠${save.diamond} &nbsp; ⭐ LV ${save.level}`;
     const wrap = $('shopItems');
     wrap.innerHTML = '';
     for (const [key, t] of Object.entries(TOOLS)) {
@@ -1333,8 +1426,13 @@ function physics(dt) {
         if (P.pos.distanceTo(pk.mesh.position) < 1.0) {
             pk.taken = true;
             pk.mesh.visible = false;
-            save[pk.type]++;
-            addXP(5, pk.type === 'wood' ? '🪵 drevo +1' : pk.type === 'crystal' ? '💎 kryštál +1' : '🪨 kameň +1');
+            if (pk.type === 'amber') {
+                addXP(30, '🟠 jantár s pravekou DNA!');
+            } else {
+                save[pk.type]++;
+                const LABEL = { wood: '🪵 drevo +1', stone: '🪨 kameň +1', crystal: '💎 kryštál +1', gold: '🥇 zlato +1', iron: '⚙️ železo +1', diamond: '💠 diamant +1' };
+                addXP(pk.type === 'diamond' ? 15 : 5, LABEL[pk.type]);
+            }
         }
     }
     // portály medzi džungľou a jaskyňou
