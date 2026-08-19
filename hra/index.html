@@ -1490,7 +1490,8 @@ const herd = { z: 18, active: false, members: [] };
     hg.position.set(600, 0, herd.z);
     scene.add(hg);
     herd.group = hg;
-    const hit = { mesh: hg, w: 14, h: 5, d: 4, kill: true, reason: 'stampede', sleeping: true };
+    // vysoká kill zóna – ponad stádo sa nedá preskočiť ani dvojskokom
+    const hit = { mesh: hg, w: 14, h: 14, d: 4, kill: true, reason: 'stampede', sleeping: true };
     killBricks.push(hit);
     herd.hit = hit;
 }
@@ -1927,7 +1928,7 @@ function physics(dt) {
             // stádo je o chlp pomalšie než hráč – dobehne ťa len pri chybách
             herd.z -= Math.max(6.0, moveSpeed() - 0.4) * dt;
             herd.group.position.z = herd.z;
-            if (herd.z < -155) resetHerd(); // prehnali sa okolo rímsy
+            if (herd.z < -135.5) resetHerd(); // zastavia pred záchrannými schodmi
         }
     }
 
