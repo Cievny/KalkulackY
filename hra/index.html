@@ -1196,9 +1196,19 @@ box(600, -0.5, 1, 14, 1, 12, PLAINS_GRASS);
 checkpoint(600, 0.2, 3, 4, 4);
 portal(595.5, 0.2, 5, new THREE.Vector3(0, 1.8, 3), '🌿 Späť v džungli!');
 
-// Kaňon: bočné steny držia hráča v dráhe stáda
-box(593.4, 1.5, -70, 1.6, 5, 155, 0x6d5c43);
-box(606.6, 1.5, -70, 1.6, 5, 155, 0x6d5c43);
+// Kaňon: vysoké bočné steny držia hráča v dráhe stáda
+box(593.4, 3.5, -70, 1.6, 9, 155, 0x6d5c43);
+box(606.6, 3.5, -70, 1.6, 9, 155, 0x6d5c43);
+
+// Jaskynný otvor za štartom – odtiaľ vybieha stádo
+box(600, -0.5, 13, 14, 1, 12, PLAINS_GRASS); // zem od štartu k jaskyni
+deco(new THREE.BoxGeometry(3.5, 9, 9), 0x5a4f3f, 591.5, 4.5, 20);
+deco(new THREE.BoxGeometry(3.5, 9, 9), 0x5a4f3f, 608.5, 4.5, 20);
+deco(new THREE.BoxGeometry(20, 5, 9), 0x5a4f3f, 600, 9.5, 20);   // previs nad otvorom
+deco(new THREE.BoxGeometry(12.5, 7, 6), 0x0d0a08, 600, 3.5, 21.5); // tmavá diera jaskyne
+deco(new THREE.BoxGeometry(4, 2.5, 3), 0x6d5c43, 594.5, 1.2, 16);  // balvany pri ústí
+deco(new THREE.BoxGeometry(3.2, 2, 2.6), 0x6d5c43, 605.8, 1, 16.5);
+deco(new THREE.BoxGeometry(5, 3, 4), 0x5a4f3f, 600, 13.2, 18);     // skaly na vrchu
 
 // Úseky zeme s puklinami medzi nimi (pád = smrť)
 box(600, -0.5, -20, 12, 1, 30, PLAINS_GRASS);   // -5..-35
@@ -1212,17 +1222,41 @@ for (const [pz, pd] of [[-20, 28], [-54, 30], [-89, 28], [-122, 26]]) {
 
 // Prekážky: nízke múriky (preskoč), balvany (obehni/preskoč)
 box(600, 0.65, -12, 12, 1.3, 1.2, PLAINS_ROCK);
-box(597.8, 0.9, -20, 7.5, 1.8, 1.6, 0x7d8471);  // balvany vľavo – prebehni vpravo
+box(597.8, 1.8, -20, 7.5, 3.6, 1.6, 0x7d8471);  // vysoké balvany vľavo – prebehni vpravo
 box(600, 0.7, -28, 12, 1.4, 1.2, PLAINS_ROCK);
 box(600, 0.65, -44, 12, 1.3, 1.2, PLAINS_ROCK);
-box(602.3, 0.9, -52, 7.5, 1.8, 1.6, 0x7d8471);  // balvany vpravo – prebehni vľavo
+box(602.3, 1.8, -52, 7.5, 3.6, 1.6, 0x7d8471);  // vysoké balvany vpravo – prebehni vľavo
 box(600, 0.75, -61, 12, 1.5, 1.2, PLAINS_ROCK);
 box(600, 0.65, -78, 12, 1.3, 1.2, PLAINS_ROCK);
-box(597.5, 0.9, -86, 8, 1.8, 1.6, 0x7d8471);
+box(597.5, 1.8, -86, 8, 3.6, 1.6, 0x7d8471);
 box(600, 0.75, -95, 12, 1.5, 1.2, PLAINS_ROCK);
 box(600, 0.7, -112, 12, 1.4, 1.2, PLAINS_ROCK);
-box(602.5, 0.9, -119, 8, 1.8, 1.6, 0x7d8471);
+box(602.5, 1.8, -119, 8, 3.6, 1.6, 0x7d8471);
 box(600, 0.75, -128, 12, 1.5, 1.2, PLAINS_ROCK);
+
+// Divoké rieky v puklinách medzi úsekmi
+const plainsRivers = [];
+{
+    const riverMat = new THREE.MeshStandardMaterial({
+        color: 0x4a8fb5, transparent: true, opacity: 0.85,
+        emissive: 0x16405c, emissiveIntensity: 0.4
+    });
+    plainsRivers.push({ mat: riverMat });
+    for (const [rz, rd] of [[-36.5, 3.4], [-72, 4.4], [-106, 4.4]]) {
+        const rv = box(600, -3, rz, 12, 0.8, rd, 0x4a8fb5, { kill: true, reason: 'river' });
+        rv.mesh.material = riverMat;
+        // pena unášaná prúdom
+        for (let i = 0; i < 2; i++) {
+            const f = new THREE.Mesh(
+                new THREE.BoxGeometry(0.7, 0.2, 0.5),
+                new THREE.MeshBasicMaterial({ color: 0xdcedf5 })
+            );
+            f.position.set(600, -2.5, rz + (i ? 0.8 : -0.8));
+            scene.add(f);
+            plainsRivers.push({ foam: f, off: i * 6 + rz });
+        }
+    }
+}
 
 // Záchranná rímsa na konci – stádo na ňu nedosiahne
 box(600, 0.9, -138.5, 12, 1.8, 3, PLAINS_ROCK);
@@ -1262,7 +1296,7 @@ function makeGalli(shade = 0xc8a36b) {
     g.userData = { legL, legR, armL, armR };
     return g;
 }
-const herd = { z: 14, active: false, members: [] };
+const herd = { z: 18, active: false, members: [] };
 {
     const hg = new THREE.Group();
     const offs = [[-4.5, 0], [-2.2, 1.4], [0, 0.2], [2.3, 1.6], [4.5, 0.3], [-3.4, -1.3], [1.2, -1.2], [3.6, -1.5]];
@@ -1281,10 +1315,10 @@ const herd = { z: 14, active: false, members: [] };
     herd.hit = hit;
 }
 function resetHerd() {
-    herd.z = 14;
+    herd.z = 18; // stádo čaká v tme jaskynného otvoru
     herd.active = false;
     herd.hit.sleeping = true;
-    herd.group.position.z = 14;
+    herd.group.position.z = 18;
 }
 
 // ---------- Postavička (ranger) ----------
@@ -1469,6 +1503,7 @@ const DEATH_MSG = {
     spikes: '🗡️ Stalagmity v tme! Au!',
     lava: '🌋 Padol si do žeravej lávy!',
     stampede: '🦖 Stádo gallimimov ťa ušliapalo!',
+    river: '🌊 Odniesla ťa divoká rieka!',
 };
 function die(reason) {
     deathCount++;
@@ -1965,6 +2000,12 @@ function loop() {
                 gm.m.position.y *= 0.9;
             }
         }
+    }
+
+    // rieky na planine: pena pláva prúdom, voda sa jagá
+    for (const r of plainsRivers) {
+        if (r.foam) r.foam.position.x = 594.3 + ((t * 3 + r.off) % 11.4);
+        else if (r.mat) r.mat.emissiveIntensity = 0.4 + Math.sin(t * 2.3) * 0.15;
     }
 
     // loďka sa jemne hojdá na hladine jazierka
