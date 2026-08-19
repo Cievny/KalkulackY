@@ -958,6 +958,41 @@ pickup('diamond', 300.5, 3.0, -36.2); // na samom konci kladiny
 box(302, 1.7, -41, 5, 1, 5, CAVE_ROCK);
 checkpoint(302, 2.4, -41, 3, 3);
 box(305, 1.7, -48.5, 9, 1, 8, CAVE_ROCK);
+
+// Obria kostrová lebka T-rexa – do siene sa vchádza cez jej papuľu
+function makeSkullGate() {
+    const g = new THREE.Group();
+    const boneMat = new THREE.MeshLambertMaterial({ color: 0xd8d2c2, emissive: 0x3a362e });
+    const darkMat = new THREE.MeshLambertMaterial({ color: 0x14100c });
+    const part = (w, h, d, x, y, z, mat = boneMat) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        m.position.set(x, y, z);
+        m.castShadow = true;
+        g.add(m);
+        return m;
+    };
+    part(4.6, 2.0, 3.4, 0, 5.4, -0.2);              // mozgovňa
+    part(3.4, 1.4, 2.2, 0, 4.1, 1.2);               // horná čeľusť
+    part(0.8, 0.95, 0.4, -1.35, 5.6, 1.5, darkMat); // očné jamy
+    part(0.8, 0.95, 0.4, 1.35, 5.6, 1.5, darkMat);
+    part(0.4, 0.4, 0.3, -0.5, 4.35, 2.35, darkMat); // nozdry
+    part(0.4, 0.4, 0.3, 0.5, 4.35, 2.35, darkMat);
+    part(0.45, 3.2, 0.6, -2.2, 2.4, 0.2);           // lícne kosti k sánke
+    part(0.45, 3.2, 0.6, 2.2, 2.4, 0.2);
+    part(0.5, 0.7, 2.8, -1.9, 0.35, 0);             // sánka po bokoch priechodu
+    part(0.5, 0.7, 2.8, 1.9, 0.35, 0);
+    for (const tx of [-2.0, -1.5, -0.9, 0.9, 1.5, 2.0]) {
+        part(0.3, 0.85, 0.3, tx, 3.05, 1.7);        // horné zuby visia dole
+    }
+    for (const tx of [-1.55, 1.55]) {
+        part(0.26, 0.6, 0.26, tx, 0.95, 0.9);       // spodné zuby trčia hore
+        part(0.26, 0.6, 0.26, tx, 0.95, -0.7);
+    }
+    return g;
+}
+const skullGate = makeSkullGate();
+skullGate.position.set(305, 2.2, -45.5);
+scene.add(skullGate);
 addCarnivore(305, 2.2, -48.5, { x1: 301.2, x2: 308.8, z1: -52, z2: -45 }, 'x', 0, 0, 8,
     { color: 0x8a4b2a, chase: 4.3 });
 pickup('crystal', 303, 3.2, -46);
