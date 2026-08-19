@@ -705,6 +705,50 @@ const mosa = makeMosasaur();
 mosa.position.set(5, GROUND_Y - 0.7, -50);
 scene.add(mosa);
 
+// Kostra mosasaura na brehu rieky (dávny predok toho živého)
+function makeMosaSkeleton() {
+    const g = new THREE.Group();
+    const boneMat = new THREE.MeshLambertMaterial({ color: 0xd8d2c2, emissive: 0x2e2b24 });
+    const darkMat = new THREE.MeshLambertMaterial({ color: 0x14100c });
+    const bone = (w, h, d, x, y, z, ry = 0, mat = boneMat) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+        m.position.set(x, y, z);
+        m.rotation.y = ry;
+        m.castShadow = true;
+        g.add(m);
+        return m;
+    };
+    // pretiahnutá lebka so sánkou, zubami a očnými jamami
+    bone(1.15, 0.8, 2.7, 0, 0.55, 5.7);
+    bone(0.95, 0.35, 2.3, 0, 0.14, 5.5);
+    for (const tx of [-0.4, -0.13, 0.13, 0.4]) bone(0.12, 0.3, 0.12, tx, 0.36, 6.7);
+    bone(0.3, 0.34, 0.26, -0.4, 0.72, 6.5, 0, darkMat);
+    bone(0.3, 0.34, 0.26, 0.4, 0.72, 6.5, 0, darkMat);
+    // dlhá hadovitá chrbtica – vlní sa a k chvostu sa stráca
+    for (let i = 0; i < 16; i++) {
+        const z = 4.6 - i * 0.75;
+        const x = Math.sin(i * 0.38) * 1.1;
+        const s = i < 9 ? 0.44 : 0.44 - (i - 9) * 0.045;
+        bone(s, s, 0.6, x, 0.42, z, Math.cos(i * 0.38) * 0.35);
+        // rebrá na prednej tretine
+        if (i >= 1 && i <= 5) {
+            bone(0.15, 1.1, 0.15, x - 0.75, 0.3, z);
+            bone(0.15, 1.1, 0.15, x + 0.75, 0.3, z);
+        }
+    }
+    // štyri plutvové kosti (ploché vejáre)
+    bone(1.5, 0.14, 0.9, -1.5, 0.12, 3.4, 0.5);
+    bone(1.5, 0.14, 0.9, 1.5, 0.12, 3.4, -0.5);
+    bone(1.2, 0.14, 0.75, -1.4, 0.12, 0.2, 0.6);
+    bone(1.2, 0.14, 0.75, 1.5, 0.12, 0.2, -0.6);
+    return g;
+}
+const mosaBones = makeMosaSkeleton();
+mosaBones.position.set(15, GROUND_Y, -60);
+mosaBones.rotation.y = -0.45;
+scene.add(mosaBones);
+fern(12.5, GROUND_Y, -55.5);
+
 // ---------- Hory na obzore ----------
 function mountain(x, z, h, w) {
     deco(new THREE.BoxGeometry(w, h, w), 0x66755c, x, GROUND_Y + h / 2, z);
