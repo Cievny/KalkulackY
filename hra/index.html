@@ -2193,8 +2193,9 @@ function physics(dt) {
 
     const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
     const spd = moveSpeed();
-    P.vel.x = (ix * cos - iz * sin) * spd;
-    P.vel.z = (ix * sin + iz * cos) * spd;
+    // dopredu = presne smer pohľadu kamery, do strán kolmo naň
+    P.vel.x = (ix * cos + iz * sin) * spd;
+    P.vel.z = (iz * cos - ix * sin) * spd;
 
     // skok: zo zeme aj podržaním; dvojskok (LV2+) len čerstvým stlačením
     const jumpPressed = keys['Space'] || jumpTouch;
@@ -2417,6 +2418,7 @@ const JUNGLE_FOG_COLOR = new THREE.Color(0xaec9a0);
 const camRay = new THREE.Raycaster();
 const _camDir = new THREE.Vector3();
 const camBlockers = platforms.map(p => p.mesh);
+let camDistSmooth = 9;
 let lastT = performance.now();
 function loop() {
     requestAnimationFrame(loop);
@@ -2536,29 +2538,26 @@ function loop() {
     lantern.intensity = save.lantern * 5.5;
     lantern.distance = 8 + save.lantern * 7;
 
-    // kamera nasleduje pohyb – plynulo sa zarovná za hráča
-    const spdXZ = Math.hypot(P.vel.x, P.vel.z);
-    if (!dragging && spdXZ > 1 && !finished && !shopOpen && !levelsOpen) {
-        const moveYaw = Math.atan2(P.vel.x, P.vel.z) + Math.PI;
-        const dAng = ((moveYaw - camYaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-        camYaw += dAng * Math.min(1, dt * 2.2);
-    }
+    // kameru otáčajú len šípky ←→ alebo myš – žiadne samovoľné točenie
+    const inMaze = P.pos.x > 800;
 
-    // kamera
+    // kamera – v bludisku bližšie a vyššie (vidno dolu chodbou),
+    // kolízia o steny s plynulým návratom namiesto skokov
     const target = new THREE.Vector3().copy(P.pos).add(new THREE.Vector3(0, 1.6, 0));
-    const camOff = new THREE.Vector3(
-        Math.sin(camYaw) * Math.cos(camPitch),
-        Math.sin(camPitch),
-        Math.cos(camYaw) * Math.cos(camPitch)
-    ).multiplyScalar(camDist);
-    camera.position.copy(target).add(camOff);
-    // kolízia kamery: keď je medzi hráčom a kamerou stena, pritiahni ju pred ňu
-    camRay.set(target, _camDir.copy(camOff).normalize());
-    camRay.far = camOff.length();
+    const pitch = inMaze ? Math.max(camPitch, 0.55) : camPitch;
+    const wantDist = inMaze ? Math.min(camDist, 6) : camDist;
+    _camDir.set(
+        Math.sin(camYaw) * Math.cos(pitch),
+        Math.sin(pitch),
+        Math.cos(camYaw) * Math.cos(pitch)
+    );
+    camRay.set(target, _camDir);
+    camRay.far = wantDist;
     const camHits = camRay.intersectObjects(camBlockers, false);
-    if (camHits.length) {
-        camera.position.copy(target).addScaledVector(_camDir, Math.max(1.4, camHits[0].distance - 0.4));
-    }
+    const constrained = camHits.length ? Math.max(1.4, camHits[0].distance - 0.4) : wantDist;
+    if (constrained < camDistSmooth) camDistSmooth = constrained; // dnu skočí hneď
+    else camDistSmooth += (constrained - camDistSmooth) * Math.min(1, dt * 5); // von plynulo
+    camera.position.copy(target).addScaledVector(_camDir, camDistSmooth);
     // v jaskyni drž kameru vnútri – inak by prešla stenou/stropom a obraz „zmizne"
     if (inCave) {
         camera.position.x = clamp(camera.position.x, 284, 316);
