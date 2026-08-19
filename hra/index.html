@@ -164,7 +164,7 @@
 </div>
 <div id="msg"></div>
 <div id="toasts"></div>
-<div id="help">WASD – pohyb • Medzerník – skok • Myš – kamera • U – dielňa • F – uspávač • L – levely • R – checkpoint</div>
+<div id="help">↑↓ – pohyb • ←→ – otáčanie • WASD – pohyb/úkroky • Medzerník – skok • U – dielňa • F – uspávač • L – levely • R – checkpoint</div>
 <div id="shopBtn" title="Dielňa (U)">🛠️</div>
 <canvas id="minimap" width="148" height="148"></canvas>
 <div id="lvlBtn" title="Výber levelu (L)">🗺️</div>
@@ -1838,7 +1838,7 @@ addEventListener('keydown', e => {
     if (e.code === 'KeyU') toggleShop();
     if (e.code === 'KeyL') toggleLevels();
     if (e.code === 'KeyF') tryStun();
-    if (['Space','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault();
+    if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
 });
 addEventListener('keyup', e => keys[e.code] = false);
 
@@ -2177,12 +2177,16 @@ function physics(dt) {
         }
     }
 
+    // otáčanie šípkami – celé ovládanie funguje len klávesmi
+    if (keys['ArrowLeft']) camYaw += 2.6 * dt;
+    if (keys['ArrowRight']) camYaw -= 2.6 * dt;
+
     // smer pohybu podľa kamery
     let ix = 0, iz = 0;
     if (keys['KeyW'] || keys['ArrowUp']) iz -= 1;
     if (keys['KeyS'] || keys['ArrowDown']) iz += 1;
-    if (keys['KeyA'] || keys['ArrowLeft']) ix -= 1;
-    if (keys['KeyD'] || keys['ArrowRight']) ix += 1;
+    if (keys['KeyA']) ix -= 1;
+    if (keys['KeyD']) ix += 1;
     if (joy.active) { ix = joy.x; iz = joy.y; }
     const len = Math.hypot(ix, iz);
     if (len > 1) { ix /= len; iz /= len; }
