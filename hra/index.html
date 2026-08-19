@@ -80,6 +80,11 @@
         cursor: pointer; margin-top: 6px;
     }
     .lvl-item:hover { background: rgba(255,255,255,0.18); }
+    #minimap {
+        position: fixed; top: 120px; right: 12px; z-index: 12;
+        border-radius: 10px; border: 1px solid rgba(255,255,255,0.3);
+        pointer-events: none;
+    }
     #lvlBtn {
         position: fixed; top: 66px; right: 12px; z-index: 15;
         width: 46px; height: 46px; border-radius: 12px;
@@ -161,6 +166,7 @@
 <div id="toasts"></div>
 <div id="help">WASD – pohyb • Medzerník – skok • Myš – kamera • U – dielňa • F – uspávač • L – levely • R – checkpoint</div>
 <div id="shopBtn" title="Dielňa (U)">🛠️</div>
+<canvas id="minimap" width="148" height="148"></canvas>
 <div id="lvlBtn" title="Výber levelu (L)">🗺️</div>
 <div id="levels" hidden>
     <h2>🗺️ Výber levelu</h2>
@@ -1673,18 +1679,34 @@ checkpoint(900, 0.2, -33.5, 3, 3);  // pred bránou 2. okruhu
 checkpoint(900, 0.2, -76.5, 3, 3);  // pred stredom
 
 // Dravce v chodbách bludiska
-addCarnivore(937, 0, -60, { x1: 933.5, x2: 940.5, z1: -95, z2: -25 }, 'z', 26, 0.45, 9,
-    { makeModel: makeAllo, hit: { w: 1.9, h: 3.4, d: 5.2 }, reason: 'allo', chase: 3.8 });
-addCarnivore(873, 0, -60, { x1: 869.5, x2: 876.5, z1: -89, z2: -31 }, 'z', 24, 0.5, 8.5,
-    { makeModel: makeCarno, hit: { w: 1.9, h: 3.4, d: 5.2 }, reason: 'carno', chase: 4.0 });
-addCarnivore(917, 0, -60, { x1: 913.5, x2: 920.5, z1: -79, z2: -41 }, 'z', 16, 0.55, 8.5,
-    { makeModel: makeAllo, hit: { w: 1.9, h: 3.4, d: 5.2 }, reason: 'allo', chase: 4.0 });
-addCarnivore(900, 0, -60, { x1: 890, x2: 910, z1: -70, z2: -50 }, 'x', 8, 0.7, 10,
-    { makeModel: makeCarno, hit: { w: 1.9, h: 3.4, d: 5.2 }, reason: 'carno', chase: 4.4 }); // boss stredu
-// raptory v užších pruhoch bludiska
-addCarnivore(863, 0, -40, { x1: 860, x2: 866.3, z1: -57, z2: -24 }, 'z', 1, 0.5, 7, { chase: 3.6 });
-addCarnivore(900, 0, -87, { x1: 880, x2: 920, z1: -90, z2: -84.2 }, 'x', 1, 0.5, 7, { chase: 3.6 });
-addCarnivore(900, 0, -42, { x1: 884, x2: 916, z1: -45.8, z2: -40.2 }, 'x', 1, 0.5, 7, { chase: 3.6 });
+// Dravce bludiska – druh aj pozícia sa generujú náhodne pri každom spustení
+{
+    const bigHit = { w: 1.9, h: 3.4, d: 5.2 };
+    const territories = [
+        { b: { x1: 933.5, x2: 940.5, z1: -95, z2: -25 }, big: true },
+        { b: { x1: 869.5, x2: 876.5, z1: -89, z2: -31 }, big: true },
+        { b: { x1: 913.5, x2: 920.5, z1: -79, z2: -41 }, big: true },
+        { b: { x1: 890, x2: 910, z1: -70, z2: -50 }, big: true, boss: true },
+        { b: { x1: 860, x2: 866.3, z1: -57, z2: -24 } },
+        { b: { x1: 880, x2: 920, z1: -90, z2: -84.2 } },
+        { b: { x1: 884, x2: 916, z1: -45.8, z2: -40.2 } },
+    ];
+    for (const t of territories) {
+        const x = t.b.x1 + Math.random() * (t.b.x2 - t.b.x1);
+        const z = t.b.z1 + Math.random() * (t.b.z2 - t.b.z1);
+        if (t.big) {
+            const carno = Math.random() < 0.5;
+            addCarnivore(x, 0, z, t.b, 'x', 1, 0.5, t.boss ? 10 : 8.5 + Math.random(), {
+                makeModel: carno ? makeCarno : makeAllo,
+                hit: bigHit,
+                reason: carno ? 'carno' : 'allo',
+                chase: t.boss ? 4.4 : 3.8 + Math.random() * 0.4,
+            });
+        } else {
+            addCarnivore(x, 0, z, t.b, 'z', 1, 0.5, 7, { chase: 3.6 });
+        }
+    }
+}
 
 // Odmeny v slepých uličkách pri zátarasách
 coin(863, 1.4, -56); pickup('iron', 863, 1.3, -63.5);
@@ -2388,6 +2410,9 @@ function animatePlayer(dt) {
 // ---------- Slučka ----------
 const CAVE_FOG_COLOR = new THREE.Color(0x0b0806);
 const JUNGLE_FOG_COLOR = new THREE.Color(0xaec9a0);
+const camRay = new THREE.Raycaster();
+const _camDir = new THREE.Vector3();
+const camBlockers = platforms.map(p => p.mesh);
 let lastT = performance.now();
 function loop() {
     requestAnimationFrame(loop);
@@ -2507,6 +2532,14 @@ function loop() {
     lantern.intensity = save.lantern * 5.5;
     lantern.distance = 8 + save.lantern * 7;
 
+    // kamera nasleduje pohyb – plynulo sa zarovná za hráča
+    const spdXZ = Math.hypot(P.vel.x, P.vel.z);
+    if (!dragging && spdXZ > 1 && !finished && !shopOpen && !levelsOpen) {
+        const moveYaw = Math.atan2(P.vel.x, P.vel.z) + Math.PI;
+        const dAng = ((moveYaw - camYaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+        camYaw += dAng * Math.min(1, dt * 2.2);
+    }
+
     // kamera
     const target = new THREE.Vector3().copy(P.pos).add(new THREE.Vector3(0, 1.6, 0));
     const camOff = new THREE.Vector3(
@@ -2515,6 +2548,13 @@ function loop() {
         Math.cos(camYaw) * Math.cos(camPitch)
     ).multiplyScalar(camDist);
     camera.position.copy(target).add(camOff);
+    // kolízia kamery: keď je medzi hráčom a kamerou stena, pritiahni ju pred ňu
+    camRay.set(target, _camDir.copy(camOff).normalize());
+    camRay.far = camOff.length();
+    const camHits = camRay.intersectObjects(camBlockers, false);
+    if (camHits.length) {
+        camera.position.copy(target).addScaledVector(_camDir, Math.max(1.4, camHits[0].distance - 0.4));
+    }
     // v jaskyni drž kameru vnútri – inak by prešla stenou/stropom a obraz „zmizne"
     if (inCave) {
         camera.position.x = clamp(camera.position.x, 284, 316);
@@ -2534,8 +2574,50 @@ function loop() {
         $('timer').textContent = `${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
     }
     updateHud();
+    drawMinimap();
 
     renderer.render(scene, camera);
+}
+
+// ---------- Minimapa ----------
+const mmCtx = $('minimap').getContext('2d');
+function drawMinimap() {
+    const S = 148, RNG = 40, k = S / (RNG * 2);
+    mmCtx.clearRect(0, 0, S, S);
+    mmCtx.fillStyle = 'rgba(18,24,16,0.78)';
+    mmCtx.fillRect(0, 0, S, S);
+    mmCtx.save();
+    mmCtx.translate(S / 2, S / 2);
+    mmCtx.rotate(camYaw);
+    const dot = (m, w, d, color) => {
+        const dx = m.x - P.pos.x, dz = m.z - P.pos.z;
+        if (Math.abs(dx) > RNG + w || Math.abs(dz) > RNG + d) return;
+        if (Math.abs(m.y - P.pos.y) > 12) return;
+        mmCtx.fillStyle = color;
+        mmCtx.fillRect((dx - w / 2) * k, (dz - d / 2) * k, Math.max(w * k, 2), Math.max(d * k, 2));
+    };
+    for (const kb of killBricks) {
+        if (kb.dino || kb.mesh === herd.group) continue;
+        dot(kb.mesh.position, kb.w, kb.d, 'rgba(205,70,45,0.85)');
+    }
+    for (const pl of platforms) dot(pl.mesh.position, pl.w, pl.d, 'rgba(150,162,138,0.7)');
+    for (const pt of portals) dot(pt.entry.mesh.position, 3.5, 3.5, '#a678f0');
+    dot(goal.mesh.position, goal.w, goal.d, '#ffd700');
+    dot(caveGoal.mesh.position, 3.5, 3.5, '#ffd700');
+    dot(plainsGoal.mesh.position, 3.5, 3.5, '#ffd700');
+    dot(mazeGoal.mesh.position, 3.5, 3.5, '#ffd700');
+    for (const cn of coins) if (!cn.taken) dot(cn.mesh.position, 2, 2, '#f7e08a');
+    for (const d of dinos) dot(d.group.position, 3.2, 3.2, d.hit.sleeping ? '#93a393' : '#ff5040');
+    if (P.pos.x > 500 && P.pos.x < 750) dot(herd.group.position, 14, 4, herd.active ? '#ff5040' : '#c07050');
+    mmCtx.restore();
+    // hráč – šípka v strede, hore = smer pohľadu
+    mmCtx.fillStyle = '#ffffff';
+    mmCtx.beginPath();
+    mmCtx.moveTo(S / 2, S / 2 - 6.5);
+    mmCtx.lineTo(S / 2 - 4.5, S / 2 + 4.5);
+    mmCtx.lineTo(S / 2 + 4.5, S / 2 + 4.5);
+    mmCtx.closePath();
+    mmCtx.fill();
 }
 
 addEventListener('resize', () => {
