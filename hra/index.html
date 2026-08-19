@@ -1665,9 +1665,9 @@ function physics(dt) {
 
     updateDinos(dt, nowMs);
 
-    // stádo gallimimov na planine: rozbehne sa, keď vyrazíš z štartu
+    // stádo gallimimov na planine: rozbehne sa pri prvom pohybe hráča
     if (P.pos.x > 500) {
-        if (!herd.active && P.pos.z < -6 && P.pos.y < 5) {
+        if (!herd.active && Math.hypot(P.vel.x, P.vel.z) > 0.5) {
             herd.active = true;
             herd.hit.sleeping = false;
             showMsg('🦖 STÁDO GALLIMIMOV! UTEKAJ!', 1800);
