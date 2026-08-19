@@ -1243,17 +1243,17 @@ const plainsRivers = [];
     });
     plainsRivers.push({ mat: riverMat });
     for (const [rz, rd] of [[-36.5, 3.4], [-72, 4.4], [-106, 4.4]]) {
-        const rv = box(600, -3, rz, 12, 0.8, rd, 0x4a8fb5, { kill: true, reason: 'river' });
+        const rv = box(600, -1.6, rz, 12, 1.2, rd, 0x4a8fb5, { kill: true, reason: 'river' });
         rv.mesh.material = riverMat;
         // pena unášaná prúdom
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 3; i++) {
             const f = new THREE.Mesh(
                 new THREE.BoxGeometry(0.7, 0.2, 0.5),
                 new THREE.MeshBasicMaterial({ color: 0xdcedf5 })
             );
-            f.position.set(600, -2.5, rz + (i ? 0.8 : -0.8));
+            f.position.set(600, -0.9, rz + (i - 1) * 0.9);
             scene.add(f);
-            plainsRivers.push({ foam: f, off: i * 6 + rz });
+            plainsRivers.push({ foam: f, off: i * 4.2 + rz });
         }
     }
 }
@@ -1708,8 +1708,8 @@ function physics(dt) {
             showMsg('🦖 STÁDO GALLIMIMOV! UTEKAJ!', 1800);
         }
         if (herd.active) {
-            // stádo je vždy o chlp rýchlejšie než hráč – zachráni ťa len náskok
-            herd.z -= Math.max(7.4, moveSpeed() + 0.6) * dt;
+            // stádo je o chlp pomalšie než hráč – dobehne ťa len pri chybách
+            herd.z -= Math.max(6.0, moveSpeed() - 0.4) * dt;
             herd.group.position.z = herd.z;
             if (herd.z < -155) resetHerd(); // prehnali sa okolo rímsy
         }
