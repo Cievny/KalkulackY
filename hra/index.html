@@ -1673,7 +1673,8 @@ function physics(dt) {
             showMsg('🦖 STÁDO GALLIMIMOV! UTEKAJ!', 1800);
         }
         if (herd.active) {
-            herd.z -= 6.9 * dt; // rýchlejšie než základný beh – náskok si treba strážiť
+            // stádo je vždy o chlp rýchlejšie než hráč – zachráni ťa len náskok
+            herd.z -= Math.max(7.4, moveSpeed() + 0.6) * dt;
             herd.group.position.z = herd.z;
             if (herd.z < -155) resetHerd(); // prehnali sa okolo rímsy
         }
