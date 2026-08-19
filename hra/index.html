@@ -937,6 +937,46 @@ trexBones.position.set(296, -2, -36);
 trexBones.rotation.y = 0.7;
 scene.add(trexBones);
 
+// Podzemný vodopád na západnej stene (pri pohyblivých plošinách)
+const fallsStreaks = [];
+{
+    const sheet = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 21.5, 3),
+        new THREE.MeshStandardMaterial({ color: 0x5fb8d8, transparent: true, opacity: 0.4, emissive: 0x1e6e8c, emissiveIntensity: 0.7 })
+    );
+    sheet.position.set(283.3, 8.7, -59.5);
+    scene.add(sheet);
+    // puklina v strope, z ktorej voda vyteká
+    deco(new THREE.BoxGeometry(1.6, 1.2, 3.6), 0x2e261c, 283.6, 19.2, -59.5);
+    // jazierko na dne a hmla pri dopade
+    const pool = new THREE.Mesh(
+        new THREE.BoxGeometry(5.5, 0.35, 6.5),
+        new THREE.MeshStandardMaterial({ color: 0x4fa8cc, transparent: true, opacity: 0.75, emissive: 0x1e6e8c, emissiveIntensity: 0.9 })
+    );
+    pool.position.set(285, -1.75, -59.5);
+    scene.add(pool);
+    const mist = new THREE.Mesh(
+        new THREE.BoxGeometry(3.4, 0.8, 4.2),
+        new THREE.MeshBasicMaterial({ color: 0xcfeef8, transparent: true, opacity: 0.3 })
+    );
+    mist.position.set(283.8, -1.2, -59.5);
+    scene.add(mist);
+    fallsStreaks.push({ mist });
+    // padajúce pramienky
+    for (let i = 0; i < 7; i++) {
+        const st = new THREE.Mesh(
+            new THREE.BoxGeometry(0.26, 1.9, 0.26),
+            new THREE.MeshBasicMaterial({ color: 0xbfe8f5, transparent: true, opacity: 0.85 })
+        );
+        st.position.set(283.6, 10, -60.8 + i * 0.45);
+        scene.add(st);
+        fallsStreaks.push({ st, off: i * 3.17 });
+    }
+    // mokré kamene okolo jazierka
+    deco(new THREE.BoxGeometry(1.2, 0.9, 1.1), 0x3f4a4e, 286.6, -1.6, -56.8);
+    deco(new THREE.BoxGeometry(1.0, 0.7, 1.0), 0x3f4a4e, 287, -1.7, -61.9);
+}
+
 // Vstupná sieň jaskyne
 box(300, 0.5, -12, 6, 1, 6, CAVE_ROCK);
 checkpoint(300, 1.2, -12, 3, 3);
@@ -1650,6 +1690,16 @@ function loop() {
     const tb = trikeBox.mesh.position;
     trikeGroup.position.set(tb.x, tb.y - 0.95, tb.z);
     trikeGroup.rotation.y = trikeBox.delta.x >= 0 ? Math.PI / 2 : -Math.PI / 2;
+
+    // vodopád v jaskyni: pramienky padajú, hmla pri dopade pulzuje
+    for (const f of fallsStreaks) {
+        if (f.st) f.st.position.y = 18.6 - ((t * 7 + f.off) % 20.8);
+        if (f.mist) {
+            const p = 1 + Math.sin(t * 3.2) * 0.12;
+            f.mist.scale.set(p, 1, p);
+            f.mist.material.opacity = 0.24 + Math.sin(t * 2.1) * 0.08;
+        }
+    }
 
     // mosasaurus pláva riekou – vynára sa, ponára a máva chvostom
     const swimT = t * 0.12;
