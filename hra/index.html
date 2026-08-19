@@ -469,12 +469,14 @@ function makeRaptor(color = 0x5a7d3a) {
 // Mäsožravec: hliadkuje (alebo číha na mieste), a keď si blízko,
 // naháňa ťa v rámci svojho územia
 function addCarnivore(x, y, z, bounds, axis, range, speed, aggro = 6.5, opts = {}) {
-    const group = makeRaptor(opts.color);
+    const group = (opts.makeModel || makeRaptor)(opts.color);
     group.position.set(x, y, z);
     scene.add(group);
     const zzz = makeZzz();
+    zzz.position.y = opts.hit ? 4.4 : 3;
     group.add(zzz);
-    const hit = { mesh: group, w: 1.2, h: 2.2, d: 3.0, kill: true, reason: 'dino', sleeping: false };
+    const hs = opts.hit || { w: 1.2, h: 2.2, d: 3.0 };
+    const hit = { mesh: group, w: hs.w, h: hs.h, d: hs.d, kill: true, reason: opts.reason || 'dino', sleeping: false };
     killBricks.push(hit);
     const dino = {
         type: 'carnivore', group, hit, zzz, baseY: y, bounds, axis, range,
@@ -508,6 +510,42 @@ function makeTrike(color = 0x9aa77c) {
     part(0.6, 0.6, 1.2, 0, 1.6, -1.9);              // chvost
     return g;
 }
+
+// Veľký teropod (Allosaurus / Carnotaurus) – väčší a hrozivejší než raptor
+function makeBigTheropod(bodyC, kind) {
+    const g = new THREE.Group();
+    const mat = c => new THREE.MeshLambertMaterial({ color: c });
+    const part = (w, h, d, x, y, z, c = bodyC) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
+        m.position.set(x, y, z); m.castShadow = true; g.add(m); return m;
+    };
+    part(1.3, 1.3, 2.6, 0, 1.9, 0);                        // telo
+    part(0.75, 0.75, 1.0, 0, 2.4, 1.5);                    // krk
+    const headD = kind === 'carno' ? 1.15 : 1.6;
+    part(0.85, 0.9, headD, 0, 2.85, 2.15 + (1.6 - headD) / 2); // hlava
+    part(0.72, 0.35, headD - 0.2, 0, 2.3, 2.15 + (1.6 - headD) / 2, 0x4a3520); // sánka
+    part(0.75, 0.16, 0.7, 0, 2.42, 2.55, 0xe8e4d8);        // zuby
+    const eL = part(0.14, 0.14, 0.14, -0.35, 3.05, 2.55, 0xffd700); // oči
+    const eR = part(0.14, 0.14, 0.14, 0.35, 3.05, 2.55, 0xffd700);
+    if (kind === 'carno') {
+        part(0.24, 0.45, 0.24, -0.34, 3.5, 2.3, 0x4a2018); // rohy nad očami
+        part(0.24, 0.45, 0.24, 0.34, 3.5, 2.3, 0x4a2018);
+    } else {
+        part(0.2, 0.32, 0.55, -0.28, 3.4, 2.35, 0x8a3020); // hrebienky allosaura
+        part(0.2, 0.32, 0.55, 0.28, 3.4, 2.35, 0x8a3020);
+    }
+    part(0.8, 0.8, 2.2, 0, 1.95, -2.2);                    // chvost
+    part(0.5, 0.5, 1.6, 0, 2.0, -3.9);
+    const legL = part(0.45, 1.7, 0.6, -0.55, 0.85, -0.45);
+    const legR = part(0.45, 1.7, 0.6, 0.55, 0.85, -0.45);
+    const armS = kind === 'carno' ? 0.12 : 0.2;
+    const armL = part(armS, 0.55, armS, -0.72, 1.6, 0.9);
+    const armR = part(armS, 0.55, armS, 0.72, 1.6, 0.9);
+    g.userData = { legL, legR, armL, armR };
+    return g;
+}
+const makeAllo = () => makeBigTheropod(0x7a6032, 'allo');
+const makeCarno = () => makeBigTheropod(0x8a3a2a, 'carno');
 
 // Obrí dekoračný brachiosaurus v pozadí
 function makeBrachio(x, y, z) {
@@ -1246,6 +1284,7 @@ caveGoal.mesh.material = new THREE.MeshStandardMaterial({
 });
 let jungleDone = false;
 let caveDone = false;
+let plainsDone = false;
 
 // ---------- LEVEL 3: Planina – naháňačka so stádom gallimimov (x okolo 600) ----------
 // Vchod z džungle (mostík na západnej strane štartu)
@@ -1564,6 +1603,104 @@ function resetHerd() {
     herd.group.position.z = 18;
 }
 
+// ---------- LEVEL 4: Bludisko (x okolo 900) – najdlhší, hlavne prežiť ----------
+// Vchod z džungle (mostík na južnej strane štartu)
+box(0, -0.5, 8.7, 4, 1, 5, 0x7d8471);
+deco(new THREE.BoxGeometry(0.7, 3, 0.7), 0x4a4238, -1.6, 1.5, 10.2);
+deco(new THREE.BoxGeometry(0.7, 3, 0.7), 0x4a4238, 1.6, 1.5, 10.2);
+const mazeSignTex = (() => {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = '#1e3a20'; g.fillRect(0, 0, 256, 64);
+    g.strokeStyle = '#9fe87f'; g.lineWidth = 4; g.strokeRect(4, 4, 248, 56);
+    g.fillStyle = '#f3ecd8'; g.font = 'bold 32px Georgia, serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('BLUDISKO', 128, 34);
+    return new THREE.CanvasTexture(c);
+})();
+const mazeSign = new THREE.Mesh(
+    new THREE.BoxGeometry(3.6, 1.0, 0.3),
+    new THREE.MeshLambertMaterial({ map: mazeSignTex })
+);
+mazeSign.position.set(0, 3.3, 10.2);
+scene.add(mazeSign);
+portal(0, 0.2, 10.2, new THREE.Vector3(900, 1.8, -21), '🌀 Vstupuješ do bludiska… Prežiť je jediná úloha!');
+
+// Zem bludiska a podložie
+box(900, -0.5, -60, 88, 1, 88, 0x55684a);
+deco(new THREE.BoxGeometry(84, 10, 84), 0x554f45, 900, -6, -60);
+
+// Sústredné okruhy živých stien – brány striedavo na opačných stranách
+function mazeRing(hs, gapSide) {
+    const t = 1.8, h = 5, cx = 900, cz = -60, gap = 6;
+    for (const s of [
+        { side: 'zp', x: cx, z: cz + hs, horiz: true },
+        { side: 'zm', x: cx, z: cz - hs, horiz: true },
+        { side: 'xp', x: cx + hs, z: cz, horiz: false },
+        { side: 'xm', x: cx - hs, z: cz, horiz: false },
+    ]) {
+        const L = hs * 2 + t;
+        if (s.side === gapSide) {
+            const segL = (L - gap) / 2;
+            if (s.horiz) {
+                box(s.x - (gap + segL) / 2, h / 2, s.z, segL, h, t, 0x3a6b35);
+                box(s.x + (gap + segL) / 2, h / 2, s.z, segL, h, t, 0x2e5e2e);
+            } else {
+                box(s.x, h / 2, s.z - (gap + segL) / 2, t, h, segL, 0x3a6b35);
+                box(s.x, h / 2, s.z + (gap + segL) / 2, t, h, segL, 0x2e5e2e);
+            }
+        } else if (s.horiz) {
+            box(s.x, h / 2, s.z, L, h, t, 0x35633a);
+        } else {
+            box(s.x, h / 2, s.z, t, h, L, 0x35633a);
+        }
+    }
+}
+mazeRing(42, 'zp'); // vonkajší múr, vstup od džungle
+mazeRing(32, 'zm');
+mazeRing(22, 'zp');
+mazeRing(12, 'zm');
+// priečne zátarasy – nútia obiehať okruhy striedavo
+box(863, 2.5, -60, 10.5, 5, 1.8, 0x35633a);
+box(927, 2.5, -60, 10.5, 5, 1.8, 0x35633a);
+box(883, 2.5, -60, 10.5, 5, 1.8, 0x35633a);
+
+// Návratový portál a checkpointy na trase
+portal(895.5, 0.2, -21.5, new THREE.Vector3(0, 1.8, 3), '🌿 Späť v džungli!');
+checkpoint(900, 0.2, -23, 3, 3);
+checkpoint(900, 0.2, -88.5, 3, 3);  // pred bránou 1. okruhu
+checkpoint(900, 0.2, -33.5, 3, 3);  // pred bránou 2. okruhu
+checkpoint(900, 0.2, -76.5, 3, 3);  // pred stredom
+
+// Dravce v chodbách bludiska
+addCarnivore(937, 0, -60, { x1: 933.5, x2: 940.5, z1: -95, z2: -25 }, 'z', 26, 0.45, 9,
+    { makeModel: makeAllo, hit: { w: 1.9, h: 3.4, d: 5.2 }, reason: 'allo', chase: 3.8 });
+addCarnivore(873, 0, -60, { x1: 869.5, x2: 876.5, z1: -89, z2: -31 }, 'z', 24, 0.5, 8.5,
+    { makeModel: makeCarno, hit: { w: 1.9, h: 3.4, d: 5.2 }, reason: 'carno', chase: 4.0 });
+addCarnivore(917, 0, -60, { x1: 913.5, x2: 920.5, z1: -79, z2: -41 }, 'z', 16, 0.55, 8.5,
+    { makeModel: makeAllo, hit: { w: 1.9, h: 3.4, d: 5.2 }, reason: 'allo', chase: 4.0 });
+addCarnivore(900, 0, -60, { x1: 890, x2: 910, z1: -70, z2: -50 }, 'x', 8, 0.7, 10,
+    { makeModel: makeCarno, hit: { w: 1.9, h: 3.4, d: 5.2 }, reason: 'carno', chase: 4.4 }); // boss stredu
+
+// Odmeny v slepých uličkách pri zátarasách
+coin(863, 1.4, -56); pickup('iron', 863, 1.3, -63.5);
+coin(927, 1.4, -64); pickup('amber', 927, 1.3, -56.5);
+coin(883, 1.4, -56); pickup('gold', 883, 1.3, -63.5);
+pickup('gold', 905, 1.3, -53); // v stredovej sieni pri bossovi
+pickup('wood', 895, 1.3, -67);
+
+// Východ v strede bludiska = veľké finále
+const mazeGoal = box(900, 0.6, -60, 2.6, 0.4, 2.6, 0xffd700);
+mazeGoal.mesh.material = new THREE.MeshStandardMaterial({
+    color: 0xffd700, emissive: 0xcc9900, emissiveIntensity: 0.6
+});
+
+// Zeleň bludiska
+palm(879, 5, -82, 4); palm(921, 5, -38, 4.5); palm(900, 5, -102, 5); palm(858, 5, -30, 4);
+grassTuft(897, 0, -25); grassTuft(935, 0, -50); grassTuft(872, 0, -75); grassTuft(915, 0, -55);
+flower(903, 0, -26, 0xf2c14e); flower(938, 0, -80, 0xe4572e); flower(870, 0, -45, 0xd66ba0);
+fern(893, 0, -90); fern(908, 0, -36); bush(896, 0, -58.5, 0.7);
+
 // ---------- Byliny a kvety – dekorácia všetkých levelov ----------
 // Džungľa: štart, plošiny a brána
 flower(-4, 0, -1.5, 0xe4572e); flower(3.8, 0, 2.2, 0xf2c14e);
@@ -1783,6 +1920,8 @@ const DEATH_MSG = {
     lava: '🌋 Padol si do žeravej lávy!',
     stampede: '🦖 Stádo gallimimov ťa ušliapalo!',
     river: '🌊 Odniesla ťa divoká rieka!',
+    allo: '🦖 Allosaurus ťa zožral!',
+    carno: '🦖 Carnotaurus ťa nabral na rohy!',
 };
 function die(reason) {
     deathCount++;
@@ -1852,6 +1991,8 @@ const LEVEL_SPOTS = [
     { name: '🕳️ Jaskyňa · Horná sieň', pos: [300, 9.3, -77] },
     { name: '🌾 Planina · Štart (stádo!)', pos: [600, 1.8, 3] },
     { name: '🌾 Planina · Cieľová rímsa', pos: [600, 5.5, -144] },
+    { name: '🌀 Bludisko · Vstup', pos: [900, 1.8, -21] },
+    { name: '🌀 Bludisko · Pred stredom', pos: [900, 1.8, -76.5] },
 ];
 let levelsOpen = false, levelsOpenedAt = 0;
 function toggleLevels() {
@@ -2180,10 +2321,22 @@ function physics(dt) {
         resetHerd();
         portalLockUntil = nowMs + 1500;
     }
-    // rímsa na planine (level 3) = veľké finále
-    if (!finished && collideAABB(plainsGoal, P.pos, 0.2)) {
-        finished = true;
+    // rímsa na planine (level 3): odmena a pokračovanie do bludiska
+    if (!plainsDone && collideAABB(plainsGoal, P.pos, 0.2)) {
+        plainsDone = true;
         addXP(200, 'planina zdolaná');
+        showMsg('🏆 PLANINA ZDOLANÁ!<br><small>Level 4: Bludisko – najdlhší level, hlavne prežiť!</small>', 3200);
+        P.pos.set(900, 1.8, -21);
+        P.vel.set(0, 0, 0);
+        P.spawn.set(900, 1.8, -21);
+        P.hp = MAX_HP;
+        resetHerd();
+        portalLockUntil = nowMs + 1500;
+    }
+    // stred bludiska (level 4) = veľké finále
+    if (!finished && collideAABB(mazeGoal, P.pos, 0.2)) {
+        finished = true;
+        addXP(250, 'bludisko zdolané');
         const secs = Math.floor((performance.now() - startTime) / 1000);
         showMsg(`🏆 PREŠIEL SI CELÝ PARK!<br>Čas: ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')} • Vajcia: ${coinCount}/${coins.length} • 🦖 ${deathCount}<br><small>Stlač R pre novú hru – postup a nástroje ti ostávajú</small>`, 0);
     }
