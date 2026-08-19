@@ -1673,7 +1673,7 @@ function physics(dt) {
             showMsg('🦖 STÁDO GALLIMIMOV! UTEKAJ!', 1800);
         }
         if (herd.active) {
-            herd.z -= 5.8 * dt;
+            herd.z -= 6.9 * dt; // rýchlejšie než základný beh – náskok si treba strážiť
             herd.group.position.z = herd.z;
             if (herd.z < -155) resetHerd(); // prehnali sa okolo rímsy
         }
