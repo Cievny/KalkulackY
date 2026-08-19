@@ -1632,7 +1632,7 @@ deco(new THREE.BoxGeometry(84, 10, 84), 0x554f45, 900, -6, -60);
 
 // Sústredné okruhy živých stien – brány striedavo na opačných stranách
 function mazeRing(hs, gapSide) {
-    const t = 1.8, h = 5, cx = 900, cz = -60, gap = 6;
+    const t = 3, h = 9, cx = 900, cz = -60, gap = 6;
     for (const s of [
         { side: 'zp', x: cx, z: cz + hs, horiz: true },
         { side: 'zm', x: cx, z: cz - hs, horiz: true },
@@ -1661,9 +1661,9 @@ mazeRing(32, 'zm');
 mazeRing(22, 'zp');
 mazeRing(12, 'zm');
 // priečne zátarasy – nútia obiehať okruhy striedavo
-box(863, 2.5, -60, 10.5, 5, 1.8, 0x35633a);
-box(927, 2.5, -60, 10.5, 5, 1.8, 0x35633a);
-box(883, 2.5, -60, 10.5, 5, 1.8, 0x35633a);
+box(863, 4.5, -60, 10.5, 9, 3, 0x35633a);
+box(927, 4.5, -60, 10.5, 9, 3, 0x35633a);
+box(883, 4.5, -60, 10.5, 9, 3, 0x35633a);
 
 // Návratový portál a checkpointy na trase
 portal(895.5, 0.2, -21.5, new THREE.Vector3(0, 1.8, 3), '🌿 Späť v džungli!');
@@ -1696,7 +1696,7 @@ mazeGoal.mesh.material = new THREE.MeshStandardMaterial({
 });
 
 // Zeleň bludiska
-palm(879, 5, -82, 4); palm(921, 5, -38, 4.5); palm(900, 5, -102, 5); palm(858, 5, -30, 4);
+palm(879, 9, -82, 4); palm(921, 9, -38, 4.5); palm(900, 9, -102, 5); palm(858, 9, -30, 4);
 grassTuft(897, 0, -25); grassTuft(935, 0, -50); grassTuft(872, 0, -75); grassTuft(915, 0, -55);
 flower(903, 0, -26, 0xf2c14e); flower(938, 0, -80, 0xe4572e); flower(870, 0, -45, 0xd66ba0);
 fern(893, 0, -90); fern(908, 0, -36); bush(896, 0, -58.5, 0.7);
