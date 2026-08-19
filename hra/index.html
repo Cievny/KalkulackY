@@ -1001,7 +1001,7 @@ const caveGoal = box(300, 7.9, -90.5, 2.2, 0.4, 2.2, 0xffd700);
 caveGoal.mesh.material = new THREE.MeshStandardMaterial({
     color: 0xffd700, emissive: 0xcc9900, emissiveIntensity: 0.6
 });
-let caveDone = false;
+let jungleDone = false;
 
 // ---------- Postavička (ranger) ----------
 function limb(w, h, d, color, x, y, z) {
@@ -1539,24 +1539,24 @@ function physics(dt) {
             }
         }
     }
-    // východ z jaskyne – odmena a návrat do džungle
-    if (collideAABB(caveGoal, P.pos, 0.2)) {
-        if (!caveDone) {
-            caveDone = true;
-            addXP(150, 'jaskyňa zdolaná');
-        }
-        showMsg('🏆 Prešiel si jaskyňu!<br><small>Návrat do džungle…</small>', 2500);
-        P.pos.set(0, 1.8, 3);
-        P.vel.set(0, 0, 0);
-        P.spawn.set(0, 1.8, 3);
-        P.hp = MAX_HP;
-    }
-    // cieľ
-    if (!finished && collideAABB(goal, P.pos, 0.15)) {
-        finished = true;
-        addXP(100, 'únik z parku');
+    // cieľ džungle (level 1): odmena a pokračovanie do jaskyne
+    if (!jungleDone && collideAABB(goal, P.pos, 0.15)) {
+        jungleDone = true;
+        addXP(100, 'únik z džungle');
         const secs = Math.floor((performance.now() - startTime) / 1000);
-        showMsg(`🏆 UNIKOL SI Z PARKU!<br>Čas: ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')} • Vajcia: ${coinCount}/${coins.length}<br><small>Stlač R pre novú hru – postup a nástroje ti ostávajú</small>`, 0);
+        showMsg(`🏆 DŽUNGĽA ZDOLANÁ! (${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')})<br><small>Level 2: Jaskyňa – v tme pomôže Lampáš…</small>`, 3200);
+        P.pos.set(300, 2.5, -12);
+        P.vel.set(0, 0, 0);
+        P.spawn.set(300, 2.5, -12);
+        P.hp = MAX_HP;
+        portalLockUntil = nowMs + 1500;
+    }
+    // východ z jaskyne (level 2) = veľké finále
+    if (!finished && collideAABB(caveGoal, P.pos, 0.2)) {
+        finished = true;
+        addXP(150, 'jaskyňa zdolaná');
+        const secs = Math.floor((performance.now() - startTime) / 1000);
+        showMsg(`🏆 PREŠIEL SI CELÝ PARK!<br>Čas: ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')} • Vajcia: ${coinCount}/${coins.length} • 🦖 ${deathCount}<br><small>Stlač R pre novú hru – postup a nástroje ti ostávajú</small>`, 0);
     }
 }
 
