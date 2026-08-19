@@ -844,6 +844,34 @@ for (const [sx, sz, sh] of [[297,-16,2.6],[304,-24,3.2],[300,-33,2.2],[308,-40,2
     deco(new THREE.BoxGeometry(0.9, sh * 1.6, 0.9), 0x2e261c, sx, 19.5 - sh * 0.8, sz);
 }
 
+// Skaly v jaskyni: balvany na dne, stĺpy od dna po strop a podpery plošín
+function caveBoulder(x, z, s = 1) {
+    deco(new THREE.BoxGeometry(1.8 * s, 1.4 * s, 1.6 * s), 0x3a3228, x, -2 + 0.7 * s, z);
+    deco(new THREE.BoxGeometry(1.1 * s, 0.9 * s, 1.0 * s), 0x453b2e, x + 0.5 * s, -2 + 1.5 * s, z - 0.3 * s);
+    deco(new THREE.BoxGeometry(0.7 * s, 0.5 * s, 0.7 * s), 0x2e2820, x - 0.6 * s, -2 + 0.35 * s, z + 0.6 * s);
+}
+function caveColumn(x, z, w = 2.6) {
+    deco(new THREE.BoxGeometry(w, 21.6, w), 0x322b21, x, 8.7, z);
+    deco(new THREE.BoxGeometry(w * 1.5, 2.2, w * 1.5), 0x3a3228, x, -1.4, z);   // rozšírená päta
+    deco(new THREE.BoxGeometry(w * 1.4, 2.0, w * 1.4), 0x2e2820, x, 18.8, z);   // napojenie na strop
+}
+caveBoulder(294, -16); caveBoulder(308, -21, 1.3); caveBoulder(296, -24, 0.8);
+caveBoulder(311, -40, 1.1); caveBoulder(292, -42); caveBoulder(297, -55, 1.2);
+caveBoulder(308, -57, 0.9); caveBoulder(293, -66, 1.1); caveBoulder(306, -72);
+caveBoulder(296, -80, 0.9); caveBoulder(304, -88, 1.2); caveBoulder(288, -50, 1.4);
+caveColumn(288, -25);
+caveColumn(313, -15, 2.2);
+caveColumn(312, -62, 3);
+caveColumn(289, -78, 2.4);
+// skalné podpery pod plošinami – nech nevisia vo vzduchu
+deco(new THREE.BoxGeometry(3.2, 2.2, 3.2), 0x322b21, 300, -1, -12);      // vstupná sieň
+deco(new THREE.BoxGeometry(2.6, 3.4, 2.6), 0x322b21, 302, -0.4, -41);    // checkpoint 2
+deco(new THREE.BoxGeometry(2.6, 3.4, 2.6), 0x322b21, 304, -0.4, -46.5);  // raptorí revír
+deco(new THREE.BoxGeometry(2.6, 3.4, 2.6), 0x322b21, 307, -0.4, -50.5);
+deco(new THREE.BoxGeometry(2.6, 8.6, 2.6), 0x322b21, 300, 2.2, -77);     // horná sieň
+deco(new THREE.BoxGeometry(3.0, 8.6, 3.0), 0x322b21, 300, 2.2, -84);
+deco(new THREE.BoxGeometry(2.4, 8.6, 2.4), 0x322b21, 300, 2.2, -90.5);   // východ
+
 // Ozdobné žily minerálov v jaskyni (len scenéria, nedajú sa zbierať)
 function oreCluster(type, x, y, z, s = 1) {
     const mats = {
