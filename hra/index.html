@@ -1224,18 +1224,28 @@ for (const [pz, pd] of [[-20, 28], [-54, 30], [-89, 28], [-122, 26]]) {
 }
 
 // Prekážky: nízke múriky (preskoč), balvany (obehni/preskoč)
-box(600, 0.65, -12, 12, 1.3, 1.2, PLAINS_ROCK);
-box(597.8, 1.8, -20, 7.5, 3.6, 1.6, 0x7d8471);  // vysoké balvany vľavo – prebehni vpravo
-box(600, 0.7, -28, 12, 1.4, 1.2, PLAINS_ROCK);
-box(600, 0.65, -44, 12, 1.3, 1.2, PLAINS_ROCK);
-box(602.3, 1.8, -52, 7.5, 3.6, 1.6, 0x7d8471);  // vysoké balvany vpravo – prebehni vľavo
-box(600, 0.75, -61, 12, 1.5, 1.2, PLAINS_ROCK);
-box(600, 0.65, -78, 12, 1.3, 1.2, PLAINS_ROCK);
-box(597.5, 1.8, -86, 8, 3.6, 1.6, 0x7d8471);
-box(600, 0.75, -95, 12, 1.5, 1.2, PLAINS_ROCK);
-box(600, 0.7, -112, 12, 1.4, 1.2, PLAINS_ROCK);
-box(602.5, 1.8, -119, 8, 3.6, 1.6, 0x7d8471);
-box(600, 0.75, -128, 12, 1.5, 1.2, PLAINS_ROCK);
+// Zvalený strom cez kaňon – preskakuje sa cez kmeň
+function fallenLog(z, h = 1.3, crownX = 1) {
+    box(600, h / 2, z, 12, h, h, 0x6d4c33); // kmeň (kolízia)
+    deco(new THREE.BoxGeometry(1.3, h + 0.3, h + 0.3), 0x5a3f2a, 600 - crownX * 2.6, h / 2, z);
+    deco(new THREE.BoxGeometry(0.25, 0.8, 0.25), 0x5a3f2a, 598.6 + crownX, h + 0.3, z); // pahýle
+    deco(new THREE.BoxGeometry(0.25, 0.6, 0.25), 0x5a3f2a, 601.8 - crownX, h + 0.2, z);
+    deco(new THREE.BoxGeometry(0.5, 2.5, 2.5), 0x4a3527, 600 - crownX * 6.2, h / 2 + 0.6, z); // koreňový tanier
+    deco(new THREE.BoxGeometry(2.2, 2.0, 2.0), 0x2e6b2e, 600 + crownX * 6.2, h + 0.4, z);     // koruna
+    deco(new THREE.BoxGeometry(1.5, 1.4, 2.9), 0x3a9c46, 600 + crownX * 6.0, h + 1.3, z);
+}
+fallenLog(-12, 1.3, 1);
+box(597.8, 2.5, -20, 7.5, 5, 1.6, 0x7d8471);  // skalná stena vľavo – prebehni vpravo
+fallenLog(-28, 1.4, -1);
+fallenLog(-44, 1.3, 1);
+box(602.3, 2.5, -52, 7.5, 5, 1.6, 0x7d8471);  // skalná stena vpravo – prebehni vľavo
+fallenLog(-61, 1.5, -1);
+fallenLog(-78, 1.3, -1);
+box(597.5, 2.5, -86, 8, 5, 1.6, 0x7d8471);
+fallenLog(-95, 1.5, 1);
+fallenLog(-112, 1.4, -1);
+box(602.5, 2.5, -119, 8, 5, 1.6, 0x7d8471);
+fallenLog(-128, 1.5, 1);
 
 // Divoké rieky v puklinách medzi úsekmi
 const plainsRivers = [];
