@@ -1726,7 +1726,6 @@ function die(reason) {
     deathCount++;
     $('deaths').textContent = deathCount;
     showMsg(DEATH_MSG[reason] || '💀 Ups! Skús to znova.', 1200);
-    P.invulnUntil = performance.now() + 2000; // krátka nesmrteľnosť proti opakovanému zabitiu
     P.hp = MAX_HP;
     respawn();
 }
@@ -2005,19 +2004,17 @@ function physics(dt) {
         }
     }
 
-    // močiar a mäsožravce (spiace neublížia; po smrti chvíľa nesmrteľnosti)
-    if (nowMs >= P.invulnUntil) {
-        for (const kb of killBricks) {
-            if (kb.sleeping) continue;
-            if (collideAABB(kb, P.pos)) {
-                // dravec sa po úlovku vráti na začiatok hliadky
-                if (kb.dino) {
-                    kb.dino.group.position.set(kb.dino.origin.x, kb.dino.baseY, kb.dino.origin.z);
-                    kb.dino.phase = 0;
-                }
-                die(kb.reason);
-                return;
+    // močiar a mäsožravce (spiace neublížia)
+    for (const kb of killBricks) {
+        if (kb.sleeping) continue;
+        if (collideAABB(kb, P.pos)) {
+            // dravec sa po úlovku vráti na začiatok hliadky
+            if (kb.dino) {
+                kb.dino.group.position.set(kb.dino.origin.x, kb.dino.baseY, kb.dino.origin.z);
+                kb.dino.phase = 0;
             }
+            die(kb.reason);
+            return;
         }
     }
     // pád do priepasti
@@ -2150,9 +2147,6 @@ function animatePlayer(dt) {
     if (!P.onGround) {
         armL.rotation.x = armR.rotation.x = -2.6; // ruky hore pri skoku
     }
-    // blikanie počas nesmrteľnosti po smrti
-    const nowMs = performance.now();
-    player.visible = nowMs >= P.invulnUntil || Math.floor(nowMs / 120) % 2 === 0;
 }
 
 // ---------- Slučka ----------
