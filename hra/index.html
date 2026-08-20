@@ -1671,6 +1671,44 @@ box(863, 4.5, -60, 10.5, 9, 3, 0x35633a);
 box(927, 4.5, -60, 10.5, 9, 3, 0x35633a);
 box(883, 4.5, -60, 10.5, 9, 3, 0x35633a);
 
+// Obrastené ploty – mach, visiace liany a lístie po stenách bludiska
+{
+    const mossC = [0x4f7a3a, 0x3f6b30, 0x5f8f46];
+    let i = 0;
+    for (const hs of [42, 32, 22, 12]) {
+        for (let o = -hs + 4; o <= hs - 4; o += 7) {
+            i++;
+            const sides = [
+                [900 + o, -60 + hs, 0, 1],
+                [900 + o, -60 - hs, 0, -1],
+                [900 + hs, -60 + o, 1, 0],
+                [900 - hs, -60 + o, -1, 0],
+            ];
+            for (let si = 0; si < 4; si++) {
+                const [x, z, nx, nz] = sides[si];
+                const j = i * 4 + si;
+                const face = (j % 2) ? 1.62 : -1.62; // striedavo vnútorná / vonkajšia strana
+                const fx = x + nx * face, fz = z + nz * face;
+                const kind = j % 3;
+                if (kind === 0) {
+                    // visiaca liana s lístím na konci
+                    const len = 2.2 + (j * 1.7) % 2.8;
+                    deco(new THREE.BoxGeometry(nx ? 0.16 : 0.6, len, nz ? 0.16 : 0.6), mossC[j % 3], fx, 9 - len / 2, fz);
+                    deco(new THREE.BoxGeometry(0.55, 0.4, 0.55), 0x3a9c46, fx, 8.8 - len, fz);
+                } else if (kind === 1) {
+                    // machový fľak na stene
+                    const h = 2 + (j * 2.3) % 4.5;
+                    deco(new THREE.BoxGeometry(nx ? 0.14 : 2.2, 1.6, nz ? 0.14 : 2.2), mossC[(j + 1) % 3], fx, h, fz);
+                } else {
+                    // chumáč lístia prerastený cez korunu plota
+                    deco(new THREE.BoxGeometry(1.9, 0.9, 1.9), 0x2e6b2e, x, 9.4, z);
+                    deco(new THREE.BoxGeometry(1.1, 0.7, 1.1), 0x3a9c46, x + 0.4, 10, z - 0.3);
+                }
+            }
+        }
+    }
+}
+
 // Návratový portál a checkpointy na trase
 portal(895.5, 0.2, -21.5, new THREE.Vector3(0, 1.8, 3), '🌿 Späť v džungli!');
 checkpoint(900, 0.2, -23, 3, 3);
