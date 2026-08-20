@@ -1362,17 +1362,7 @@ function animeAmbient(th, camX, gy) {
         }
         return;
     }
-    // sakurové lupienky v denných svetoch
-    ctx.fillStyle = 'rgba(255,170,200,0.85)';
-    for (let i = 0; i < 16; i++) {
-        const x = ((sv(i, 74) * W + Math.sin(t * 0.8 + i) * 50 - camX * 0.45) % W + W) % W;
-        const y = (sv(i, 75) * H + t * (26 + sv(i, 76) * 30)) % gy;
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(t * (1 + sv(i, 77)) + i);
-        ctx.beginPath(); ctx.ellipse(0, 0, 4, 2.2, 0, 0, TAU); ctx.fill();
-        ctx.restore();
-    }
+    // (denné svety sú bez padajúcich lupienkov)
 }
 
 function drawHouseBg(x, base, i, snow) {
