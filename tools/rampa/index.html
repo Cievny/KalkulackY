@@ -34,6 +34,7 @@
          -webkit-background-clip: text; background-clip: text; color: transparent; }
     h2 { font-size: 1.5rem; margin-bottom: 14px; }
     .sub { color: #aebfd4; margin-bottom: 20px; font-size: 0.95rem; }
+    .jp { color: #ff9ec4; letter-spacing: 3px; font-size: 0.78rem; font-weight: 700; margin-bottom: 10px; text-shadow: 0 0 12px rgba(255,158,196,0.5); }
     .btn {
         display: inline-block; border: none; cursor: pointer; user-select: none;
         font-size: 1.05rem; font-weight: 700; color: #fff;
@@ -159,6 +160,7 @@
     <div class="panel">
         <div class="big-emoji">🚴💨</div>
         <h1>SKOČ NA RAMPU</h1>
+        <div class="jp">✦ アニメ・ライダー ✦ ANIME RIDER ✦</div>
         <p class="sub">Jazdi, zbieraj mince, skáč cez rampy, rob triky a vylepšuj si bicykle!</p>
         <div class="coin-wallet" id="menuCoins">🪙 0</div>
         <button class="btn" id="btnPlay">▶ Hrať</button><br>
@@ -764,18 +766,6 @@ function draw() {
         }
     } else {
         drawMenuRider(gy);
-        // sakurové lupienky poletujúce v menu
-        const t2 = performance.now() * 0.001;
-        ctx.fillStyle = 'rgba(255,170,200,0.8)';
-        for (let i = 0; i < 26; i++) {
-            const px2 = (sv(i, 64) * W + Math.sin(t2 * 0.8 + i) * 60 + t2 * 18) % W;
-            const py2 = (sv(i, 65) * H + t2 * (28 + sv(i, 66) * 34)) % H;
-            ctx.save();
-            ctx.translate(px2, py2);
-            ctx.rotate(t2 * (1 + sv(i, 67)) + i);
-            ctx.beginPath(); ctx.ellipse(0, 0, 4.5, 2.4, 0, 0, TAU); ctx.fill();
-            ctx.restore();
-        }
     }
     ctx.restore();
 }
@@ -796,8 +786,33 @@ function drawSky(th, gy) {
         ctx.globalAlpha = 1;
     }
     if (th.sun === 'sun') {
-        ctx.fillStyle = 'rgba(255,220,120,0.95)';
-        ctx.beginPath(); ctx.arc(W * 0.82, H * 0.16, 42, 0, TAU); ctx.fill();
+        const sx2 = W * 0.82, sy2 = H * 0.16, t2 = performance.now() * 0.001;
+        // aureola
+        const halo = ctx.createRadialGradient(sx2, sy2, 30, sx2, sy2, 130);
+        halo.addColorStop(0, 'rgba(255,235,160,0.45)'); halo.addColorStop(1, 'rgba(255,235,160,0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(sx2, sy2, 130, 0, TAU); ctx.fill();
+        // pomaly rotujúce božské lúče
+        ctx.save();
+        ctx.translate(sx2, sy2); ctx.rotate(t2 * 0.05);
+        ctx.fillStyle = 'rgba(255,240,180,0.10)';
+        for (let i = 0; i < 7; i++) {
+            ctx.rotate(TAU / 7);
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(620, -46); ctx.lineTo(620, 46); ctx.closePath(); ctx.fill();
+        }
+        ctx.restore();
+        ctx.fillStyle = 'rgba(255,220,120,0.98)';
+        ctx.beginPath(); ctx.arc(sx2, sy2, 42, 0, TAU); ctx.fill();
+        ctx.fillStyle = 'rgba(255,250,220,0.9)';
+        ctx.beginPath(); ctx.arc(sx2 - 8, sy2 - 8, 24, 0, TAU); ctx.fill();
+        // anime trblietky ✦ na oblohe
+        for (let i = 0; i < 6; i++) {
+            const a = 0.25 + Math.sin(t2 * 2 + i * 1.9) * 0.25;
+            const px2 = sv(i, 78) * W, py2 = sv(i, 79) * H * 0.45;
+            ctx.fillStyle = `rgba(255,255,255,${Math.max(0.05, a)})`;
+            ctx.fillRect(px2 - 1.5, py2 - 7, 3, 14);
+            ctx.fillRect(px2 - 7, py2 - 1.5, 14, 3);
+        }
     } else if (th.sun === 'sunset') {
         const g2 = ctx.createRadialGradient(W * 0.5, gy - 10, 10, W * 0.5, gy - 10, 130);
         g2.addColorStop(0, 'rgba(255,200,90,1)'); g2.addColorStop(1, 'rgba(255,140,60,0)');
@@ -1318,6 +1333,46 @@ function drawScenery(th, camX, gy) {
             ctx.beginPath(); ctx.moveTo(dx, gy); ctx.lineTo(dx, gy + 26); ctx.stroke();
         }
     }
+
+    animeAmbient(th, camX, gy);
+}
+
+/* anime atmosféra v každom svete: sakurové lupienky, svetlušky, zrnká prachu */
+function animeAmbient(th, camX, gy) {
+    const t = performance.now() * 0.001;
+    if (th.back === 'winter' || th.back === 'upside') return; // majú sneženie / spóry
+    if (th.stars || th.back === 'night' || th.dusk) { // svetlušky
+        for (let i = 0; i < 14; i++) {
+            const x = ((sv(i, 70) * W - camX * 0.3) % W + W) % W;
+            const y = gy - 26 - sv(i, 71) * 170 + Math.sin(t * 1.4 + i) * 12;
+            const p = 0.4 + Math.sin(t * 2 + i * 1.7) * 0.4;
+            ctx.fillStyle = `rgba(255,235,140,${Math.max(0.08, p)})`;
+            ctx.beginPath(); ctx.arc(x, y, 2.4, 0, TAU); ctx.fill();
+            ctx.fillStyle = `rgba(255,235,140,${Math.max(0, p - 0.2) * 0.3})`;
+            ctx.beginPath(); ctx.arc(x, y, 6.5, 0, TAU); ctx.fill();
+        }
+        return;
+    }
+    if (th.back === 'interior') { // zlaté zrnká prachu v lúči svetla
+        ctx.fillStyle = 'rgba(255,220,150,0.55)';
+        for (let i = 0; i < 22; i++) {
+            const x = ((sv(i, 72) * W - camX * 0.2) % W + W) % W;
+            const y = (sv(i, 73) * gy + t * (8 + sv(i, 73) * 10)) % gy;
+            ctx.fillRect(x, y, 2, 2);
+        }
+        return;
+    }
+    // sakurové lupienky v denných svetoch
+    ctx.fillStyle = 'rgba(255,170,200,0.85)';
+    for (let i = 0; i < 16; i++) {
+        const x = ((sv(i, 74) * W + Math.sin(t * 0.8 + i) * 50 - camX * 0.45) % W + W) % W;
+        const y = (sv(i, 75) * H + t * (26 + sv(i, 76) * 30)) % gy;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(t * (1 + sv(i, 77)) + i);
+        ctx.beginPath(); ctx.ellipse(0, 0, 4, 2.2, 0, 0, TAU); ctx.fill();
+        ctx.restore();
+    }
 }
 
 function drawHouseBg(x, base, i, snow) {
@@ -1436,20 +1491,31 @@ function updateAmbulance(g, dt) {
 }
 
 function cloud(x, y, s) {
+    // cel-shaded anime oblak — modrastý tieň dole, žiarivo biely vrch
+    ctx.save();
+    ctx.translate(x, y); ctx.scale(s, s);
+    ctx.fillStyle = 'rgba(172,202,232,0.85)';
     ctx.beginPath();
-    ctx.arc(x, y, 22 * s, 0, TAU);
-    ctx.arc(x + 24 * s, y - 10 * s, 26 * s, 0, TAU);
-    ctx.arc(x + 52 * s, y, 20 * s, 0, TAU);
+    ctx.arc(2, 7, 21, 0, TAU); ctx.arc(26, 0, 25, 0, TAU); ctx.arc(52, 7, 19, 0, TAU);
     ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.96)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 21, 0, TAU); ctx.arc(24, -10, 26, 0, TAU); ctx.arc(52, 0, 19, 0, TAU);
+    ctx.arc(38, -18, 15, 0, TAU); ctx.arc(10, -15, 13, 0, TAU);
+    ctx.fill();
+    ctx.restore();
 }
 function hills(off, gy, color, hs) {
+    const f = x => (Math.sin((x + off) * 0.004) * 40 + Math.sin((x + off) * 0.004 * 2.7) * 22 + 60) * hs;
     ctx.fillStyle = color;
     ctx.beginPath(); ctx.moveTo(0, gy);
-    for (let x = 0; x <= W; x += 8) {
-        const t = (x + off) * 0.004;
-        ctx.lineTo(x, gy - (Math.sin(t) * 40 + Math.sin(t * 2.7) * 22 + 60) * hs);
-    }
+    for (let x = 0; x <= W; x += 8) ctx.lineTo(x, gy - f(x));
     ctx.lineTo(W, gy); ctx.closePath(); ctx.fill();
+    // cel-shading — svetlý pás na hrebeňoch
+    ctx.strokeStyle = 'rgba(255,255,255,0.28)'; ctx.lineWidth = 5;
+    ctx.beginPath();
+    for (let x = 0; x <= W; x += 8) ctx.lineTo(x, gy - f(x) + 3);
+    ctx.stroke();
 }
 
 /* každý svet má svoju rampu — rovnaká fyzika, iný vzhľad */
