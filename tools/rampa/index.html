@@ -276,8 +276,11 @@ const NUM_LEVELS = 15;
 const SKINS = [
     { id: 'misko',    name: 'Akira',           emoji: '⚔️', g: 'ch', req: 0,  skin: '#f2c8a0', shirt: '#e05c3a', pants: '#26415e', hair: '#3d2b1c', eye: '#4a90e2', style: 'spiky' },
     { id: 'ema',      name: 'Sakura',          emoji: '🌸', g: 'd',  req: 0,  skin: '#f8d5b0', shirt: '#ff7bac', pants: '#7c5cd6', hair: '#ffb7d0', eye: '#4cd07d', style: 'long' },
-    { id: 'zltak',    name: 'Žltáčik',         emoji: '🍩', g: 'ch', req: 1,  skin: '#ffd90f', shirt: '#f14e28', pants: '#3d6ef5', hair: '#ffd90f', eye: '#5a3a22', style: 'spiky' },
+    { id: 'zltak',    name: 'Žltáčik',         emoji: '🍩', g: 'ch', req: 0,  skin: '#ffd90f', shirt: '#f14e28', pants: '#3d6ef5', hair: '#ffd90f', eye: '#5a3a22', style: 'spiky' },
+    { id: 'lisa',     name: 'Líza',            emoji: '🎷', g: 'd',  req: 0,  skin: '#ffd90f', shirt: '#f14e28', pants: '#f14e28', hair: '#ffd90f', eye: '#5a3a22', style: 'star', pearls: true },
+    { id: 'tato',     name: 'Tato Žltko',      emoji: '🍔', g: 'ch', req: 1,  skin: '#ffd90f', shirt: '#f5f5f0', pants: '#5a7ab5', hair: '#3d2b1c', eye: '#5a3a22', style: 'bald' },
     { id: 'modruska', name: 'Modruška',        emoji: '💙', g: 'd',  req: 2,  skin: '#ffd90f', shirt: '#4cd07d', pants: '#4cd07d', hair: '#2857a4', eye: '#5a3a22', style: 'tall' },
+    { id: 'megi',     name: 'Bábätko Megi',    emoji: '🍼', g: 'd',  req: 3,  skin: '#ffd90f', shirt: '#8ecbff', pants: '#8ecbff', hair: '#ffd90f', eye: '#5a3a22', style: 'baby' },
     { id: 'kubo',     name: 'Kai',             emoji: '⚡', g: 'ch', req: 3,  skin: '#f2c8a0', shirt: '#2980ff', pants: '#333a44', hair: '#3a6ed8', eye: '#2ec9c9', style: 'spiky' },
     { id: 'laura',    name: 'Yuki',            emoji: '😎', g: 'd',  req: 4,  skin: '#e8b88a', shirt: '#9b59d0', pants: '#26415e', hair: '#4a3626', eye: '#9b59d0', style: 'twin' },
     { id: 'ninja',    name: 'Ninja Ryu',       emoji: '🥷', g: 'ch', req: 5,  skin: '#f2c8a0', shirt: '#20242c', pants: '#20242c', hair: '#20242c', eye: '#e05c3a', style: 'mask' },
@@ -1917,6 +1920,49 @@ function drawBike(color, wheelSpin, pedal, tilt, ups, rider = true) {
     } else if (sk.style === 'tall') { // vrch hlavy pod vysokým účesom
         ctx.fillStyle = sk.hair;
         ctx.beginPath(); ctx.arc(hx, hy, R, Math.PI * 0.8, Math.PI * 2.1); ctx.lineTo(hx, hy); ctx.closePath(); ctx.fill();
+    } else if (sk.style === 'bald') { // plešatý tato — dva vlásky, zavinutý fúzik
+        ctx.fillStyle = '#c9a02c'; // strnisko okolo úst
+        ctx.beginPath(); ctx.arc(hx, hy, R, Math.PI * 0.15, Math.PI * 0.75); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#b06a4a'; ctx.lineWidth = 1.2; // ústa cez strnisko
+        ctx.beginPath(); ctx.arc(hx + 6.4, hy + 4.2, 1.6, 0.2, Math.PI * 0.8); ctx.stroke();
+        ctx.strokeStyle = sk.hair; ctx.lineWidth = 1.4; // dva slávne vlásky
+        ctx.beginPath();
+        ctx.moveTo(hx - 1, hy - R); ctx.quadraticCurveTo(hx - 2, hy - R - 5, hx - 5, hy - R - 4);
+        ctx.moveTo(hx + 2, hy - R + 0.5); ctx.quadraticCurveTo(hx + 3, hy - R - 5, hx, hy - R - 5);
+        ctx.stroke();
+        ctx.beginPath(); // zigzag nad uchom
+        ctx.moveTo(hx - R + 1, hy - 2); ctx.lineTo(hx - R + 4, hy - 5); ctx.lineTo(hx - R + 6, hy - 2); ctx.lineTo(hx - R + 8.5, hy - 5);
+        ctx.stroke();
+    } else if (sk.style === 'star' || sk.style === 'baby') { // hviezdicové špičky
+        ctx.fillStyle = sk.hair;
+        const n = sk.style === 'star' ? 7 : 5, len = sk.style === 'star' ? 7 : 5;
+        for (let i2 = 0; i2 < n; i2++) {
+            const a = Math.PI * 1.62 - (i2 / (n - 1)) * Math.PI * 1.05;
+            const bx1 = hx + Math.cos(a - 0.18) * (R - 1), by1 = hy + Math.sin(a - 0.18) * (R - 1);
+            const bx2 = hx + Math.cos(a + 0.18) * (R - 1), by2 = hy + Math.sin(a + 0.18) * (R - 1);
+            const tx = hx + Math.cos(a) * (R + len), ty = hy + Math.sin(a) * (R + len);
+            ctx.beginPath(); ctx.moveTo(bx1, by1); ctx.lineTo(tx, ty); ctx.lineTo(bx2, by2); ctx.closePath(); ctx.fill();
+        }
+        if (sk.style === 'baby') { // modrá mašľa + cumlík
+            ctx.fillStyle = '#4a90e2';
+            ctx.beginPath();
+            ctx.moveTo(hx + 1, hy - R - 2);
+            ctx.lineTo(hx - 4, hy - R - 7); ctx.lineTo(hx - 2, hy - R - 1);
+            ctx.moveTo(hx + 1, hy - R - 2);
+            ctx.lineTo(hx + 6, hy - R - 7); ctx.lineTo(hx + 4, hy - R - 1);
+            ctx.fill();
+            ctx.beginPath(); ctx.arc(hx + 1, hy - R - 2, 2, 0, TAU); ctx.fill();
+            ctx.fillStyle = '#e02d2d'; // cumlík
+            ctx.beginPath(); ctx.arc(hx + R - 1, hy + 3.5, 2.6, 0, TAU); ctx.fill();
+            ctx.strokeStyle = '#c9b284'; ctx.lineWidth = 1.2;
+            ctx.beginPath(); ctx.arc(hx + R - 1, hy + 3.5, 3.8, 0, TAU); ctx.stroke();
+        }
+    }
+    if (sk.pearls) { // perlový náhrdelník
+        ctx.fillStyle = '#fff';
+        for (let i2 = 0; i2 < 4; i2++) {
+            ctx.beginPath(); ctx.arc(hx - 3 + i2 * 2.6, hy + R + 1.5, 1.3, 0, TAU); ctx.fill();
+        }
     }
     } // koniec okrúhlej (nekockovej) hlavy
     if (sk.band) { // červená čelenka s vejúcimi stužkami
