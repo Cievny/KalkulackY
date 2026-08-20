@@ -188,7 +188,7 @@
 <div class="overlay" id="skinsScr">
     <div class="panel" style="max-width: 720px;">
         <h2>👕 Skiny</h2>
-        <p class="sub" style="margin-bottom:12px;">Nové skiny sa odomykajú za dokončené levely!</p>
+        <p class="sub" style="margin-bottom:12px;">Za KAŽDÝ dokončený level dostaneš nový skin! 🎁</p>
         <div class="skin-cols">
             <div class="skin-col boys"><h3>👦 Chalani</h3><div id="skinBoys"></div></div>
             <div class="skin-col girls"><h3>👧 Dievčatá</h3><div id="skinGirls"></div></div>
@@ -271,17 +271,26 @@ const UPGRADES = [
 const MAX_UP = 5;
 const NUM_LEVELS = 15;
 
-/* Anime skiny jazdca — chalanské a dievčenské; req = koľko dokončených levelov ich odomkne
-   style: spiky (anime chalan) | long (dlhé vlasy) | twin (dva chvostíky) | mask (ninja) | robo */
+/* Anime skiny jazdca — za KAŽDÝ dokončený level pribudne nový skin (req = počet levelov)
+   style: spiky | long (dlhé vlasy) | twin (chvostíky) | tall (vysoký účes) | mask | robo | block */
 const SKINS = [
-    { id: 'misko',    name: 'Akira',         emoji: '⚔️', g: 'ch', req: 0, skin: '#f2c8a0', shirt: '#e05c3a', pants: '#26415e', hair: '#3d2b1c', eye: '#4a90e2', style: 'spiky' },
-    { id: 'kubo',     name: 'Kai',           emoji: '⚡', g: 'ch', req: 2, skin: '#f2c8a0', shirt: '#2980ff', pants: '#333a44', hair: '#3a6ed8', eye: '#2ec9c9', style: 'spiky' },
-    { id: 'ninja',    name: 'Ninja Ryu',     emoji: '🥷', g: 'ch', req: 5, skin: '#f2c8a0', shirt: '#20242c', pants: '#20242c', hair: '#20242c', eye: '#e05c3a', style: 'mask' },
-    { id: 'robo',     name: 'Robo-kun',      emoji: '🤖', g: 'ch', req: 8, skin: '#aab6c2', shirt: '#7c8a99', pants: '#5a6672', hair: '#5a6672', eye: '#4ae8e8', style: 'robo', antenna: true },
-    { id: 'ema',      name: 'Sakura',        emoji: '🌸', g: 'd',  req: 0, skin: '#f8d5b0', shirt: '#ff7bac', pants: '#7c5cd6', hair: '#ffb7d0', eye: '#4cd07d', style: 'long' },
-    { id: 'laura',    name: 'Yuki',          emoji: '😎', g: 'd',  req: 2, skin: '#e8b88a', shirt: '#9b59d0', pants: '#26415e', hair: '#4a3626', eye: '#9b59d0', style: 'twin' },
-    { id: 'princezna',name: 'Princezná Hana',emoji: '👑', g: 'd',  req: 5, skin: '#f8d5b0', shirt: '#ff9ec4', pants: '#e8e0f0', hair: '#f2d16b', eye: '#4a90e2', style: 'long', crown: true },
-    { id: 'unicorn',  name: 'Miku Jednorožka',emoji: '🦄', g: 'd', req: 8, skin: '#f8d5b0', shirt: '#8ecbff', pants: '#b58ee8', hair: '#7ce8d8', eye: '#8ecbff', style: 'twin', horn: true },
+    { id: 'misko',    name: 'Akira',           emoji: '⚔️', g: 'ch', req: 0,  skin: '#f2c8a0', shirt: '#e05c3a', pants: '#26415e', hair: '#3d2b1c', eye: '#4a90e2', style: 'spiky' },
+    { id: 'ema',      name: 'Sakura',          emoji: '🌸', g: 'd',  req: 0,  skin: '#f8d5b0', shirt: '#ff7bac', pants: '#7c5cd6', hair: '#ffb7d0', eye: '#4cd07d', style: 'long' },
+    { id: 'zltak',    name: 'Žltáčik',         emoji: '🍩', g: 'ch', req: 1,  skin: '#ffd90f', shirt: '#f14e28', pants: '#3d6ef5', hair: '#ffd90f', eye: '#5a3a22', style: 'spiky' },
+    { id: 'modruska', name: 'Modruška',        emoji: '💙', g: 'd',  req: 2,  skin: '#ffd90f', shirt: '#4cd07d', pants: '#4cd07d', hair: '#2857a4', eye: '#5a3a22', style: 'tall' },
+    { id: 'kubo',     name: 'Kai',             emoji: '⚡', g: 'ch', req: 3,  skin: '#f2c8a0', shirt: '#2980ff', pants: '#333a44', hair: '#3a6ed8', eye: '#2ec9c9', style: 'spiky' },
+    { id: 'laura',    name: 'Yuki',            emoji: '😎', g: 'd',  req: 4,  skin: '#e8b88a', shirt: '#9b59d0', pants: '#26415e', hair: '#4a3626', eye: '#9b59d0', style: 'twin' },
+    { id: 'ninja',    name: 'Ninja Ryu',       emoji: '🥷', g: 'ch', req: 5,  skin: '#f2c8a0', shirt: '#20242c', pants: '#20242c', hair: '#20242c', eye: '#e05c3a', style: 'mask' },
+    { id: 'princezna',name: 'Princezná Hana',  emoji: '👑', g: 'd',  req: 6,  skin: '#f8d5b0', shirt: '#ff9ec4', pants: '#e8e0f0', hair: '#f2d16b', eye: '#4a90e2', style: 'long', crown: true },
+    { id: 'kocka',    name: 'Kocka Stevo',     emoji: '⛏️', g: 'ch', req: 7,  skin: '#d9a066', shirt: '#2ec9c9', pants: '#5a4a8a', hair: '#4a3626', eye: '#4a3626', style: 'block' },
+    { id: 'unicorn',  name: 'Miku Jednorožka', emoji: '🦄', g: 'd',  req: 8,  skin: '#f8d5b0', shirt: '#8ecbff', pants: '#b58ee8', hair: '#7ce8d8', eye: '#8ecbff', style: 'twin', horn: true },
+    { id: 'robo',     name: 'Robo-kun',        emoji: '🤖', g: 'ch', req: 9,  skin: '#aab6c2', shirt: '#7c8a99', pants: '#5a6672', hair: '#5a6672', eye: '#4ae8e8', style: 'robo', antenna: true },
+    { id: 'ladova',   name: 'Ľadová Ela',      emoji: '❄️', g: 'd',  req: 10, skin: '#f8e8f0', shirt: '#8ecbff', pants: '#e8f4fa', hair: '#cfe9fa', eye: '#4a90e2', style: 'long' },
+    { id: 'vojak',    name: 'Ostrovný Vojak',  emoji: '🪂', g: 'ch', req: 11, skin: '#f2c8a0', shirt: '#5f7a3d', pants: '#3d4a2a', hair: '#20242c', eye: '#4a90e2', style: 'spiky', band: true },
+    { id: 'ninjagirl',name: 'Kunoichi Rei',    emoji: '🌙', g: 'd',  req: 12, skin: '#f2c8a0', shirt: '#472a4a', pants: '#472a4a', hair: '#472a4a', eye: '#ff7bac', style: 'mask' },
+    { id: 'upir',     name: 'Upír Kuro',       emoji: '🦇', g: 'ch', req: 13, skin: '#eae4ee', shirt: '#2a2438', pants: '#1d1d28', hair: '#1d1d28', eye: '#e02d2d', style: 'spiky' },
+    { id: 'luna',     name: 'Hviezdna Luna',   emoji: '⭐', g: 'd',  req: 14, skin: '#f2c8a0', shirt: '#2a2447', pants: '#4a3a8a', hair: '#9b59d0', eye: '#f6b93b', style: 'twin', star: true },
+    { id: 'sampion',  name: 'Zlatý Šampión',   emoji: '🏆', g: 'ch', req: 15, skin: '#f2c8a0', shirt: '#f6b93b', pants: '#e8a020', hair: '#ffd166', eye: '#ff8e3c', style: 'spiky', glow: true },
 ];
 function skinDef() { return SKINS.find(s => s.id === save.skin) || SKINS[0]; }
 function skinUnlocked(s) { return save.done.length >= s.req; }
@@ -383,6 +392,9 @@ const THEMES = [
     { name: 'Bojový ostrov',  emoji: '🪂', back: 'fort',      ramp: 'fort',     sky: ['#6ec4f5', '#bfe6fa', '#e8f5d8'], sun: 'sun',    clouds: true,  grass: '#7cc95f', road: '#8a7a5c', dash: '#e0d0a8' },
 ];
 function themeFor(n) { return THEMES[((n - 1) % THEMES.length + THEMES.length) % THEMES.length]; }
+/* tieto typy rámp sú prehnuté (kicker) — iný tvar aj let */
+const CURVED = new Set(['plank', 'neon', 'neon2', 'donut', 'fort']);
+function rampSurf(style, t) { return CURVED.has(style) ? t * t : t; }
 /* deterministická pseudo-náhoda pre variácie kulís */
 function sv(i, salt) { const x = Math.sin(i * 127.1 + salt * 311.7) * 43758.5; return x - Math.floor(x); }
 /* opakovanie kulís s parallaxou: fn(screenX, index) */
@@ -530,20 +542,21 @@ function update(dt) {
     g.wheelSpin += g.speed * dt / 22;
     g.pedal += g.speed * dt / 46;
 
-    // --- rampy: nábeh po šikmej ploche + vystrelenie ---
+    // --- rampy: nábeh po ploche (rovnej či prehnutej) + vystrelenie ---
+    const rampStyle = themeFor(g.n).ramp;
     let surfaceY = gy, onRampNow = false;
     for (const r of L.ramps) {
         if (g.px >= r.x && g.px <= r.x + r.w) {
             const t = (g.px - r.x) / r.w;
-            surfaceY = gy - r.h * t;
+            surfaceY = gy - r.h * rampSurf(rampStyle, t);
             onRampNow = true;
         }
     }
     if (g.onGround) {
         if (onRampNow || surfaceY >= g.py - 40) g.py = surfaceY;
-        // koniec rampy → automatické vystrelenie do vzduchu
+        // koniec rampy → automatické vystrelenie do vzduchu (kicker strieľa silnejšie)
         if (g.onRamp && !onRampNow) {
-            g.vy = -(jumpPower() + g.speed * 0.6);
+            g.vy = -(jumpPower() + g.speed * 0.6) * (CURVED.has(rampStyle) ? 1.12 : 1);
             g.onGround = false; g.airborne = true;
             spawnBurst(g.px, g.py, '#ffd166', 12);
         }
@@ -735,8 +748,31 @@ function draw() {
             ctx.fillText(f.txt, f.x - camX, f.y);
         }
         ctx.globalAlpha = 1;
+        // manga rýchlostné čiary pri booste / turbe
+        if (S.screen === 'play' && (G.boostT > 0 || G.active.turbo > 0)) {
+            ctx.globalAlpha = 0.3; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+            for (let i = 0; i < 12; i++) {
+                const y = sv(i, 61) * H;
+                const len = 130 + sv(i, 62) * 180;
+                const xo = (performance.now() * (1.4 + sv(i, 63) * 1.4)) % (W + len);
+                ctx.beginPath(); ctx.moveTo(W - xo, y); ctx.lineTo(W - xo + len, y); ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
     } else {
         drawMenuRider(gy);
+        // sakurové lupienky poletujúce v menu
+        const t2 = performance.now() * 0.001;
+        ctx.fillStyle = 'rgba(255,170,200,0.8)';
+        for (let i = 0; i < 26; i++) {
+            const px2 = (sv(i, 64) * W + Math.sin(t2 * 0.8 + i) * 60 + t2 * 18) % W;
+            const py2 = (sv(i, 65) * H + t2 * (28 + sv(i, 66) * 34)) % H;
+            ctx.save();
+            ctx.translate(px2, py2);
+            ctx.rotate(t2 * (1 + sv(i, 67)) + i);
+            ctx.beginPath(); ctx.ellipse(0, 0, 4.5, 2.4, 0, 0, TAU); ctx.fill();
+            ctx.restore();
+        }
     }
     ctx.restore();
 }
@@ -1416,8 +1452,10 @@ function hills(off, gy, color, hs) {
 /* každý svet má svoju rampu — rovnaká fyzika, iný vzhľad */
 function drawRamp(style, r, x, gy) {
     const w = r.w, h = r.h;
-    const tri = () => { ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + w, gy - h); ctx.lineTo(x + w, gy); ctx.closePath(); };
-    const edge = (color, lw) => { ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + w, gy - h); ctx.stroke(); };
+    const surf = t => rampSurf(style, t);
+    const slope = () => { for (let i = 0; i <= 16; i++) { const t = i / 16; ctx.lineTo(x + w * t, gy - h * surf(t)); } };
+    const tri = () => { ctx.beginPath(); ctx.moveTo(x, gy); slope(); ctx.lineTo(x + w, gy); ctx.closePath(); };
+    const edge = (color, lw) => { ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, gy); slope(); ctx.stroke(); };
     switch (style) {
         case 'dirt': { // hlinený kopec s trávou
             ctx.fillStyle = '#8a6142'; tri(); ctx.fill();
@@ -1436,13 +1474,16 @@ function drawRamp(style, r, x, gy) {
         }
         case 'plank': { // parková skejtová rampa s bielym zábradlím
             ctx.fillStyle = '#c9a06b'; tri(); ctx.fill();
+            ctx.save(); tri(); ctx.clip();
             ctx.strokeStyle = 'rgba(120,85,50,0.5)'; ctx.lineWidth = 2;
-            for (let i = 1; i < 4; i++) { // dosky rovnobežné so svahom
-                const o = i * 12;
-                ctx.beginPath(); ctx.moveTo(x + o * (w / h), gy); ctx.lineTo(x + w, gy - h + o); ctx.stroke();
+            for (let o = 12; o < 40; o += 12) { // dosky kopírujúce prehnutie
+                ctx.beginPath();
+                for (let i = 0; i <= 16; i++) { const t = i / 16; ctx.lineTo(x + w * t, gy - h * surf(t) + o); }
+                ctx.stroke();
             }
+            ctx.restore();
             ctx.strokeStyle = '#8a5a32'; ctx.lineWidth = 3;
-            for (let i = 1; i < 4; i++) { const sx = x + w * i / 4; ctx.beginPath(); ctx.moveTo(sx, gy); ctx.lineTo(sx, gy - h * i / 4); ctx.stroke(); }
+            for (let i = 1; i < 4; i++) { const sx = x + w * i / 4; ctx.beginPath(); ctx.moveTo(sx, gy); ctx.lineTo(sx, gy - h * surf(i / 4)); ctx.stroke(); }
             edge('#f2f2f2', 4);
             break;
         }
@@ -1540,7 +1581,7 @@ function drawRamp(style, r, x, gy) {
                 const t = 0.08 + i / 11;
                 ctx.fillStyle = sc[i % sc.length];
                 ctx.save();
-                ctx.translate(x + w * t, gy - h * t - 2);
+                ctx.translate(x + w * t, gy - h * surf(t) - 2);
                 ctx.rotate(sv(i, r.x) * 3);
                 ctx.fillRect(-1.5, -4, 3, 8);
                 ctx.restore();
@@ -1575,13 +1616,15 @@ function drawRamp(style, r, x, gy) {
         }
         case 'fort': { // narýchlo postavená drevená rampa s X výstuhou
             ctx.fillStyle = '#d9a25c'; tri(); ctx.fill();
+            ctx.save(); tri(); ctx.clip();
             ctx.strokeStyle = '#8a5a26'; ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(x + w * 0.1, gy); ctx.lineTo(x + w * 0.95, gy - h * 0.6);
-            ctx.moveTo(x + w * 0.55, gy); ctx.lineTo(x + w * 0.98, gy - h * 0.35);
-            ctx.moveTo(x + w * 0.5, gy - h * 0.28); ctx.lineTo(x + w * 0.75, gy);
+            ctx.moveTo(x + w * 0.1, gy); ctx.lineTo(x + w, gy - h * surf(0.95) * 0.8);
+            ctx.moveTo(x + w * 0.55, gy); ctx.lineTo(x + w, gy - h * surf(0.98) * 0.5);
+            ctx.moveTo(x + w * 0.45, gy - h * surf(0.5)); ctx.lineTo(x + w * 0.8, gy);
             ctx.stroke();
-            ctx.lineWidth = 4; tri(); ctx.stroke();
+            ctx.restore();
+            ctx.strokeStyle = '#8a5a26'; ctx.lineWidth = 4; tri(); ctx.stroke();
             edge('#6b4a1d', 4);
             break;
         }
@@ -1743,6 +1786,12 @@ function drawBike(color, wheelSpin, pedal, tilt, ups, rider = true) {
     // jazdec — farby a doplnky podľa vybraného skinu
     const sk = skinDef();
     const hipX = -9, hipY = -33;
+    if (sk.glow) { // zlatá aura šampióna
+        const ga = ctx.createRadialGradient(hipX + 6, hipY - 16, 4, hipX + 6, hipY - 16, 34);
+        ga.addColorStop(0, 'rgba(255,209,102,0.55)'); ga.addColorStop(1, 'rgba(255,209,102,0)');
+        ctx.fillStyle = ga;
+        ctx.beginPath(); ctx.arc(hipX + 6, hipY - 16, 34, 0, TAU); ctx.fill();
+    }
     const kneeX = -2 + Math.cos(pa) * 4, kneeY = -18 + Math.sin(pa) * 3;
     const footX = 2 + Math.cos(pa) * 9, footY = -2 + Math.sin(pa) * 9;
     ctx.strokeStyle = sk.pants; ctx.lineWidth = 5.5; ctx.lineCap = 'round';
@@ -1768,6 +1817,16 @@ function drawBike(color, wheelSpin, pedal, tilt, ups, rider = true) {
         ctx.quadraticCurveTo(hx - R + 1, hy + 4, hx - 3, hy + 1);
         ctx.closePath(); ctx.fill();
     }
+    if (sk.style === 'tall') { // vysoký modrý účes
+        ctx.fillStyle = sk.hair;
+        ctx.beginPath();
+        ctx.arc(hx - 1, hy - R - 15, 6, 0, TAU);
+        ctx.arc(hx - 4, hy - R - 8, 6.5, 0, TAU);
+        ctx.arc(hx + 2, hy - R - 7, 6, 0, TAU);
+        ctx.arc(hx - 1, hy - R - 21, 5, 0, TAU);
+        ctx.fill();
+        ctx.fillRect(hx - 6.5, hy - R - 15, 13, 15);
+    }
     if (sk.style === 'twin') { // dva chvostíky
         ctx.fillStyle = sk.hair;
         for (const [ox, oy] of [[-R - 3, -4], [-R + 1, -R + 1]]) {
@@ -1779,6 +1838,19 @@ function drawBike(color, wheelSpin, pedal, tilt, ups, rider = true) {
             ctx.closePath(); ctx.fill();
         }
     }
+    if (sk.style === 'block') { // hranatá kocková hlava s pixelovou tvárou
+        ctx.fillStyle = sk.skin;
+        ctx.fillRect(hx - 8, hy - 8, 17, 17);
+        ctx.fillStyle = sk.hair;
+        ctx.fillRect(hx - 9, hy - 9, 19, 6);
+        ctx.fillRect(hx - 9, hy - 9, 6, 12);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(hx + 2, hy - 3, 4, 5);
+        ctx.fillStyle = sk.eye;
+        ctx.fillRect(hx + 4, hy - 2, 2.5, 3.5);
+        ctx.fillStyle = '#7a4a3a';
+        ctx.fillRect(hx + 2, hy + 4, 5, 2.5);
+    } else {
     // tvár
     ctx.fillStyle = sk.skin;
     ctx.beginPath(); ctx.arc(hx, hy, R, 0, TAU); ctx.fill();
@@ -1842,6 +1914,26 @@ function drawBike(color, wheelSpin, pedal, tilt, ups, rider = true) {
         ctx.lineTo(hx + 2.5, hy + 1.5); ctx.lineTo(hx + 1.5, hy - 3);
         ctx.lineTo(hx - 3, hy - 1);
         ctx.closePath(); ctx.fill();
+    } else if (sk.style === 'tall') { // vrch hlavy pod vysokým účesom
+        ctx.fillStyle = sk.hair;
+        ctx.beginPath(); ctx.arc(hx, hy, R, Math.PI * 0.8, Math.PI * 2.1); ctx.lineTo(hx, hy); ctx.closePath(); ctx.fill();
+    }
+    } // koniec okrúhlej (nekockovej) hlavy
+    if (sk.band) { // červená čelenka s vejúcimi stužkami
+        ctx.fillStyle = '#e02d2d';
+        ctx.fillRect(hx - R + 1, hy - 6.5, R * 2 - 3, 3);
+        ctx.strokeStyle = '#e02d2d'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(hx - R + 2, hy - 5); ctx.lineTo(hx - R - 6, hy - 1);
+        ctx.moveTo(hx - R + 2, hy - 5); ctx.lineTo(hx - R - 5, hy - 8);
+        ctx.stroke();
+    }
+    if (sk.star) { // hviezdna sponka
+        ctx.fillStyle = '#ffd166';
+        ctx.save(); ctx.translate(hx + 3, hy - R - 1);
+        ctx.fillRect(-1.5, -4.5, 3, 9);
+        ctx.fillRect(-4.5, -1.5, 9, 3);
+        ctx.restore();
     }
     if (sk.crown) { // korunka
         ctx.fillStyle = '#f6b93b';
@@ -1873,7 +1965,12 @@ function drawPlayer(camX, gy) {
     // náklon na rampe / rotácia trikov / drift
     let tilt = 0;
     if (g.onGround && g.onRamp) {
-        for (const r of g.level.ramps) if (g.px >= r.x && g.px <= r.x + r.w) tilt = -Math.atan2(r.h, r.w);
+        const st = themeFor(g.n).ramp;
+        for (const r of g.level.ramps) if (g.px >= r.x && g.px <= r.x + r.w) {
+            const t = (g.px - r.x) / r.w;
+            const grad = CURVED.has(st) ? 2 * t * r.h / r.w : r.h / r.w; // lokálny sklon
+            tilt = -Math.atan(grad);
+        }
     } else if (!g.onGround) {
         tilt = g.rot !== 0 ? g.rot : clamp(g.vy / 2200, -0.35, 0.4);
     } else if (g.drifting) {
