@@ -1709,6 +1709,15 @@ box(883, 4.5, -60, 10.5, 9, 3, 0x35633a);
     }
 }
 
+// Kostra dávneho návštevníka – varovanie v zadnej chodbe bludiska
+const mazeBones = makeTrexSkeleton();
+mazeBones.position.set(885, 0, -97);
+mazeBones.rotation.y = Math.PI / 2 + 0.15;
+scene.add(mazeBones);
+deco(new THREE.BoxGeometry(0.7, 0.22, 0.22), 0xd8d2c2, 893, 0.11, -95.5);  // roztrúsené kosti
+deco(new THREE.BoxGeometry(0.5, 0.2, 0.2), 0xcfc4ae, 896.5, 0.1, -98.2);
+deco(new THREE.BoxGeometry(0.26, 0.5, 0.26), 0xd8d2c2, 891, 0.25, -99);
+
 // Návratový portál a checkpointy na trase
 portal(895.5, 0.2, -21.5, new THREE.Vector3(0, 1.8, 3), '🌿 Späť v džungli!');
 checkpoint(900, 0.2, -23, 3, 3);
