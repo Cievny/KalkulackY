@@ -1709,6 +1709,39 @@ box(883, 4.5, -60, 10.5, 9, 3, 0x35633a);
     }
 }
 
+// Fosília stegosaura v stene 2. okruhu (pri západnej trase)
+{
+    deco(new THREE.BoxGeometry(0.18, 3.4, 5.0), 0x95886f, 876.3, 2.3, -58);
+    deco(new THREE.BoxGeometry(0.22, 0.22, 5.3), 0x6f6557, 876.28, 4.05, -58);
+    deco(new THREE.BoxGeometry(0.22, 0.22, 5.3), 0x6f6557, 876.28, 0.55, -58);
+    const fosMat = new THREE.MeshLambertMaterial({ color: 0xd8d2c2, emissive: 0x3a362e });
+    const darkMat = new THREE.MeshLambertMaterial({ color: 0x14100c });
+    const sb = (len, h, dz, dy, rx = 0, mat = fosMat) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(0.1, h, len), mat);
+        m.position.set(876.13, dy, -58 + dz);
+        m.rotation.x = rx;
+        scene.add(m);
+    };
+    // klenutá chrbtica s chrbtovými platňami
+    for (let i = 0; i < 8; i++) {
+        const t = i / 7;
+        const dz = 1.6 - t * 3.2;
+        const dy = 2.1 + Math.sin(t * Math.PI) * 0.75;
+        sb(0.42, 0.2, dz, dy);
+        if (i > 0 && i < 7) sb(0.32, 0.55, dz, dy + 0.55, i % 2 ? 0.15 : -0.15);
+    }
+    sb(0.55, 0.32, 2.15, 1.55);            // malá hlava nízko
+    sb(0.1, 0.1, 2.3, 1.62, 0, darkMat);   // oko
+    sb(0.5, 0.18, 1.85, 1.85, 0.5);        // krk
+    for (let i = 0; i < 4; i++) sb(0.14, 0.9, 0.7 - i * 0.45, 1.75); // rebrá
+    sb(0.2, 1.1, 1.1, 1.35);               // predná noha
+    sb(0.24, 1.4, -0.9, 1.5);              // zadná noha
+    sb(0.9, 0.18, -2.0, 1.9, 0.35);        // chvost
+    sb(0.8, 0.15, -2.6, 1.55, 0.55);
+    sb(0.4, 0.12, -2.95, 1.35, 0.9);       // thagomizer – hroty
+    sb(0.4, 0.12, -2.85, 1.15, -0.5);
+}
+
 // Kostra dávneho návštevníka – varovanie v zadnej chodbe bludiska
 const mazeBones = makeTrexSkeleton();
 mazeBones.position.set(885, 0, -97);
