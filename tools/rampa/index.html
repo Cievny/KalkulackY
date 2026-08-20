@@ -269,18 +269,19 @@ const UPGRADES = [
     { id: 'power', name: 'Powerupy', emoji: '🔋' },
 ];
 const MAX_UP = 5;
-const NUM_LEVELS = 14;
+const NUM_LEVELS = 15;
 
-/* Skiny jazdca — chalanské a dievčenské; req = koľko dokončených levelov ich odomkne */
+/* Anime skiny jazdca — chalanské a dievčenské; req = koľko dokončených levelov ich odomkne
+   style: spiky (anime chalan) | long (dlhé vlasy) | twin (dva chvostíky) | mask (ninja) | robo */
 const SKINS = [
-    { id: 'misko',    name: 'Miško',        emoji: '🚴', g: 'ch', req: 0, skin: '#e8a87c', shirt: '#e05c3a', pants: '#26415e', helmet: '#2E8339' },
-    { id: 'kubo',     name: 'Kubo',         emoji: '🧢', g: 'ch', req: 2, skin: '#e8a87c', shirt: '#2980ff', pants: '#333a44', helmet: '#222222' },
-    { id: 'ninja',    name: 'Ninja',        emoji: '🥷', g: 'ch', req: 5, skin: '#e8a87c', shirt: '#20242c', pants: '#20242c', helmet: '#20242c', mask: true },
-    { id: 'robo',     name: 'Robo',         emoji: '🤖', g: 'ch', req: 8, skin: '#aab6c2', shirt: '#7c8a99', pants: '#5a6672', helmet: '#e05c3a', antenna: true },
-    { id: 'ema',      name: 'Ema',          emoji: '👧', g: 'd',  req: 0, skin: '#f2c29b', shirt: '#ff7bac', pants: '#7c5cd6', helmet: '#ff9ec4', hair: '#f2d16b' },
-    { id: 'laura',    name: 'Laura',        emoji: '😎', g: 'd',  req: 2, skin: '#d9a066', shirt: '#9b59d0', pants: '#26415e', helmet: '#6A1B42', hair: '#5a3a22' },
-    { id: 'princezna',name: 'Princezná',    emoji: '👑', g: 'd',  req: 5, skin: '#f2c29b', shirt: '#ff9ec4', pants: '#e8e0f0', hair: '#c98850', crown: true },
-    { id: 'unicorn',  name: 'Jednorožkárka',emoji: '🦄', g: 'd',  req: 8, skin: '#f2c29b', shirt: '#8ecbff', pants: '#b58ee8', helmet: '#ffffff', horn: true, hair: '#ff9ec4' },
+    { id: 'misko',    name: 'Akira',         emoji: '⚔️', g: 'ch', req: 0, skin: '#f2c8a0', shirt: '#e05c3a', pants: '#26415e', hair: '#3d2b1c', eye: '#4a90e2', style: 'spiky' },
+    { id: 'kubo',     name: 'Kai',           emoji: '⚡', g: 'ch', req: 2, skin: '#f2c8a0', shirt: '#2980ff', pants: '#333a44', hair: '#3a6ed8', eye: '#2ec9c9', style: 'spiky' },
+    { id: 'ninja',    name: 'Ninja Ryu',     emoji: '🥷', g: 'ch', req: 5, skin: '#f2c8a0', shirt: '#20242c', pants: '#20242c', hair: '#20242c', eye: '#e05c3a', style: 'mask' },
+    { id: 'robo',     name: 'Robo-kun',      emoji: '🤖', g: 'ch', req: 8, skin: '#aab6c2', shirt: '#7c8a99', pants: '#5a6672', hair: '#5a6672', eye: '#4ae8e8', style: 'robo', antenna: true },
+    { id: 'ema',      name: 'Sakura',        emoji: '🌸', g: 'd',  req: 0, skin: '#f8d5b0', shirt: '#ff7bac', pants: '#7c5cd6', hair: '#ffb7d0', eye: '#4cd07d', style: 'long' },
+    { id: 'laura',    name: 'Yuki',          emoji: '😎', g: 'd',  req: 2, skin: '#e8b88a', shirt: '#9b59d0', pants: '#26415e', hair: '#4a3626', eye: '#9b59d0', style: 'twin' },
+    { id: 'princezna',name: 'Princezná Hana',emoji: '👑', g: 'd',  req: 5, skin: '#f8d5b0', shirt: '#ff9ec4', pants: '#e8e0f0', hair: '#f2d16b', eye: '#4a90e2', style: 'long', crown: true },
+    { id: 'unicorn',  name: 'Miku Jednorožka',emoji: '🦄', g: 'd', req: 8, skin: '#f8d5b0', shirt: '#8ecbff', pants: '#b58ee8', hair: '#7ce8d8', eye: '#8ecbff', style: 'twin', horn: true },
 ];
 function skinDef() { return SKINS.find(s => s.id === save.skin) || SKINS[0]; }
 function skinUnlocked(s) { return save.done.length >= s.req; }
@@ -363,22 +364,23 @@ const POWERUPS = {
     x2:     { emoji: '✖️2', name: '2× mince', dur: 8 },
 };
 
-/* Prostredia levelov — každý level sa hrá inde */
+/* Prostredia levelov — každý level sa hrá inde a má vlastný typ rampy */
 const THEMES = [
-    { name: 'Doma na dvore',  emoji: '🏠', back: 'houses',    sky: ['#7ec8ff', '#cfe9ff', '#eef7ff'], sun: 'sun',    clouds: true,  grass: '#6da65f', road: '#5c554e', dash: '#f2e6c9' },
-    { name: 'Dedina',         emoji: '🏡', back: 'village',   sky: ['#8fd0ff', '#d8eeff', '#f2f9ee'], sun: 'sun',    clouds: true,  grass: '#7cb35f', road: '#8a7a5c', dash: '#e0d0a8' },
-    { name: 'Park',           emoji: '🌳', back: 'park',      sky: ['#79c9f2', '#d3ecdf', '#eaf6e6'], sun: 'sun',    clouds: true,  grass: '#5aa04e', road: '#c2a276', dash: '#efe3c4' },
-    { name: 'Sídlisko',       emoji: '🏢', back: 'blocks',    sky: ['#86b9e8', '#c8dcf0', '#e8eef5'], sun: 'sun',    clouds: true,  grass: '#79a06a', road: '#565b63', dash: '#e8e8e8' },
-    { name: 'Mesto',          emoji: '🏙️', back: 'city',      sky: ['#79b7e8', '#cfe2f2', '#eef3f8'], sun: 'sun',    clouds: true,  grass: '#7f9b8a', road: '#4c5158', dash: '#f2f2f2' },
-    { name: 'Večerné mesto',  emoji: '🌇', back: 'city',      sky: ['#2e3a6e', '#c86b4a', '#f2b25c'], sun: 'sunset', clouds: false, grass: '#6b6a52', road: '#3f4147', dash: '#e8c98a', dusk: true },
-    { name: 'Nočné mesto',    emoji: '🌃', back: 'night',     sky: ['#0c1230', '#1a2447', '#2a3560'], sun: 'moon',   clouds: false, stars: true, grass: '#2e4636', road: '#23262e', dash: '#aab6d0' },
-    { name: 'Zimná dedina',   emoji: '❄️', back: 'winter',    sky: ['#9fc4de', '#d5e6f0', '#f0f6fa'], sun: 'sun',    clouds: true,  grass: '#eef4f8', road: '#b8c4cc', dash: '#ffffff' },
-    { name: 'Hory',           emoji: '⛰️', back: 'mountains', sky: ['#7ec2ef', '#cde7f5', '#ecf6fb'], sun: 'sun',    clouds: true,  grass: '#5f9b58', road: '#6e6558', dash: '#e5d9c0' },
-    { name: 'Pláž',           emoji: '🏖️', back: 'beach',     sky: ['#6ec4f5', '#bfe6fa', '#f5efdc'], sun: 'sun',    clouds: true,  grass: '#ecd9a0', road: '#c9b284', dash: '#ffffff' },
-    { name: 'V dome',         emoji: '🛋️', back: 'interior',  sky: ['#f2e4cf', '#eeddc4', '#e8d4b8'], sun: 'none',   clouds: false, grass: '#c9995c', road: '#8a5a32', dash: '#d9b98a' },
-    { name: 'Žlté mestečko',  emoji: '🍩', back: 'yellow',    sky: ['#4aa8ff', '#8fd0ff', '#d8f0ff'], sun: 'sun',    clouds: true,  grass: '#7cc95f', road: '#5c554e', dash: '#f2e6c9' },
-    { name: 'Temný svet',     emoji: '🙃', back: 'upside',    sky: ['#0a0d18', '#1a1030', '#33122e'], sun: 'none',   clouds: false, grass: '#2a2438', road: '#1d1826', dash: '#7a4a8a' },
-    { name: 'Kockový svet',   emoji: '⛏️', back: 'blocky',    sky: ['#7ab8e8', '#a8d5f2', '#cfe9fa'], sun: 'blocksun', clouds: false, grass: '#6dbf4e', road: '#8a8a8a', dash: '#a8a8a8' },
+    { name: 'Doma na dvore',  emoji: '🏠', back: 'houses',    ramp: 'wood',     sky: ['#7ec8ff', '#cfe9ff', '#eef7ff'], sun: 'sun',    clouds: true,  grass: '#6da65f', road: '#5c554e', dash: '#f2e6c9' },
+    { name: 'Dedina',         emoji: '🏡', back: 'village',   ramp: 'dirt',     sky: ['#8fd0ff', '#d8eeff', '#f2f9ee'], sun: 'sun',    clouds: true,  grass: '#7cb35f', road: '#8a7a5c', dash: '#e0d0a8' },
+    { name: 'Park',           emoji: '🌳', back: 'park',      ramp: 'plank',    sky: ['#79c9f2', '#d3ecdf', '#eaf6e6'], sun: 'sun',    clouds: true,  grass: '#5aa04e', road: '#c2a276', dash: '#efe3c4' },
+    { name: 'Sídlisko',       emoji: '🏢', back: 'blocks',    ramp: 'concrete', sky: ['#86b9e8', '#c8dcf0', '#e8eef5'], sun: 'sun',    clouds: true,  grass: '#79a06a', road: '#565b63', dash: '#e8e8e8' },
+    { name: 'Mesto',          emoji: '🏙️', back: 'city',      ramp: 'metal',    sky: ['#79b7e8', '#cfe2f2', '#eef3f8'], sun: 'sun',    clouds: true,  grass: '#7f9b8a', road: '#4c5158', dash: '#f2f2f2' },
+    { name: 'Večerné mesto',  emoji: '🌇', back: 'city',      ramp: 'neon',     sky: ['#2e3a6e', '#c86b4a', '#f2b25c'], sun: 'sunset', clouds: false, grass: '#6b6a52', road: '#3f4147', dash: '#e8c98a', dusk: true },
+    { name: 'Nočné mesto',    emoji: '🌃', back: 'night',     ramp: 'neon2',    sky: ['#0c1230', '#1a2447', '#2a3560'], sun: 'moon',   clouds: false, stars: true, grass: '#2e4636', road: '#23262e', dash: '#aab6d0' },
+    { name: 'Zimná dedina',   emoji: '❄️', back: 'winter',    ramp: 'snow',     sky: ['#9fc4de', '#d5e6f0', '#f0f6fa'], sun: 'sun',    clouds: true,  grass: '#eef4f8', road: '#b8c4cc', dash: '#ffffff' },
+    { name: 'Hory',           emoji: '⛰️', back: 'mountains', ramp: 'stone',    sky: ['#7ec2ef', '#cde7f5', '#ecf6fb'], sun: 'sun',    clouds: true,  grass: '#5f9b58', road: '#6e6558', dash: '#e5d9c0' },
+    { name: 'Pláž',           emoji: '🏖️', back: 'beach',     ramp: 'sand',     sky: ['#6ec4f5', '#bfe6fa', '#f5efdc'], sun: 'sun',    clouds: true,  grass: '#ecd9a0', road: '#c9b284', dash: '#ffffff' },
+    { name: 'V dome',         emoji: '🛋️', back: 'interior',  ramp: 'books',    sky: ['#f2e4cf', '#eeddc4', '#e8d4b8'], sun: 'none',   clouds: false, grass: '#c9995c', road: '#8a5a32', dash: '#d9b98a' },
+    { name: 'Žlté mestečko',  emoji: '🍩', back: 'yellow',    ramp: 'donut',    sky: ['#4aa8ff', '#8fd0ff', '#d8f0ff'], sun: 'sun',    clouds: true,  grass: '#7cc95f', road: '#5c554e', dash: '#f2e6c9' },
+    { name: 'Temný svet',     emoji: '🙃', back: 'upside',    ramp: 'vine',     sky: ['#0a0d18', '#1a1030', '#33122e'], sun: 'none',   clouds: false, grass: '#2a2438', road: '#1d1826', dash: '#7a4a8a' },
+    { name: 'Kockový svet',   emoji: '⛏️', back: 'blocky',    ramp: 'blocks',   sky: ['#7ab8e8', '#a8d5f2', '#cfe9fa'], sun: 'blocksun', clouds: false, grass: '#6dbf4e', road: '#8a8a8a', dash: '#a8a8a8' },
+    { name: 'Bojový ostrov',  emoji: '🪂', back: 'fort',      ramp: 'fort',     sky: ['#6ec4f5', '#bfe6fa', '#e8f5d8'], sun: 'sun',    clouds: true,  grass: '#7cc95f', road: '#8a7a5c', dash: '#e0d0a8' },
 ];
 function themeFor(n) { return THEMES[((n - 1) % THEMES.length + THEMES.length) % THEMES.length]; }
 /* deterministická pseudo-náhoda pre variácie kulís */
@@ -883,6 +885,30 @@ function drawScenery(th, camX, gy) {
                 }
             });
             break;
+        case 'fort': {
+            hills(camX * 0.25, gy, '#9cd47f', 0.5);
+            // fialová búrka sa blíži sprava
+            const storm = ctx.createLinearGradient(W - 200, 0, W, 0);
+            storm.addColorStop(0, 'rgba(140,60,200,0)'); storm.addColorStop(1, 'rgba(140,60,200,0.30)');
+            ctx.fillStyle = storm; ctx.fillRect(W - 200, 0, 200, gy);
+            ctx.strokeStyle = 'rgba(190,120,255,0.6)'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(W - 6, 0); ctx.lineTo(W - 6, gy); ctx.stroke();
+            // battle bus s balónom letí po oblohe
+            const bt = performance.now() * 0.012;
+            const bx = ((bt - camX * 0.06) % (W + 500) + W + 500) % (W + 500) - 250;
+            const by = 84 + Math.sin(bt * 0.05) * 8;
+            ctx.fillStyle = '#4a90e2';
+            ctx.beginPath(); ctx.ellipse(bx + 40, by - 44, 34, 22, 0, 0, TAU); ctx.fill();
+            ctx.strokeStyle = '#2e5f9e'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(bx + 16, by - 34); ctx.lineTo(bx + 14, by - 12);
+            ctx.moveTo(bx + 64, by - 34); ctx.lineTo(bx + 66, by - 12); ctx.stroke();
+            ctx.fillStyle = '#5aa8e8';
+            if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(bx, by - 14, 80, 26, 6); ctx.fill(); }
+            else ctx.fillRect(bx, by - 14, 80, 26);
+            ctx.fillStyle = '#cfe9fa';
+            for (let wi = 0; wi < 4; wi++) ctx.fillRect(bx + 8 + wi * 18, by - 9, 12, 9);
+            break;
+        }
         case 'beach': {
             // more s vlnkami a plachetnicou
             const seaTop = gy - 105;
@@ -1149,6 +1175,53 @@ function drawScenery(th, camX, gy) {
                 }
             });
             break;
+        case 'fort':
+            rep(camX, 330, 0.5, (x, i) => {
+                const v = sv(i, 52);
+                if (v < 0.35) { // drevená stavba s X výstuhou
+                    ctx.fillStyle = '#d9a25c';
+                    ctx.fillRect(x, base - 110, 104, 110);
+                    ctx.strokeStyle = '#8a5a26'; ctx.lineWidth = 4;
+                    ctx.strokeRect(x, base - 110, 104, 110);
+                    ctx.beginPath();
+                    ctx.moveTo(x, base - 110); ctx.lineTo(x + 104, base);
+                    ctx.moveTo(x + 104, base - 110); ctx.lineTo(x, base);
+                    ctx.stroke();
+                } else if (v < 0.6) { // piňatová lama 🦙
+                    const lx = x + 20, s2 = 1.1;
+                    ctx.fillStyle = '#b58ee8';
+                    for (const [lx2, lw2] of [[8, 8], [26, 8], [44, 8], [58, 8]])
+                        ctx.fillRect(lx + lx2 * s2, base - 26, lw2 * s2 * 0.7, 26);
+                    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(lx, base - 62, 70 * s2, 38, 8); ctx.fill(); }
+                    else ctx.fillRect(lx, base - 62, 70 * s2, 38);
+                    ctx.fillRect(lx + 58 * s2, base - 100, 14 * s2, 46);
+                    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(lx + 52 * s2, base - 108, 30 * s2, 17, 5); ctx.fill(); }
+                    else ctx.fillRect(lx + 52 * s2, base - 108, 30 * s2, 17);
+                    ctx.beginPath(); // uši
+                    ctx.moveTo(lx + 56 * s2, base - 108); ctx.lineTo(lx + 60 * s2, base - 120); ctx.lineTo(lx + 65 * s2, base - 108);
+                    ctx.moveTo(lx + 70 * s2, base - 108); ctx.lineTo(lx + 74 * s2, base - 120); ctx.lineTo(lx + 79 * s2, base - 108);
+                    ctx.fill();
+                    const fc = ['#ff7bac', '#4a90e2', '#f6b93b'];
+                    fc.forEach((c, fi) => { // farebné strapce piňaty
+                        ctx.fillStyle = c;
+                        for (let f2 = 0; f2 < 6; f2++)
+                            ctx.fillRect(lx + 4 + f2 * 11 * s2, base - 60 + fi * 12, 7, 9);
+                    });
+                    ctx.fillStyle = '#222';
+                    ctx.beginPath(); ctx.arc(lx + 74 * s2, base - 100, 2.2, 0, TAU); ctx.fill();
+                } else if (v < 0.8) drawTreeBg(x + 40, base, 1 + sv(i, 53) * 0.4);
+                else { // truhlica s pokladom
+                    ctx.fillStyle = '#8a5a32';
+                    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x + 20, base - 40, 62, 40, 6); ctx.fill(); }
+                    else ctx.fillRect(x + 20, base - 40, 62, 40);
+                    ctx.fillStyle = '#f6b93b';
+                    ctx.fillRect(x + 20, base - 26, 62, 6);
+                    ctx.fillRect(x + 46, base - 30, 10, 14);
+                    ctx.fillStyle = 'rgba(255,220,120,0.35)';
+                    ctx.beginPath(); ctx.arc(x + 51, base - 40, 20, Math.PI, 0); ctx.fill();
+                }
+            });
+            break;
         case 'beach':
             rep(camX, 300, 0.5, (x, i) => {
                 // palma
@@ -1340,26 +1413,200 @@ function hills(off, gy, color, hs) {
     ctx.lineTo(W, gy); ctx.closePath(); ctx.fill();
 }
 
+/* každý svet má svoju rampu — rovnaká fyzika, iný vzhľad */
+function drawRamp(style, r, x, gy) {
+    const w = r.w, h = r.h;
+    const tri = () => { ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + w, gy - h); ctx.lineTo(x + w, gy); ctx.closePath(); };
+    const edge = (color, lw) => { ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + w, gy - h); ctx.stroke(); };
+    switch (style) {
+        case 'dirt': { // hlinený kopec s trávou
+            ctx.fillStyle = '#8a6142'; tri(); ctx.fill();
+            ctx.fillStyle = 'rgba(60,40,20,0.4)';
+            for (let i = 0; i < 9; i++) {
+                const t = 0.2 + sv(i, r.x) * 0.75;
+                ctx.fillRect(x + w * t - 2, gy - h * t + 8 + sv(i, r.x + 1) * (h * t - 10), 5, 4);
+            }
+            ctx.strokeStyle = '#4e8f44'; ctx.lineWidth = 2;
+            for (let i = 1; i < 6; i++) {
+                const ex = x + w * i / 6, ey = gy - h * i / 6;
+                for (const dxa of [-3, 0, 3]) { ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex + dxa, ey - 8); ctx.stroke(); }
+            }
+            edge('#5f4630', 3);
+            break;
+        }
+        case 'plank': { // parková skejtová rampa s bielym zábradlím
+            ctx.fillStyle = '#c9a06b'; tri(); ctx.fill();
+            ctx.strokeStyle = 'rgba(120,85,50,0.5)'; ctx.lineWidth = 2;
+            for (let i = 1; i < 4; i++) { // dosky rovnobežné so svahom
+                const o = i * 12;
+                ctx.beginPath(); ctx.moveTo(x + o * (w / h), gy); ctx.lineTo(x + w, gy - h + o); ctx.stroke();
+            }
+            ctx.strokeStyle = '#8a5a32'; ctx.lineWidth = 3;
+            for (let i = 1; i < 4; i++) { const sx = x + w * i / 4; ctx.beginPath(); ctx.moveTo(sx, gy); ctx.lineTo(sx, gy - h * i / 4); ctx.stroke(); }
+            edge('#f2f2f2', 4);
+            break;
+        }
+        case 'concrete': { // betón s výstražným pruhom
+            const grad = ctx.createLinearGradient(x, gy - h, x, gy);
+            grad.addColorStop(0, '#9aa2ab'); grad.addColorStop(1, '#6e757e');
+            ctx.fillStyle = grad; tri(); ctx.fill();
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 2;
+            for (let i = 1; i < 4; i++) { const sx = x + w * i / 4; ctx.beginPath(); ctx.moveTo(sx, gy); ctx.lineTo(sx, gy - h * i / 4); ctx.stroke(); }
+            const seg = 8;
+            for (let i = 0; i < seg; i++) { // žlto-čierna hrana
+                ctx.strokeStyle = i % 2 ? '#222' : '#f6b93b'; ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.moveTo(x + w * i / seg, gy - h * i / seg);
+                ctx.lineTo(x + w * (i + 1) / seg, gy - h * (i + 1) / seg);
+                ctx.stroke();
+            }
+            break;
+        }
+        case 'metal': { // oceľ s nitmi
+            const grad = ctx.createLinearGradient(x, gy - h, x, gy);
+            grad.addColorStop(0, '#9db4c9'); grad.addColorStop(1, '#5f7791');
+            ctx.fillStyle = grad; tri(); ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x + w * 0.2, gy); ctx.lineTo(x + w, gy - h * 0.55); ctx.moveTo(x + w, gy - h * 0.2); ctx.lineTo(x + w * 0.55, gy); ctx.stroke();
+            edge('#39506b', 4);
+            ctx.fillStyle = '#dce8f2';
+            for (let i = 1; i < 7; i++) { ctx.beginPath(); ctx.arc(x + w * i / 7 + 4, gy - h * i / 7 + 7, 2, 0, TAU); ctx.fill(); }
+            break;
+        }
+        case 'neon': case 'neon2': { // svietiaca hrana vo večernom / nočnom meste
+            ctx.fillStyle = '#1d2030'; tri(); ctx.fill();
+            const c = style === 'neon' ? '#ff8e3c' : '#4ae8e8';
+            const glow = style === 'neon' ? 'rgba(255,142,60,0.35)' : 'rgba(74,232,232,0.35)';
+            edge(glow, 10); edge(c, 3);
+            ctx.strokeStyle = glow; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.moveTo(x + w, gy - h); ctx.lineTo(x + w, gy); ctx.stroke();
+            break;
+        }
+        case 'snow': { // zasnežený mostík
+            ctx.fillStyle = '#dfe9f0'; tri(); ctx.fill();
+            ctx.strokeStyle = 'rgba(140,170,195,0.5)'; ctx.lineWidth = 2;
+            for (let i = 1; i < 4; i++) { const sx = x + w * i / 4; ctx.beginPath(); ctx.moveTo(sx, gy); ctx.lineTo(sx, gy - h * i / 4); ctx.stroke(); }
+            edge('#ffffff', 6);
+            ctx.fillStyle = '#fff'; // trblietky
+            for (let i = 0; i < 6; i++) {
+                const t = 0.15 + sv(i, r.x) * 0.8;
+                ctx.fillRect(x + w * t, gy - h * t + 6 + sv(i, r.x + 2) * 14, 3, 3);
+            }
+            break;
+        }
+        case 'stone': { // skalná rampa
+            ctx.fillStyle = '#8a8578'; tri(); ctx.fill();
+            ctx.strokeStyle = 'rgba(50,45,38,0.5)'; ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x + w * 0.35, gy); ctx.lineTo(x + w * 0.5, gy - h * 0.3); ctx.lineTo(x + w * 0.45, gy - h * 0.42);
+            ctx.moveTo(x + w * 0.7, gy - h * 0.2); ctx.lineTo(x + w * 0.82, gy - h * 0.55); ctx.lineTo(x + w * 0.78, gy - h * 0.7);
+            ctx.stroke();
+            edge('#5f5a4e', 4);
+            break;
+        }
+        case 'sand': { // piesková duna s mušľami
+            ctx.fillStyle = '#e8d59c'; tri(); ctx.fill();
+            ctx.fillStyle = 'rgba(160,130,70,0.45)';
+            for (let i = 0; i < 8; i++) {
+                const t = 0.2 + sv(i, r.x) * 0.75;
+                ctx.fillRect(x + w * t, gy - h * t + 8 + sv(i, r.x + 3) * (h * t * 0.6), 4, 3);
+            }
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(x + w * 0.5, gy - h * 0.5 + 14, 4, Math.PI, 0); ctx.fill();
+            edge('#c9b284', 4);
+            break;
+        }
+        case 'books': { // stoh kníh s doskou na šmýkanie
+            const bc = ['#e05c3a', '#4a90e2', '#4cd07d', '#f6b93b', '#9b59d0'];
+            const rows = Math.ceil(h / 16);
+            for (let rI = 0; rI < rows; rI++) {
+                const left = x + w * Math.min(1, (16 * (rI + 1)) / h);
+                let cx2 = left, k = 0;
+                while (cx2 < x + w - 4) {
+                    const bw2 = 24 + sv(rI * 7 + k, r.x) * 18;
+                    ctx.fillStyle = bc[(rI + k) % bc.length];
+                    ctx.fillRect(cx2, gy - 16 * (rI + 1), Math.min(bw2, x + w - cx2), 15);
+                    cx2 += bw2 + 1; k++;
+                }
+            }
+            edge('#8a5a32', 6);
+            break;
+        }
+        case 'donut': { // donutová rampa s polevou a posypom
+            ctx.fillStyle = '#e8b04a'; tri(); ctx.fill();
+            edge('#f2a7c9', 9);
+            const sc = ['#fff', '#f6b93b', '#4cd07d', '#4a90e2', '#e05c3a'];
+            for (let i = 0; i < 10; i++) {
+                const t = 0.08 + i / 11;
+                ctx.fillStyle = sc[i % sc.length];
+                ctx.save();
+                ctx.translate(x + w * t, gy - h * t - 2);
+                ctx.rotate(sv(i, r.x) * 3);
+                ctx.fillRect(-1.5, -4, 3, 8);
+                ctx.restore();
+            }
+            break;
+        }
+        case 'vine': { // temná rampa so svietiacimi žilami
+            ctx.fillStyle = '#241b30'; tri(); ctx.fill();
+            ctx.strokeStyle = 'rgba(155,89,208,0.8)'; ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(x + w * (0.3 + i * 0.22), gy);
+                ctx.quadraticCurveTo(x + w * (0.4 + i * 0.22), gy - h * (0.2 + i * 0.1),
+                                     x + w * (0.55 + i * 0.16), gy - h * (0.45 + i * 0.16));
+                ctx.stroke();
+            }
+            edge('rgba(224,45,45,0.45)', 9); edge('#ff5c3a', 3);
+            break;
+        }
+        case 'blocks': { // schodíky z kociek trávy a hliny
+            const steps = Math.max(3, Math.round(w / 38));
+            for (let i = 0; i < steps; i++) {
+                const sx = x + i * w / steps, sh = h * (i + 1) / steps, bw2 = w / steps + 1;
+                ctx.fillStyle = '#8a6142';
+                ctx.fillRect(sx, gy - sh, bw2, sh);
+                ctx.fillStyle = '#5aa845';
+                ctx.fillRect(sx, gy - sh, bw2, Math.min(12, sh));
+                ctx.strokeStyle = 'rgba(0,0,0,0.22)'; ctx.lineWidth = 2;
+                ctx.strokeRect(sx, gy - sh, bw2, sh);
+            }
+            break;
+        }
+        case 'fort': { // narýchlo postavená drevená rampa s X výstuhou
+            ctx.fillStyle = '#d9a25c'; tri(); ctx.fill();
+            ctx.strokeStyle = '#8a5a26'; ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x + w * 0.1, gy); ctx.lineTo(x + w * 0.95, gy - h * 0.6);
+            ctx.moveTo(x + w * 0.55, gy); ctx.lineTo(x + w * 0.98, gy - h * 0.35);
+            ctx.moveTo(x + w * 0.5, gy - h * 0.28); ctx.lineTo(x + w * 0.75, gy);
+            ctx.stroke();
+            ctx.lineWidth = 4; tri(); ctx.stroke();
+            edge('#6b4a1d', 4);
+            break;
+        }
+        default: { // klasické drevo so vzperami
+            const grad = ctx.createLinearGradient(x, gy - h, x, gy);
+            grad.addColorStop(0, '#c98850'); grad.addColorStop(1, '#8a5a32');
+            ctx.fillStyle = grad; tri(); ctx.fill();
+            edge('#5f3d20', 3);
+            ctx.strokeStyle = 'rgba(95,61,32,0.55)'; ctx.lineWidth = 2;
+            for (let i = 1; i < 4; i++) {
+                const sx = x + w * i / 4;
+                ctx.beginPath(); ctx.moveTo(sx, gy); ctx.lineTo(sx, gy - h * i / 4); ctx.stroke();
+            }
+        }
+    }
+}
+
 function drawTrack(camX, gy) {
     const L = G.level;
+    const rampStyle = themeFor(G.n).ramp;
     // rampy
     for (const r of L.ramps) {
         const x = r.x - camX;
         if (x + r.w < -50 || x > W + 50) continue;
-        const grad = ctx.createLinearGradient(x, gy - r.h, x, gy);
-        grad.addColorStop(0, '#c98850'); grad.addColorStop(1, '#8a5a32');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(x, gy); ctx.lineTo(x + r.w, gy - r.h); ctx.lineTo(x + r.w, gy);
-        ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = '#5f3d20'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + r.w, gy - r.h); ctx.stroke();
-        // vzpery
-        ctx.strokeStyle = 'rgba(95,61,32,0.55)'; ctx.lineWidth = 2;
-        for (let i = 1; i < 4; i++) {
-            const sx = x + r.w * i / 4;
-            ctx.beginPath(); ctx.moveTo(sx, gy); ctx.lineTo(sx, gy - r.h * i / 4); ctx.stroke();
-        }
+        drawRamp(rampStyle, r, x, gy);
     }
     // cieľ
     const fx = L.len - camX;
@@ -1506,43 +1753,113 @@ function drawBike(color, wheelSpin, pedal, tilt, ups, rider = true) {
     ctx.beginPath(); ctx.moveTo(hipX + 2, hipY - 10); ctx.lineTo(hipX + 12, hipY - 24); ctx.stroke();          // trup
     ctx.strokeStyle = sk.skin; ctx.lineWidth = 4.5;
     ctx.beginPath(); ctx.moveTo(hipX + 10, hipY - 22); ctx.lineTo(hipX + 22, hipY - 12); ctx.lineTo(29, -34); ctx.stroke(); // ruka
-    // hlava
-    const hx = hipX + 16, hy = hipY - 30;
-    if (sk.hair) { // vlasy / vrkoč vejúci dozadu
-        ctx.strokeStyle = sk.hair; ctx.lineWidth = 4; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(hx - 5, hy - 2);
-        ctx.quadraticCurveTo(hx - 14, hy + 2, hx - 17, hy + 10); ctx.stroke();
-        ctx.beginPath(); ctx.arc(hx - 17, hy + 12, 3, 0, TAU);
-        ctx.fillStyle = sk.hair; ctx.fill();
+    // hlava — anime štýl: veľká hlava, veľké oko, anime vlasy
+    const hx = hipX + 15, hy = hipY - 33, R = 9;
+    // dlhé vlasy vejúce dozadu (kreslia sa za tvárou)
+    if (sk.style === 'long') {
+        ctx.fillStyle = sk.hair;
+        ctx.beginPath();
+        ctx.moveTo(hx - 2, hy - R + 1);
+        ctx.quadraticCurveTo(hx - R - 7, hy - 2, hx - R - 9, hy + 16);
+        ctx.lineTo(hx - R - 4, hy + 14);
+        ctx.quadraticCurveTo(hx - R - 5, hy + 6, hx - R + 2, hy + 4);
+        ctx.lineTo(hx - R - 2, hy + 18);
+        ctx.lineTo(hx - R + 3, hy + 15);
+        ctx.quadraticCurveTo(hx - R + 1, hy + 4, hx - 3, hy + 1);
+        ctx.closePath(); ctx.fill();
     }
+    if (sk.style === 'twin') { // dva chvostíky
+        ctx.fillStyle = sk.hair;
+        for (const [ox, oy] of [[-R - 3, -4], [-R + 1, -R + 1]]) {
+            ctx.beginPath(); ctx.arc(hx + ox, hy + oy, 3.4, 0, TAU); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(hx + ox - 2, hy + oy);
+            ctx.quadraticCurveTo(hx + ox - 4, hy + oy + 10, hx + ox - 1, hy + oy + 15);
+            ctx.quadraticCurveTo(hx + ox + 2, hy + oy + 10, hx + ox + 2, hy + oy + 1);
+            ctx.closePath(); ctx.fill();
+        }
+    }
+    // tvár
     ctx.fillStyle = sk.skin;
-    ctx.beginPath(); ctx.arc(hx, hy, 6.5, 0, TAU); ctx.fill();
-    if (sk.mask) { // ninja maska s očným priezorom
-        ctx.fillStyle = sk.helmet;
-        ctx.beginPath(); ctx.arc(hx, hy, 6.5, 0, TAU); ctx.fill();
-        ctx.fillStyle = '#f5e8d0';
-        ctx.fillRect(hx - 1, hy - 3, 8, 3.4);
+    ctx.beginPath(); ctx.arc(hx, hy, R, 0, TAU); ctx.fill();
+    if (sk.style === 'mask') { // ninja kukla, vidno len oko
+        ctx.fillStyle = sk.hair;
+        ctx.beginPath(); ctx.arc(hx, hy, R, 0, TAU); ctx.fill();
+        ctx.fillStyle = sk.skin;
+        ctx.beginPath(); ctx.ellipse(hx + 3, hy - 1.5, 5, 3, 0, 0, TAU); ctx.fill();
     }
-    if (sk.crown) { // korunka namiesto prilby
+    if (sk.style === 'robo') { // robo hlava s vizorom
+        ctx.fillStyle = sk.skin;
+        ctx.beginPath(); ctx.arc(hx, hy, R, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#1d2030';
+        if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(hx - 4, hy - 4, 12, 6, 3); ctx.fill(); }
+        else ctx.fillRect(hx - 4, hy - 4, 12, 6);
+        ctx.fillStyle = sk.eye;
+        ctx.fillRect(hx + 1, hy - 2.6, 6, 3);
+    } else {
+        // veľké anime oko (profil)
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.ellipse(hx + 4, hy - 0.5, 2.9, 4, 0, 0, TAU); ctx.fill();
+        ctx.fillStyle = sk.eye;
+        ctx.beginPath(); ctx.ellipse(hx + 4.6, hy - 0.3, 2, 3.1, 0, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#1b1b1b';
+        ctx.beginPath(); ctx.ellipse(hx + 5, hy, 1.1, 1.9, 0, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(hx + 4.2, hy - 1.8, 1, 0, TAU); ctx.fill();
+        if (sk.style !== 'mask') { // obočie, ústa, líčko
+            ctx.strokeStyle = sk.hair; ctx.lineWidth = 1.4;
+            ctx.beginPath(); ctx.moveTo(hx + 1.5, hy - 5.5); ctx.lineTo(hx + 6.5, hy - 5); ctx.stroke();
+            ctx.strokeStyle = '#b06a4a'; ctx.lineWidth = 1.2;
+            ctx.beginPath(); ctx.arc(hx + 6.4, hy + 4.2, 1.6, 0.2, Math.PI * 0.8); ctx.stroke();
+            ctx.fillStyle = 'rgba(255,130,140,0.4)';
+            ctx.beginPath(); ctx.ellipse(hx + 2.4, hy + 3.6, 2, 1.2, 0, 0, TAU); ctx.fill();
+        }
+    }
+    // vlasy hore — ofina / anime špice
+    if (sk.style === 'spiky') {
+        ctx.fillStyle = sk.hair;
+        ctx.beginPath();
+        ctx.moveTo(hx + R - 1, hy - 3);
+        ctx.lineTo(hx + R + 2, hy - 8);   // špica dopredu
+        ctx.lineTo(hx + 4, hy - R + 1);
+        ctx.lineTo(hx + 5, hy - R - 5);   // špice hore
+        ctx.lineTo(hx + 1, hy - R);
+        ctx.lineTo(hx - 1, hy - R - 7);
+        ctx.lineTo(hx - 4, hy - R + 1);
+        ctx.lineTo(hx - 7, hy - R - 4);
+        ctx.lineTo(hx - R + 1, hy - 3);
+        ctx.lineTo(hx - R - 3, hy - 6);   // špica dozadu
+        ctx.lineTo(hx - R + 1, hy + 2);
+        ctx.quadraticCurveTo(hx, hy - R + 3, hx + R - 1, hy - 3);
+        ctx.closePath(); ctx.fill();
+    } else if (sk.style === 'long' || sk.style === 'twin') {
+        ctx.fillStyle = sk.hair;
+        ctx.beginPath(); ctx.arc(hx, hy, R, Math.PI * 0.75, Math.PI * 2.08); ctx.lineTo(hx, hy); ctx.closePath(); ctx.fill();
+        // ofina — jemné špičky do čela
+        ctx.beginPath();
+        ctx.moveTo(hx + R - 1, hy - 2);
+        ctx.lineTo(hx + 6, hy + 2); ctx.lineTo(hx + 5, hy - 2.5);
+        ctx.lineTo(hx + 2.5, hy + 1.5); ctx.lineTo(hx + 1.5, hy - 3);
+        ctx.lineTo(hx - 3, hy - 1);
+        ctx.closePath(); ctx.fill();
+    }
+    if (sk.crown) { // korunka
         ctx.fillStyle = '#f6b93b';
         ctx.beginPath();
-        ctx.moveTo(hx - 6, hy - 5); ctx.lineTo(hx - 6, hy - 12); ctx.lineTo(hx - 3, hy - 8);
-        ctx.lineTo(hx, hy - 13); ctx.lineTo(hx + 3, hy - 8); ctx.lineTo(hx + 6, hy - 12);
-        ctx.lineTo(hx + 6, hy - 5); ctx.closePath(); ctx.fill();
-    } else if (sk.helmet) {
-        ctx.fillStyle = sk.helmet;
-        ctx.beginPath(); ctx.arc(hx, hy - 2, 7, Math.PI, 0); ctx.fill();
+        ctx.moveTo(hx - 6, hy - R + 1); ctx.lineTo(hx - 6, hy - R - 6); ctx.lineTo(hx - 3, hy - R - 2);
+        ctx.lineTo(hx, hy - R - 7); ctx.lineTo(hx + 3, hy - R - 2); ctx.lineTo(hx + 6, hy - R - 6);
+        ctx.lineTo(hx + 6, hy - R + 1); ctx.closePath(); ctx.fill();
     }
-    if (sk.horn) { // roh jednorožca + hrivová farba
+    if (sk.horn) { // roh jednorožky
         ctx.fillStyle = '#f6b93b';
-        ctx.beginPath(); ctx.moveTo(hx + 3, hy - 8); ctx.lineTo(hx + 11, hy - 15); ctx.lineTo(hx + 6, hy - 6);
+        ctx.beginPath(); ctx.moveTo(hx + 2, hy - R + 1); ctx.lineTo(hx + 9, hy - R - 8); ctx.lineTo(hx + 5.5, hy - R + 2);
         ctx.closePath(); ctx.fill();
     }
     if (sk.antenna) { // robo anténka
         ctx.strokeStyle = '#555'; ctx.lineWidth = 1.6;
-        ctx.beginPath(); ctx.moveTo(hx, hy - 9); ctx.lineTo(hx, hy - 14); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(hx, hy - R); ctx.lineTo(hx, hy - R - 5); ctx.stroke();
         ctx.fillStyle = '#ff5c3a';
-        ctx.beginPath(); ctx.arc(hx, hy - 15, 2, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(hx, hy - R - 6, 2, 0, TAU); ctx.fill();
     }
     ctx.restore();
 }
@@ -1748,9 +2065,9 @@ function renderSkins() {
                     <div class="skin-nm">${s.name}${save.skin === s.id ? ' ✅' : ''}</div>
                     <div class="skin-req">${unlocked ? (save.skin === s.id ? 'Vybraný' : 'Klikni a vyber') : `Dokonči ${s.req} levelov (máš ${save.done.length})`}</div>
                     <div class="skin-chips">
-                        <div class="chip" style="background:${s.shirt}"></div>
-                        <div class="chip" style="background:${s.pants}"></div>
-                        <div class="chip" style="background:${s.helmet || s.hair || s.shirt}"></div>
+                        <div class="chip" style="background:${s.hair}" title="vlasy"></div>
+                        <div class="chip" style="background:${s.shirt}" title="tričko"></div>
+                        <div class="chip" style="background:${s.eye}" title="oči"></div>
                     </div>
                 </div>`;
             if (unlocked) card.addEventListener('click', () => { save.skin = s.id; persist(); renderSkins(); });
