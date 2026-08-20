@@ -722,7 +722,8 @@ function finishLevel() {
 function draw() {
     if (S.screen === 'garage') { drawGarage(); return; }
     const inGame = G && S.screen !== 'menu';
-    const th = themeFor(inGame ? G.n : Math.min(save.unlocked, NUM_LEVELS));
+    // menu strieda pozadia všetkých svetov (každých 8 sekúnd iné)
+    const th = themeFor(inGame ? G.n : 1 + Math.floor(performance.now() / 8000) % NUM_LEVELS);
     const gy = S.screen === 'play' && G ? groundYSaved : groundY();
     const camX = inGame ? G.camX : performance.now() * 0.04;
     const shakeX = G && G.shake ? (Math.random() - 0.5) * G.shake : 0;
@@ -2351,7 +2352,14 @@ function renderLevels() {
 }
 
 /* tlačidlá */
-document.getElementById('btnPlay').addEventListener('click', () => startLevel(Math.min(save.unlocked, NUM_LEVELS)));
+document.getElementById('btnPlay').addEventListener('click', () => {
+    // prvý nedokončený odomknutý level; ak je všetko hotové, zakaždým iný náhodný svet
+    let lvl = 0;
+    for (let i = 1; i <= Math.min(save.unlocked, NUM_LEVELS); i++)
+        if (!save.done.includes(i)) { lvl = i; break; }
+    if (!lvl) lvl = 1 + Math.floor(Math.random() * Math.min(save.unlocked, NUM_LEVELS));
+    startLevel(lvl);
+});
 document.getElementById('btnGarage').addEventListener('click', () => { S.screen = 'garage'; showOverlays(); });
 document.getElementById('btnLevels').addEventListener('click', () => { S.screen = 'levels'; showOverlays(); });
 document.getElementById('btnSkins').addEventListener('click', () => { S.screen = 'skins'; showOverlays(); });
