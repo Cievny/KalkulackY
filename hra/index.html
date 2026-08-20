@@ -2275,7 +2275,7 @@ function physics(dt) {
     updateDinos(dt, nowMs);
 
     // stádo gallimimov na planine: rozbehne sa pri prvom pohybe hráča
-    if (P.pos.x > 500) {
+    if (P.pos.x > 500 && P.pos.x < 750) {
         if (!herd.active && Math.hypot(P.vel.x, P.vel.z) > 0.5) {
             herd.active = true;
             herd.hit.sleeping = false;
