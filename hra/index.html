@@ -553,6 +553,53 @@ function makeBigTheropod(bodyC, kind) {
 const makeAllo = () => makeBigTheropod(0x7a6032, 'allo');
 const makeCarno = () => makeBigTheropod(0x8a3a2a, 'carno');
 
+// Megalodon – obrí žralok (pláva k -z? nie, model hľadí +z ako ostatné)
+function makeMeg() {
+    const g = new THREE.Group();
+    const mat = c => new THREE.MeshLambertMaterial({ color: c });
+    const part = (w, h, d, x, y, z, c = 0x5a6b78) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
+        m.position.set(x, y, z); m.castShadow = true; g.add(m); return m;
+    };
+    part(2.2, 2.2, 5.5, 0, 0, 0);                       // trup
+    part(1.6, 1.5, 2.2, 0, -0.1, 3.4);                  // hlava
+    part(1.65, 0.4, 1.3, 0, -0.95, 3.7, 0xe8e4d8);      // pás zubov
+    part(1.9, 1.2, 4.6, 0, -0.95, 0.3, 0xdfe6ea);       // biele brucho
+    part(0.2, 0.2, 0.2, -0.85, 0.42, 4.1, 0x14100c);    // oči
+    part(0.2, 0.2, 0.2, 0.85, 0.42, 4.1, 0x14100c);
+    part(0.35, 1.9, 1.7, 0, 1.75, 0.3);                 // chrbtová plutva
+    const armL = part(2.0, 0.28, 1.2, -1.7, -0.5, 1.4); // bočné plutvy
+    const armR = part(2.0, 0.28, 1.2, 1.7, -0.5, 1.4);
+    const legL = part(1.3, 1.3, 1.7, 0, 0, -3.3);       // koreň chvosta
+    const legR = part(0.35, 2.8, 1.4, 0, 0.2, -4.4);    // chvostová plutva
+    g.userData = { legL, legR, armL, armR };
+    return g;
+}
+
+// Plesiosaurus – oválne telo, dlhý krk, štyri plutvy
+function makePlesio() {
+    const g = new THREE.Group();
+    const mat = c => new THREE.MeshLambertMaterial({ color: c });
+    const part = (w, h, d, x, y, z, c = 0x6b8f9c) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
+        m.position.set(x, y, z); m.castShadow = true; g.add(m); return m;
+    };
+    part(1.5, 1.1, 2.6, 0, 0, 0);                       // telo
+    part(1.3, 0.6, 2.2, 0, -0.55, 0, 0xd9e4e8);         // svetlé brucho
+    part(0.42, 0.42, 1.1, 0, 0.55, 1.6);                // krk (stúpa dopredu)
+    part(0.36, 0.36, 1.0, 0, 1.15, 2.4);
+    part(0.5, 0.42, 0.85, 0, 1.6, 3.1);                 // malá hlava
+    part(0.14, 0.14, 0.14, -0.2, 1.72, 3.4, 0x14100c);  // oči
+    part(0.14, 0.14, 0.14, 0.2, 1.72, 3.4, 0x14100c);
+    const armL = part(1.6, 0.22, 0.9, -1.3, -0.35, 0.8); // predné plutvy
+    const armR = part(1.6, 0.22, 0.9, 1.3, -0.35, 0.8);
+    const legL = part(1.3, 0.2, 0.8, -1.1, -0.35, -0.9); // zadné plutvy
+    const legR = part(1.3, 0.2, 0.8, 1.1, -0.35, -0.9);
+    part(0.5, 0.4, 1.2, 0, 0, -1.8);                    // krátky chvost
+    g.userData = { legL, legR, armL, armR };
+    return g;
+}
+
 // Obrí dekoračný brachiosaurus v pozadí
 function makeBrachio(x, y, z) {
     const g = new THREE.Group();
@@ -1291,6 +1338,7 @@ caveGoal.mesh.material = new THREE.MeshStandardMaterial({
 let jungleDone = false;
 let caveDone = false;
 let plainsDone = false;
+let mazeDone = false;
 
 // ---------- LEVEL 3: Planina – naháňačka so stádom gallimimov (x okolo 600) ----------
 // Vchod z džungle (mostík na západnej strane štartu)
@@ -1839,6 +1887,138 @@ grassTuft(897, 0, -25); grassTuft(935, 0, -50); grassTuft(872, 0, -75); grassTuf
 flower(903, 0, -26, 0xf2c14e); flower(938, 0, -80, 0xe4572e); flower(870, 0, -45, 0xd66ba0);
 fern(893, 0, -90); fern(908, 0, -36); bush(896, 0, -58.5, 0.7);
 
+// ---------- LEVEL 5: Hlbina – podmorský svet (x okolo 1200) ----------
+// Predĺženie južného móla + portál HLBINA
+box(0, -0.5, 14.5, 4, 1, 7, 0x7d8471);
+deco(new THREE.BoxGeometry(0.7, 3, 0.7), 0x4a4238, -1.6, 1.5, 16.5);
+deco(new THREE.BoxGeometry(0.7, 3, 0.7), 0x4a4238, 1.6, 1.5, 16.5);
+const seaSignTex = (() => {
+    const c = document.createElement('canvas'); c.width = 256; c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = '#0e3a55'; g.fillRect(0, 0, 256, 64);
+    g.strokeStyle = '#7fd8f0'; g.lineWidth = 4; g.strokeRect(4, 4, 248, 56);
+    g.fillStyle = '#e8f4f8'; g.font = 'bold 34px Georgia, serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('HLBINA', 128, 34);
+    return new THREE.CanvasTexture(c);
+})();
+const seaSign = new THREE.Mesh(
+    new THREE.BoxGeometry(3.6, 1.0, 0.3),
+    new THREE.MeshLambertMaterial({ map: seaSignTex })
+);
+seaSign.position.set(0, 3.3, 16.5);
+scene.add(seaSign);
+portal(0, 0.2, 16.5, new THREE.Vector3(1200, 3, 2), '🌊 Ponáraš sa do hlbiny… Medzerník = plávaj hore!');
+
+// Morské dno a hladina
+box(1200, -0.5, -50, 130, 1, 130, 0xc2b280);
+const seaSurface = new THREE.Mesh(
+    new THREE.BoxGeometry(130, 0.3, 130),
+    new THREE.MeshStandardMaterial({ color: 0x2a6a8f, transparent: true, opacity: 0.45, emissive: 0x123c55, emissiveIntensity: 0.5, side: THREE.DoubleSide })
+);
+seaSurface.position.set(1200, 12, -50);
+scene.add(seaSurface);
+
+// Štart, návratový portál a checkpointy
+checkpoint(1200, 0.2, 2, 4, 4);
+portal(1195.5, 0.2, 3.5, new THREE.Vector3(0, 1.8, 3), '🌿 Späť v džungli!');
+checkpoint(1200, 0.2, -52, 3, 3);   // pri vraku
+checkpoint(1200, 0.2, -80, 3, 3);   // za tiesňavou
+
+// Tri kamenné oblúky na preplávanie
+for (const [az, ax] of [[-18, 0], [-33, 6], [-33, -6], [-46, 0]]) {
+    if (ax === 0) {
+        box(1200 + ax - 3.2, 3, az, 1.4, 7, 1.4, 0x7d8471);
+        box(1200 + ax + 3.2, 3, az, 1.4, 7, 1.4, 0x7d8471);
+        box(1200 + ax, 6.9, az, 7.8, 1.2, 1.4, 0x8a7f66);
+    }
+}
+box(1206 - 3.2, 3, -33, 1.4, 7, 1.4, 0x7d8471);
+box(1206 + 3.2, 3, -33, 1.4, 7, 1.4, 0x7d8471);
+box(1206, 6.9, -33, 7.8, 1.2, 1.4, 0x8a7f66);
+
+// Vrak lode s pokladom
+{
+    const wood = 0x5a3f2a;
+    deco(new THREE.BoxGeometry(2.6, 0.4, 7), wood, 1188, 0.3, -55);
+    deco(new THREE.BoxGeometry(0.4, 1.6, 6.4), 0x6d4c33, 1186.9, 1.1, -55);
+    deco(new THREE.BoxGeometry(0.4, 1.2, 5.6), 0x6d4c33, 1189.1, 0.9, -55);
+    deco(new THREE.BoxGeometry(2.6, 1.2, 0.4), 0x6d4c33, 1188, 0.9, -51.7);
+    const mast = deco(new THREE.BoxGeometry(0.35, 6, 0.35), 0x6d4c33, 1189.5, 2.2, -56.5);
+    mast.rotation.z = 0.7; // zlomený sťažeň
+    deco(new THREE.BoxGeometry(1.1, 0.8, 0.7), 0x8a6d3b, 1188, 0.7, -57.2); // truhlica
+    deco(new THREE.BoxGeometry(1.16, 0.18, 0.76), 0xd4a017, 1188, 1.05, -57.2);
+    pickup('gold', 1188, 1.7, -57.2);
+    pickup('gold', 1187, 1.2, -54);
+    pickup('gold', 1189.3, 1.2, -55.6);
+    pickup('diamond', 1188.4, 1.5, -56);
+    pickup('amber', 1186.5, 1.2, -56.8);
+    coin(1188, 2.4, -55);
+}
+
+// Tiesňava s hrebeňmi – megalodon krúži nad ňou
+box(1193, 3.5, -72, 3, 8, 18, 0x7d8471);
+box(1207, 3.5, -72, 3, 8, 18, 0x7d8471);
+coin(1200, 8.2, -72); // vajce vysoko – treba vyplávať k megalodonovi!
+
+// Cieľový podstavec
+box(1200, 1, -93, 4, 2, 4, 0x8a7f66);
+const seaGoal = box(1200, 2.3, -93, 2.4, 0.4, 2.4, 0xffd700);
+seaGoal.mesh.material = new THREE.MeshStandardMaterial({
+    color: 0xffd700, emissive: 0xcc9900, emissiveIntensity: 0.6
+});
+
+// Vajce pri prvom oblúku
+coin(1200, 2, -18);
+
+// Morské príšery
+addCarnivore(1200, 6.5, -60, { x1: 1176, x2: 1224, z1: -88, z2: -28 }, 'x', 1, 0.5, 10,
+    { makeModel: makeMeg, hit: { w: 2.6, h: 2.8, d: 7.5 }, reason: 'meg', chase: 4.6 });
+addCarnivore(1210, 3.2, -30, { x1: 1180, x2: 1222, z1: -60, z2: -12 }, 'x', 1, 0.5, 8,
+    { makeModel: makePlesio, hit: { w: 1.7, h: 2.2, d: 4.8 }, reason: 'plesio', chase: 3.6 });
+addCarnivore(1190, 1.6, -70, { x1: 1178, x2: 1215, z1: -90, z2: -45 }, 'x', 1, 0.5, 8.5,
+    {
+        makeModel: () => {
+            const m = makeMosasaur();
+            const u = m.userData;
+            m.userData = { legL: u.tail1, legR: u.tail2, armL: u.finFL, armR: u.finFR };
+            return m;
+        },
+        hit: { w: 2.2, h: 2.0, d: 6 }, reason: 'mosa', chase: 4.0,
+    });
+
+// Chaluhy (hojdajú sa), koraly a bubliny
+const kelp = [];
+for (const [kx, kz, kh] of [[1192, -12, 9], [1209, -20, 10], [1186, -28, 8], [1214, -40, 11],
+    [1183, -46, 9], [1210, -52, 8], [1194, -63, 10], [1179, -66, 9], [1216, -62, 10],
+    [1188, -82, 8], [1212, -86, 9], [1200, -8, 8], [1222, -30, 9], [1178, -20, 10]]) {
+    const k = deco(new THREE.BoxGeometry(0.5, kh, 0.4), 0x2e6b4a, kx, kh / 2, kz);
+    kelp.push({ m: k, ph: kx * 0.7 + kz });
+}
+const CORAL_C = [0xe4572e, 0xd66ba0, 0xf2c14e, 0x9b6ce8];
+let ci = 0;
+for (const [cx, cz] of [[1195, -15], [1207, -25], [1190, -38], [1213, -48], [1185, -60],
+    [1205, -58], [1195, -78], [1208, -80], [1198, -88], [1220, -70]]) {
+    ci++;
+    deco(new THREE.BoxGeometry(0.9, 1.1, 0.8), CORAL_C[ci % 4], cx, 0.55, cz);
+    deco(new THREE.BoxGeometry(0.5, 0.9, 0.5), CORAL_C[(ci + 1) % 4], cx + 0.6, 0.45, cz + 0.4);
+    deco(new THREE.BoxGeometry(0.4, 1.4, 0.4), CORAL_C[(ci + 2) % 4], cx - 0.5, 0.7, cz - 0.3);
+}
+const bubbles = [];
+for (let i = 0; i < 9; i++) {
+    const b = new THREE.Mesh(
+        new THREE.BoxGeometry(0.22, 0.22, 0.22),
+        new THREE.MeshBasicMaterial({ color: 0xcfeef8, transparent: true, opacity: 0.6 })
+    );
+    b.position.set(1180 + (i * 47) % 44, 1, -12 - (i * 31) % 78);
+    scene.add(b);
+    bubbles.push({ m: b, off: i * 2.3, bx: b.position.x, bz: b.position.z });
+}
+// skalné hrebene po obvode
+deco(new THREE.BoxGeometry(120, 6, 4), 0x6f6557, 1200, 2.5, -108);
+deco(new THREE.BoxGeometry(4, 6, 110), 0x6f6557, 1146, 2.5, -50);
+deco(new THREE.BoxGeometry(4, 6, 110), 0x6f6557, 1254, 2.5, -50);
+
 // ---------- Byliny a kvety – dekorácia všetkých levelov ----------
 // Džungľa: štart, plošiny a brána
 flower(-4, 0, -1.5, 0xe4572e); flower(3.8, 0, 2.2, 0xf2c14e);
@@ -2060,6 +2240,9 @@ const DEATH_MSG = {
     river: '🌊 Odniesla ťa divoká rieka!',
     allo: '🦖 Allosaurus ťa zožral!',
     carno: '🦖 Carnotaurus ťa nabral na rohy!',
+    meg: '🦈 Megalodon ťa zhltol!',
+    plesio: '🦕 Plesiosaurus ťa schmatol!',
+    mosa: '🌊 Mosasaurus ťa stiahol do hlbín!',
 };
 function die(reason) {
     deathCount++;
@@ -2131,6 +2314,8 @@ const LEVEL_SPOTS = [
     { name: '🌾 Planina · Cieľová rímsa', pos: [600, 5.5, -144] },
     { name: '🌀 Bludisko · Vstup', pos: [900, 1.8, -21] },
     { name: '🌀 Bludisko · Pred stredom', pos: [900, 1.8, -76.5] },
+    { name: '🌊 Hlbina · Štart', pos: [1200, 3, 2] },
+    { name: '🌊 Hlbina · Vrak lode', pos: [1200, 2, -52] },
 ];
 let levelsOpen = false, levelsOpenedAt = 0;
 function toggleLevels() {
@@ -2304,24 +2489,33 @@ function physics(dt) {
     if (len > 1) { ix /= len; iz /= len; }
 
     const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
-    const spd = moveSpeed();
+    const inSea = P.pos.x > 1100;
+    const spd = moveSpeed() * (inSea ? 0.85 : 1);
     // dopredu = presne smer pohľadu kamery, do strán kolmo naň
     P.vel.x = (ix * cos + iz * sin) * spd;
     P.vel.z = (iz * cos - ix * sin) * spd;
 
     // skok: zo zeme aj podržaním; dvojskok (LV2+) len čerstvým stlačením
     const jumpPressed = keys['Space'] || jumpTouch;
-    if (jumpPressed && P.onGround) {
-        P.vel.y = jumpSpeed();
-        P.onGround = false;
-        P.groundMover = null;
-        P.jumps = 1;
-    } else if (jumpPressed && !P.prevJump && !P.onGround && P.jumps < maxJumps()) {
-        P.vel.y = jumpSpeed() * 0.95;
-        P.jumps++;
+    if (inSea) {
+        // plávanie: medzerník = hore, inak pomalé klesanie
+        if (jumpPressed) P.vel.y = Math.min(P.vel.y + 34 * dt, 4.2);
+        P.vel.y -= 6 * dt;
+        if (P.vel.y < -3.2) P.vel.y = -3.2;
+        P.prevJump = jumpPressed;
+    } else {
+        if (jumpPressed && P.onGround) {
+            P.vel.y = jumpSpeed();
+            P.onGround = false;
+            P.groundMover = null;
+            P.jumps = 1;
+        } else if (jumpPressed && !P.prevJump && !P.onGround && P.jumps < maxJumps()) {
+            P.vel.y = jumpSpeed() * 0.95;
+            P.jumps++;
+        }
+        P.prevJump = jumpPressed;
+        P.vel.y += GRAVITY * dt;
     }
-    P.prevJump = jumpPressed;
-    P.vel.y += GRAVITY * dt;
 
     // posun + kolízie po osiach
     P.onGround = false;
@@ -2365,6 +2559,12 @@ function physics(dt) {
         if (c.oz <= c.ox && c.oz <= c.oy) {
             P.pos.z += (P.pos.z > c.m.z ? c.oz : -c.oz);
         }
+    }
+
+    // pod hladinou drž hráča (hladina mora je vo výške 11,5)
+    if (inSea && P.pos.y > 11.5) {
+        P.pos.y = 11.5;
+        if (P.vel.y > 0) P.vel.y = 0;
     }
 
     // močiar a mäsožravce (spiace neublížia)
@@ -2493,10 +2693,22 @@ function physics(dt) {
         resetHerd();
         portalLockUntil = nowMs + 1500;
     }
-    // stred bludiska (level 4) = veľké finále
-    if (!finished && collideAABB(mazeGoal, P.pos, 0.2)) {
-        finished = true;
+    // stred bludiska (level 4): odmena a ponor do hlbiny
+    if (!mazeDone && collideAABB(mazeGoal, P.pos, 0.2)) {
+        mazeDone = true;
         addXP(250, 'bludisko zdolané');
+        showMsg('🏆 BLUDISKO ZDOLANÉ!<br><small>Level 5: Hlbina – medzerník = plávaj hore, pozor na megalodona!</small>', 3400);
+        P.pos.set(1200, 3, 2);
+        P.vel.set(0, 0, 0);
+        P.spawn.set(1200, 3, 2);
+        P.hp = MAX_HP;
+        resetHerd();
+        portalLockUntil = nowMs + 1500;
+    }
+    // podstavec v hlbine (level 5) = veľké finále
+    if (!finished && collideAABB(seaGoal, P.pos, 0.2)) {
+        finished = true;
+        addXP(300, 'hlbina zdolaná');
         const secs = Math.floor((performance.now() - startTime) / 1000);
         showMsg(`🏆 PREŠIEL SI CELÝ PARK!<br>Čas: ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')} • Vajcia: ${coinCount}/${coins.length} • 🦖 ${deathCount}<br><small>Stlač R pre novú hru – postup a nástroje ti ostávajú</small>`, 0);
     }
@@ -2527,6 +2739,7 @@ function animatePlayer(dt) {
 // ---------- Slučka ----------
 const CAVE_FOG_COLOR = new THREE.Color(0x0b0806);
 const JUNGLE_FOG_COLOR = new THREE.Color(0xaec9a0);
+const SEA_FOG_COLOR = new THREE.Color(0x0e3a55);
 const camRay = new THREE.Raycaster();
 const _camDir = new THREE.Vector3();
 const camBlockers = platforms.map(p => p.mesh);
@@ -2603,6 +2816,15 @@ function loop() {
     quetz.userData.head.rotation.y = Math.sin(t * 0.35) * 0.45;
     quetz.userData.head.rotation.x = Math.sin(t * 0.6) * 0.1;
 
+    // hlbina: chaluhy sa vlnia, bubliny stúpajú, hladina sa mihoce
+    for (const k of kelp) k.m.rotation.z = Math.sin(t * 0.8 + k.ph) * 0.07;
+    for (const b of bubbles) {
+        const ph = (t * 1.3 + b.off) % 9;
+        b.m.position.set(b.bx + Math.sin(t + b.off) * 0.3, 0.8 + ph * 1.15, b.bz);
+        b.m.material.opacity = Math.max(0, 0.65 - ph * 0.06);
+    }
+    seaSurface.material.emissiveIntensity = 0.45 + Math.sin(t * 1.7) * 0.15;
+
     // loďka sa jemne hojdá na hladine jazierka
     caveBoat.position.y = -1.62 + Math.sin(t * 1.3) * 0.07;
     caveBoat.rotation.z = Math.sin(t * 1.1) * 0.05;
@@ -2633,18 +2855,19 @@ function loop() {
     mu.finBL.rotation.z = Math.sin(t * 1.8 + 0.7) * 0.2;
     mu.finBR.rotation.z = -Math.sin(t * 1.8 + 0.7) * 0.2;
 
-    // atmosféra: v jaskyni tma (lampáš ju prežiari), inde denné svetlo
+    // atmosféra: jaskyňa tma, hlbina modrá, inde denné svetlo
     const inCave = P.pos.x > 150 && P.pos.x < 450;
+    const inSeaZone = P.pos.x > 1100;
     const ak = 0.08;
-    const tgtSun = inCave ? 0.3 : 2.2;
-    const tgtAmb = inCave ? 0.16 + save.lantern * 0.11 : 0.8;
-    const tgtFogN = inCave ? 7 + save.lantern * 3 : 45;
-    const tgtFogF = inCave ? 32 + save.lantern * 24 : 130;
+    const tgtSun = inCave ? 0.3 : inSeaZone ? 0.85 : 2.2;
+    const tgtAmb = inCave ? 0.16 + save.lantern * 0.11 : inSeaZone ? 0.55 : 0.8;
+    const tgtFogN = inCave ? 7 + save.lantern * 3 : inSeaZone ? 8 : 45;
+    const tgtFogF = inCave ? 32 + save.lantern * 24 : inSeaZone ? 62 : 130;
     sun.intensity += (tgtSun - sun.intensity) * ak;
     ambient.intensity += (tgtAmb - ambient.intensity) * ak;
     scene.fog.near += (tgtFogN - scene.fog.near) * ak;
     scene.fog.far += (tgtFogF - scene.fog.far) * ak;
-    const tgtCol = inCave ? CAVE_FOG_COLOR : JUNGLE_FOG_COLOR;
+    const tgtCol = inCave ? CAVE_FOG_COLOR : inSeaZone ? SEA_FOG_COLOR : JUNGLE_FOG_COLOR;
     scene.fog.color.lerp(tgtCol, ak);
     scene.background.lerp(tgtCol, ak);
     lantern.intensity = save.lantern * 5.5;
