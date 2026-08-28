@@ -442,6 +442,7 @@ CREATE TABLE IF NOT EXISTS vis_vykony (
   trombektomia BOOLEAN, trombektomia_druh TEXT, trombektomia_detail TEXT,
   predilatacia BOOLEAN, predil_balon TEXT, predil_rozmer TEXT,
   stent_typ TEXT, stent_nazov TEXT, stent_priemer NUMERIC, stent_dlzka NUMERIC, stent_tlak_atm INT,
+  presah_aorta_mm NUMERIC, postdil_priemer NUMERIC, postdil_tlak_atm INT,
   dilat_balon TEXT, dilat_priemer NUMERIC, dilat_dlzka NUMERIC, dilat_tlak_atm INT, dilat_inflacia_s INT,
   postdilatacia BOOLEAN, rezidualna_stenoza TEXT,
   komplikacie TEXT, komplikacie_struct TEXT, komplikacie_text TEXT, clavien_dindo TEXT,
@@ -480,3 +481,8 @@ BEGIN
     EXECUTE format('CREATE POLICY "pov del %1$s" ON public.%1$I FOR DELETE TO authenticated USING (je_povoleny() AND NOT je_tv())', t);
   END LOOP;
 END $vis$;
+
+-- ── 3u · RAS: persistencia presahu do aorty a postdilatácie (oprava z kontroly kódu) ──
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS presah_aorta_mm NUMERIC;
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS postdil_priemer NUMERIC;
+ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS postdil_tlak_atm INT;

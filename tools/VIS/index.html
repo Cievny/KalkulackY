@@ -495,7 +495,7 @@ function buildAutoZaver(){
   const nazov=t==='POBA'?'PTA (POBA)':t==='DEB'?'DEB angioplastika':'stenting';
   const rekan=chk('c_rekan');
   let uvod;
-  if(uspesne)uvod='Úspešn'+(rekan?'á rekanalizácia a ':(t==='POBA'||t==='DEB')?'á ':'ý ')+(rekan?nazov:nazov)+' ';
+  if(uspesne)uvod='Úspešn'+(rekan?'á rekanalizácia a ':(t==='POBA'||t==='DEB')?'á ':'ý ')+nazov+' ';
   else uvod=(rekan?'Rekanalizácia a ':'')+nazov.charAt(0).toUpperCase()+nazov.slice(1)+' ';
   let z=uvod+lezGen()+' '+tepnaTxt()+' ('+g('lokalizacia')+')'+(g('rezid')?', '+g('rezid'):'')+'. ';
   if(chk('c_trom'))z+='Vykonaná trombektómia s odstránením trombotických más. ';
@@ -631,6 +631,9 @@ function collectPayload(){
     stent_priemer:t==='stenting'&&g('stent_p')?parseFloat(g('stent_p')):null,
     stent_dlzka:t==='stenting'&&g('stent_d')?parseFloat(g('stent_d')):null,
     stent_tlak_atm:t==='stenting'&&g('stent_atm')?parseInt(g('stent_atm')):null,
+    presah_aorta_mm:t==='stenting'&&g('presah')?parseFloat(g('presah')):null,
+    postdil_priemer:(t==='stenting'&&chk('c_postdil')&&g('postdil_p'))?parseFloat(g('postdil_p')):null,
+    postdil_tlak_atm:(t==='stenting'&&chk('c_postdil')&&g('postdil_atm'))?parseInt(g('postdil_atm')):null,
     dilat_balon:t!=='stenting'?vN('dilat_balon'):null,
     dilat_priemer:t!=='stenting'&&g('dilat_p')?parseFloat(g('dilat_p')):null,
     dilat_dlzka:t!=='stenting'&&g('dilat_d')?parseFloat(g('dilat_d')):null,
@@ -709,7 +712,7 @@ async function saveVIS(){
     }
     if(_isEdit){
       // pri edite ostávajú null hodnoty – vyprázdnené/prepnuté polia sa musia dať v DB vymazať
-      const keepNull=['stent_typ','stent_nazov','stent_priemer','stent_dlzka','stent_tlak_atm','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','predil_balon','predil_rozmer',
+      const keepNull=['vek','stenoza_pct','ubytok_kg','heparin_iu','stent_typ','stent_nazov','stent_priemer','stent_dlzka','stent_tlak_atm','presah_aorta_mm','postdil_priemer','postdil_tlak_atm','dilat_balon','dilat_priemer','dilat_dlzka','dilat_tlak_atm','dilat_inflacia_s','predil_balon','predil_rozmer',
         'diagnoza_text','symptomy','ubytok_kg','laktat','crp','pred_pozn','rekan_technika','rekan_vodic','reentry_nazov','trombektomia_druh','trombektomia_detail',
         'clavien_dindo','komplikacie_struct','komplikacie_text','drg_kody','kontrast_ml','fluoro_time_min','dap','rodne_cislo'];
       Object.keys(payload).forEach(k=>{if(payload[k]==null&&!keepNull.includes(k))delete payload[k];});
@@ -803,7 +806,7 @@ function loadEditRecord(){
     sv('heparin',record.heparin_iu);
     p2Restore(record.pristup_dalsi);
     if(record.rekanalizacia){document.getElementById('c_rekan').checked=true;tB('rekan');sv('rekan_technika',record.rekan_technika);setVl('rekan_vodic',record.rekan_vodic);if(record.reentry){document.getElementById('c_reentry').checked=true;sv('reentry_nazov',record.reentry_nazov);}}
-    if(record.trombektomia){document.getElementById('c_trom').checked=true;tB('trom');document.getElementById('trom_asp').checked=(record.trombektomia_druh||'aspiračná').includes('aspiračná');document.getElementById('trom_rot').checked=(record.trombektomia_druh||'').includes('rotačná');sv('trom_detail',record.trombektomia_detail);}
+    if(record.trombektomia){document.getElementById('c_trom').checked=true;tB('trom');document.getElementById('trom_asp').checked=(record.trombektomia_druh||'').includes('aspiračná');document.getElementById('trom_rot').checked=(record.trombektomia_druh||'').includes('rotačná');sv('trom_detail',record.trombektomia_detail);}
     if(record.predilatacia){document.getElementById('c_predil').checked=true;tB('predil');setVl('predil_balon',record.predil_balon);const rz=(record.predil_rozmer||'').split('x');if(rz[0])sv('predil_p',rz[0]);if(rz[1])sv('predil_d',rz[1]);}
     if(record.typ_vykonu){document.getElementById('typ_vykonu').value=record.typ_vykonu;typVykonuZmena();}
     setVl('dilat_balon',record.dilat_balon);
@@ -811,7 +814,8 @@ function loadEditRecord(){
     sv('stent_typ',record.stent_typ);
     setVl('stent_n',record.stent_nazov);
     sv('stent_p',record.stent_priemer);sv('stent_d',record.stent_dlzka);sv('stent_atm',record.stent_tlak_atm);
-    if(record.postdilatacia){document.getElementById('c_postdil').checked=true;tB('postdil');}
+    if(record.presah_aorta_mm!=null)sv('presah',record.presah_aorta_mm);
+    if(record.postdilatacia){document.getElementById('c_postdil').checked=true;tB('postdil');sv('postdil_p',record.postdil_priemer);sv('postdil_atm',record.postdil_tlak_atm);}
     sv('rezid',record.rezidualna_stenoza);
     const komp=record.komplikacie||'';
     document.querySelectorAll('.komp_ck').forEach(c=>{c.checked=c.value==='žiadne'?(!komp||komp==='žiadne'):komp.includes(c.value);});

@@ -53,7 +53,8 @@ jobs:
           # rovnaká logika ako /tools/kontroly: 1M/6M/12M, mešká = >14 dní po termíne,
           # max 18 mesiacov dozadu, zosnulí (exitus) sa nepripomínajú
           meskajuce=[]
-          for tbl,dcol,label in [('evk_vykony','datum','EVK'),('cas_vykony','datum_zaznamu','CAS'),('pevar_vykony','datum_zaznamu','PEVAR'),('ras_vykony','datum_zaznamu','RAS')]:
+          # VIS má protokol kontroly o 6 mesiacov – 1M sa pri ňom neočakáva
+          for tbl,dcol,label,body in [('evk_vykony','datum','EVK',None),('cas_vykony','datum_zaznamu','CAS',None),('pevar_vykony','datum_zaznamu','PEVAR',None),('ras_vykony','datum_zaznamu','RAS',None),('avf_vykony','datum_zaznamu','AVF',None),('vis_vykony','datum_zaznamu','VIS',[(6,'6M'),(12,'12M')])]:
               vykony=fetch_all(f'{tbl}?select=vykon_id,{dcol}')
               fus=fetch_all(tbl.replace('_vykony','_followup')+'?select=vykon_id,casovy_bod,exitus')
               if vykony is None or fus is None:
@@ -63,7 +64,7 @@ jobs:
               for v in vykony:
                   vid=v.get('vykon_id');dat=(v.get(dcol) or '')[:10]
                   if not vid or not dat or vid in dead or '???' in vid:continue
-                  for m,bod in [(1,'1M'),(6,'6M'),(12,'12M')]:
+                  for m,bod in (body or [(1,'1M'),(6,'6M'),(12,'12M')]):
                       due=add_months(dat,m)
                       if not due:continue
                       dni=(today-due).days

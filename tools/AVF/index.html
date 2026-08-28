@@ -657,7 +657,7 @@ async function saveAVF(){
     }
     if(_isEdit){
       // pri edite ostávajú null hodnoty – vyprázdnené polia sa musia dať v DB vymazať
-      const keepNull=['qa_pred','indikacia_text','avf_rok','faza','indikacie','pristup_vztah','pristup_anes','pristup_nav','pristup2_miesto','pristup2_smer','pristup2_sheath','pristup2_uzaver','dsa_vena','dsa_kolateraly','dsa_centralna','dsa_text','vymena_sheath','vymena_dovod','intervencia_pozn','rezidualna_stenoza','komplikacie_struct','komplikacie_text','clavien_dindo','kontrast_ml','fluoro_time_min','dap','drg_kody','rodne_cislo'];
+      const keepNull=['vek','qa_pred','indikacia_text','avf_rok','faza','indikacie','pristup_vztah','pristup_anes','pristup_nav','pristup2_miesto','pristup2_smer','pristup2_sheath','pristup2_uzaver','dsa_vena','dsa_kolateraly','dsa_centralna','dsa_text','vymena_sheath','vymena_dovod','intervencia_pozn','rezidualna_stenoza','komplikacie_struct','komplikacie_text','clavien_dindo','kontrast_ml','fluoro_time_min','dap','drg_kody','rodne_cislo'];
       Object.keys(payload).forEach(k=>{if(payload[k]==null&&!keepNull.includes(k))delete payload[k];});
       delete payload.vykon_id;
     }
@@ -778,8 +778,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('datum').value=isoLocal();
   document.getElementById('fu_datum').value=isoLocal();
   loadEditRecord();
-  // pri novom zázname predvyplň jeden riadok intervencie (najčastejší scenár: PTA anastomózy)
-  if(!document.querySelector('#iv_rows .ivrow'))ivAdd({typ:'PTA',lok:'anastomózy'});
+  // pri novom zázname predvyplň jeden riadok intervencie (najčastejší scenár: PTA anastomózy);
+  // v edit-móde NIE – záznam s prázdnymi intervenciami (diagnostická DSA) nesmie dostať fiktívnu PTA
+  if(!window._editRecordId&&!document.querySelector('#iv_rows .ivrow'))ivAdd({typ:'PTA',lok:'anastomózy'});
   gen();
 });
 </script>
