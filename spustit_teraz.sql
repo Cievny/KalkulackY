@@ -486,3 +486,26 @@ END $vis$;
 ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS presah_aorta_mm NUMERIC;
 ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS postdil_priemer NUMERIC;
 ALTER TABLE ras_vykony ADD COLUMN IF NOT EXISTS postdil_tlak_atm INT;
+
+-- ── 3v · BEZPEČNOSTNÝ AUDIT: kioskové kontá (tv@/sala@) nesmú čítať tabuľky
+--         s otvoreným rodným číslom. pacient_rc už chránená je (pacient_entita.sql);
+--         tu doplníme RESTRICTIVE politiku na tabuľky výkonov, zaujímavých
+--         pacientov, objednávky a požiadavky (aorta_indikacie). RESTRICTIVE sa
+--         ANDuje s existujúcimi politikami, takže netreba poznať ich mená.
+--         TV obrazovka (Program) tieto tabuľky nepotrebuje – návrhy z požiadaviek
+--         sa jej len prestanú ponúkať (sekcia sa sama skryje).
+CREATE OR REPLACE FUNCTION je_kiosk() RETURNS boolean LANGUAGE sql STABLE SET search_path = '' AS $$
+  SELECT coalesce((auth.jwt() ->> 'email') IN ('tv@cievny.sk','sala@cievny.sk'), false)
+$$;
+DO $kiosk$
+DECLARE t text;
+BEGIN
+  FOR t IN SELECT unnest(ARRAY['evk_vykony','cas_vykony','pevar_vykony','ras_vykony','avf_vykony','vis_vykony',
+                               'cz_evk_vykony','cz_cas_vykony','cz_pevar_vykony',
+                               'zaujimavi_pacienti','cz_zaujimavi_pacienti','objednavky','aorta_indikacie']) LOOP
+    IF to_regclass('public.'||t) IS NOT NULL THEN
+      EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', 'kiosk nesmie citat '||t, t);
+      EXECUTE format('CREATE POLICY %I ON public.%I AS RESTRICTIVE FOR SELECT TO authenticated USING (NOT je_kiosk())', 'kiosk nesmie citat '||t, t);
+    END IF;
+  END LOOP;
+END $kiosk$;
