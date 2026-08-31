@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalendár odpočtu do Vianoc | Cievny.sk</title>
+<meta name="description" content="Interaktívny odpočet do Vianoc – okienko na každý deň s motivačným citátom, afirmáciou a malou výzvou pre ľudí, ktorí prechádzajú ťažkým obdobím a hľadajú cestu k svojmu vnútornému ja.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --night-1: #0d1b2e;
+        --night-2: #16283f;
+        --night-3: #1f3554;
+        --gold: #e8b95a;
+        --gold-soft: #f3d9a4;
+        --snow: #f4f7fb;
+        --ink: #2b2b2b;
+        --wine: #6A1B42;
+        --green: #2E8339;
+        --door-front: linear-gradient(145deg, #24436b, #16283f);
+        --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        color: var(--snow);
+        background: radial-gradient(ellipse at 50% -10%, var(--night-3) 0%, var(--night-2) 45%, var(--night-1) 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    /* ------- hlavička ------- */
+    header {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        backdrop-filter: blur(10px);
+        background: rgba(13, 27, 46, 0.72);
+        border-bottom: 1px solid rgba(232, 185, 90, 0.18);
+    }
+    .header-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0.8rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 1.15rem;
+        color: var(--snow);
+    }
+    .brand .wine { color: #d98ab3; }
+    .brand .green { color: #7fd08a; }
+    .header-note {
+        font-size: 0.8rem;
+        color: rgba(244, 247, 251, 0.65);
+        text-align: right;
+    }
+
+    /* ------- úvod ------- */
+    .hero {
+        text-align: center;
+        padding: 3rem 1.25rem 1.5rem;
+        position: relative;
+        z-index: 2;
+    }
+    .hero h1 {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: clamp(2.1rem, 5.5vw, 3.4rem);
+        font-weight: 700;
+        margin: 0 0 0.6rem;
+        color: var(--gold-soft);
+        letter-spacing: 0.02em;
+    }
+    .hero p.sub {
+        max-width: 640px;
+        margin: 0 auto;
+        font-size: 1.02rem;
+        line-height: 1.65;
+        color: rgba(244, 247, 251, 0.82);
+    }
+
+    /* ------- odpočet ------- */
+    .countdown {
+        display: flex;
+        justify-content: center;
+        gap: 0.7rem;
+        margin: 2rem auto 0.5rem;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 2;
+    }
+    .count-box {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(232, 185, 90, 0.35);
+        border-radius: var(--radius);
+        padding: 0.85rem 0.5rem;
+        min-width: 86px;
+        text-align: center;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+    }
+    .count-box .num {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 2.3rem;
+        font-weight: 700;
+        color: var(--gold);
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+    }
+    .count-box .lbl {
+        margin-top: 0.35rem;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: rgba(244, 247, 251, 0.6);
+    }
+    .countdown-msg {
+        text-align: center;
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.5rem;
+        color: var(--gold-soft);
+        margin: 1.5rem 1.25rem 0;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* ------- kalendár po mesiacoch ------- */
+    .calendar {
+        max-width: 900px;
+        margin: 2.5rem auto 1rem;
+        padding: 0 1.25rem;
+        position: relative;
+        z-index: 2;
+    }
+    .month { margin-bottom: 2.4rem; }
+    .month-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: var(--gold-soft);
+        margin: 0 0 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+    .month-title::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(to right, rgba(232, 185, 90, 0.45), transparent);
+    }
+    .month-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.7rem;
+    }
+    @media (max-width: 760px) { .month-grid { grid-template-columns: repeat(5, 1fr); } }
+    @media (max-width: 480px) { .month-grid { grid-template-columns: repeat(4, 1fr); gap: 0.55rem; } }
+
+    .door {
+        aspect-ratio: 1 / 1.05;
+        perspective: 700px;
+        cursor: pointer;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .door-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.65s cubic-bezier(0.4, 0.1, 0.2, 1);
+        transform-style: preserve-3d;
+    }
+    .door.opened .door-inner { transform: rotateY(180deg); }
+    .door-face {
+        position: absolute;
+        inset: 0;
+        border-radius: var(--radius);
+        backface-visibility: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+    .door-front {
+        background: var(--door-front);
+        border: 1px solid rgba(232, 185, 90, 0.35);
+        box-shadow: inset 0 0 0 3px rgba(232, 185, 90, 0.08), 0 4px 14px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .door:not(.locked):not(.opened):hover .door-front {
+        transform: translateY(-3px);
+        border-color: var(--gold);
+        box-shadow: inset 0 0 0 3px rgba(232, 185, 90, 0.15), 0 10px 24px rgba(0, 0, 0, 0.4);
+    }
+    .door-front .day-num {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: clamp(1.2rem, 3.2vw, 1.8rem);
+        font-weight: 700;
+        color: var(--gold-soft);
+        line-height: 1;
+    }
+    .door-front .day-star {
+        font-size: 0.7rem;
+        margin-top: 0.25rem;
+        color: rgba(232, 185, 90, 0.7);
+    }
+    .door-back {
+        background: linear-gradient(155deg, #f9f3e6, #efe2c8);
+        border: 1px solid var(--gold);
+        transform: rotateY(180deg);
+        color: var(--wine);
+        font-family: 'Cormorant Garamond', serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 0.3rem;
+        text-align: center;
+    }
+    .door-back .heart { font-size: 1.1rem; }
+
+    .door.locked { cursor: not-allowed; }
+    .door.locked .door-front {
+        opacity: 0.5;
+        filter: saturate(0.5);
+    }
+    .door.locked .day-star::before { content: "🔒"; }
+    .door.today .door-front {
+        border-color: var(--gold);
+        animation: pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { box-shadow: inset 0 0 0 3px rgba(232, 185, 90, 0.15), 0 0 0 0 rgba(232, 185, 90, 0.45); }
+        50%      { box-shadow: inset 0 0 0 3px rgba(232, 185, 90, 0.2), 0 0 0 12px rgba(232, 185, 90, 0); }
+    }
+    .door.christmas .door-front {
+        background: linear-gradient(145deg, #7c2450, #4a1230);
+        border-color: var(--gold);
+    }
+    .door.shake .door-inner { animation: shake 0.45s ease; }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-6px) rotate(-2deg); }
+        40% { transform: translateX(6px) rotate(2deg); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+    }
+
+    /* ------- panel s citátom ------- */
+    .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        background: rgba(8, 15, 26, 0.75);
+        backdrop-filter: blur(6px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.25rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    .overlay.visible { opacity: 1; pointer-events: auto; }
+    .card {
+        background: linear-gradient(160deg, #fdfaf3, #f4ead6);
+        color: var(--ink);
+        max-width: 560px;
+        width: 100%;
+        border-radius: 20px;
+        border: 1px solid rgba(232, 185, 90, 0.8);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+        padding: 2.2rem 1.8rem 1.8rem;
+        position: relative;
+        transform: translateY(18px) scale(0.97);
+        transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+        max-height: 88vh;
+        overflow-y: auto;
+    }
+    .overlay.visible .card { transform: translateY(0) scale(1); }
+    .card .close-btn {
+        position: absolute;
+        top: 0.8rem;
+        right: 0.9rem;
+        border: 0;
+        background: transparent;
+        font-size: 1.4rem;
+        color: #9a8560;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0.3rem;
+    }
+    .card .close-btn:hover { color: var(--wine); }
+    .card .card-day {
+        text-transform: uppercase;
+        letter-spacing: 0.22em;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #a08040;
+        text-align: center;
+    }
+    .card .card-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--wine);
+        text-align: center;
+        margin: 0.4rem 0 1.2rem;
+    }
+    .card blockquote {
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        font-size: 1.35rem;
+        line-height: 1.55;
+        color: #3d3428;
+        margin: 0;
+        padding: 0 0.5rem;
+        text-align: center;
+        position: relative;
+    }
+    .card blockquote::before {
+        content: "„";
+        display: block;
+        font-size: 3rem;
+        line-height: 0.4;
+        color: var(--gold);
+        margin-bottom: 0.5rem;
+    }
+    .card .section {
+        margin-top: 1.4rem;
+        padding: 1rem 1.1rem;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    .card .affirmation {
+        background: rgba(106, 27, 66, 0.07);
+        border-left: 3px solid var(--wine);
+    }
+    .card .affirmation strong { color: var(--wine); }
+    .card .task {
+        background: rgba(46, 131, 57, 0.08);
+        border-left: 3px solid var(--green);
+    }
+    .card .task strong { color: var(--green); }
+
+    /* ------- pätička / pomocné ------- */
+    .toast {
+        position: fixed;
+        left: 50%;
+        bottom: 1.6rem;
+        transform: translate(-50%, 20px);
+        background: rgba(13, 27, 46, 0.95);
+        border: 1px solid rgba(232, 185, 90, 0.5);
+        color: var(--gold-soft);
+        padding: 0.7rem 1.2rem;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        z-index: 70;
+        text-align: center;
+        max-width: 90vw;
+    }
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+
+    .progress-note {
+        text-align: center;
+        color: rgba(244, 247, 251, 0.55);
+        font-size: 0.85rem;
+        margin: 0 auto 2.5rem;
+        position: relative;
+        z-index: 2;
+        padding: 0 1.25rem;
+    }
+
+    footer {
+        text-align: center;
+        padding: 1.5rem 1.25rem 2.5rem;
+        color: rgba(244, 247, 251, 0.45);
+        font-size: 0.8rem;
+        position: relative;
+        z-index: 2;
+        line-height: 1.7;
+    }
+    footer a { color: rgba(232, 185, 90, 0.8); }
+
+    /* ------- sneženie ------- */
+    #snow-canvas {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .door-inner, .card, .overlay { transition: none; }
+        .door.today .door-front { animation: none; }
+        #snow-canvas { display: none; }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <a href="../../index.html" class="brand">
+            <span class="wine">cievny</span><span class="green">.sk</span>
+        </a>
+        <div class="header-note">Kalendár odpočtu do Vianoc</div>
+    </div>
+</header>
+
+<canvas id="snow-canvas" aria-hidden="true"></canvas>
+
+<main>
+    <section class="hero">
+        <h1>Cesta k svojmu vnútornému ja</h1>
+        <p class="sub" id="hero-sub">
+            Prechádzaš ťažkým obdobím? Tento kalendár je tichý spoločník na dlhú cestu do Vianoc.
+            Každý deň sa odomkne jedno okienko – citát, myšlienka pre teba a jeden malý krôčik.
+            Zmeškané dni si môžeš kedykoľvek otvoriť spätne; dopredu sa nazrieť nedá.
+            Nie sú to veľké skoky. Sú to malé kroky domov, k sebe.
+        </p>
+    </section>
+
+    <div class="countdown" id="countdown" aria-live="polite">
+        <div class="count-box"><div class="num" id="cd-days">–</div><div class="lbl">dní</div></div>
+        <div class="count-box"><div class="num" id="cd-hours">–</div><div class="lbl">hodín</div></div>
+        <div class="count-box"><div class="num" id="cd-mins">–</div><div class="lbl">minút</div></div>
+        <div class="count-box"><div class="num" id="cd-secs">–</div><div class="lbl">sekúnd</div></div>
+    </div>
+    <div class="countdown-msg" id="countdown-msg"></div>
+
+    <section class="calendar" id="calendar" aria-label="Kalendár odpočtu – okienko na každý deň do Vianoc"></section>
+    <p class="progress-note" id="progress-note"></p>
+</main>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="card-title">
+    <div class="card">
+        <button class="close-btn" id="close-card" aria-label="Zavrieť">✕</button>
+        <div class="card-day" id="card-day"></div>
+        <h2 class="card-title" id="card-title"></h2>
+        <blockquote id="card-quote"></blockquote>
+        <div class="section affirmation"><strong>Afirmácia na dnes:</strong> <span id="card-affirmation"></span></div>
+        <div class="section task"><strong>Malý krôčik:</strong> <span id="card-task"></span></div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+    Otvorené okienka si prehliadač pamätá – môžeš sa k nim kedykoľvek vrátiť.<br>
+    Ak je toho na teba priveľa, nemusíš na to byť sám/sama – porozprávaj sa s blízkym človekom
+    alebo s odborníkom (Linka dôvery Nezábudka: 0800 800 566, nonstop a bezplatne).
+</footer>
+
+<script>
+(function () {
+    'use strict';
+
+    /* Zásoba citátov na celú cestu – tematické okruhy nasledujú za sebou.
+       Texty sú pôvodné alebo voľné parafrázy ľudových múdrostí, písané
+       pre ľudí v ťažkom období. */
+    const QUOTES = [
+        // Začiatok cesty
+        'Aj najdlhšia cesta k sebe začína jediným krokom – tým, že sa dnes nevzdáš.',
+        'Nemusíš vidieť celú cestu. Stačí vidieť ďalší krok.',
+        'To, že ideš pomaly, neznamená, že nejdeš. Znamená to, že nesieš veľa.',
+        'Každé ráno, keď vstaneš napriek všetkému, je tichý dôkaz tvojej sily.',
+        'Nezačínaš od nuly. Začínaš zo skúsenosti všetkého, čo si už prežil.',
+        'Cesta k sebe nie je útek zo sveta. Je to návrat domov.',
+        'Nie je hanba byť na začiatku. Škoda by bolo nevykročiť.',
+        'Veľké zmeny nerobia veľké dni. Robia ich obyčajné dni, v ktorých to nevzdáš.',
+        'Dnes nemusíš zvládnuť všetko. Dnes stačí zvládnuť dnešok.',
+        'Sila nie je to, čo cítiš. Sila je to, čo robíš, aj keď ju necítiš.',
+        // Pocity
+        'Sila nie je v tom, že nič necítiš. Sila je v tom, že cítiš všetko – a ideš ďalej.',
+        'Slzy nie sú slabosť. Sú to slová, na ktoré srdce nenašlo hlas.',
+        'Pocit nie je rozkaz. Smieš ho cítiť a nekonať podľa neho.',
+        'Aj búrka v tebe je len počasie. A počasie sa vždy zmení.',
+        'Smútok, ktorý si dovolíš, bolí menej než ten, ktorý zamykáš.',
+        'Nemusíš byť stále v poriadku. Musíš byť len úprimný k tomu, ako ti je.',
+        'Strach je len strážca brány. Za ňou býva to, na čom ti najviac záleží.',
+        'Hnev býva smútok, ktorý nedostal priestor. Daj mu meno a stíchne.',
+        'To, čo cítiš, ťa nedefinuje. Definuje ťa to, čo s tým urobíš.',
+        'Aj ťažké pocity sú návšteva. Prídu, pobudnú a odídu.',
+        // Súcit so sebou
+        'Hovor so sebou tak, ako by si hovoril s priateľom, ktorý má za sebou ťažký rok.',
+        'Nie si problém, ktorý treba vyriešiť. Si človek, ktorého treba vypočuť.',
+        'Odpustiť si neznamená zabudnúť. Znamená to prestať si sypať soľ do rany.',
+        'Aj keby ťa dnes nikto nepochválil, môžeš to urobiť ty. Počíta sa to rovnako.',
+        'Buď k sebe jemný. Robíš najlepšie, čo v tejto chvíli vieš.',
+        'Tvoja hodnota sa nemeria výkonom. Si vzácny aj v dňoch, keď len dýchaš.',
+        'Kritik v tvojej hlave nemá vždy pravdu. Je len hlasný.',
+        'Zaobchádzaj so sebou ako s niekým, koho máš na starosti. Lebo presne to si.',
+        'Chyba nie je dôkaz, že si zlý. Je to dôkaz, že si to skúsil.',
+        'Láskavosť, ktorú rozdávaš druhým, patrí aj tebe.',
+        // Korene a sila
+        'Strom v búrke neprežije vďaka konárom, ale vďaka koreňom, ktoré nevidno.',
+        'Už si prežil dni, o ktorých si si myslel, že sa prežiť nedajú. Nezabúdaj na to.',
+        'Zlomené miesto po zahojení býva najsilnejšie.',
+        'Tvoja sila nie je hlasná. Je to tichá vytrvalosť, s ktorou každý deň začínaš znova.',
+        'Diamant je len uhlík, ktorý vydržal tlak.',
+        'Nepodceňuj sa. Nesieš veci, o ktorých svet nemá ani tušenia.',
+        'Korene rastú v tme. Aj tvoja sila rastie v období, ktoré nevidno.',
+        'To, čo ťa dnes ohýba, ťa učí, ako sa nezlomiť.',
+        'Vydržať neznamená mlčať a trpieť. Znamená to hľadať cestu ďalej.',
+        'Si ako rieka – prekážka ťa nezastaví, len ti zmení tvar cesty.',
+        // Hranice a odpočinok
+        'Povedať „nie“ svetu je niekedy jediný spôsob, ako povedať „áno“ sebe.',
+        'Odpočinok nie je odmena za dokončenú prácu. Je to podmienka, aby si vládal žiť.',
+        'Aj zem cez zimu odpočíva, aby mohla na jar rozkvitnúť.',
+        'Nemusíš horieť, aby si svietil.',
+        'Hranice nie sú múry. Sú to dvere, pri ktorých rozhoduješ ty.',
+        'Nie každý telefonát treba zdvihnúť a nie každú bitku vybojovať.',
+        'Tvoja energia je vzácna. Nemusí ju dostať každý, kto si ju pýta.',
+        'Prestávka nie je prehra. Aj hudba potrebuje pauzy, aby bola hudbou.',
+        'Keď si unavený, nauč sa odpočívať, nie vzdávať sa.',
+        'Svet počká. Tvoje zdravie nie.',
+        // Ľudia a pomoc
+        'Požiadať o pomoc nie je slabosť. Je to jedna z najodvážnejších viet na svete.',
+        'Nemusíš niesť všetko sám. Aj most má viac pilierov.',
+        'Správni ľudia ťa nebudú milovať menej, keď uvidia, že nevládzeš.',
+        'Zdieľaná bolesť je polovičná. Zdieľaná radosť dvojnásobná.',
+        'Niekedy je najväčšia pomoc len človek, ktorý sedí vedľa teba a počúva.',
+        'Obklop sa ľuďmi, pri ktorých nemusíš nič predstierať.',
+        'Aj ty si pre niekoho dôvod, prečo to nevzdal.',
+        'Láska nezačína veľkými slovami, ale malou prítomnosťou.',
+        'Nemusíš mať silu pre všetkých. Stačí, keď ju máš pre seba a najbližších.',
+        'Osamelosť sa začína liečiť úprimnou vetou: „Nie je mi dobre.“',
+        // Nádej a svetlo
+        'Nádej nie je istota, že všetko dobre dopadne. Je to sila ísť ďalej, aj keď istota nie je.',
+        'Aj najtmavšia noc sa raz skončí a slnko vyjde.',
+        'Sviečka nestráca svoje svetlo tým, že zapáli inú.',
+        'V každej tme je aspoň jedna hviezda. Hľadaj ju, kým ju nenájdeš.',
+        'Zajtrajšok je nepopísaný list. Nikto ho nenapíše za teba.',
+        'Nádej spieva aj v tme – lebo verí ránu, ktoré ešte nevidno.',
+        'Malý plamienok stačí, aby tma nebola úplná.',
+        'Svetlo na konci tunela niekedy nevidno. Ale tunel má koniec aj tak.',
+        'Zima vždy odovzdá vládu jari. Aj tá tvoja.',
+        'Niekedy nájdeš svoje svetlo tak, že ho zapáliš niekomu inému.',
+        // Prijatie a púšťanie
+        'Pokoj nezačína tam, kde sa všetko vyrieši. Začína tam, kde prestaneš bojovať sám so sebou.',
+        'Niektoré veci nenesieš preto, že musíš, ale preto, že si zabudol, že ich smieš položiť.',
+        'Púšťanie nie je strata. Je to uvoľnenie miesta pre nové.',
+        'Nemôžeš zmeniť vietor, ale môžeš nastaviť plachty.',
+        'Prijatie neznamená súhlas. Znamená to prestať míňať silu na boj s tým, čo už je.',
+        'To, čo bolo, ťa formovalo. Ale nemusí ťa to riadiť.',
+        'Odpusť – nie preto, že si to zaslúžia, ale preto, že ty si zaslúžiš pokoj.',
+        'Zatvorené dvere nie sú koniec chodby.',
+        'Minulosť je učiteľ, nie väzenie.',
+        'Strom na jeseň púšťa listy bez smútku. Vie, že prídu nové.',
+        // Prítomnosť a ticho
+        'Minulosť už nezmeníš a budúcnosť ešte nie je. Jediné miesto, kde žiješ, je teraz.',
+        'V hluku sveta sa ľahko stratíš. V tichu sa nájdeš.',
+        'Ticho nie je prázdne. Je plné odpovedí, ktoré v hluku nepočuť.',
+        'Prítomná chvíľa je jediné miesto, kde ťa starosti nemôžu predbehnúť.',
+        'Dýchaj. Nič viac teraz nemusíš.',
+        'Šálka čaju, teplé svetlo, pokojný nádych – aj z malých vecí sa skladá pevná zem pod nohami.',
+        'Myšlienky sú ako oblaky. Ty si obloha, po ktorej plávajú.',
+        'Keď je toho veľa, vráť sa k jednoduchému: kde som, čo počujem, ako dýcham.',
+        'Pokoj nie je miesto bez búrky. Je to pevný bod v nej.',
+        'Hlboko pod hlukom strachu je v tebe tichý hlas, ktorý vie, kadiaľ ďalej.',
+        // Odvaha a rast
+        'Odvaha nie je vždy hlasná. Niekedy je to šepot: „Zajtra to skúsim znova.“',
+        'Rast bolí. Ale stagnácia bolí dlhšie.',
+        'Neboj sa pomalého napredovania. Boj sa státia na mieste.',
+        'Motýľ by nikdy nelietal, keby sa kukla nerozpadla.',
+        'Každý majster bol raz začiatočník. Každý silný bol raz na dne.',
+        'Nezáleží, koľkokrát spadneš. Záleží, že sa o jeden raz viac postavíš.',
+        'Strach sa zmenšuje zakaždým, keď ho prejdeš.',
+        'Nové ja sa rodí vždy o krok za hranicou starého.',
+        'Nie si tým, čo sa ti stalo. Si tým, čím sa rozhodneš stať.',
+        'Padnúť je ľudské. Vstať je hrdinské.',
+        // Telo a vďačnosť
+        'Tvoje telo ťa nesie celý život. Aj dnes si zaslúži jedno tiché ďakujem.',
+        'Vďačnosť nezmení to, čo sa stalo. Zmení to, ako v tom dokážeš stáť.',
+        'Kto hľadá dôvody na vďačnosť, nachádza ich. Kto hľadá dôvody na trápenie, tiež.',
+        'Prechádzka nevyrieši všetko. Ale máloktorý problém vyzerá po nej rovnako ťažký.',
+        'Spánok je najlacnejší liek – a najčastejšie zanedbávaný.',
+        'Malé rituály – teplý čaj, krátke pretiahnutie, pohľad z okna – sú kotvy v rozbúrených dňoch.',
+        'Buď vďačný za to, čo máš, a pracuj na tom, čo chceš.',
+        'Telo šepká skôr, než začne kričať. Počúvaj šepot.',
+        'Nie každý deň je dobrý, ale v každom dni sa dá nájsť niečo dobré.',
+        'Starostlivosť o seba nie je sebectvo. Z prázdneho džbánu nenaleješ.',
+        // Cesta domov
+        'Nie si pozadu. Si presne tam, kde má byť človek, ktorý prežil to, čo ty.',
+        'Trhliny nie sú miesta, kde si sa rozbil. Sú to miesta, kadiaľ do teba vchádza svetlo.',
+        'Neporovnávaj svoju tretiu kapitolu s cudzou dvadsiatou.',
+        'Šťastie nie je cieľ na konci cesty. Je to spôsob, akým kráčaš.',
+        'Tvoj domov nie je miesto. Je to pokoj, ktorý si buduješ v sebe.',
+        'Celý čas hľadáš cestu k sebe. A ona vedie tadiaľto – cez každý deň, keď to nevzdáš.',
+        'Jedného dňa budeš rozprávať svoj príbeh a niekomu pomôže prežiť ten jeho.',
+        'More je z kvapiek. Tvoja cesta z dní. Dnešok je jedna z nich.',
+        'Najkrajšie na návrate k sebe je, že dvere boli celý čas otvorené.',
+        'Vianoce sa blížia. A s nimi aj človek, ktorým sa každým dňom stávaš.'
+    ];
+
+    const AFFIRMATIONS = [
+        'Som tu. To, že som dnes vstal/a, je viac, než sa zdá.',
+        'Moje pocity sú platné. Nemusím ich pred sebou skrývať.',
+        'Každý malý krok sa počíta, aj keď ho nikto netlieska.',
+        'Zaslúžim si rovnakú láskavosť, akú dávam druhým.',
+        'Vo mne sú korene, ktoré ma držia, aj keď to navonok nevyzerá.',
+        'Nemusím mať dnes všetky odpovede.',
+        'Mám právo chrániť si svoju energiu.',
+        'Ticho nie je prázdnota. Je to priestor, kde sa stretávam so sebou.',
+        'Aj v ťažkom období viem nájsť malé svetlá.',
+        'Smiem odložiť to, čo už nie je moje niesť.',
+        'Moje telo je môj domov, nie môj nepriateľ.',
+        'Som ďalej, než som bol/a. Aj keď to nie je vždy vidieť.',
+        'Nemusím byť dokonalý/á, aby som bol/a hodnotný/á.',
+        'Nemusím všetko zvládnuť sám/sama.',
+        'Práve teraz, v tejto chvíli, som v poriadku.',
+        'Moje tempo je moje. Neporovnávam svoju cestu s cudzou.',
+        'Nosím v sebe nádej, aj keď je niekedy len malý plamienok.',
+        'Odpočinok si nemusím zaslúžiť. Je to moja potreba, nie odmena.',
+        'Dôverujem svojej intuícii. Poznám sa lepšie, než si myslím.',
+        'Som odvážny/a už tým, že to nevzdávam.',
+        'Aj s prázdnymi rukami mám čo dať – svoju prítomnosť.',
+        'Prijímam seba aj so všetkým, čo práve prežívam.',
+        'Môj domov nie je miesto. Je to pokoj, ktorý si budujem v sebe.',
+        'Robím, čo môžem. A to stačí.',
+        'Dnes si dovolím byť len človekom, nie strojom.',
+        'To, čo cítim, prejde. Ja zostanem.',
+        'Mám za sebou ťažšie dni – a prežil/a som ich.',
+        'Dnes sa rozhodujem pre seba.',
+        'Som viac než moje najhoršie dni.',
+        'Každý nádych je nový začiatok.',
+        'Nemusím sa páčiť všetkým, aby som mal/a hodnotu.',
+        'Dovolím si radosť aj uprostred starostí.',
+        'Moja citlivosť je dar, nie chyba.',
+        'Krok za krokom sa vraciam k sebe.',
+        'To, že prosím o pomoc, znamená, že bojujem.',
+        'Dnešok mi stačí. Zajtrajšok počká.'
+    ];
+
+    const TASKS = [
+        'Nájdi si dve minúty ticha. Len dýchaj a nikam sa neponáhľaj.',
+        'Pomenuj si nahlas alebo na papier jeden pocit, ktorý dnes nosíš.',
+        'Zapíš si tri drobnosti, ktoré sa ti dnes podarili. Aj obyčajné.',
+        'Keď sa pristihneš pri tvrdej sebakritike, skús vetu preformulovať láskavejšie.',
+        'Spomeň si na jednu ťažkú chvíľu, ktorú si už zvládol/zvládla. Tá sila je stále v tebe.',
+        'Vyskúšaj: nádych na 4 doby, výdych na 6 dôb. Päťkrát za sebou.',
+        'Odlož dnes jednu povinnosť, ktorá nie je nutná. Svet sa nezrúti.',
+        'Vypni na desať minút všetky obrazovky. Len buď.',
+        'Nájdi jednu vec, za ktorú si dnes napriek všetkému vďačný/vďačná.',
+        'Napíš na papier jednu starosť a odlož ho do zásuvky. Dnes ju nesie papier.',
+        'Urob niečo dobré pre telo: krátka prechádzka, teplý čaj, poriadny strečing.',
+        'Nájdi jednu vec, ktorá je dnes lepšia než pred rokom – alebo ktorú si sa odvtedy naučil/a.',
+        'Odpusť si dnes jednu vec, ktorú si dlho vyčítaš. Aspoň na dnešok ju polož.',
+        'Ozvi sa človeku, ktorému dôveruješ. Stačí krátka správa: „Myslím na teba.“',
+        'Vnímaj päť vecí, ktoré vidíš, štyri, ktoré počuješ, tri, ktorých sa dotýkaš.',
+        'Všimni si dnes jedno porovnávanie sa s druhými – a vedome ho pusť.',
+        'Napíš si jednu vec, na ktorú sa – hoci len trochu – tešíš.',
+        'Choď dnes spať o pol hodiny skôr, alebo si dopraj chvíľu bez plánu.',
+        'Polož si otázku: „Čo teraz naozaj potrebujem?“ – a chvíľu počkaj na odpoveď.',
+        'Urob dnes jednu malú vec, ktorú odkladáš zo strachu. Len jednu, malú.',
+        'Urob drobnú láskavosť: úsmev, pochvala, podržané dvere.',
+        'Postav sa pred zrkadlo a povedz si: „Robím, čo môžem. A to stačí.“',
+        'Vypi pohár vody a na minútu sa poriadne pretiahni.',
+        'Napíš si večer jednu vetu o dnešnom dni. Len jednu.',
+        'Pusti si pesničku, ktorá ti robí dobre, a naozaj ju počúvaj.',
+        'Vyjdi na desať minút von – nech je počasie akékoľvek.',
+        'Uprac jedno malé miesto: zásuvku, stôl, poličku. Poriadok vonku upratuje aj vnútri.',
+        'Jednu dnešnú činnosť urob úplne pomaly a vedome, bez ponáhľania.',
+        'Poďakuj dnes niekomu za konkrétnu malú vec.',
+        'Daj si jedno jedlo bez mobilu a obrazoviek.',
+        'Napíš si tri veci, ktoré máš na sebe rád/rada. Nemusia byť veľké.',
+        'Zhlboka sa nadýchni a s výdychom uvoľni plecia. Trikrát.',
+        'Predstav si, kde chceš byť o rok. Jedna veta, jeden obraz. Odlož si ho v mysli.',
+        'Usmej sa na seba v zrkadle. Aj keď to je zvláštne – telo si to pamätá.',
+        'Objím niekoho blízkeho, alebo mu aspoň napíš, že ho máš rád/rada.',
+        'Dovoľ si pätnásť minút úplného ničnerobenia. Bez výčitiek.'
+    ];
+
+    /* Posledné okienko – Štedrý deň */
+    const CHRISTMAS_DAY = {
+        quote: 'Najväčší dar nenájdeš pod stromčekom. Je to človek, ktorým si sa stal, kým si sem došiel. Šťastné a pokojné Vianoce.',
+        affirmation: 'Prešiel/prešla som kus cesty. Dnes si dovolím pokoj.',
+        task: 'Dopraj si dnes chvíľu len pre seba – a ak môžeš, objím niekoho blízkeho.'
+    };
+
+    const STORAGE_KEY = 'adventny-kalendar-otvorene';
+    const now = () => new Date();
+    const previewMode = new URLSearchParams(location.search).get('nahlad') === '1';
+
+    const MONTHS = ['Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún',
+        'Júl', 'August', 'September', 'Október', 'November', 'December'];
+    const MONTHS_GENITIVE = ['januára', 'februára', 'marca', 'apríla', 'mája', 'júna',
+        'júla', 'augusta', 'septembra', 'októbra', 'novembra', 'decembra'];
+    function formatDate(d) { return `${d.getDate()}. ${MONTHS_GENITIVE[d.getMonth()]}`; }
+    function midnight(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+    /* Kalendár má pevný začiatok – minulé dni sa dajú otvárať spätne,
+       budúce zostávajú zamknuté. */
+    const startDate = new Date(2026, 7, 31); // 31. august 2026
+
+    /* Štedrý deň, ku ktorému sa počíta – tento rok, alebo budúci, ak už bol. */
+    function christmasEveAfter(d) {
+        const target = new Date(d.getFullYear(), 11, 24);
+        return d > target ? new Date(d.getFullYear() + 1, 11, 24) : target;
+    }
+    const christmasEve = christmasEveAfter(startDate);
+    const totalDays = Math.round((christmasEve - startDate) / 86400000) + 1;
+
+    /* Dátum daného okienka (1..totalDays). */
+    function doorDate(day) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + (day - 1));
+        return d;
+    }
+
+    /* Koľko okienok je už odomknutých? */
+    function unlockedUpTo() {
+        if (previewMode) return totalDays;
+        const elapsed = Math.floor((midnight(now()) - startDate) / 86400000);
+        return Math.max(1, Math.min(elapsed + 1, totalDays));
+    }
+
+    /* Obsah dňa – posledný deň je Štedrý, ostatné čerpajú zo zásob. */
+    function dayData(day) {
+        const isChristmas = doorDate(day).getMonth() === 11 && doorDate(day).getDate() === 24;
+        if (isChristmas) return CHRISTMAS_DAY;
+        return {
+            quote: QUOTES[(day - 1) % QUOTES.length],
+            affirmation: AFFIRMATIONS[(day - 1) % AFFIRMATIONS.length],
+            task: TASKS[(day - 1) % TASKS.length]
+        };
+    }
+
+    function loadOpened() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            const arr = raw ? JSON.parse(raw) : [];
+            return new Set(Array.isArray(arr) ? arr : []);
+        } catch (e) { return new Set(); }
+    }
+    function saveOpened(set) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...set])); } catch (e) {}
+    }
+
+    const opened = loadOpened();
+
+    /* ------- odpočet do Vianoc ------- */
+    const cdEls = {
+        days: document.getElementById('cd-days'),
+        hours: document.getElementById('cd-hours'),
+        mins: document.getElementById('cd-mins'),
+        secs: document.getElementById('cd-secs')
+    };
+    const cdMsg = document.getElementById('countdown-msg');
+    const cdWrap = document.getElementById('countdown');
+
+    function countdownTarget() {
+        const d = now();
+        const target = new Date(d.getFullYear(), 11, 24, 0, 0, 0);
+        // Od 24.12. do konca roka odpočet neukazujeme – sú Vianoce
+        if (d >= target && d <= new Date(d.getFullYear(), 11, 31, 23, 59, 59)) return null;
+        if (d > target) return new Date(d.getFullYear() + 1, 11, 24, 0, 0, 0);
+        return target;
+    }
+
+    function tick() {
+        const target = countdownTarget();
+        if (!target) {
+            cdWrap.style.display = 'none';
+            cdMsg.textContent = '✨ Vianoce sú tu. Nech je v tebe pokoj. ✨';
+            return;
+        }
+        const diff = target - now();
+        const s = Math.floor(diff / 1000);
+        cdEls.days.textContent = Math.floor(s / 86400);
+        cdEls.hours.textContent = String(Math.floor(s / 3600) % 24).padStart(2, '0');
+        cdEls.mins.textContent = String(Math.floor(s / 60) % 60).padStart(2, '0');
+        cdEls.secs.textContent = String(s % 60).padStart(2, '0');
+        cdMsg.textContent = 'do Štedrého dňa';
+    }
+    tick();
+    setInterval(tick, 1000);
+
+    /* ------- vykreslenie okienok po mesiacoch ------- */
+    const calendarEl = document.getElementById('calendar');
+    const unlocked = unlockedUpTo();
+    const todayDay = previewMode ? 0 : unlocked;
+
+    let currentMonthKey = '';
+    let currentGrid = null;
+
+    for (let day = 1; day <= totalDays; day++) {
+        const date = doorDate(day);
+        const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+        if (monthKey !== currentMonthKey) {
+            currentMonthKey = monthKey;
+            const section = document.createElement('div');
+            section.className = 'month';
+            const title = document.createElement('h2');
+            title.className = 'month-title';
+            title.textContent = `${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+            currentGrid = document.createElement('div');
+            currentGrid.className = 'month-grid';
+            section.appendChild(title);
+            section.appendChild(currentGrid);
+            calendarEl.appendChild(section);
+        }
+
+        const isChristmas = date.getMonth() === 11 && date.getDate() === 24;
+        const btn = document.createElement('button');
+        btn.className = 'door';
+        btn.type = 'button';
+        btn.dataset.day = day;
+        if (day > unlocked) btn.classList.add('locked');
+        if (opened.has(day)) btn.classList.add('opened');
+        if (day === todayDay) btn.classList.add('today');
+        if (isChristmas) btn.classList.add('christmas');
+        btn.setAttribute('aria-label',
+            day > unlocked
+                ? `Okienko ${formatDate(date)} – zatiaľ zamknuté`
+                : `Okienko ${formatDate(date)} – otvoriť citát`);
+        btn.innerHTML = `
+            <div class="door-inner">
+                <div class="door-face door-front">
+                    <span class="day-num">${date.getDate()}</span>
+                    <span class="day-star">${day > unlocked ? '' : (isChristmas ? '🎄' : '✦')}</span>
+                </div>
+                <div class="door-face door-back"><span class="heart">🕯️</span>${date.getDate()}.</div>
+            </div>`;
+        btn.addEventListener('click', () => onDoorClick(btn, day));
+        currentGrid.appendChild(btn);
+    }
+
+    function updateProgress() {
+        const note = document.getElementById('progress-note');
+        const extra = unlocked < totalDays ? ' · ďalšie okienko sa odomkne zajtra' : '';
+        note.textContent = `Otvorené okienka: ${opened.size} z ${totalDays}${extra}`;
+    }
+    updateProgress();
+
+    /* ------- otváranie okienok ------- */
+    const overlay = document.getElementById('overlay');
+    const toast = document.getElementById('toast');
+    let toastTimer = null;
+
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('visible'), 3200);
+    }
+
+    function onDoorClick(btn, day) {
+        if (day > unlocked) {
+            btn.classList.remove('shake');
+            void btn.offsetWidth; // reštart animácie
+            btn.classList.add('shake');
+            showToast(`Toto okienko sa otvorí ${formatDate(doorDate(day))}. Každý deň má svoj čas. 🕯️`);
+            return;
+        }
+        if (!btn.classList.contains('opened')) {
+            btn.classList.add('opened');
+            opened.add(day);
+            saveOpened(opened);
+            updateProgress();
+            // karta sa ukáže po dokončení otočenia dvierok
+            setTimeout(() => showCard(day), 500);
+        } else {
+            showCard(day);
+        }
+    }
+
+    function showCard(day) {
+        const data = dayData(day);
+        const remaining = totalDays - day;
+        document.getElementById('card-day').textContent = `${day}. deň cesty · ${formatDate(doorDate(day))}`;
+        document.getElementById('card-title').textContent =
+            remaining === 0 ? 'Štedrý deň 🎄'
+            : remaining === 1 ? 'Do Vianoc zostáva posledný deň'
+            : `Do Vianoc zostáva ${remaining} dní`;
+        document.getElementById('card-quote').textContent = data.quote;
+        document.getElementById('card-affirmation').textContent = data.affirmation;
+        document.getElementById('card-task').textContent = data.task;
+        overlay.classList.add('visible');
+    }
+
+    function hideCard() { overlay.classList.remove('visible'); }
+    document.getElementById('close-card').addEventListener('click', hideCard);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) hideCard(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideCard(); });
+
+    /* ------- sneženie ------- */
+    const canvas = document.getElementById('snow-canvas');
+    const ctx = canvas.getContext('2d');
+    let flakes = [];
+
+    function resizeSnow() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const count = Math.min(120, Math.floor(canvas.width / 12));
+        flakes = Array.from({ length: count }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            r: 1 + Math.random() * 2.5,
+            speed: 0.4 + Math.random() * 0.9,
+            drift: (Math.random() - 0.5) * 0.6,
+            phase: Math.random() * Math.PI * 2
+        }));
+    }
+    resizeSnow();
+    window.addEventListener('resize', resizeSnow);
+
+    function drawSnow(t) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(244, 247, 251, 0.75)';
+        for (const f of flakes) {
+            f.y += f.speed;
+            f.x += f.drift + Math.sin(t / 1500 + f.phase) * 0.3;
+            if (f.y > canvas.height + 5) { f.y = -5; f.x = Math.random() * canvas.width; }
+            if (f.x > canvas.width + 5) f.x = -5;
+            if (f.x < -5) f.x = canvas.width + 5;
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        requestAnimationFrame(drawSnow);
+    }
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        requestAnimationFrame(drawSnow);
+    }
+})();
+</script>
+</body>
+</html>
