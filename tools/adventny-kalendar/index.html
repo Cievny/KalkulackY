@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Adventný kalendár vnútornej sily | Cievny.sk</title>
-<meta name="description" content="Interaktívny odpočet do Vianoc – 24 okienok s motivačnými citátmi a malými výzvami pre ľudí, ktorí prechádzajú ťažkým obdobím a hľadajú cestu k svojmu vnútornému ja.">
+<title>Kalendár odpočtu do Vianoc | Cievny.sk</title>
+<meta name="description" content="Interaktívny odpočet do Vianoc – okienko na každý deň s motivačným citátom, afirmáciou a malou výzvou pre ľudí, ktorí prechádzajú ťažkým obdobím a hľadajú cestu k svojmu vnútornému ja.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
         --wine: #6A1B42;
         --green: #2E8339;
         --door-front: linear-gradient(145deg, #24436b, #16283f);
-        --radius: 14px;
+        --radius: 12px;
     }
 
     * { box-sizing: border-box; }
@@ -136,22 +136,41 @@
         z-index: 2;
     }
 
-    /* ------- mriežka okienok ------- */
+    /* ------- kalendár po mesiacoch ------- */
     .calendar {
         max-width: 900px;
-        margin: 2.5rem auto 3rem;
+        margin: 2.5rem auto 1rem;
         padding: 0 1.25rem;
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 0.9rem;
         position: relative;
         z-index: 2;
     }
-    @media (max-width: 760px) { .calendar { grid-template-columns: repeat(4, 1fr); } }
-    @media (max-width: 480px) { .calendar { grid-template-columns: repeat(3, 1fr); gap: 0.7rem; } }
+    .month { margin-bottom: 2.4rem; }
+    .month-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.6rem;
+        font-weight: 600;
+        color: var(--gold-soft);
+        margin: 0 0 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+    .month-title::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(to right, rgba(232, 185, 90, 0.45), transparent);
+    }
+    .month-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.7rem;
+    }
+    @media (max-width: 760px) { .month-grid { grid-template-columns: repeat(5, 1fr); } }
+    @media (max-width: 480px) { .month-grid { grid-template-columns: repeat(4, 1fr); gap: 0.55rem; } }
 
     .door {
-        aspect-ratio: 1 / 1.1;
+        aspect-ratio: 1 / 1.05;
         perspective: 700px;
         cursor: pointer;
         border: 0;
@@ -180,24 +199,24 @@
     .door-front {
         background: var(--door-front);
         border: 1px solid rgba(232, 185, 90, 0.35);
-        box-shadow: inset 0 0 0 4px rgba(232, 185, 90, 0.08), 0 4px 16px rgba(0, 0, 0, 0.3);
+        box-shadow: inset 0 0 0 3px rgba(232, 185, 90, 0.08), 0 4px 14px rgba(0, 0, 0, 0.3);
         transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
     .door:not(.locked):not(.opened):hover .door-front {
         transform: translateY(-3px);
         border-color: var(--gold);
-        box-shadow: inset 0 0 0 4px rgba(232, 185, 90, 0.15), 0 10px 26px rgba(0, 0, 0, 0.4);
+        box-shadow: inset 0 0 0 3px rgba(232, 185, 90, 0.15), 0 10px 24px rgba(0, 0, 0, 0.4);
     }
     .door-front .day-num {
         font-family: 'Cormorant Garamond', serif;
-        font-size: clamp(1.5rem, 4vw, 2.2rem);
+        font-size: clamp(1.2rem, 3.2vw, 1.8rem);
         font-weight: 700;
         color: var(--gold-soft);
         line-height: 1;
     }
     .door-front .day-star {
-        font-size: 0.75rem;
-        margin-top: 0.3rem;
+        font-size: 0.7rem;
+        margin-top: 0.25rem;
         color: rgba(232, 185, 90, 0.7);
     }
     .door-back {
@@ -207,15 +226,15 @@
         color: var(--wine);
         font-family: 'Cormorant Garamond', serif;
         font-weight: 700;
-        font-size: 1.1rem;
-        padding: 0.4rem;
+        font-size: 0.95rem;
+        padding: 0.3rem;
         text-align: center;
     }
-    .door-back .heart { font-size: 1.3rem; }
+    .door-back .heart { font-size: 1.1rem; }
 
     .door.locked { cursor: not-allowed; }
     .door.locked .door-front {
-        opacity: 0.55;
+        opacity: 0.5;
         filter: saturate(0.5);
     }
     .door.locked .day-star::before { content: "🔒"; }
@@ -224,8 +243,12 @@
         animation: pulse 2.2s ease-in-out infinite;
     }
     @keyframes pulse {
-        0%, 100% { box-shadow: inset 0 0 0 4px rgba(232, 185, 90, 0.15), 0 0 0 0 rgba(232, 185, 90, 0.45); }
-        50%      { box-shadow: inset 0 0 0 4px rgba(232, 185, 90, 0.2), 0 0 0 14px rgba(232, 185, 90, 0); }
+        0%, 100% { box-shadow: inset 0 0 0 3px rgba(232, 185, 90, 0.15), 0 0 0 0 rgba(232, 185, 90, 0.45); }
+        50%      { box-shadow: inset 0 0 0 3px rgba(232, 185, 90, 0.2), 0 0 0 12px rgba(232, 185, 90, 0); }
+    }
+    .door.christmas .door-front {
+        background: linear-gradient(145deg, #7c2450, #4a1230);
+        border-color: var(--gold);
     }
     .door.shake .door-inner { animation: shake 0.45s ease; }
     @keyframes shake {
@@ -359,7 +382,7 @@
         text-align: center;
         color: rgba(244, 247, 251, 0.55);
         font-size: 0.85rem;
-        margin: -1.5rem auto 2.5rem;
+        margin: 0 auto 2.5rem;
         position: relative;
         z-index: 2;
         padding: 0 1.25rem;
@@ -398,7 +421,7 @@
         <a href="../../index.html" class="brand">
             <span class="wine">cievny</span><span class="green">.sk</span>
         </a>
-        <div class="header-note">Adventný kalendár vnútornej sily</div>
+        <div class="header-note">Kalendár odpočtu do Vianoc</div>
     </div>
 </header>
 
@@ -407,9 +430,9 @@
 <main>
     <section class="hero">
         <h1>Cesta k svojmu vnútornému ja</h1>
-        <p class="sub">
-            Prechádzaš ťažkým obdobím? Tento kalendár je tichý spoločník na cestu do Vianoc.
-            Prvé okienko sa ti odomkne hneď dnes a každý ďalší deň jedno nové – citát,
+        <p class="sub" id="hero-sub">
+            Prechádzaš ťažkým obdobím? Tento kalendár je tichý spoločník na dlhú cestu do Vianoc.
+            Od dnešného dňa až po Štedrý deň sa každý deň otvorí jedno okienko – citát,
             myšlienka pre teba a jeden malý krôčik. Nie sú to veľké skoky. Sú to malé kroky domov, k sebe.
         </p>
     </section>
@@ -422,7 +445,7 @@
     </div>
     <div class="countdown-msg" id="countdown-msg"></div>
 
-    <section class="calendar" id="calendar" aria-label="Adventný kalendár – 24 okienok"></section>
+    <section class="calendar" id="calendar" aria-label="Kalendár odpočtu – okienko na každý deň do Vianoc"></section>
     <p class="progress-note" id="progress-note"></p>
 </main>
 
@@ -449,40 +472,236 @@
 (function () {
     'use strict';
 
-    /* 24 dní – citát, názov dňa, afirmácia a malá výzva.
-       Texty sú pôvodné, písané pre ľudí v ťažkom období. */
-    const DAYS = [
-        { title: 'Začiatok', quote: 'Aj najdlhšia cesta k sebe začína jediným krokom – tým, že sa dnes nevzdáš.', affirmation: 'Som tu. To, že som dnes vstal/a, je viac, než sa zdá.', task: 'Nájdi si dve minúty ticha. Len dýchaj a nikam sa neponáhľaj.' },
-        { title: 'Dovoliť si cítiť', quote: 'Sila nie je v tom, že nič necítiš. Sila je v tom, že cítiš všetko – a ideš ďalej.', affirmation: 'Moje pocity sú platné. Nemusím ich pred sebou skrývať.', task: 'Pomenuj si nahlas alebo na papier jeden pocit, ktorý dnes nosíš.' },
-        { title: 'Malé víťazstvá', quote: 'Nikto nevidí tvoje tiché víťazstvá. Ale ty o nich vieš – a to stačí.', affirmation: 'Každý malý krok sa počíta, aj keď ho nikto netlieska.', task: 'Zapíš si tri drobnosti, ktoré sa ti dnes podarili. Aj obyčajné.' },
-        { title: 'Súcit so sebou', quote: 'Hovor so sebou tak, ako by si hovoril s priateľom, ktorý má za sebou ťažký rok.', affirmation: 'Zaslúžim si rovnakú láskavosť, akú dávam druhým.', task: 'Keď sa dnes pristihneš pri tvrdej sebakritike, skús vetu preformulovať láskavejšie.' },
-        { title: 'Korene', quote: 'Strom v búrke neprežije vďaka konárom, ale vďaka koreňom, ktoré nevidno.', affirmation: 'Vo mne sú korene, ktoré ma držia, aj keď to navonok nevyzerá.', task: 'Spomeň si na jednu ťažkú chvíľu, ktorú si už zvládol/zvládla. Bola v tebe sila – stále tam je.' },
-        { title: 'Dýchať', quote: 'Keď nevieš, čo ďalej, nemusíš vedieť. Stačí sa nadýchnuť. Odpoveď príde.', affirmation: 'Nemusím mať dnes všetky odpovede.', task: 'Vyskúšaj: nádych na 4 doby, výdych na 6 dôb. Päťkrát za sebou.' },
-        { title: 'Hranice', quote: 'Povedať „nie“ svetu je niekedy jediný spôsob, ako povedať „áno“ sebe.', affirmation: 'Mám právo chrániť si svoju energiu.', task: 'Odlož dnes jednu povinnosť, ktorá nie je nutná. Svet sa nezrúti.' },
-        { title: 'Ticho', quote: 'V hluku sveta sa ľahko stratíš. V tichu sa nájdeš.', affirmation: 'Ticho nie je prázdnota. Je to priestor, kde sa stretávam sám/sama so sebou.', task: 'Vypni na desať minút všetky obrazovky. Len buď.' },
-        { title: 'Vďačnosť', quote: 'Vďačnosť nezmení to, čo sa stalo. Zmení to, ako v tom dokážeš stáť.', affirmation: 'Aj v ťažkom období viem nájsť malé svetlá.', task: 'Nájdi jednu vec, za ktorú si dnes napriek všetkému vďačný/vďačná.' },
-        { title: 'Púšťanie', quote: 'Niektoré veci nenesieš preto, že musíš, ale preto, že si zabudol, že ich smieš položiť.', affirmation: 'Smiem odložiť to, čo už nie je moje niesť.', task: 'Napíš na papier jednu starosť a odlož ho do zásuvky. Dnes ju nesie papier.' },
-        { title: 'Telo', quote: 'Tvoje telo ťa nesie celý život. Aj dnes si zaslúži jedno tiché ďakujem.', affirmation: 'Moje telo je môj domov, nie môj nepriateľ.', task: 'Urob niečo dobré pre telo: krátka prechádzka, teplý čaj, poriadny strečing.' },
-        { title: 'Polovica cesty', quote: 'Pozri sa späť – nie preto, aby si sa vrátil, ale aby si videl, kam až si došiel.', affirmation: 'Som ďalej, než som bol/a. Aj keď to nie je vždy vidieť.', task: 'Spomeň si, kde si bol/a pred rokom. Nájdi jednu vec, ktorá je dnes lepšia alebo ktorú si sa naučil/a.' },
-        { title: 'Nedokonalosť', quote: 'Trhliny nie sú miesta, kde si sa rozbil. Sú to miesta, kadiaľ do teba vchádza svetlo.', affirmation: 'Nemusím byť dokonalý/á, aby som bol/a hodnotný/á.', task: 'Odpusť si dnes jednu vec, ktorú si dlho vyčítaš. Aspoň na dnešok ju polož.' },
-        { title: 'Pomoc', quote: 'Požiadať o pomoc nie je slabosť. Je to jedna z najodvážnejších viet na svete.', affirmation: 'Nemusím všetko zvládnuť sám/sama.', task: 'Ozvi sa človeku, ktorému dôveruješ. Stačí krátka správa: „Myslím na teba.“' },
-        { title: 'Prítomnosť', quote: 'Minulosť už nezmeníš a budúcnosť ešte nie je. Jediné miesto, kde žiješ, je teraz.', affirmation: 'Práve teraz, v tejto chvíli, som v poriadku.', task: 'Vnímaj päť vecí, ktoré práve vidíš, štyri, ktoré počuješ, tri, ktorých sa dotýkaš.' },
-        { title: 'Vlastné tempo', quote: 'Nie si pozadu. Si presne tam, kde má byť človek, ktorý prežil to, čo ty.', affirmation: 'Moje tempo je moje. Neporovnávam svoju cestu s cudzou.', task: 'Všimni si dnes jedno porovnávanie sa s druhými – a vedome ho pusť.' },
-        { title: 'Nádej', quote: 'Nádej nie je istota, že všetko dobre dopadne. Je to sila ísť ďalej, aj keď istota nie je.', affirmation: 'Nosím v sebe nádej, aj keď je niekedy len malý plamienok.', task: 'Napíš si jednu vec, na ktorú sa – hoci len trochu – tešíš.' },
-        { title: 'Odpočinok', quote: 'Aj zem cez zimu odpočíva, aby mohla na jar rozkvitnúť. Odpočinok nie je lenivosť, je to príprava.', affirmation: 'Odpočinok si nemusím zaslúžiť. Je to moja potreba, nie odmena.', task: 'Choď dnes spať o pol hodiny skôr, alebo si dopraj chvíľu bez plánu.' },
-        { title: 'Vnútorný hlas', quote: 'Hlboko pod hlukom strachu je v tebe tichý hlas, ktorý vie, kadiaľ ďalej. Nauč sa ho počúvať.', affirmation: 'Dôverujem svojej intuícii. Poznám sa lepšie, než si myslím.', task: 'Polož si otázku: „Čo teraz naozaj potrebujem?“ – a chvíľu počkaj na odpoveď.' },
-        { title: 'Odvaha', quote: 'Odvaha nie vždy reve. Niekedy je to tichý hlas na konci dňa: „Zajtra to skúsim znova.“', affirmation: 'Som odvážny/a už tým, že to nevzdávam.', task: 'Urob dnes jednu malú vec, ktorú odkladáš zo strachu. Len jednu, malú.' },
-        { title: 'Svetlo pre druhých', quote: 'Niekedy nájdeš svoje svetlo tak, že ho zapáliš niekomu inému.', affirmation: 'Aj s prázdnymi rukami mám čo dať – svoju prítomnosť.', task: 'Urob dnes drobnú láskavosť: úsmev, pochvala, podržané dvere.' },
-        { title: 'Prijatie', quote: 'Pokoj nezačína tam, kde sa všetko vyrieši. Začína tam, kde prestaneš bojovať sám so sebou.', affirmation: 'Prijímam seba aj so všetkým, čo práve prežívam.', task: 'Postav sa pred zrkadlo a povedz si: „Robím, čo môžem. A to stačí.“' },
-        { title: 'Domov v sebe', quote: 'Celý čas si hľadal cestu k sebe. A ona viedla tadiaľto – cez každý deň, keď si to nevzdal.', affirmation: 'Môj domov nie je miesto. Je to pokoj, ktorý si budujem v sebe.', task: 'Prejdi si v mysli tieto adventné dni. Ktorá myšlienka ti najviac pomohla? Vezmi si ju so sebou.' },
-        { title: 'Cieľ cesty', quote: 'Najväčší dar nenájdeš zabalený. Je to človek, ktorým si sa stal, kým si sem došiel.', affirmation: 'Prešiel/prešla som kus cesty. Dnes si dovolím pokoj.', task: 'Dopraj si dnes chvíľu len pre seba – a ak môžeš, objím niekoho blízkeho.' }
+    /* Zásoba citátov na celú cestu – tematické okruhy nasledujú za sebou.
+       Texty sú pôvodné alebo voľné parafrázy ľudových múdrostí, písané
+       pre ľudí v ťažkom období. */
+    const QUOTES = [
+        // Začiatok cesty
+        'Aj najdlhšia cesta k sebe začína jediným krokom – tým, že sa dnes nevzdáš.',
+        'Nemusíš vidieť celú cestu. Stačí vidieť ďalší krok.',
+        'To, že ideš pomaly, neznamená, že nejdeš. Znamená to, že nesieš veľa.',
+        'Každé ráno, keď vstaneš napriek všetkému, je tichý dôkaz tvojej sily.',
+        'Nezačínaš od nuly. Začínaš zo skúsenosti všetkého, čo si už prežil.',
+        'Cesta k sebe nie je útek zo sveta. Je to návrat domov.',
+        'Nie je hanba byť na začiatku. Škoda by bolo nevykročiť.',
+        'Veľké zmeny nerobia veľké dni. Robia ich obyčajné dni, v ktorých to nevzdáš.',
+        'Dnes nemusíš zvládnuť všetko. Dnes stačí zvládnuť dnešok.',
+        'Sila nie je to, čo cítiš. Sila je to, čo robíš, aj keď ju necítiš.',
+        // Pocity
+        'Sila nie je v tom, že nič necítiš. Sila je v tom, že cítiš všetko – a ideš ďalej.',
+        'Slzy nie sú slabosť. Sú to slová, na ktoré srdce nenašlo hlas.',
+        'Pocit nie je rozkaz. Smieš ho cítiť a nekonať podľa neho.',
+        'Aj búrka v tebe je len počasie. A počasie sa vždy zmení.',
+        'Smútok, ktorý si dovolíš, bolí menej než ten, ktorý zamykáš.',
+        'Nemusíš byť stále v poriadku. Musíš byť len úprimný k tomu, ako ti je.',
+        'Strach je len strážca brány. Za ňou býva to, na čom ti najviac záleží.',
+        'Hnev býva smútok, ktorý nedostal priestor. Daj mu meno a stíchne.',
+        'To, čo cítiš, ťa nedefinuje. Definuje ťa to, čo s tým urobíš.',
+        'Aj ťažké pocity sú návšteva. Prídu, pobudnú a odídu.',
+        // Súcit so sebou
+        'Hovor so sebou tak, ako by si hovoril s priateľom, ktorý má za sebou ťažký rok.',
+        'Nie si problém, ktorý treba vyriešiť. Si človek, ktorého treba vypočuť.',
+        'Odpustiť si neznamená zabudnúť. Znamená to prestať si sypať soľ do rany.',
+        'Aj keby ťa dnes nikto nepochválil, môžeš to urobiť ty. Počíta sa to rovnako.',
+        'Buď k sebe jemný. Robíš najlepšie, čo v tejto chvíli vieš.',
+        'Tvoja hodnota sa nemeria výkonom. Si vzácny aj v dňoch, keď len dýchaš.',
+        'Kritik v tvojej hlave nemá vždy pravdu. Je len hlasný.',
+        'Zaobchádzaj so sebou ako s niekým, koho máš na starosti. Lebo presne to si.',
+        'Chyba nie je dôkaz, že si zlý. Je to dôkaz, že si to skúsil.',
+        'Láskavosť, ktorú rozdávaš druhým, patrí aj tebe.',
+        // Korene a sila
+        'Strom v búrke neprežije vďaka konárom, ale vďaka koreňom, ktoré nevidno.',
+        'Už si prežil dni, o ktorých si si myslel, že sa prežiť nedajú. Nezabúdaj na to.',
+        'Zlomené miesto po zahojení býva najsilnejšie.',
+        'Tvoja sila nie je hlasná. Je to tichá vytrvalosť, s ktorou každý deň začínaš znova.',
+        'Diamant je len uhlík, ktorý vydržal tlak.',
+        'Nepodceňuj sa. Nesieš veci, o ktorých svet nemá ani tušenia.',
+        'Korene rastú v tme. Aj tvoja sila rastie v období, ktoré nevidno.',
+        'To, čo ťa dnes ohýba, ťa učí, ako sa nezlomiť.',
+        'Vydržať neznamená mlčať a trpieť. Znamená to hľadať cestu ďalej.',
+        'Si ako rieka – prekážka ťa nezastaví, len ti zmení tvar cesty.',
+        // Hranice a odpočinok
+        'Povedať „nie“ svetu je niekedy jediný spôsob, ako povedať „áno“ sebe.',
+        'Odpočinok nie je odmena za dokončenú prácu. Je to podmienka, aby si vládal žiť.',
+        'Aj zem cez zimu odpočíva, aby mohla na jar rozkvitnúť.',
+        'Nemusíš horieť, aby si svietil.',
+        'Hranice nie sú múry. Sú to dvere, pri ktorých rozhoduješ ty.',
+        'Nie každý telefonát treba zdvihnúť a nie každú bitku vybojovať.',
+        'Tvoja energia je vzácna. Nemusí ju dostať každý, kto si ju pýta.',
+        'Prestávka nie je prehra. Aj hudba potrebuje pauzy, aby bola hudbou.',
+        'Keď si unavený, nauč sa odpočívať, nie vzdávať sa.',
+        'Svet počká. Tvoje zdravie nie.',
+        // Ľudia a pomoc
+        'Požiadať o pomoc nie je slabosť. Je to jedna z najodvážnejších viet na svete.',
+        'Nemusíš niesť všetko sám. Aj most má viac pilierov.',
+        'Správni ľudia ťa nebudú milovať menej, keď uvidia, že nevládzeš.',
+        'Zdieľaná bolesť je polovičná. Zdieľaná radosť dvojnásobná.',
+        'Niekedy je najväčšia pomoc len človek, ktorý sedí vedľa teba a počúva.',
+        'Obklop sa ľuďmi, pri ktorých nemusíš nič predstierať.',
+        'Aj ty si pre niekoho dôvod, prečo to nevzdal.',
+        'Láska nezačína veľkými slovami, ale malou prítomnosťou.',
+        'Nemusíš mať silu pre všetkých. Stačí, keď ju máš pre seba a najbližších.',
+        'Osamelosť sa začína liečiť úprimnou vetou: „Nie je mi dobre.“',
+        // Nádej a svetlo
+        'Nádej nie je istota, že všetko dobre dopadne. Je to sila ísť ďalej, aj keď istota nie je.',
+        'Aj najtmavšia noc sa raz skončí a slnko vyjde.',
+        'Sviečka nestráca svoje svetlo tým, že zapáli inú.',
+        'V každej tme je aspoň jedna hviezda. Hľadaj ju, kým ju nenájdeš.',
+        'Zajtrajšok je nepopísaný list. Nikto ho nenapíše za teba.',
+        'Nádej spieva aj v tme – lebo verí ránu, ktoré ešte nevidno.',
+        'Malý plamienok stačí, aby tma nebola úplná.',
+        'Svetlo na konci tunela niekedy nevidno. Ale tunel má koniec aj tak.',
+        'Zima vždy odovzdá vládu jari. Aj tá tvoja.',
+        'Niekedy nájdeš svoje svetlo tak, že ho zapáliš niekomu inému.',
+        // Prijatie a púšťanie
+        'Pokoj nezačína tam, kde sa všetko vyrieši. Začína tam, kde prestaneš bojovať sám so sebou.',
+        'Niektoré veci nenesieš preto, že musíš, ale preto, že si zabudol, že ich smieš položiť.',
+        'Púšťanie nie je strata. Je to uvoľnenie miesta pre nové.',
+        'Nemôžeš zmeniť vietor, ale môžeš nastaviť plachty.',
+        'Prijatie neznamená súhlas. Znamená to prestať míňať silu na boj s tým, čo už je.',
+        'To, čo bolo, ťa formovalo. Ale nemusí ťa to riadiť.',
+        'Odpusť – nie preto, že si to zaslúžia, ale preto, že ty si zaslúžiš pokoj.',
+        'Zatvorené dvere nie sú koniec chodby.',
+        'Minulosť je učiteľ, nie väzenie.',
+        'Strom na jeseň púšťa listy bez smútku. Vie, že prídu nové.',
+        // Prítomnosť a ticho
+        'Minulosť už nezmeníš a budúcnosť ešte nie je. Jediné miesto, kde žiješ, je teraz.',
+        'V hluku sveta sa ľahko stratíš. V tichu sa nájdeš.',
+        'Ticho nie je prázdne. Je plné odpovedí, ktoré v hluku nepočuť.',
+        'Prítomná chvíľa je jediné miesto, kde ťa starosti nemôžu predbehnúť.',
+        'Dýchaj. Nič viac teraz nemusíš.',
+        'Šálka čaju, teplé svetlo, pokojný nádych – aj z malých vecí sa skladá pevná zem pod nohami.',
+        'Myšlienky sú ako oblaky. Ty si obloha, po ktorej plávajú.',
+        'Keď je toho veľa, vráť sa k jednoduchému: kde som, čo počujem, ako dýcham.',
+        'Pokoj nie je miesto bez búrky. Je to pevný bod v nej.',
+        'Hlboko pod hlukom strachu je v tebe tichý hlas, ktorý vie, kadiaľ ďalej.',
+        // Odvaha a rast
+        'Odvaha nie je vždy hlasná. Niekedy je to šepot: „Zajtra to skúsim znova.“',
+        'Rast bolí. Ale stagnácia bolí dlhšie.',
+        'Neboj sa pomalého napredovania. Boj sa státia na mieste.',
+        'Motýľ by nikdy nelietal, keby sa kukla nerozpadla.',
+        'Každý majster bol raz začiatočník. Každý silný bol raz na dne.',
+        'Nezáleží, koľkokrát spadneš. Záleží, že sa o jeden raz viac postavíš.',
+        'Strach sa zmenšuje zakaždým, keď ho prejdeš.',
+        'Nové ja sa rodí vždy o krok za hranicou starého.',
+        'Nie si tým, čo sa ti stalo. Si tým, čím sa rozhodneš stať.',
+        'Padnúť je ľudské. Vstať je hrdinské.',
+        // Telo a vďačnosť
+        'Tvoje telo ťa nesie celý život. Aj dnes si zaslúži jedno tiché ďakujem.',
+        'Vďačnosť nezmení to, čo sa stalo. Zmení to, ako v tom dokážeš stáť.',
+        'Kto hľadá dôvody na vďačnosť, nachádza ich. Kto hľadá dôvody na trápenie, tiež.',
+        'Prechádzka nevyrieši všetko. Ale máloktorý problém vyzerá po nej rovnako ťažký.',
+        'Spánok je najlacnejší liek – a najčastejšie zanedbávaný.',
+        'Malé rituály – teplý čaj, krátke pretiahnutie, pohľad z okna – sú kotvy v rozbúrených dňoch.',
+        'Buď vďačný za to, čo máš, a pracuj na tom, čo chceš.',
+        'Telo šepká skôr, než začne kričať. Počúvaj šepot.',
+        'Nie každý deň je dobrý, ale v každom dni sa dá nájsť niečo dobré.',
+        'Starostlivosť o seba nie je sebectvo. Z prázdneho džbánu nenaleješ.',
+        // Cesta domov
+        'Nie si pozadu. Si presne tam, kde má byť človek, ktorý prežil to, čo ty.',
+        'Trhliny nie sú miesta, kde si sa rozbil. Sú to miesta, kadiaľ do teba vchádza svetlo.',
+        'Neporovnávaj svoju tretiu kapitolu s cudzou dvadsiatou.',
+        'Šťastie nie je cieľ na konci cesty. Je to spôsob, akým kráčaš.',
+        'Tvoj domov nie je miesto. Je to pokoj, ktorý si buduješ v sebe.',
+        'Celý čas hľadáš cestu k sebe. A ona vedie tadiaľto – cez každý deň, keď to nevzdáš.',
+        'Jedného dňa budeš rozprávať svoj príbeh a niekomu pomôže prežiť ten jeho.',
+        'More je z kvapiek. Tvoja cesta z dní. Dnešok je jedna z nich.',
+        'Najkrajšie na návrate k sebe je, že dvere boli celý čas otvorené.',
+        'Vianoce sa blížia. A s nimi aj človek, ktorým sa každým dňom stávaš.'
     ];
+
+    const AFFIRMATIONS = [
+        'Som tu. To, že som dnes vstal/a, je viac, než sa zdá.',
+        'Moje pocity sú platné. Nemusím ich pred sebou skrývať.',
+        'Každý malý krok sa počíta, aj keď ho nikto netlieska.',
+        'Zaslúžim si rovnakú láskavosť, akú dávam druhým.',
+        'Vo mne sú korene, ktoré ma držia, aj keď to navonok nevyzerá.',
+        'Nemusím mať dnes všetky odpovede.',
+        'Mám právo chrániť si svoju energiu.',
+        'Ticho nie je prázdnota. Je to priestor, kde sa stretávam so sebou.',
+        'Aj v ťažkom období viem nájsť malé svetlá.',
+        'Smiem odložiť to, čo už nie je moje niesť.',
+        'Moje telo je môj domov, nie môj nepriateľ.',
+        'Som ďalej, než som bol/a. Aj keď to nie je vždy vidieť.',
+        'Nemusím byť dokonalý/á, aby som bol/a hodnotný/á.',
+        'Nemusím všetko zvládnuť sám/sama.',
+        'Práve teraz, v tejto chvíli, som v poriadku.',
+        'Moje tempo je moje. Neporovnávam svoju cestu s cudzou.',
+        'Nosím v sebe nádej, aj keď je niekedy len malý plamienok.',
+        'Odpočinok si nemusím zaslúžiť. Je to moja potreba, nie odmena.',
+        'Dôverujem svojej intuícii. Poznám sa lepšie, než si myslím.',
+        'Som odvážny/a už tým, že to nevzdávam.',
+        'Aj s prázdnymi rukami mám čo dať – svoju prítomnosť.',
+        'Prijímam seba aj so všetkým, čo práve prežívam.',
+        'Môj domov nie je miesto. Je to pokoj, ktorý si budujem v sebe.',
+        'Robím, čo môžem. A to stačí.',
+        'Dnes si dovolím byť len človekom, nie strojom.',
+        'To, čo cítim, prejde. Ja zostanem.',
+        'Mám za sebou ťažšie dni – a prežil/a som ich.',
+        'Dnes sa rozhodujem pre seba.',
+        'Som viac než moje najhoršie dni.',
+        'Každý nádych je nový začiatok.',
+        'Nemusím sa páčiť všetkým, aby som mal/a hodnotu.',
+        'Dovolím si radosť aj uprostred starostí.',
+        'Moja citlivosť je dar, nie chyba.',
+        'Krok za krokom sa vraciam k sebe.',
+        'To, že prosím o pomoc, znamená, že bojujem.',
+        'Dnešok mi stačí. Zajtrajšok počká.'
+    ];
+
+    const TASKS = [
+        'Nájdi si dve minúty ticha. Len dýchaj a nikam sa neponáhľaj.',
+        'Pomenuj si nahlas alebo na papier jeden pocit, ktorý dnes nosíš.',
+        'Zapíš si tri drobnosti, ktoré sa ti dnes podarili. Aj obyčajné.',
+        'Keď sa pristihneš pri tvrdej sebakritike, skús vetu preformulovať láskavejšie.',
+        'Spomeň si na jednu ťažkú chvíľu, ktorú si už zvládol/zvládla. Tá sila je stále v tebe.',
+        'Vyskúšaj: nádych na 4 doby, výdych na 6 dôb. Päťkrát za sebou.',
+        'Odlož dnes jednu povinnosť, ktorá nie je nutná. Svet sa nezrúti.',
+        'Vypni na desať minút všetky obrazovky. Len buď.',
+        'Nájdi jednu vec, za ktorú si dnes napriek všetkému vďačný/vďačná.',
+        'Napíš na papier jednu starosť a odlož ho do zásuvky. Dnes ju nesie papier.',
+        'Urob niečo dobré pre telo: krátka prechádzka, teplý čaj, poriadny strečing.',
+        'Nájdi jednu vec, ktorá je dnes lepšia než pred rokom – alebo ktorú si sa odvtedy naučil/a.',
+        'Odpusť si dnes jednu vec, ktorú si dlho vyčítaš. Aspoň na dnešok ju polož.',
+        'Ozvi sa človeku, ktorému dôveruješ. Stačí krátka správa: „Myslím na teba.“',
+        'Vnímaj päť vecí, ktoré vidíš, štyri, ktoré počuješ, tri, ktorých sa dotýkaš.',
+        'Všimni si dnes jedno porovnávanie sa s druhými – a vedome ho pusť.',
+        'Napíš si jednu vec, na ktorú sa – hoci len trochu – tešíš.',
+        'Choď dnes spať o pol hodiny skôr, alebo si dopraj chvíľu bez plánu.',
+        'Polož si otázku: „Čo teraz naozaj potrebujem?“ – a chvíľu počkaj na odpoveď.',
+        'Urob dnes jednu malú vec, ktorú odkladáš zo strachu. Len jednu, malú.',
+        'Urob drobnú láskavosť: úsmev, pochvala, podržané dvere.',
+        'Postav sa pred zrkadlo a povedz si: „Robím, čo môžem. A to stačí.“',
+        'Vypi pohár vody a na minútu sa poriadne pretiahni.',
+        'Napíš si večer jednu vetu o dnešnom dni. Len jednu.',
+        'Pusti si pesničku, ktorá ti robí dobre, a naozaj ju počúvaj.',
+        'Vyjdi na desať minút von – nech je počasie akékoľvek.',
+        'Uprac jedno malé miesto: zásuvku, stôl, poličku. Poriadok vonku upratuje aj vnútri.',
+        'Jednu dnešnú činnosť urob úplne pomaly a vedome, bez ponáhľania.',
+        'Poďakuj dnes niekomu za konkrétnu malú vec.',
+        'Daj si jedno jedlo bez mobilu a obrazoviek.',
+        'Napíš si tri veci, ktoré máš na sebe rád/rada. Nemusia byť veľké.',
+        'Zhlboka sa nadýchni a s výdychom uvoľni plecia. Trikrát.',
+        'Predstav si, kde chceš byť o rok. Jedna veta, jeden obraz. Odlož si ho v mysli.',
+        'Usmej sa na seba v zrkadle. Aj keď to je zvláštne – telo si to pamätá.',
+        'Objím niekoho blízkeho, alebo mu aspoň napíš, že ho máš rád/rada.',
+        'Dovoľ si pätnásť minút úplného ničnerobenia. Bez výčitiek.'
+    ];
+
+    /* Posledné okienko – Štedrý deň */
+    const CHRISTMAS_DAY = {
+        quote: 'Najväčší dar nenájdeš pod stromčekom. Je to človek, ktorým si sa stal, kým si sem došiel. Šťastné a pokojné Vianoce.',
+        affirmation: 'Prešiel/prešla som kus cesty. Dnes si dovolím pokoj.',
+        task: 'Dopraj si dnes chvíľu len pre seba – a ak môžeš, objím niekoho blízkeho.'
+    };
 
     const STORAGE_KEY = 'adventny-kalendar-otvorene';
     const START_KEY = 'adventny-kalendar-zaciatok';
     const now = () => new Date();
     const previewMode = new URLSearchParams(location.search).get('nahlad') === '1';
 
+    const MONTHS = ['Január', 'Február', 'Marec', 'Apríl', 'Máj', 'Jún',
+        'Júl', 'August', 'September', 'Október', 'November', 'December'];
     const MONTHS_GENITIVE = ['januára', 'februára', 'marca', 'apríla', 'mája', 'júna',
         'júla', 'augusta', 'septembra', 'októbra', 'novembra', 'decembra'];
     function formatDate(d) { return `${d.getDate()}. ${MONTHS_GENITIVE[d.getMonth()]}`; }
@@ -503,18 +722,37 @@
     }
     const startDate = loadStartDate();
 
-    /* Dátum, kedy sa odomkne dané okienko (1–24). */
-    function unlockDate(day) {
+    /* Štedrý deň, ku ktorému sa počíta – tento rok, alebo budúci, ak už bol. */
+    function christmasEveAfter(d) {
+        const target = new Date(d.getFullYear(), 11, 24);
+        return d > target ? new Date(d.getFullYear() + 1, 11, 24) : target;
+    }
+    const christmasEve = christmasEveAfter(startDate);
+    const totalDays = Math.round((christmasEve - startDate) / 86400000) + 1;
+
+    /* Dátum daného okienka (1..totalDays). */
+    function doorDate(day) {
         const d = new Date(startDate);
         d.setDate(d.getDate() + (day - 1));
         return d;
     }
 
-    /* Ktorý deň (1–24) je už odomknutý? */
+    /* Koľko okienok je už odomknutých? */
     function unlockedUpTo() {
-        if (previewMode) return 24;
+        if (previewMode) return totalDays;
         const elapsed = Math.floor((midnight(now()) - startDate) / 86400000);
-        return Math.max(1, Math.min(elapsed + 1, 24));
+        return Math.max(1, Math.min(elapsed + 1, totalDays));
+    }
+
+    /* Obsah dňa – posledný deň je Štedrý, ostatné čerpajú zo zásob. */
+    function dayData(day) {
+        const isChristmas = doorDate(day).getMonth() === 11 && doorDate(day).getDate() === 24;
+        if (isChristmas) return CHRISTMAS_DAY;
+        return {
+            quote: QUOTES[(day - 1) % QUOTES.length],
+            affirmation: AFFIRMATIONS[(day - 1) % AFFIRMATIONS.length],
+            task: TASKS[(day - 1) % TASKS.length]
+        };
     }
 
     function loadOpened() {
@@ -540,17 +778,17 @@
     const cdMsg = document.getElementById('countdown-msg');
     const cdWrap = document.getElementById('countdown');
 
-    function christmasTarget() {
+    function countdownTarget() {
         const d = now();
-        let target = new Date(d.getFullYear(), 11, 24, 0, 0, 0);
+        const target = new Date(d.getFullYear(), 11, 24, 0, 0, 0);
         // Od 24.12. do konca roka odpočet neukazujeme – sú Vianoce
         if (d >= target && d <= new Date(d.getFullYear(), 11, 31, 23, 59, 59)) return null;
-        if (d > target) target = new Date(d.getFullYear() + 1, 11, 24, 0, 0, 0);
+        if (d > target) return new Date(d.getFullYear() + 1, 11, 24, 0, 0, 0);
         return target;
     }
 
     function tick() {
-        const target = christmasTarget();
+        const target = countdownTarget();
         if (!target) {
             cdWrap.style.display = 'none';
             cdMsg.textContent = '✨ Vianoce sú tu. Nech je v tebe pokoj. ✨';
@@ -567,38 +805,60 @@
     tick();
     setInterval(tick, 1000);
 
-    /* ------- vykreslenie okienok ------- */
+    /* ------- vykreslenie okienok po mesiacoch ------- */
     const calendarEl = document.getElementById('calendar');
     const unlocked = unlockedUpTo();
     const todayDay = previewMode ? 0 : unlocked;
 
-    DAYS.forEach((_, i) => {
-        const day = i + 1;
+    let currentMonthKey = '';
+    let currentGrid = null;
+
+    for (let day = 1; day <= totalDays; day++) {
+        const date = doorDate(day);
+        const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+        if (monthKey !== currentMonthKey) {
+            currentMonthKey = monthKey;
+            const section = document.createElement('div');
+            section.className = 'month';
+            const title = document.createElement('h2');
+            title.className = 'month-title';
+            title.textContent = `${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+            currentGrid = document.createElement('div');
+            currentGrid.className = 'month-grid';
+            section.appendChild(title);
+            section.appendChild(currentGrid);
+            calendarEl.appendChild(section);
+        }
+
+        const isChristmas = date.getMonth() === 11 && date.getDate() === 24;
         const btn = document.createElement('button');
         btn.className = 'door';
         btn.type = 'button';
         btn.dataset.day = day;
         if (day > unlocked) btn.classList.add('locked');
         if (opened.has(day)) btn.classList.add('opened');
-        if (day === todayDay && !previewMode) btn.classList.add('today');
+        if (day === todayDay) btn.classList.add('today');
+        if (isChristmas) btn.classList.add('christmas');
         btn.setAttribute('aria-label',
-            day > unlocked ? `Okienko ${day} – zatiaľ zamknuté` : `Okienko ${day} – otvoriť citát`);
+            day > unlocked
+                ? `Okienko ${formatDate(date)} – zatiaľ zamknuté`
+                : `Okienko ${formatDate(date)} – otvoriť citát`);
         btn.innerHTML = `
             <div class="door-inner">
                 <div class="door-face door-front">
-                    <span class="day-num">${day}</span>
-                    <span class="day-star">${day > unlocked ? '' : '✦'}</span>
+                    <span class="day-num">${date.getDate()}</span>
+                    <span class="day-star">${day > unlocked ? '' : (isChristmas ? '🎄' : '✦')}</span>
                 </div>
-                <div class="door-face door-back"><span class="heart">🕯️</span>${day}. deň</div>
+                <div class="door-face door-back"><span class="heart">🕯️</span>${date.getDate()}.</div>
             </div>`;
         btn.addEventListener('click', () => onDoorClick(btn, day));
-        calendarEl.appendChild(btn);
-    });
+        currentGrid.appendChild(btn);
+    }
 
     function updateProgress() {
         const note = document.getElementById('progress-note');
-        const extra = unlocked < 24 ? ' · ďalšie okienko sa odomkne zajtra' : '';
-        note.textContent = `Otvorené okienka: ${opened.size} z 24${extra}`;
+        const extra = unlocked < totalDays ? ' · ďalšie okienko sa odomkne zajtra' : '';
+        note.textContent = `Otvorené okienka: ${opened.size} z ${totalDays}${extra}`;
     }
     updateProgress();
 
@@ -619,7 +879,7 @@
             btn.classList.remove('shake');
             void btn.offsetWidth; // reštart animácie
             btn.classList.add('shake');
-            showToast(`Toto okienko sa otvorí ${formatDate(unlockDate(day))}. Každý deň má svoj čas. 🕯️`);
+            showToast(`Toto okienko sa otvorí ${formatDate(doorDate(day))}. Každý deň má svoj čas. 🕯️`);
             return;
         }
         if (!btn.classList.contains('opened')) {
@@ -635,9 +895,13 @@
     }
 
     function showCard(day) {
-        const data = DAYS[day - 1];
-        document.getElementById('card-day').textContent = `${day}. deň · ${formatDate(unlockDate(day))}`;
-        document.getElementById('card-title').textContent = data.title;
+        const data = dayData(day);
+        const remaining = totalDays - day;
+        document.getElementById('card-day').textContent = `${day}. deň cesty · ${formatDate(doorDate(day))}`;
+        document.getElementById('card-title').textContent =
+            remaining === 0 ? 'Štedrý deň 🎄'
+            : remaining === 1 ? 'Do Vianoc zostáva posledný deň'
+            : `Do Vianoc zostáva ${remaining} dní`;
         document.getElementById('card-quote').textContent = data.quote;
         document.getElementById('card-affirmation').textContent = data.affirmation;
         document.getElementById('card-task').textContent = data.task;
