@@ -432,8 +432,9 @@
         <h1>Cesta k svojmu vnútornému ja</h1>
         <p class="sub" id="hero-sub">
             Prechádzaš ťažkým obdobím? Tento kalendár je tichý spoločník na dlhú cestu do Vianoc.
-            Od dnešného dňa až po Štedrý deň sa každý deň otvorí jedno okienko – citát,
-            myšlienka pre teba a jeden malý krôčik. Nie sú to veľké skoky. Sú to malé kroky domov, k sebe.
+            Každý deň sa odomkne jedno okienko – citát, myšlienka pre teba a jeden malý krôčik.
+            Zmeškané dni si môžeš kedykoľvek otvoriť spätne; dopredu sa nazrieť nedá.
+            Nie sú to veľké skoky. Sú to malé kroky domov, k sebe.
         </p>
     </section>
 
@@ -696,7 +697,6 @@
     };
 
     const STORAGE_KEY = 'adventny-kalendar-otvorene';
-    const START_KEY = 'adventny-kalendar-zaciatok';
     const now = () => new Date();
     const previewMode = new URLSearchParams(location.search).get('nahlad') === '1';
 
@@ -707,20 +707,9 @@
     function formatDate(d) { return `${d.getDate()}. ${MONTHS_GENITIVE[d.getMonth()]}`; }
     function midnight(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
 
-    /* Kalendár začína dňom prvej návštevy – prvé okienko sa odomkne hneď. */
-    function loadStartDate() {
-        try {
-            const raw = localStorage.getItem(START_KEY);
-            if (raw) {
-                const d = new Date(raw);
-                if (!isNaN(d)) return midnight(d);
-            }
-        } catch (e) {}
-        const today = midnight(now());
-        try { localStorage.setItem(START_KEY, today.toISOString()); } catch (e) {}
-        return today;
-    }
-    const startDate = loadStartDate();
+    /* Kalendár má pevný začiatok – minulé dni sa dajú otvárať spätne,
+       budúce zostávajú zamknuté. */
+    const startDate = new Date(2026, 7, 31); // 31. august 2026
 
     /* Štedrý deň, ku ktorému sa počíta – tento rok, alebo budúci, ak už bol. */
     function christmasEveAfter(d) {
