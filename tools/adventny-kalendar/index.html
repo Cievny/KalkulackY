@@ -409,8 +409,8 @@
         <h1>Cesta k svojmu vnútornému ja</h1>
         <p class="sub">
             Prechádzaš ťažkým obdobím? Tento kalendár je tichý spoločník na cestu do Vianoc.
-            Každý decembrový deň sa otvorí jedno okienko – citát, myšlienka pre teba
-            a jeden malý krôčik. Nie sú to veľké skoky. Sú to malé kroky domov, k sebe.
+            Prvé okienko sa ti odomkne hneď dnes a každý ďalší deň jedno nové – citát,
+            myšlienka pre teba a jeden malý krôčik. Nie sú to veľké skoky. Sú to malé kroky domov, k sebe.
         </p>
     </section>
 
@@ -475,20 +475,46 @@
         { title: 'Svetlo pre druhých', quote: 'Niekedy nájdeš svoje svetlo tak, že ho zapáliš niekomu inému.', affirmation: 'Aj s prázdnymi rukami mám čo dať – svoju prítomnosť.', task: 'Urob dnes drobnú láskavosť: úsmev, pochvala, podržané dvere.' },
         { title: 'Prijatie', quote: 'Pokoj nezačína tam, kde sa všetko vyrieši. Začína tam, kde prestaneš bojovať sám so sebou.', affirmation: 'Prijímam seba aj so všetkým, čo práve prežívam.', task: 'Postav sa pred zrkadlo a povedz si: „Robím, čo môžem. A to stačí.“' },
         { title: 'Domov v sebe', quote: 'Celý čas si hľadal cestu k sebe. A ona viedla tadiaľto – cez každý deň, keď si to nevzdal.', affirmation: 'Môj domov nie je miesto. Je to pokoj, ktorý si budujem v sebe.', task: 'Prejdi si v mysli tieto adventné dni. Ktorá myšlienka ti najviac pomohla? Vezmi si ju so sebou.' },
-        { title: 'Štedrý deň', quote: 'Najväčší dar nenájdeš pod stromčekom. Je to človek, ktorým si sa stal, kým si sem došiel. Šťastné a pokojné Vianoce.', affirmation: 'Prešiel/prešla som kus cesty. Dnes si dovolím pokoj.', task: 'Dopraj si dnes chvíľu len pre seba – a ak môžeš, objím niekoho blízkeho.' }
+        { title: 'Cieľ cesty', quote: 'Najväčší dar nenájdeš zabalený. Je to človek, ktorým si sa stal, kým si sem došiel.', affirmation: 'Prešiel/prešla som kus cesty. Dnes si dovolím pokoj.', task: 'Dopraj si dnes chvíľu len pre seba – a ak môžeš, objím niekoho blízkeho.' }
     ];
 
     const STORAGE_KEY = 'adventny-kalendar-otvorene';
+    const START_KEY = 'adventny-kalendar-zaciatok';
     const now = () => new Date();
     const previewMode = new URLSearchParams(location.search).get('nahlad') === '1';
 
-    /* Ktorý deň (1–24) je už odomknutý? 0 = žiadny. */
+    const MONTHS_GENITIVE = ['januára', 'februára', 'marca', 'apríla', 'mája', 'júna',
+        'júla', 'augusta', 'septembra', 'októbra', 'novembra', 'decembra'];
+    function formatDate(d) { return `${d.getDate()}. ${MONTHS_GENITIVE[d.getMonth()]}`; }
+    function midnight(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+    /* Kalendár začína dňom prvej návštevy – prvé okienko sa odomkne hneď. */
+    function loadStartDate() {
+        try {
+            const raw = localStorage.getItem(START_KEY);
+            if (raw) {
+                const d = new Date(raw);
+                if (!isNaN(d)) return midnight(d);
+            }
+        } catch (e) {}
+        const today = midnight(now());
+        try { localStorage.setItem(START_KEY, today.toISOString()); } catch (e) {}
+        return today;
+    }
+    const startDate = loadStartDate();
+
+    /* Dátum, kedy sa odomkne dané okienko (1–24). */
+    function unlockDate(day) {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + (day - 1));
+        return d;
+    }
+
+    /* Ktorý deň (1–24) je už odomknutý? */
     function unlockedUpTo() {
         if (previewMode) return 24;
-        const d = now();
-        const m = d.getMonth(); // 11 = december
-        if (m === 11) return Math.min(d.getDate(), 24);
-        return 0; // mimo decembra je kalendár zamknutý a čaká
+        const elapsed = Math.floor((midnight(now()) - startDate) / 86400000);
+        return Math.max(1, Math.min(elapsed + 1, 24));
     }
 
     function loadOpened() {
@@ -544,7 +570,7 @@
     /* ------- vykreslenie okienok ------- */
     const calendarEl = document.getElementById('calendar');
     const unlocked = unlockedUpTo();
-    const todayDay = (now().getMonth() === 11 && now().getDate() <= 24) ? now().getDate() : 0;
+    const todayDay = previewMode ? 0 : unlocked;
 
     DAYS.forEach((_, i) => {
         const day = i + 1;
@@ -571,11 +597,8 @@
 
     function updateProgress() {
         const note = document.getElementById('progress-note');
-        if (unlocked === 0) {
-            note.textContent = 'Okienka sa začnú odomykať 1. decembra – každý deň jedno.';
-        } else {
-            note.textContent = `Otvorené okienka: ${opened.size} z 24`;
-        }
+        const extra = unlocked < 24 ? ' · ďalšie okienko sa odomkne zajtra' : '';
+        note.textContent = `Otvorené okienka: ${opened.size} z 24${extra}`;
     }
     updateProgress();
 
@@ -596,12 +619,7 @@
             btn.classList.remove('shake');
             void btn.offsetWidth; // reštart animácie
             btn.classList.add('shake');
-            const d = now();
-            if (d.getMonth() !== 11) {
-                showToast('Kalendár sa prebudí 1. decembra. Vydrž, oplatí sa. 🌟');
-            } else {
-                showToast(`Toto okienko sa otvorí ${day}. decembra. Každý deň má svoj čas. 🕯️`);
-            }
+            showToast(`Toto okienko sa otvorí ${formatDate(unlockDate(day))}. Každý deň má svoj čas. 🕯️`);
             return;
         }
         if (!btn.classList.contains('opened')) {
@@ -618,7 +636,7 @@
 
     function showCard(day) {
         const data = DAYS[day - 1];
-        document.getElementById('card-day').textContent = `${day}. december`;
+        document.getElementById('card-day').textContent = `${day}. deň · ${formatDate(unlockDate(day))}`;
         document.getElementById('card-title').textContent = data.title;
         document.getElementById('card-quote').textContent = data.quote;
         document.getElementById('card-affirmation').textContent = data.affirmation;
