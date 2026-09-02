@@ -1,5 +1,5 @@
 -- ============================================================
--- RESET DATABÁZY K 1. 9. 2026 — čistý štart ostrej prevádzky.
+-- RESET DATABÁZY K 1. 10. 2026 (pôvodne 1.9., posunuté) — čistý štart ostrej prevádzky.
 --
 -- ZACHOVÁVA SA (dohoda 24.7.):
 --   • Požiadavky (čakačka) + prílohy       • Program (denný/zásobník)

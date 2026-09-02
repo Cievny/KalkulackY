@@ -121,7 +121,7 @@ jobs:
           echo "✓ Zašifrované: backup-enc/zaloha-${STAMP}.tar.gz.gpg"
 
       - name: Ulož zašifrovanú zálohu ako artefakt (30 dní)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: cievny-zaloha-${{ github.run_id }}
           path: backup-enc/
@@ -133,7 +133,7 @@ jobs:
 
       - name: Mesačná záloha s dlhou retenciou (90 dní)
         if: steps.cal.outputs.prvy == 'yes'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: cievny-zaloha-mesacna-${{ github.run_id }}
           path: backup-enc/
