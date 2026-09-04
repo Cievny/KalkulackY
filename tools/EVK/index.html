@@ -497,11 +497,13 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="tbody" id="b_trom">
     <div class="f"><div class="lbl">Typ</div><div class="checks"><label class="ck"><input type="checkbox" id="trom_rotarex" onchange="toggleRotarex();gen()"> Rotačná (Rotarex)</label><label class="ck"><input type="checkbox" id="trom_aspir" onchange="toggleAspir();gen()"> Aspiračná</label></div></div>
     <div id="rotarex_detail" style="display:none" class="sub-box"><div class="f"><label>Rotarex veľkosť</label><select id="rotarex_fr" onchange="gen()"><option value="6F">6F</option><option value="8F">8F</option></select></div></div>
-    <div id="aspir_detail" style="display:none" class="sub-box"><div class="row r2"><div class="f"><label>Aspiračný katéter</label><select id="aspir_kat" onchange="chkVl('aspir_kat');gen()"><option>Indigo</option><option>Sofia</option><option>BigLumen</option><option>Lightning</option><option>vlastný</option></select><input type="text" id="aspir_kat_c" placeholder="Vlastný katéter..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Veľkosť</label><select id="aspir_fr" onchange="gen()"><option value="5F">5F</option><option value="6F">6F</option><option value="8F">8F</option></select></div></div></div>
+    <div id="aspir_detail" style="display:none" class="sub-box"><div class="row r2"><div class="f"><label>Aspiračný katéter</label><select id="aspir_kat" onchange="chkVl('aspir_kat');gen()"><option>Indigo</option><option>Sofia</option><option>BigLumen</option><option>Lightning</option><option>vlastný</option></select><input type="text" id="aspir_kat_c" placeholder="Vlastný katéter..." oninput="gen()" style="display:none;margin-top:4px"></div><div class="f"><label>Veľkosť</label><select id="aspir_fr" onchange="gen()"><option value="5F">5F</option><option value="6F">6F</option><option value="7F">7F</option><option value="8F">8F</option></select></div></div></div>
     <div class="row r2" style="margin-top:8px">
       <div class="f"><label>Tepna</label><select id="trom_tp" onchange="gen()"><option>– tepna –</option><option>AIC l.sin.</option><option>AIC l.dx.</option><option>AIE l.sin.</option><option>AIE l.dx.</option><option>AII l.sin.</option><option>AII l.dx.</option><option>AFC l.sin.</option><option>AFC l.dx.</option><option>APF l.sin.</option><option>APF l.dx.</option><option>AFS l.sin.</option><option>AFS l.dx.</option><option>P1 l.sin.</option><option>P1 l.dx.</option><option>P2 l.sin.</option><option>P2 l.dx.</option><option>P3 l.sin.</option><option>P3 l.dx.</option><option>ATA l.sin.</option><option>ATA l.dx.</option><option>ATP l.sin.</option><option>ATP l.dx.</option><option>AFib l.sin.</option><option>AFib l.dx.</option><option>TTF l.sin.</option><option>TTF l.dx.</option></select></div>
       <div class="f"><label>Segment</label><select id="trom_sg" onchange="gen()"><option value="">–</option><option>proximálny</option><option>stredný</option><option>distálny</option><option>celý</option></select></div>
     </div>
+    <div id="trom_locs"></div>
+    <button type="button" onclick="addLoc('trom',false,'＋ Tepna (ošetrená tou istou technikou)')" style="margin-top:6px;font-size:11px;padding:3px 9px;border:1px dashed #93c5fd;border-radius:6px;background:#eff6ff;color:#1e40af;cursor:pointer">＋ Pridať ďalší ošetrený segment / tepnu</button>
   </div>
 </div>
 
@@ -1030,12 +1032,12 @@ function addItem(pfx,kind,silent){
 function delItem(pfx,idx){const r=document.querySelector('#'+pfx+'_list [data-idx="'+idx+'"]');if(r)r.remove();gen();}
 
 // Jeden balón použitý vo viacerých lokalitách – pridá ďalšiu tepnu/segment k existujúcemu balónu
-function addLoc(id,silent){
+function addLoc(id,silent,lbl){
   if(locCnt[id]===undefined)locCnt[id]=0;
   const li=locCnt[id]++;
   const cont=document.getElementById(id+'_locs');if(!cont)return;
   const div=document.createElement('div');div.className='loc-row';div.dataset.li=li;div.style.cssText='margin-top:6px;padding-top:6px;border-top:1px dashed #dbeafe';
-  div.innerHTML=`<div class="row r2"><div class="f"><label>＋ Tepna (tá istá inflácia)</label><select id="${id}_l${li}_tp" onchange="gen()">${vsel()}</select></div><div class="f"><label>Segment</label><div style="display:flex;gap:6px"><select id="${id}_l${li}_sg" onchange="gen()" style="flex:1">${sgsel()}</select><button type="button" onclick="delLoc('${id}',${li})" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:0 10px;cursor:pointer;font-weight:700">✕</button></div></div></div>`;
+  div.innerHTML=`<div class="row r2"><div class="f"><label>${lbl||'＋ Tepna (tá istá inflácia)'}</label><select id="${id}_l${li}_tp" onchange="gen()">${vsel()}</select></div><div class="f"><label>Segment</label><div style="display:flex;gap:6px"><select id="${id}_l${li}_sg" onchange="gen()" style="flex:1">${sgsel()}</select><button type="button" onclick="delLoc('${id}',${li})" style="border:none;background:#fee2e2;color:#b91c1c;border-radius:6px;padding:0 10px;cursor:pointer;font-weight:700">✕</button></div></div></div>`;
   cont.appendChild(div);if(!silent)gen();
 }
 function delLoc(id,li){const r=document.querySelector('#'+id+'_locs [data-li="'+li+'"]');if(r)r.remove();gen();}
@@ -1075,7 +1077,12 @@ function collectInterventionItems(){
     const rot=document.getElementById('trom_rotarex').checked,asp=document.getElementById('trom_aspir').checked;
     const typy=[];if(rot)typy.push('rotačná (Rotarex '+g('rotarex_fr')+')');
     if(asp){const kat=g('aspir_kat')==='vlastný'?(g('aspir_kat_c')||'vlastný katéter'):g('aspir_kat');typy.push('aspiračná za použitia aspiračného katétra '+kat+' '+g('aspir_fr'));}
-    if(typy.length)items.push({tp:g('trom_tp'),sg:g('trom_sg')||'',desc:'endovaskulárna trombektómia: '+typy.join('; ')+', s odsatím materiálu',short:'trombektómia',order:3});
+    if(typy.length){
+      // trombektómia v ďalších segmentoch/tepnách → riadok nálezu za každú lokalitu
+      [{tp:g('trom_tp'),sg:g('trom_sg')||''},...extraLocs('trom')].forEach(l=>{
+        items.push({tp:l.tp,sg:l.sg,desc:'endovaskulárna trombektómia: '+typy.join('; ')+', s odsatím materiálu',short:'trombektómia',order:3});
+      });
+    }
   }
   if(document.getElementById('c_sw').checked){rows('sw').forEach(row=>{
     const idx=row.dataset.idx,id='sw_'+idx;
@@ -1353,6 +1360,7 @@ function collectFullData(){
     const base={typ:'trombektomia',tepna:g('trom_tp'),segment:g('trom_sg')};
     if(document.getElementById('trom_rotarex').checked)interventionDetail.push({...base,metoda:'Rotarex',velkost:g('rotarex_fr')});
     if(document.getElementById('trom_aspir').checked)interventionDetail.push({...base,metoda:'Aspiračná',kateter:nameOf('aspir_kat'),velkost:g('aspir_fr')});
+    extraLocs('trom').forEach(l=>interventionDetail.push({typ:'trombektomia',tepna:l.tp,segment:l.sg,extra_loc:true}));
   }
   if((g('territory')==='pelv'||g('territory')==='both')&&document.getElementById('c_kiss').checked){
     ['s','d'].forEach(side=>{
@@ -1396,7 +1404,7 @@ function collectFullData(){
   const ivls=interventionDetail.filter(i=>i.typ==='ivl');
   const sgs=interventionDetail.filter(i=>i.typ==='stentgraft');
   const atrs=interventionDetail.filter(i=>i.typ==='aterektomia');
-  const troms=interventionDetail.filter(i=>i.typ==='trombektomia');
+  const troms=interventionDetail.filter(i=>i.typ==='trombektomia'&&!i.extra_loc);
   const jn=a=>a.filter(Boolean).join('; ');
   const ck=id=>document.getElementById(id)?.checked||false;
   const mat={
@@ -1912,14 +1920,19 @@ function collectDRGSections(){
   }
   // Trombektómia
   if(document.getElementById('c_trom').checked){
-    const s=vesselSuffix(g('trom_tp'));
-    const sl=s?SL[s]:'– doplňte tepnu';
-    const warn=!s;
+    // suffix za každé ošetrené povodie (primárna tepna + ďalšie segmenty)
+    const _tromTps=[g('trom_tp'),...extraLocs('trom').map(l=>l.tp)];
+    let _sfx=[...new Set(_tromTps.map(vesselSuffix).filter(Boolean))];
+    const warn=!_sfx.length;
+    if(warn)_sfx=[null];
     const rot=document.getElementById('trom_rotarex').checked;
     const asp=document.getElementById('trom_aspir').checked;
-    if(rot)add('8r821.'+(s||'?'),'Rotačná trombektómia a embolektómia (Rotarex): '+sl,warn);
-    if(asp)add('8r822.'+(s||'?'),'Aspiračná trombektómia a embolektómia: '+sl,warn);
-    if(!rot&&!asp)add('8r820.'+(s||'?'),'Trombektómia a embolektómia: '+sl,warn);
+    _sfx.forEach(s=>{
+      const sl=s?SL[s]:'– doplňte tepnu';
+      if(rot)add('8r821.'+(s||'?'),'Rotačná trombektómia a embolektómia (Rotarex): '+sl,warn);
+      if(asp)add('8r822.'+(s||'?'),'Aspiračná trombektómia a embolektómia: '+sl,warn);
+      if(!rot&&!asp)add('8r820.'+(s||'?'),'Trombektómia a embolektómia: '+sl,warn);
+    });
   }
   // Stenting – group by suffix + DES
   if(document.getElementById('c_stent').checked){
@@ -2346,6 +2359,12 @@ function restoreInterventionRows(record){
       }
       if(it.typ==='trombektomia'){
         on('trom');
+        if(it.extra_loc){
+          addLoc('trom',true,'＋ Tepna (ošetrená tou istou technikou)');
+          const li=locCnt['trom']-1;
+          svTp('trom_l'+li+'_tp',it.tepna);sv('trom_l'+li+'_sg',it.segment);
+          return;
+        }
         svTp('trom_tp',it.tepna);sv('trom_sg',it.segment);
         if(it.metoda==='Rotarex'){
           const c=document.getElementById('trom_rotarex');if(c)c.checked=true;toggleRotarex();
