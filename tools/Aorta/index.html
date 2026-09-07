@@ -635,6 +635,21 @@ function cardEl(it){
   const nPril=PRILOHY.filter(p=>p.indikacia_id===it.id).length;
   const prilBadge=nPril?'<span class="badge" style="background:#e0e7ff;color:#3730a3">📎 '+nPril+'</span>':'';
   const title=it.inicialy?escHtml(it.inicialy)+(it.rocnik?' '+it.rocnik:''):escHtml(it.rodne_cislo||'?');
+  if(it.status==='konzervativa'||it.status==='chirurgia'){
+    // zbalená karta: pacient odovzdaný na konzervatívu/chirurgiu – stačí meno + r.č.
+    // (detaily po 📂 Otvoriť); po 90 dňoch v tomto stave sa karta archivuje sama
+    const zost=dIn!==null?Math.max(0,90-dIn):null;
+    div.innerHTML=`
+    <div class="card-id">${title}${it.pohlavie?' ('+it.pohlavie+')':''} ${esvsBadge}${prilBadge}</div>
+    ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}
+    <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stave':''}${zost!==null?' • 🗄 auto-archív o <b>'+zost+' d</b>':''}</div>
+    <div class="card-actions">
+      <button class="btn-edit" onclick="openModal('${it.id}')">📂 Otvoriť</button>
+      <select class="sel-move" onchange="if(this.value){moveCard('${it.id}',this.value)}"><option value="">Presunúť…</option>${moveOpts}</select>
+      <button class="btn-arch" onclick="openArch('${it.id}')">🗄</button>
+    </div>`;
+    return div;
+  }
   div.innerHTML=`
     <div class="card-id">${title}${it.pohlavie?' ('+it.pohlavie+')':''} ${urgBadge}${esvsBadge}${prilBadge}${watchBadge}</div>
     ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}
@@ -1186,7 +1201,29 @@ function copyZapis(){
   else fail();
 }
 
-loadItems();
+// ── Automatická archivácia: po 90 dňoch (3 mes.) od presunu do konzervatívy
+//    alebo chirurgického riešenia sa karta sama presunie do archívu ──
+let _autoArchBezalo=false;
+async function autoArchivujStare(){
+  if(_autoArchBezalo)return;_autoArchBezalo=true;
+  const ids=ITEMS.filter(it=>{
+    if(it.status!=='konzervativa'&&it.status!=='chirurgia')return false;
+    const hist=parseHist(it);
+    const entered=hist.length?hist[hist.length-1].d:(it.created_at||'').slice(0,10);
+    const d=entered?daysBetween(entered,today()):null;
+    return d!==null&&d>=90;
+  }).map(it=>it.id);
+  let n=0;
+  for(const id of ids){
+    const it=ITEMS.find(i=>i.id===id);       // po každom moveCard sa ITEMS obnovia
+    if(!it||it.status==='archiv')continue;
+    const dovod=(it.status==='konzervativa'?'konzervatívny postup – odovzdané na sledovanie':'odovzdané na chirurgické riešenie')+' (automatická archivácia po 90 d)';
+    try{await moveCard(id,'archiv',dovod);n++;}catch(e){}
+  }
+  if(n)msg('top_msg','🗄 Automaticky archivované po 90 dňoch v konzervatíve/chirurgii: '+n,'#059669');
+}
+
+loadItems().then(autoArchivujStare);
 initArchDrop();
 
 // auto-refresh boardu každých 60 s (keď nie je otvorený modál a stránka je viditeľná)
