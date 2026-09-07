@@ -92,7 +92,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     Kódy sa generujú automaticky podľa zoznamu ZV-DRG 2026.<br>
     Variant sa určuje <strong>automaticky</strong> z formulára: segment aorty (abdominálna 8r8q3 / torakálna 8r8q0 / torakoabdominálna 8r8q1), počet fenestrácií, vetiev a chimney z tabuľky Vetvy/fenestrácie; hybridné výkony 8r8q4. Štandardný PEVAR = <strong>8r8q3.0</strong>.<br>
     <strong>Extenzie do iliackých tepien</strong> sa vykazujú samostatne kódom <strong>8r8q5.x</strong> podľa počtu – počíta sa automaticky zo sekcie Extenzie.<br>
-    Domodelovanie (CODA/Atlas…) sa nekóduje ako PTA – vykazuje sa len počet balónikových katétrov (8r8x0).
+    Domodelovanie (CODA/Atlas…) sa vykazuje ako balónová angioplastika (8r800.c telo / 8r800.i nožičky) + počet balónikových katétrov (8r8x0).
   </div>
   <div class="f" style="max-width:420px;margin-bottom:12px">
     <label>Variant stentgraftu (pre DRG)</label>
@@ -1395,6 +1395,17 @@ function collectDRGPevarSections(){
   if(document.getElementById('modelovanie_telo')?.checked)bal.push('telo SG');
   if(document.getElementById('modelovanie_extenzie')?.checked)bal.push('extenzie');
   if(bal.length)supp.push({code:'8r8x0.'+(bal.length-1),desc:'Počet balónikových katétrov: '+bal.length+' (domodelovanie – '+bal.join(' + ')+')'});
+  {
+    // domodelovanie sa vykazuje aj ako balónová angioplastika (výkonový kód):
+    // telo SG = aorta (8r800.c); extenzie (nožičky) = iliacké tepny (8r800.i), pri hrudnej aorte tiež .c
+    const _mSuf=new Map();
+    if(document.getElementById('modelovanie_telo')?.checked)_mSuf.set('c','domodelovanie tela stentgraftu (aorta)');
+    if(document.getElementById('modelovanie_extenzie')?.checked){
+      const _s=seg==='torakalna'?'c':'i';
+      _mSuf.set(_s,_mSuf.has(_s)?_mSuf.get(_s)+' + extenzií':'domodelovanie extenzií ('+(_s==='c'?'aorta':'iné brušné a panvové tepny')+')');
+    }
+    _mSuf.forEach((d,s)=>main.push({code:'8r800.'+s,desc:'Balónová angioplastika – '+d}));
+  }
   {
     // 8r8x9 = špirály/iný embolizačný materiál + sac filling plugy; 8r852 = okludéry (vascular plug)
     const _embN=document.getElementById('c_emb')?.checked?Math.max(1,parseInt(g('emb_pocet'))||1):0;
