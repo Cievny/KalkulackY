@@ -47,6 +47,8 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .badge-soon{background:#ffedd5;color:#c2410c;}
 .card-line{font-size:12px;color:#374151;margin-top:3px;line-height:1.4;}
 .card-mat{font-size:11.5px;color:#0e7490;background:#ecfeff;border-left:3px solid #06b6d4;border-radius:0 5px 5px 0;padding:4px 7px;margin-top:5px;line-height:1.4;}
+.card-plan{font-size:12px;color:#92400e;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 5px 5px 0;padding:5px 8px;margin-top:5px;line-height:1.5;font-weight:600;}
+.card-plan .pl-late{color:#b91c1c;}.card-plan .pl-soon{color:#b45309;}
 .card-pozn{font-size:11.5px;color:#713f12;background:#fefce8;border-left:3px solid #eab308;border-radius:0 5px 5px 0;padding:4px 7px;margin-top:5px;line-height:1.4;white-space:pre-wrap;word-break:break-word;}
 .card-meta{font-size:11px;color:#9ca3af;margin-top:5px;}
 .card-meta b{color:#6b7280;}
@@ -160,7 +162,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
     <div class="m-grid">
       <div class="fld"><label>Kategória</label><select id="af_kategoria" onchange="toggleKategoria()"><option value="aorta">🫀 Aorta</option><option value="ine">📋 Iné</option></select></div>
       <div class="fld"><label>Rodné číslo * <span style="font-weight:400;color:#9ca3af">(povinné)</span></label><input id="af_rodne_cislo" maxlength="11" placeholder="511224/1234" autocomplete="off"><div id="rc_warn" style="font-size:11.5px;color:#b45309;margin-top:3px"></div></div>
-      <div class="fld" style="grid-column:span 2"><label>Iniciály (napr. J.K.)</label><input id="af_inicialy" maxlength="14" autocomplete="off"></div>
+      <div class="fld" style="grid-column:span 2"><label>Meno / iniciály</label><input id="af_inicialy" autocomplete="off" placeholder="napr. J.K. alebo Horváth Ladislav"></div>
       <div class="fld"><label>Ročník narodenia</label><input id="af_rocnik" type="number" min="1900" max="2030" placeholder="doplní sa z r.č."></div>
       <div class="fld"><label>Pohlavie</label><select id="af_pohlavie"><option value="M">Muž</option><option value="Ž">Žena</option></select></div>
       <div class="fld"><label>Žiadateľ / oddelenie</label><input id="af_ziadatel" placeholder="napr. interné odd., MUDr. …"></div>
@@ -377,6 +379,9 @@ function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt
 function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
 function today(){return isoLocal(new Date());}
 function fmtD(d){if(!d)return'–';const x=new Date(d);return isNaN(x)?'–':x.toLocaleDateString('sk-SK');}
+const DNI_SK=['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'];
+// dátum aj s dňom v týždni – „streda 17.09.2026" (prehľadné plánovanie sály)
+function fmtDW(d){if(!d)return'–';const x=new Date(d);return isNaN(x)?'–':DNI_SK[x.getDay()]+' '+x.toLocaleDateString('sk-SK');}
 function daysBetween(a,b){const A=new Date(a),B=new Date(b);if(isNaN(A)||isNaN(B))return null;return Math.max(0,Math.round((B-A)/86400000));}
 function parseHist(item){try{const h=JSON.parse(item.historia||'[]');return Array.isArray(h)?h:[];}catch{return[];}}
 function msg(id,t,c){const el=document.getElementById(id);el.textContent=t;el.style.color=c;setTimeout(()=>{if(el.textContent===t)el.textContent='';},4000);}
@@ -628,8 +633,21 @@ function cardEl(it){
     const m=[];
     if(it.material)m.push('🧾 '+escHtml(it.material));
     if(it.material_objednany)m.push('objednané '+fmtD(it.material_objednany)+(it.material_dodany?' ✓ dodané':' – čaká sa'));
-    if(it.termin)m.push('📅 termín: '+fmtD(it.termin));
+    if(it.termin)m.push('📅 termín: '+fmtDW(it.termin));
     if(m.length)matHtml='<div class="card-mat">'+m.join('<br>')+'</div>';
+  }
+  // indikovaný pacient: na prvý pohľad NA AKÝ DEŇ a NA AKÝ VÝKON je navrhnutý
+  let planHtml='';
+  if(it.status==='indikovane'){
+    const vyk=it.vykon_typ?escHtml(it.vykon_typ+(it.vykon_cieva?' – '+it.vykon_cieva:'')):'výkon zatiaľ neurčený';
+    let den;
+    if(it.termin){
+      const dT=daysBetween(today(),it.termin);
+      const past=new Date(it.termin)<new Date(today());
+      const kedy=past?'<span class="pl-late">termín prešiel</span>':(dT===0?'<span class="pl-soon">dnes</span>':(dT!==null?(dT<=7?'<span class="pl-soon">o '+dT+' d</span>':'o '+dT+' d'):''));
+      den='🗓 '+fmtDW(it.termin)+(kedy?' · '+kedy:'');
+    }else den='🗓 <span class="pl-soon">termín zatiaľ neurčený</span>';
+    planHtml='<div class="card-plan">'+den+'<br>🛠 '+vyk+'</div>';
   }
   const moveOpts=STATUSES.filter(s=>s.key!==it.status).map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
   const nPril=PRILOHY.filter(p=>p.indikacia_id===it.id).length;
@@ -656,9 +674,9 @@ function cardEl(it){
     ${dg?'<div class="card-line">'+escHtml(dg)+'</div>':''}
     ${it.ziadatel?'<div class="card-line">👤 '+escHtml(it.ziadatel)+'</div>':''}
     ${(it.indikoval1||it.indikoval2)?'<div class="card-line">⚕️ indikoval: '+escHtml([it.indikoval1,it.indikoval2].filter(Boolean).join(' + '))+'</div>':''}
-    ${it.vykon_typ?'<div class="card-line">🛠 plán: '+escHtml(it.vykon_typ+(it.vykon_cieva?' – '+it.vykon_cieva:''))+'</div>':''}
+    ${(it.vykon_typ&&!planHtml)?'<div class="card-line">🛠 plán: '+escHtml(it.vykon_typ+(it.vykon_cieva?' – '+it.vykon_cieva:''))+'</div>':''}
     ${it.nalez_vykon_id?'<div class="card-line"><a class="card-nalez" href="/tools/zaznamy/" title="nález napísaný" draggable="false" onclick="event.stopPropagation()">📝 '+escHtml(it.nalez_vykon_id)+'</a></div>':''}
-    ${matHtml}
+    ${planHtml}${matHtml}
     ${it.poznamka?'<div class="card-pozn">💬 '+escHtml(it.poznamka)+'</div>':''}
     <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stave':''}${dTotal!==null?' • od požiadavky <b>'+dTotal+' d</b>':''}${it.created_by?' • pridal <b>'+escHtml(shortMail(it.created_by))+'</b>':''}</div>
     <div class="card-actions">
