@@ -168,6 +168,7 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       <div class="fld"><label>Žiadateľ / oddelenie</label><input id="af_ziadatel" placeholder="napr. interné odd., MUDr. …"></div>
       <div class="fld"><label>Dátum požiadavky</label><input id="af_datum_poziadavky" type="date"></div>
       <div class="fld"><label>Urgencia</label><select id="af_urgencia"><option>elektívne</option><option>urgentné</option><option>emergentné</option></select></div>
+      <div class="fld" style="grid-column:span 3"><label>Krátka epikríza <span style="font-weight:400;color:#9ca3af">(stručné zhrnutie pacienta – anamnéza, doterajší priebeh)</span></label><textarea id="af_epikriza" placeholder="napr. 71-r. pacientka, AAA 67 mm s rastom 5 mm/rok, ICHS po IM 2019, CHOCHP, CT-AG 8/2026…" style="min-height:70px"></textarea></div>
     </div>
 
     <div class="m-sec" data-t="Prílohy (prepis mailu, dokument, fotka)">2. Prílohy (prepis mailu, dokument, fotka)</div>
@@ -452,7 +453,7 @@ async function loadItems(){
 
 function matchesSearch(it,q){
   if(!q)return true;
-  const hay=[it.inicialy,it.rocnik,it.rodne_cislo,it.diagnoza,it.ziadatel,it.material,it.poznamka].join(' ').toLowerCase();
+  const hay=[it.inicialy,it.rocnik,it.rodne_cislo,it.diagnoza,it.ziadatel,it.material,it.poznamka,it.epikriza].join(' ').toLowerCase();
   return hay.includes(q);
 }
 
@@ -710,7 +711,7 @@ function renderArchive(q){
 }
 
 // ── Modal detail ─────────────────────────────────────────────
-const FIELDS=['kategoria','rodne_cislo','inicialy','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','diagnoza','symptomy',
+const FIELDS=['kategoria','rodne_cislo','inicialy','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','epikriza','diagnoza','symptomy',
   'priemer','rast','datum_ct','krcok_dlzka','krcok_priemer','krcok_angulacia','iliaky',
   'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','vykon_typ','vykon_cieva','indikacia_poznamka','material','material_objednany','material_dodany','termin','zaver_seminara','poznamka','endoleak_typ','dalsia_kontrola'];
 // mapovanie form id -> DB stĺpec
@@ -962,6 +963,21 @@ document.getElementById('af_rodne_cislo').addEventListener('input',()=>{
   rcCheck();
 });
 
+// Staršia DB bez niektorého stĺpca (napr. epikriza pred spustením setup SQL) by
+// zhodila celé uloženie – chýbajúci stĺpec odstránime podľa chyby a skúsime znova.
+async function sendCard(url,method,payload){
+  const send=()=>fetch(url,{method,headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify(payload)});
+  let r=await send(),guard=0;
+  while(r.status===400&&guard++<8){
+    let t='';try{t=await r.clone().text();}catch{}
+    const m=t.match(/'([a-zA-Z0-9_]+)' column/)||t.match(/column "?([a-zA-Z0-9_]+)"?/);
+    if(!m||!(m[1] in payload))break;
+    delete payload[m[1]];
+    r=await send();
+  }
+  return r;
+}
+
 async function saveCard(){
   if(saveCard._busy)return;
   const o=formToObj();
@@ -980,7 +996,7 @@ async function saveCard(){
       // ochrana pred prepísaním: PATCH prejde len ak sa záznam medzitým nezmenil
       const cur=ITEMS.find(i=>i.id===editId);
       const guard=cur&&cur.updated_at?'&updated_at=eq.'+encodeURIComponent(cur.updated_at):'';
-      r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${editId}${guard}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify(o)});
+      r=await sendCard(`${SB_URL}/rest/v1/${TBL}?id=eq.${editId}${guard}`,'PATCH',o);
       if(r.ok){
         const rows=await r.json();
         if(!rows.length&&guard){
@@ -994,7 +1010,7 @@ async function saveCard(){
     }else{
       o.status='poziadavka';
       o.historia=JSON.stringify([{s:'poziadavka',d:today(),by:shortMail(me())||undefined}]);
-      r=await fetch(`${SB_URL}/rest/v1/${TBL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify(o)});
+      r=await sendCard(`${SB_URL}/rest/v1/${TBL}`,'POST',o);
       if(r.ok){
         const rows=await r.json();
         editId=rows[0]?rows[0].id:null;  // ostávame v modáli – dajú sa hneď pridať prílohy

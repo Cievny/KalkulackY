@@ -509,3 +509,6 @@ BEGIN
     END IF;
   END LOOP;
 END $kiosk$;
+
+-- ── 3w · Požiadavky: krátka epikríza pacienta (voľný text v sekcii 1) ──
+ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS epikriza TEXT;
