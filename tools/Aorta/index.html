@@ -273,8 +273,9 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
           <option>Hybridný výkon</option>
           <option>Odoslanie na iné pracovisko</option>
           <option>Prezentovať na indikačnom seminári</option>
+          <option value="vlastné">✏️ vlastný text…</option>
         </optgroup>
-      </select></div>
+      </select><input id="af_vykon_vl" placeholder="dopíšte plánovaný výkon / postup…" style="display:none;margin-top:4px"></div>
       <div class="fld" id="fld_vykon_cieva" style="grid-column:span 2;display:none"><label id="lbl_vykon_cieva">Embolizácia – akej cievy</label><input id="af_vykon_cieva" placeholder="napr. a. mesenterica inferior, lumbálne artérie…"></div>
       <div class="fld" id="fld_indik_pozn" style="grid-column:span 3"><label>Poznámka k indikácii</label><input id="af_indikacia_poznamka" placeholder="voľný text k indikácii…"></div>
       <div class="fld" style="grid-column:span 3"><label id="lbl_material">Materiál na objednanie (stentgraft, rozmery…)</label><input id="af_material" placeholder="napr. Endurant II 28×16×145 + extenzie"></div>
@@ -560,7 +561,9 @@ const VYKON_DETAIL={
 };
 function toggleVykon(){
   const ine=document.getElementById('af_kategoria').value==='ine';
-  const det=VYKON_DETAIL[document.getElementById('af_vykon_typ').value];
+  const v=document.getElementById('af_vykon_typ').value;
+  const det=VYKON_DETAIL[v];
+  document.getElementById('af_vykon_vl').style.display=(!ine&&v==='vlastné')?'':'none';
   document.getElementById('fld_vykon_cieva').style.display=(!ine&&det)?'':'none';
   if(det){
     document.getElementById('lbl_vykon_cieva').textContent=det[0];
@@ -737,6 +740,10 @@ function formToObj(){
     o.zaver_seminara=null; // záver seminára je len pre INÉ
     if(document.getElementById('af_diagnoza').value==='vlastné')
       o.diagnoza=document.getElementById('af_diagnoza_vl').value.trim()||'Iné';
+    // vlastný plánovaný výkon sa ukladá priamo do vykon_typ (karta, seminár aj
+    // program ho potom vypíšu ako ktorýkoľvek iný výkon)
+    if(document.getElementById('af_vykon_typ').value==='vlastné')
+      o.vykon_typ=document.getElementById('af_vykon_vl').value.trim()||null;
   }
   if(!VYKON_DETAIL[o.vykon_typ])o.vykon_cieva=null; // detail len pri postupoch, ktoré ho majú
   if(!document.getElementById('af_diagnoza').value.startsWith('Endoleak'))o.endoleak_typ=null; // typ len pri endoleaku (pri vlastnej dg je select typu skryty)
@@ -755,6 +762,10 @@ function objToForm(it){
    const dgVal=it&&kat(it)!=='ine'?(it.diagnoza||''):'';
    if(dgVal&&![...dgSel.options].some(o=>o.value===dgVal||o.text===dgVal)){dgSel.value='vlastné';dgVl.value=dgVal;}
    else dgVl.value='';}
+  {const vSel=document.getElementById('af_vykon_typ'),vVl=document.getElementById('af_vykon_vl');
+   const vVal=it&&kat(it)!=='ine'?(it.vykon_typ||''):'';
+   if(vVal&&![...vSel.options].some(o=>o.value===vVal||o.text===vVal)){vSel.value='vlastné';vVl.value=vVal;}
+   else vVl.value='';}
   sizingToForm(it);
   if(it)document.getElementById('af_kategoria').value=kat(it);
   toggleKategoria();
