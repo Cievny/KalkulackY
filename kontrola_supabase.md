@@ -50,11 +50,20 @@ Ostrá verzia tejto aplikácie beží v projekte `cfavtobowqevetlumktt`; tu sú
 - 7 nikdy nepoužitých indexov (`*_vykony_pacient_idx`, `idx_avf_vykony_pacient`,
   `idx_vis_vykony_pacient`) – zostali po zavedení entity pacienta.
 
-## Odporúčaný postup
+## Stav opravy
 
-1. Spustiť **časť A** skriptu [`oprava_zvysky_objednavania.sql`](oprava_zvysky_objednavania.sql)
-   – zamkne `orders`, `open_slots`, `pricelist`, `settings` za `je_povoleny()`/`je_admin()`
-   a odoberie `anon` právo volať RPC objednávania. Je idempotentná a nič nemaže.
+**Časť A skriptu [`oprava_zvysky_objednavania.sql`](oprava_zvysky_objednavania.sql) bola 8. 9. 2026
+aplikovaná na živú DB** (migrácia `spevnenie_zvyskov_objednavania`). Overenie po spustení:
+
+- politiky s `auth.role()` v `public`: **0**
+- anon politiky mimo schránky a verejných kľúčov `settings`: **0**
+- RPC objednávania volateľné rolou `anon`/`authenticated`: **0**
+- security advisor: nálezy 1, 3, 4 a 5 zmizli; ostáva `pg_net` v `public`, vypnutá ochrana
+  hesiel a informatívne upozornenia na `je_*`/`najdi_*` funkcie (tie sú zámerne volateľné).
+
+## Odporúčaný postup (zvyšok)
+
+1. ~~Spustiť časť A~~ – hotové (pozri vyššie).
 2. **Rotovať webhook secret** edge funkcie `order-emails` (v oboch projektoch) a v novej
    verzii ho čítať z premennej prostredia. Zvážiť zapnutie `verify_jwt` alebo aspoň
    odstránenie nepoužívanej kópie funkcie z projektu Výkony.
