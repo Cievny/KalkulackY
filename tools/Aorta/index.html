@@ -63,6 +63,10 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .overlay.open{display:block;}
 .modal{background:#fff;border-radius:14px;max-width:720px;margin:0 auto;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25);}
 .modal h2{font-size:16px;color:#1a2745;margin-bottom:4px;}
+/* hlavička modálu ostáva pri scrollovaní hore – Uložiť je dostupné počas celého vypisovania */
+.m-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:#fff;margin:-20px -22px 4px;padding:16px 22px 10px;border-bottom:1px solid #e5e9f5;border-radius:14px 14px 0 0;}
+.btn-save-top{padding:7px 14px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.btn-save-top:hover{background:#1737a0;}
 .m-sec{font-size:11.5px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;border-bottom:1px solid #e5e9f5;padding-bottom:4px;}
 .m-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
 .m-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -153,9 +157,13 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 <!-- Modal: detail pacienta -->
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <div class="m-head">
       <h2 id="m_title" style="margin:0">Nová požiadavka</h2>
-      <button type="button" onclick="PoziadavkyImport.openPZ()" title="Vyplní polia z vloženého textu žiadanky, CT popisu alebo mailu – spracuje sa len v prehliadači" style="padding:6px 12px;border:1.5px solid #2563eb;background:#eff6ff;color:#1d4ed8;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600">📋 Z textu žiadanky / CT</button>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="m-msg" id="m_msg_top"></span>
+        <button type="button" class="btn-save-top" onclick="saveCard()">💾 Uložiť</button>
+        <button type="button" onclick="PoziadavkyImport.openPZ()" title="Vyplní polia z vloženého textu žiadanky, CT popisu alebo mailu – spracuje sa len v prehliadači" style="padding:6px 12px;border:1.5px solid #2563eb;background:#eff6ff;color:#1d4ed8;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600">📋 Z textu žiadanky / CT</button>
+      </div>
     </div>
 
     <div class="m-sec" data-t="Pacient a žiadanka">1. Pacient a žiadanka</div>
@@ -386,7 +394,12 @@ const DNI_SK=['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota
 function fmtDW(d){if(!d)return'–';const x=new Date(d);return isNaN(x)?'–':DNI_SK[x.getDay()]+' '+x.toLocaleDateString('sk-SK');}
 function daysBetween(a,b){const A=new Date(a),B=new Date(b);if(isNaN(A)||isNaN(B))return null;return Math.max(0,Math.round((B-A)/86400000));}
 function parseHist(item){try{const h=JSON.parse(item.historia||'[]');return Array.isArray(h)?h:[];}catch{return[];}}
-function msg(id,t,c){const el=document.getElementById(id);el.textContent=t;el.style.color=c;setTimeout(()=>{if(el.textContent===t)el.textContent='';},4000);}
+function msg(id,t,c){
+  // hlásenie z modálu sa zobrazí dole aj v lepivej hlavičke (pri hornom Uložiť)
+  const els=[document.getElementById(id)];
+  if(id==='m_msg')els.push(document.getElementById('m_msg_top'));
+  els.filter(Boolean).forEach(el=>{el.textContent=t;el.style.color=c;setTimeout(()=>{if(el.textContent===t)el.textContent='';},4000);});
+}
 function shortMail(e){return (e||'').split('@')[0];}
 function me(){return (typeof sbUserEmail==='function'?sbUserEmail():'')||null;}
 function kat(it){return it&&it.kategoria==='ine'?'ine':'aorta';} // staré záznamy bez kategórie = aorta
