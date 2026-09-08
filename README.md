@@ -20,6 +20,7 @@ Backend je **Supabase** (PostgREST REST API, Auth cez e‑mail + heslo, Storage 
 - **Roly cez RLS**: povolený používateľ číta všetko a zapisuje pacientske dáta; konto `tv@cievny.sk` má **len čítanie**; otváranie dní v objednávkach (`objednavky_dni`) a správu allowlistu smú **len administrátori** (`je_admin()` – zoznam e‑mailov v SQL aj v JS `ADMINS`).
 - Jediná anon výnimka je zúžený INSERT do `ideas` pre verejnú schránku.
 - Zdieľaná logika (auth, navigácia, PWA, Google, kiosk routing) je v `tools/auth.js` (+ `cz/tools/auth.js`).
+- Kontrolu RLS spustíte skriptom `kontrola_rls.sql` (len číta). Posledný audit databázy: [`kontrola_supabase.md`](kontrola_supabase.md), spevnenie zvyškov verejného objednávania: `oprava_zvysky_objednavania.sql`.
 
 ## Nasadenie DB (poradie spustenia SQL)
 Skripty sú idempotentné, ale **poradie je dôležité**:
