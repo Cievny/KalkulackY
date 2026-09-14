@@ -40,3 +40,5 @@ jobs:
         run: node tests/defektologia.mjs
       - name: Testy Rutherfordovej klasifikacie ALI
         run: node tests/ali.mjs
+      - name: Testy VQI CLTI modelu prezitia
+        run: node tests/vqi-clti.mjs
