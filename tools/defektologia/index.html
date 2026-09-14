@@ -255,6 +255,57 @@ function getCalculatorHTML(side) {
                 </div>
             </section>
             
+            <!-- 11. GLASS -->
+            <section><h3 class="section-header">11. Anatómia – GLASS <span class="text-sm font-normal text-gray-500">(GVG 2019, z angiografie)</span></h3>
+                <p class="text-sm text-gray-600 mb-3">Stupne FP a IP zodpovedajú pravidlám, ktoré z nálezu DSA odvodzuje aj EVK. Ak už máš nález v EVK, stupne prevezmi odtiaľ.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm">Cieľová tepna (TAP)</label>
+                        <select id="${side}-glass-tap" class="w-full p-2 border rounded-md">
+                            <option value="">-- Nezvolená --</option>
+                            <option value="ATA">a. tibialis anterior</option>
+                            <option value="ATP">a. tibialis posterior</option>
+                            <option value="AFib">a. peronea (fibularis)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Inframaleolárny deskriptor (IM)</label>
+                        <select id="${side}-glass-im" class="w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="P0">P0 – cieľová tepna prechádza členok, pedálny oblúk intaktný</option>
+                            <option value="P1">P1 – prechádza členok, pedálny oblúk chýba/ťažko postihnutý</option>
+                            <option value="P2">P2 – žiadna tepna neprechádza cez členok</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Femoropopliteálny stupeň (FP)</label>
+                        <select id="${side}-glass-fp" class="w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="0">FP 0 – bez signifikantnej choroby</option>
+                            <option value="1">FP 1 – krátka stenóza AFS</option>
+                            <option value="2">FP 2 – CTO AFS &lt; 10 cm (nie odstupová), stenóza &gt; 10 cm alebo fokálna popliteálna stenóza</option>
+                            <option value="3">FP 3 – CTO AFS &gt; 10 cm alebo odstupová, stenóza &gt; 20 cm alebo infrageniculárna popliteálna stenóza</option>
+                            <option value="4">FP 4 – oklúzia popliteálnej tepny/trifurkácie alebo CTO AFS &gt; 20 cm</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Infrapopliteálny stupeň (IP) – na cieľovej tepne</label>
+                        <select id="${side}-glass-ip" class="w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="0">IP 0 – bez signifikantnej choroby</option>
+                            <option value="1">IP 1 – fokálna stenóza &lt; 3 cm</option>
+                            <option value="2">IP 2 – stenóza &gt; 10 cm alebo proximálny/stredný úsek</option>
+                            <option value="3">IP 3 – choroba do 2/3, CTO ≤ 1/3 alebo postihnutie odstupu (TTF)</option>
+                            <option value="4">IP 4 – CTO &gt; 1/3 priebehu cieľovej tepny</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="${side}-glass-card" class="mt-4 p-4 rounded-lg border-l-4 risk-undefined">
+                    <p id="${side}-glass-result" class="font-semibold">GLASS: nezadané</p>
+                    <p id="${side}-glass-note" class="text-sm mt-1 text-gray-700"></p>
+                </div>
+            </section>
+
             <!-- WIfI Result -->
             <section id="${side}-result-section" class="pt-6 border-t-4 border-indigo-200 mt-8">
                  <h3 class="text-2xl font-bold text-gray-900 mb-4 text-center">Integrované WIfI Skóre</h3>
@@ -350,6 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (e.target.checked) {
                 updateResultUI(side, { wifiScore: 'Bez defektu', clinicalStage: 'N/A', amputationRisk: 'N/A', riskClass: 'risk-stage-1' });
+                updateGlassUI(side, { stadium: null, popis: 'GLASS: nehodnotené', poznamka: '', riskClass: 'risk-undefined' });
             } else {
                 collectAndProcessData(side);
             }
@@ -396,10 +448,16 @@ document.addEventListener('DOMContentLoaded', function() {
         data.cievyTp = form.querySelector(`#${side}-cievy-tp`).value;
         data.neuroSenzorika = form.querySelector(`#${side}-neuro-senzorika`).value;
         data.neuroMotorika = form.querySelector(`#${side}-neuro-motorika`).value;
+        data.glassTap = form.querySelector(`#${side}-glass-tap`).value;
+        data.glassIm = form.querySelector(`#${side}-glass-im`).value;
+        data.glassFp = form.querySelector(`#${side}-glass-fp`).value;
+        data.glassIp = form.querySelector(`#${side}-glass-ip`).value;
 
         const wifiResult = calculateWIfI(data);
-        reportData[side] = { ...reportData[side], ...data, ...wifiResult };
+        const glassResult = calculateGLASS(data);
+        reportData[side] = { ...reportData[side], ...data, ...wifiResult, glass: glassResult };
         updateResultUI(side, wifiResult);
+        updateGlassUI(side, glassResult);
     }
 
     // WIfI Wound (W) – podľa SVS: rozhoduje hĺbka/postihnuté štruktúry a rozsah gangrény,
@@ -447,6 +505,26 @@ document.addEventListener('DOMContentLoaded', function() {
         return 1;
     }
 
+    // GLASS (GVG 2019) – štádium z rovnakej matice FP x IP, akú používa EVK.
+    function calculateGLASS(data) {
+        const fp = data.glassFp === '' ? null : parseInt(data.glassFp, 10);
+        const ip = data.glassIp === '' ? null : parseInt(data.glassIp, 10);
+        if (fp === null || ip === null) {
+            return { stadium: null, popis: 'GLASS: nezadané', poznamka: 'Zadajte stupeň FP aj IP (sekcia 11).', riskClass: 'risk-undefined' };
+        }
+        const st = window.Staging ? window.Staging.glassStadium(fp, ip) : null;
+        if (!st) {
+            return { stadium: null, popis: `GLASS: FP ${fp} / IP ${ip} – bez signifikantnej infrainguinálnej choroby`, poznamka: '', riskClass: 'risk-stage-1' };
+        }
+        const trieda = { I: 'risk-stage-2', II: 'risk-stage-3', III: 'risk-stage-4' }[st];
+        const narocnost = { I: 'nízka anatomická zložitosť', II: 'stredná anatomická zložitosť', III: 'vysoká anatomická zložitosť' }[st];
+        let poznamka = `${narocnost}.`;
+        if (data.glassIm === 'P2') poznamka += ' IM P2 – cez členok neprechádza žiadna tepna.';
+        else if (data.glassIm === 'P1') poznamka += ' IM P1 – pedálny oblúk chýba alebo je ťažko postihnutý.';
+        if (!data.glassTap) poznamka += ' Cieľová tepna (TAP) nie je zvolená – IP stupeň sa vzťahuje na ňu.';
+        return { stadium: st, popis: `GLASS štádium ${st} (FP ${fp} / IP ${ip}${data.glassIm ? ', IM ' + data.glassIm : ''})`, poznamka: poznamka, riskClass: trieda };
+    }
+
     function calculateWIfI(data) {
         const wGrade = stupenW(data);
         const isch = stupenI(data);
@@ -473,6 +551,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const abiNevypovedne = isch.zdroj === 'abi-nevypovedne';
 
         return { wGrade, iGrade, fIGrade, wifiScore, clinicalStage, amputationRisk, riskClass, poznamka, abiNevypovedne, ischZdroj: isch.zdroj };
+    }
+
+    function updateGlassUI(side, g) {
+        const res = document.getElementById(`${side}-glass-result`);
+        const note = document.getElementById(`${side}-glass-note`);
+        const card = document.getElementById(`${side}-glass-card`);
+        if (!res || !card) return;
+        res.textContent = g.popis;
+        if (note) note.textContent = g.poznamka || '';
+        card.className = `mt-4 p-4 rounded-lg border-l-4 ${g.riskClass}`;
     }
 
     function updateResultUI(side, wifiResult) {
@@ -507,6 +595,7 @@ document.addEventListener('DOMContentLoaded', function() {
         prsty: 'obmedzená na prsty',
         extenzivna: 'extenzívna (prednožie/stredonožie) alebo nekróza päty plnej hrúbky'
     };
+    const POPIS_TAP = { ATA: 'a. tibialis anterior', ATP: 'a. tibialis posterior', AFib: 'a. peronea' };
     const popisStruktury = v => POPIS_STRUKTURY[v] || 'nezadané';
     const popisGangrena = v => POPIS_GANGRENA[v] || 'nezadané';
 
@@ -547,6 +636,11 @@ document.addEventListener('DOMContentLoaded', function() {
         r += `8. Podminovanie: ${data.podminovanie ? `áno, ${data.podminovanieRozsah || 'N/A'}` : 'nie'}\n`;
         r += `9. Cievny status: ADP ${data.cievyAdp}, ATP ${data.cievyAtp}, ABI: ${data.cievyAbi || 'N/A'}, TP: ${data.cievyTp || 'N/A'} mmHg\n`;
         r += `10. Neuro status: Senzorika: ${data.neuroSenzorika || 'N/A'}, Motorika: ${data.neuroMotorika || 'N/A'}\n\n`;
+        if (data.glass && (data.glassFp !== '' || data.glassIp !== '' || data.glassTap)) {
+            r += `11. Anatómia (GLASS): ${data.glass.popis}`;
+            if (data.glassTap) r += `; cieľová tepna: ${POPIS_TAP[data.glassTap] || data.glassTap}`;
+            r += `\n\n`;
+        }
         r += `SVS WIfI HODNOTENIE:\n`;
         r += `- Skóre: ${data.wifiScore}\n`;
         r += `- Klinické štádium: ${data.clinicalStage} (Riziko amputácie: ${data.amputationRisk})\n`;
@@ -565,10 +659,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (d.isDefectFree) return `${nazov} bez defektu`;
             const zadane = d.lokalizacia || d.velkostL || d.wStruktury || d.wGangrena;
             if (!zadane) return `${nazov} nehodnotená`;
+            const glass = (d.glass && d.glass.stadium) ? `, GLASS ${d.glass.stadium}` : '';
             if (d.clinicalStage && d.clinicalStage !== 'Štádium -') {
-                return `defekt na ${nazov} - ${d.clinicalStage} (riziko ${d.amputationRisk.toLowerCase()})`;
+                return `defekt na ${nazov} - ${d.clinicalStage} (riziko ${d.amputationRisk.toLowerCase()})${glass}`;
             }
-            return `defekt na ${nazov} - WIfI ${d.wifiScore || 'neúplné'}, štádium neurčené`;
+            return `defekt na ${nazov} - WIfI ${d.wifiScore || 'neúplné'}, štádium neurčené${glass}`;
         };
 
         findings.push(zhrni(right, 'pravej DK'));

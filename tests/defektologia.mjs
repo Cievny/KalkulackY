@@ -107,6 +107,41 @@ check('štádium sa berie zo zdieľanej tabuľky v staging.js (W2 I0 fI2)',
 check('defektológia nemá vlastnú kópiu WIfI matice',
   !(await page.content()).includes('riskMatrix'));
 
+// GLASS (GVG 2019) – štádium z rovnakej matice FP x IP ako EVK
+const glassTxt = () => page.$eval('#right-glass-result', e=>e.textContent);
+check('bez FP/IP je GLASS nezadané', (await glassTxt()).includes('nezadané'), await glassTxt());
+await set('#right-glass-fp','0'); await set('#right-glass-ip','0');
+check('FP0 + IP0 = bez signifikantnej choroby',
+  (await glassTxt()).includes('bez signifikantnej'), await glassTxt());
+await set('#right-glass-fp','1'); await set('#right-glass-ip','1');
+check('FP1 + IP1 = GLASS I', (await glassTxt()).includes('štádium I (') , await glassTxt());
+await set('#right-glass-fp','2'); await set('#right-glass-ip','3');
+check('FP2 + IP3 = GLASS II', (await glassTxt()).includes('štádium II '), await glassTxt());
+await set('#right-glass-fp','4'); await set('#right-glass-ip','0');
+check('FP4 + IP0 = GLASS III', (await glassTxt()).includes('štádium III'), await glassTxt());
+await set('#right-glass-im','P2');
+check('IM P2 sa vypíše v poznámke',
+  (await page.$eval('#right-glass-note', e=>e.textContent)).includes('P2'));
+check('bez zvolenej TAP nástroj upozorní',
+  (await page.$eval('#right-glass-note', e=>e.textContent)).includes('TAP'));
+await set('#right-glass-tap','ATP');
+check('po zvolení TAP upozornenie zmizne',
+  !(await page.$eval('#right-glass-note', e=>e.textContent)).includes('TAP nie je'));
+
+// celá matica GLASS musí sedieť s tou v staging.js (žiadna druhá kópia)
+const glassZhoda = await page.evaluate(()=>{
+  const ocak = [[0,1,1,2,3],[1,1,2,2,3],[1,2,2,2,3],[2,2,2,3,3],[3,3,3,3,3]];
+  const naz = ['I','II','III'];
+  for(let fp=0; fp<5; fp++) for(let ip=0; ip<5; ip++){
+    const v = ocak[fp][ip];
+    const got = window.Staging.glassStadium(fp, ip);
+    if((v===0 ? null : naz[v-1]) !== got) return `FP${fp} IP${ip}: ${got}`;
+  }
+  return 'ok';
+});
+check('všetkých 25 kombinácií GLASS sedí s GVG 2019 maticou', glassZhoda === 'ok', glassZhoda);
+await set('#right-glass-fp','2'); await set('#right-glass-ip','3');
+
 // Nález: nevyplnená končatina sa nesmie hlásiť ako "bez defektu"
 await page.click('#generate-report-btn');
 await page.waitForTimeout(300);
@@ -117,6 +152,9 @@ check('nevyplnená ľavá DK je označená ako nehodnotená', rep.includes('Neho
 check('záver priznáva nehodnotenú ľavú DK', /ľavej DK nehodnotená/.test(rep));
 check('nález obsahuje rozsah rany a gangrénu', rep.includes('2b. Rozsah rany'));
 check('nález obsahuje hlbšie štruktúry', rep.includes('Hlbšie štruktúry: Osteomyelitída'));
+check('nález obsahuje GLASS štádium', rep.includes('11. Anatómia (GLASS): GLASS štádium II'), rep.split('11. Anatómia')[1]?.slice(0,80));
+check('nález obsahuje cieľovú tepnu', rep.includes('a. tibialis posterior'));
+check('záver obsahuje GLASS', /ZÁVER[\s\S]*GLASS II/.test(rep));
 
 // Reset
 await page.click('#reset-btn');
