@@ -68,7 +68,7 @@
     <div class="w-full max-w-6xl bg-white rounded-2xl shadow-xl p-6 sm:p-10">
         <div class="text-center">
             <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-800">CEAP Klasifikácia</h1>
-            <p class="mt-2 text-slate-500">Pre chronické venózne ochorenia</p>
+            <p class="mt-2 text-slate-500">Pre chronické venózne ochorenia · revízia 2020 (Lurie a kol.)</p>
         </div>
 
         <div class="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10">
@@ -80,10 +80,19 @@
                     <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c0" name="c_class" value="C0"><label for="c0" class="ml-3 cursor-pointer">C0: Bez viditeľných znakov</label></div>
                     <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c1" name="c_class" value="C1"><label for="c1" class="ml-3 cursor-pointer">C1: Teleangiektázie, retik. varixy</label></div>
                     <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c2" name="c_class" value="C2"><label for="c2" class="ml-3 cursor-pointer">C2: Varixy</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c2r" name="c_class" value="C2r"><label for="c2r" class="ml-3 cursor-pointer">C2r: Rekurentné varixy</label></div>
                     <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c3" name="c_class" value="C3"><label for="c3" class="ml-3 cursor-pointer">C3: Edém</label></div>
-                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c4" name="c_class" value="C4"><label for="c4" class="ml-3 cursor-pointer">C4: Kožné zmeny</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c4a" name="c_class" value="C4a"><label for="c4a" class="ml-3 cursor-pointer">C4a: Pigmentácia alebo ekzém</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c4b" name="c_class" value="C4b"><label for="c4b" class="ml-3 cursor-pointer">C4b: Lipodermatoskleróza alebo atrophie blanche</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c4c" name="c_class" value="C4c"><label for="c4c" class="ml-3 cursor-pointer">C4c: Corona phlebectatica</label></div>
                     <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c5" name="c_class" value="C5"><label for="c5" class="ml-3 cursor-pointer">C5: Zahojený vred</label></div>
                     <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c6" name="c_class" value="C6"><label for="c6" class="ml-3 cursor-pointer">C6: Aktívny vred</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="c6r" name="c_class" value="C6r"><label for="c6r" class="ml-3 cursor-pointer">C6r: Rekurentný aktívny vred</label></div>
+                </div>
+                <h3 class="text-sm font-semibold text-slate-600 mt-5 mb-2">Symptómy</h3>
+                <div class="space-y-3">
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="sym_s" name="symptomy" value="S"><label for="sym_s" class="ml-3 cursor-pointer">S: Symptomatický</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="sym_a" name="symptomy" value="A"><label for="sym_a" class="ml-3 cursor-pointer">A: Asymptomatický</label></div>
                 </div>
             </div>
 
@@ -93,7 +102,8 @@
                 <div class="space-y-3">
                     <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="ec" name="e_class" value="Ec"><label for="ec" class="ml-3 cursor-pointer">Ec: Kongenitálna</label></div>
                     <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="ep" name="e_class" value="Ep"><label for="ep" class="ml-3 cursor-pointer">Ep: Primárna</label></div>
-                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="es" name="e_class" value="Es"><label for="es" class="ml-3 cursor-pointer">Es: Sekundárna</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="esi" name="e_class" value="Esi"><label for="esi" class="ml-3 cursor-pointer">Esi: Sekundárna – intravenózna (po trombóze, traume žily)</label></div>
+                    <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="ese" name="e_class" value="Ese"><label for="ese" class="ml-3 cursor-pointer">Ese: Sekundárna – extravenózna (útlak, obezita, imobilita…)</label></div>
                     <div class="criteria-item flex items-center p-3 rounded-xl"><input type="radio" id="en" name="e_class" value="En"><label for="en" class="ml-3 cursor-pointer">En: Bez venóznej etiológie</label></div>
                 </div>
             </div>
@@ -147,9 +157,18 @@
             });
 
             const cValue = document.querySelector('input[name="c_class"]:checked')?.value || '_';
+            const symValue = document.querySelector('input[name="symptomy"]:checked')?.value || '';
             const eValue = document.querySelector('input[name="e_class"]:checked')?.value || '_';
             const pValue = document.querySelector('input[name="p_class"]:checked')?.value || '_';
             
+            // An („bez identifikovanej lokalizácie") sa vylučuje s As/Ad/Ap – posledná voľba vyhráva
+            const anBox = document.getElementById('an');
+            if (lastChanged === anBox && anBox.checked) {
+                ['as','ad','ap'].forEach(id => { document.getElementById(id).checked = false; });
+            } else if (lastChanged && lastChanged !== anBox && lastChanged.name === 'a_class' && lastChanged.checked) {
+                anBox.checked = false;
+            }
+            allInputs.forEach(input => input.closest('.criteria-item').classList.toggle('checked', input.checked));
             const aValues = Array.from(document.querySelectorAll('input[name="a_class"]:checked')).map(cb => cb.value);
             const aValue = aValues.length > 0 ? aValues.join(',') : '_';
             
@@ -162,14 +181,16 @@
 
             resultArea.innerHTML = `
                 <h2 class="text-2xl font-bold mb-2">Výsledná CEAP Klasifikácia</h2>
-                <p class="text-3xl font-mono p-3 bg-black bg-opacity-20 rounded-lg tracking-wider">${cValue}, ${eValue}, ${aValue}, ${pValue}</p>
+                <p class="text-3xl font-mono p-3 bg-black bg-opacity-20 rounded-lg tracking-wider">${cValue}${symValue ? ' ' + symValue : ''}, ${eValue}, ${aValue}, ${pValue}</p>
+                ${symValue ? '' : '<p class="text-sm mt-2 opacity-90">Doplňte S/A (symptomatický/asymptomatický) – je súčasťou základnej CEAP.</p>'}
             `;
 
             resultArea.classList.add('visible');
         };
 
+        let lastChanged = null;
         allInputs.forEach(input => {
-            input.addEventListener('change', calculateAndDisplayResult);
+            input.addEventListener('change', (e) => { lastChanged = e.target; calculateAndDisplayResult(); lastChanged = null; });
         });
 
         resetButton.addEventListener('click', () => {

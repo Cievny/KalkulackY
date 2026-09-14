@@ -42,3 +42,5 @@ jobs:
         run: node tests/ali.mjs
       - name: Testy VQI CLTI modelu prezitia
         run: node tests/vqi-clti.mjs
+      - name: Testy skorovacich kalkulaciek (WELLS, CEAP)
+        run: node tests/skorovacie.mjs

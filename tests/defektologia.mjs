@@ -181,6 +181,14 @@ check('záver obsahuje GLASS', /ZÁVER[\s\S]*GLASS II/.test(rep));
 check('nález obsahuje blok RIZIKO PACIENTA (VQI CLTI)', rep.includes('RIZIKO PACIENTA (VQI CLTI)'));
 check('nález uvádza 30-dňové aj 2-ročné prežitie', /30 dní > 99 %, 2 roky 96 %/.test(rep), rep.split('RIZIKO PACIENTA')[1]?.slice(0,160));
 check('záver obsahuje rizikovú skupinu VQI', /ZÁVER[\s\S]*Riziko pacienta podľa VQI: nízke/.test(rep));
+check('nález obsahuje PLAN blok (GVG 2019)', rep.includes('PLAN – STAGING CLTI (GVG 2019)'));
+check('PLAN: P z VQI', /P  – riziko pacienta \(VQI\):\s+Nízke riziko/.test(rep), rep.split('PLAN –')[1]?.slice(0,300));
+check('PLAN: L z WIfI pravej DK', /L  – závažnosť končatiny \(WIfI\):\s+pravá DK WIfI št\. 3/.test(rep), rep.split('PLAN –')[1]?.slice(0,300));
+check('PLAN: AN z GLASS pravej DK', /AN – anatomický vzor \(GLASS\):\s+pravá DK GLASS II/.test(rep), rep.split('PLAN –')[1]?.slice(0,300));
+check('PLAN: nevyplnená ľavá DK je nehodnotená', /ľavá DK nehodnotená/.test(rep));
+check('živá PLAN karta zobrazuje P', (await page.$eval('#plan-p', e=>e.textContent)).includes('Nízke riziko'));
+check('živá PLAN karta zobrazuje L', (await page.$eval('#plan-l', e=>e.textContent)).includes('PDK WIfI št. 3'));
+check('živá PLAN karta zobrazuje AN', (await page.$eval('#plan-an', e=>e.textContent)).includes('PDK GLASS II'));
 
 // Reset
 await page.click('#reset-btn');

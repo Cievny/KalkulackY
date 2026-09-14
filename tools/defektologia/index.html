@@ -167,6 +167,26 @@
             </div>
         </section>
 
+        <!-- PLAN – staging CLTI podľa GVG 2019 (P = pacient, L = končatina, AN = anatómia) -->
+        <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg mt-8 border-t-4 border-indigo-400">
+            <h2 class="text-2xl font-bold text-gray-900 text-center mb-1">PLAN – staging CLTI</h2>
+            <p class="text-sm text-gray-600 text-center mb-5">Global Vascular Guidelines 2019: P – riziko pacienta · L – závažnosť končatiny · AN – anatomický vzor</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 rounded-lg bg-gray-50 border">
+                    <div class="text-xs font-bold text-gray-500 tracking-wide">P · PACIENT (VQI)</div>
+                    <div id="plan-p" class="mt-1 font-semibold text-gray-900">nezadané</div>
+                </div>
+                <div class="p-4 rounded-lg bg-gray-50 border">
+                    <div class="text-xs font-bold text-gray-500 tracking-wide">L · KONČATINA (WIfI)</div>
+                    <div id="plan-l" class="mt-1 font-semibold text-gray-900">nezadané</div>
+                </div>
+                <div class="p-4 rounded-lg bg-gray-50 border">
+                    <div class="text-xs font-bold text-gray-500 tracking-wide">AN · ANATÓMIA (GLASS)</div>
+                    <div id="plan-an" class="mt-1 font-semibold text-gray-900">nezadané</div>
+                </div>
+            </div>
+        </section>
+
         <!-- Report Generation Section -->
         <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg mt-8">
             <h2 class="text-2xl font-bold text-gray-900 text-center mb-6">Finálny Report</h2>
@@ -527,6 +547,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target.checked) {
                 updateResultUI(side, { wifiScore: 'Bez defektu', clinicalStage: 'N/A', amputationRisk: 'N/A', riskClass: 'risk-stage-1' });
                 updateGlassUI(side, { stadium: null, popis: 'GLASS: nehodnotené', poznamka: '', riskClass: 'risk-undefined' });
+                updatePlanUI();
             } else {
                 collectAndProcessData(side);
             }
@@ -583,6 +604,7 @@ document.addEventListener('DOMContentLoaded', function() {
         reportData[side] = { ...reportData[side], ...data, ...wifiResult, glass: glassResult };
         updateResultUI(side, wifiResult);
         updateGlassUI(side, glassResult);
+        updatePlanUI();
     }
 
     // WIfI Wound (W) – podľa SVS: rozhoduje hĺbka/postihnuté štruktúry a rozsah gangrény,
@@ -757,6 +779,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 : '';
             card.className = 'mt-6 p-6 rounded-lg border-l-4 risk-undefined';
         }
+        updatePlanUI();
     }
     document.querySelectorAll('.vqi-input').forEach(el => el.addEventListener('change', updateVqiUI));
 
@@ -774,6 +797,41 @@ document.addEventListener('DOMContentLoaded', function() {
         return t;
     }
 
+    // --- PLAN (GVG 2019) – spojenie P (VQI), L (WIfI), AN (GLASS) na jednom mieste ---
+    function planL(side, nazov) {
+        const d = reportData[side] || {};
+        if (d.isDefectFree) return `${nazov} bez defektu`;
+        if (d.clinicalStage && d.clinicalStage !== 'Štádium -') return `${nazov} WIfI ${d.clinicalStage.replace('Štádium ', 'št. ')} (${d.wifiScore})`;
+        if (d.wifiScore && d.wifiScore !== 'W- I- fI-') return `${nazov} WIfI ${d.wifiScore}, štádium neurčené`;
+        return `${nazov} nehodnotená`;
+    }
+    function planAN(side, nazov) {
+        const g = (reportData[side] || {}).glass;
+        if (!g) return `${nazov} nehodnotená`;
+        if (g.stadium) return `${nazov} GLASS ${g.stadium} (FP ${reportData[side].glassFp} / IP ${reportData[side].glassIp})`;
+        if (reportData[side].glassFp !== '' && reportData[side].glassIp !== '' && reportData[side].glassFp !== undefined) return `${nazov} bez signifikantnej choroby`;
+        return `${nazov} nehodnotená`;
+    }
+    function planP() {
+        const r = vqiResult;
+        if (r && r.skupina) return `${r.nazovSkupiny} (30 d ${pct(r.prezitie30)}, 2 r ${pct(r.prezitie2r)})`;
+        return 'nezadané';
+    }
+    function updatePlanUI() {
+        const elP = document.getElementById('plan-p'), elL = document.getElementById('plan-l'), elAN = document.getElementById('plan-an');
+        if (!elP) return;
+        elP.textContent = planP();
+        elL.textContent = `${planL('right', 'PDK')} · ${planL('left', 'ĽDK')}`;
+        elAN.textContent = `${planAN('right', 'PDK')} · ${planAN('left', 'ĽDK')}`;
+    }
+    function generatePlanReport() {
+        let t = 'PLAN – STAGING CLTI (GVG 2019)\n--------------------------------------------\n';
+        t += `P  – riziko pacienta (VQI):       ${planP()}\n`;
+        t += `L  – závažnosť končatiny (WIfI):  ${planL('right', 'pravá DK')}; ${planL('left', 'ľavá DK')}\n`;
+        t += `AN – anatomický vzor (GLASS):     ${planAN('right', 'pravá DK')}; ${planAN('left', 'ľavá DK')}\n`;
+        return t;
+    }
+
     // --- REPORT GENERATION ---
     function generateFullReport() {
         sides.forEach(collectAndProcessData);
@@ -784,6 +842,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fullReport += "\n============================================\n";
         const vqiBlok = generateVqiReport();
         if (vqiBlok) fullReport += vqiBlok + "\n============================================\n";
+        fullReport += generatePlanReport() + "\n============================================\n";
         fullReport += generateOverallConclusion();
         reportOutput.value = fullReport.trim();
         reportOutputContainer.classList.remove('hidden');

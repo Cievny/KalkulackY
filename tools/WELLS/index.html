@@ -64,7 +64,7 @@
                 </div>
                 <div class="criteria-item flex items-center p-4 rounded-xl">
                     <input type="checkbox" id="c_bedridden" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
-                    <label for="c_bedridden" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Nedávno pripútaný na lôžko >3 dni alebo veľká operácia do 12 týždňov</label>
+                    <label for="c_bedridden" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Pripútaný na lôžko ≥ 3 dni alebo veľká operácia v celkovej/regionálnej anestézii do 12 týždňov</label>
                     <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
                 </div>
                 <div class="criteria-item flex items-center p-4 rounded-xl">
@@ -79,7 +79,7 @@
                 </div>
                 <div class="criteria-item flex items-center p-4 rounded-xl">
                     <input type="checkbox" id="c_calf_swelling" data-points="1" class="h-5 w-5 rounded border-gray-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
-                    <label for="c_calf_swelling" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Obvod lýtka väčší o >3 cm v porovnaní s asymptomatickou stranou</label>
+                    <label for="c_calf_swelling" class="ml-4 flex-1 text-slate-700 text-base cursor-pointer">Obvod lýtka väčší o &gt; 3 cm oproti asymptomatickej strane (meraný 10 cm pod tuberositas tibiae)</label>
                     <span class="points point-positive text-lg font-bold px-3 py-1 rounded-full">+1</span>
                 </div>
                 <div class="criteria-item flex items-center p-4 rounded-xl">
@@ -139,11 +139,6 @@
                     item.classList.remove('checked');
                 }
             });
-
-            if (!isAnyCheckboxChecked) {
-                 resultArea.classList.remove('visible');
-                 return;
-            }
 
             let resultTitle = '';
             let probabilityText = '';
