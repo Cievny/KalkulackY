@@ -46,6 +46,127 @@
         <div id="right-content" class="tab-content active"></div>
         <div id="left-content" class="tab-content"></div>
         
+        <!-- 12. Riziko pacienta – VQI CLTI (na úrovni pacienta, nie končatiny) -->
+        <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg mt-8">
+            <h2 class="text-2xl font-bold text-gray-900 text-center mb-2">12. Riziko pacienta – VQI CLTI</h2>
+            <p class="text-sm text-gray-600 text-center mb-6">Odhad 30-dňového a 2-ročného prežitia pred infrainguinálnou revaskularizáciou (Simons a kol., VQI). Platí pre pacienta, nie pre končatinu.</p>
+            <form id="vqi-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <label class="text-sm">Vek</label>
+                        <select id="vqi-vek" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="<60">&lt; 60 rokov</option>
+                            <option value="60-70">60 – 70 rokov</option>
+                            <option value="71-80">71 – 80 rokov</option>
+                            <option value=">80">&gt; 80 rokov</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Rasa</label>
+                        <select id="vqi-rasa" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="biela">Biela</option>
+                            <option value="ina">Iná</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Indikácia</label>
+                        <select id="vqi-indikacia" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="kludova_bolest">Kľudová bolesť</option>
+                            <option value="tkanivova_strata">Tkanivová strata</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">ICHS</label>
+                        <select id="vqi-ichs" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="ziadna">Žiadna</option>
+                            <option value="im_stabilna">IM v anamnéze / asymptomatická / stabilná AP</option>
+                            <option value="nestabilna">Nestabilná AP / IM do 6 mesiacov</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Srdcové zlyhávanie</label>
+                        <select id="vqi-sz" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="nie">Nie</option>
+                            <option value="ano">Áno</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">CHOCHP</label>
+                        <select id="vqi-chocbp" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="ziadna">Žiadna</option>
+                            <option value="liecena">Neliečená alebo na medikácii</option>
+                            <option value="kyslik">Domáca oxygenoterapia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">CKD štádium (eGFR)</label>
+                        <select id="vqi-ckd" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="1">1 (≥ 90)</option>
+                            <option value="2">2 (60 – 89)</option>
+                            <option value="3">3 (30 – 59)</option>
+                            <option value="4">4 (15 – 29)</option>
+                            <option value="5">5 (< 15)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Ambulantný stav</label>
+                        <select id="vqi-ambulacia" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="nezavisly">Chodí samostatne</option>
+                            <option value="s_pomocou">Chodí s pomocou</option>
+                            <option value="vozik">Na vozíku</option>
+                            <option value="leziaci">Ležiaci</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Fajčenie</label>
+                        <select id="vqi-fajcenie" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="nikdy">Nikdy</option>
+                            <option value="byvaly">Bývalý fajčiar</option>
+                            <option value="aktivny">Aktívny fajčiar</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Statín (predoperačne)</label>
+                        <select id="vqi-statin" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="nie">Nie</option>
+                            <option value="ano">Áno</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Antiagregans (predoperačne)</label>
+                        <select id="vqi-antiagregans" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="nie">Nie</option>
+                            <option value="ano">Áno</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Betablokátor (predoperačne)</label>
+                        <select id="vqi-betablokator" class="vqi-input w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="nie">Nie</option>
+                            <option value="ano">Áno</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+            <div id="vqi-card" class="mt-6 p-6 rounded-lg border-l-4 risk-undefined">
+                <h4 id="vqi-skupina" class="text-2xl font-bold text-center">VQI: nezadané</h4>
+                <p id="vqi-prezitie" class="text-lg text-center mt-2">30 dní: – · 2 roky: –</p>
+                <p id="vqi-note" class="text-sm text-center mt-2 text-gray-700"></p>
+            </div>
+        </section>
+
         <!-- Report Generation Section -->
         <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg mt-8">
             <h2 class="text-2xl font-bold text-gray-900 text-center mb-6">Finálny Report</h2>
@@ -77,6 +198,8 @@
 
 <!-- Zdieľaná WIfI tabuľka (SVS 2014) – rovnaká, akú používa EVK cez /tools/staging.js -->
 <script src="/tools/staging.js"></script>
+<!-- VQI CLTI model prežitia (kalibrovaný proti oficiálnej kalkulačke SVS) -->
+<script src="/tools/vqi-clti.js"></script>
 <script>
 // --- TEMPLATE FOR CALCULATOR UI ---
 function getCalculatorHTML(side) {
@@ -358,6 +481,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById(`${side}-form-content`).classList.remove('hidden');
             collectAndProcessData(side);
         });
+        const vqiForm = document.getElementById('vqi-form');
+        if (vqiForm) { vqiForm.reset(); updateVqiUI(); }
         reportOutputContainer.classList.add('hidden');
         copyFeedback.textContent = '';
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === 'right'));
@@ -377,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    document.querySelectorAll('form').forEach(form => {
+    document.querySelectorAll('#right-form, #left-form').forEach(form => {
         form.addEventListener('input', () => {
             const side = form.id.split('-')[0];
             collectAndProcessData(side);
@@ -599,6 +724,56 @@ document.addEventListener('DOMContentLoaded', function() {
     const popisStruktury = v => POPIS_STRUKTURY[v] || 'nezadané';
     const popisGangrena = v => POPIS_GANGRENA[v] || 'nezadané';
 
+    // --- VQI CLTI (riziko pacienta) ---
+    const VQI_POLIA = ['vek','rasa','indikacia','ichs','sz','chocbp','ckd','ambulacia','fajcenie','statin','antiagregans','betablokator'];
+    const VQI_NAZVY = { vek:'vek', rasa:'rasa', indikacia:'indikácia', ichs:'ICHS', sz:'SZ', chocbp:'CHOCHP', ckd:'CKD',
+                        ambulacia:'ambulantný stav', fajcenie:'fajčenie', statin:'statín', antiagregans:'antiagregans', betablokator:'betablokátor' };
+    const VQI_TRIEDA = { nizke: 'risk-stage-1', stredne: 'risk-stage-2', vysoke: 'risk-stage-3' };
+    let vqiResult = null;
+
+    function vqiProfil() {
+        const p = {};
+        VQI_POLIA.forEach(k => { p[k] = document.getElementById('vqi-' + k).value; });
+        return p;
+    }
+    const pct = x => (x === null || x === undefined) ? '–' : (100 * x > 99 ? '> 99 %' : Math.round(100 * x) + ' %');
+
+    function updateVqiUI() {
+        if (!window.VQI) return;
+        const r = window.VQI.vypocitaj(vqiProfil());
+        vqiResult = r;
+        const card = document.getElementById('vqi-card');
+        const zadane = VQI_POLIA.some(k => document.getElementById('vqi-' + k).value !== '');
+        if (r.skupina) {
+            document.getElementById('vqi-skupina').textContent = 'VQI: ' + r.nazovSkupiny;
+            document.getElementById('vqi-prezitie').textContent = `Odhad prežitia – 30 dní: ${pct(r.prezitie30)} · 2 roky: ${pct(r.prezitie2r)}`;
+            document.getElementById('vqi-note').textContent = '';
+            card.className = 'mt-6 p-6 rounded-lg border-l-4 ' + VQI_TRIEDA[r.skupina];
+        } else {
+            document.getElementById('vqi-skupina').textContent = 'VQI: nezadané';
+            document.getElementById('vqi-prezitie').textContent = '30 dní: – · 2 roky: –';
+            document.getElementById('vqi-note').textContent = zadane
+                ? 'Chýba: ' + r.chybajuce.map(k => VQI_NAZVY[k] || k).join(', ') + '.'
+                : '';
+            card.className = 'mt-6 p-6 rounded-lg border-l-4 risk-undefined';
+        }
+    }
+    document.querySelectorAll('.vqi-input').forEach(el => el.addEventListener('change', updateVqiUI));
+
+    function generateVqiReport() {
+        const r = vqiResult;
+        const zadane = VQI_POLIA.some(k => document.getElementById('vqi-' + k).value !== '');
+        if (!zadane) return '';
+        let t = 'RIZIKO PACIENTA (VQI CLTI)\n--------------------------------------------\n';
+        if (r && r.skupina) {
+            t += `Odhad prežitia pred infrainguinálnou revaskularizáciou: 30 dní ${pct(r.prezitie30)}, 2 roky ${pct(r.prezitie2r)}.\n`;
+            t += `Riziková skupina: ${r.nazovSkupiny.toLowerCase()} (VQI, Simons a kol.).\n`;
+        } else {
+            t += 'Nehodnotené – neúplné údaje (chýba: ' + ((r && r.chybajuce) || []).map(k => VQI_NAZVY[k] || k).join(', ') + ').\n';
+        }
+        return t;
+    }
+
     // --- REPORT GENERATION ---
     function generateFullReport() {
         sides.forEach(collectAndProcessData);
@@ -607,6 +782,8 @@ document.addEventListener('DOMContentLoaded', function() {
         fullReport += "\n============================================\n";
         fullReport += generateSideReport('left', 'Ľavá dolná končatina');
         fullReport += "\n============================================\n";
+        const vqiBlok = generateVqiReport();
+        if (vqiBlok) fullReport += vqiBlok + "\n============================================\n";
         fullReport += generateOverallConclusion();
         reportOutput.value = fullReport.trim();
         reportOutputContainer.classList.remove('hidden');
@@ -670,6 +847,9 @@ document.addEventListener('DOMContentLoaded', function() {
         findings.push(zhrni(left, 'ľavej DK'));
 
         conclusion += findings.join('; ') + ".";
+        if (vqiResult && vqiResult.skupina) {
+            conclusion += ` Riziko pacienta podľa VQI: ${vqiResult.nazovSkupiny.toLowerCase()} (2-ročné prežitie ${pct(vqiResult.prezitie2r)}).`;
+        }
         return conclusion;
     }
 

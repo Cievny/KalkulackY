@@ -7,45 +7,54 @@
 // SVS: nízke (> 97 % / > 70 %), stredné (95–97 % / 50–70 %), vysoké (< 95 % alebo < 50 %).
 //
 // POZNÁMKA K PÔVODU KOEFICIENTOV – dôležité pri akejkoľvek úprave:
-// Väčšina bét je prevzatá priamo z publikovaných supplementárnych tabuliek
-// (tblSI pre 30 dní, tblSII pre 2 roky). Tie však obsahujú interakčné členy s časom
-// pre premenné, ktoré porušili predpoklad proporcionality, a ich hlavné efekty sú
-// preto skreslené (napr. ambulácia "vozík" tam má HR 49, ICHS HR 7,5). Tieto
-// konkrétne bety a obe baseline hodnoty boli preto dopočítané kalibráciou proti
-// oficiálnej kalkulačke SVS (svs-vqi.shinyapps.io/CRICalculators) – pozri
-// tests/vqi-clti.mjs, kde je celá sada kalibračných aj kontrolných profilov.
-// Kalibrované členy sú nižšie označené komentárom /* kalibrované */.
+// Publikované supplementárne tabuľky (tblSI pre 30 dní, tblSII pre 2 roky) obsahujú
+// interakčné členy s časom a ich hlavné efekty sú tým skreslené. Pri 30-dňovom
+// modeli sa skreslenie týkalo len tkanivovej straty – ostatné bety z tblSI sedia
+// s oficiálnou kalkulačkou SVS a sú prevzaté doslova. Pri 2-ročnom modeli sa
+// ukázalo, že tblSII nesedí ani pre premenné bez interakcie, preto sú VŠETKY
+// jeho bety aj baseline odmerané kalibráciou proti oficiálnej kalkulačke
+// (svs-vqi.shinyapps.io/CRICalculators): 23 jednopremenných profilov (referent
+// + zmena jedného poľa) a 4 viacpremenné profily ako koncová kontrola, riešené
+// naraz ako sústava nerovností. Celá sada je v tests/vqi-clti.mjs.
+// Kalibrované členy sú označené komentárom /* kalibrované */.
 (function (global) {
   'use strict';
 
+  // 30-DŇOVÝ MODEL – bety z tblSI (Simons a kol.), tkanivová strata a baseline
+  // dopočítané kalibráciou (pozri hlavičku). Overené na 23 profiloch.
   var M30 = {
-    baseline: 0.99671,           /* kalibrované */
-    vek:       { '<60': 0, '60-70': 0.51, '71-80': 0.97, '>80': 1.5 },
-    rasa:      { biela: 0, ina: -0.38 },
-    indikacia: { kludova_bolest: 0, tkanivova_strata: 0.330 },  /* kalibrované */
-    ichs:      { ziadna: 0, im_stabilna: 0.25, nestabilna: 0.78 },
-    sz:        { nie: 0, ano: 0.53 },
-    chocbp:    { ziadna: 0, liecena: 0.27, kyslik: 0.86 },
-    ckd:       { '1': 0, '2': -0.05, '3': 0.26, '4': 0.76, '5': 1.45 },
-    ambulacia: { nezavisly: 0, s_pomocou: 0.41, vozik: 0.60, leziaci: 1.34 },
-    statin:    { nie: 0, ano: -0.29 }
+    baseline: 0.99680,           /* kalibrované */
+    vek:       { '<60': 0, '60-70': 0.510, '71-80': 0.970, '>80': 1.500 },
+    rasa:      { biela: 0, ina: -0.380 },
+    indikacia: { kludova_bolest: 0, tkanivova_strata: 0.397 },   /* kalibrované (tblSI: -0.24, skreslené interakciou) */
+    ichs:      { ziadna: 0, im_stabilna: 0.250, nestabilna: 0.780 },
+    sz:        { nie: 0, ano: 0.530 },
+    chocbp:    { ziadna: 0, liecena: 0.270, kyslik: 0.860 },
+    ckd:       { '1': 0, '2': -0.050, '3': 0.260, '4': 0.760, '5': 1.450 },
+    ambulacia: { nezavisly: 0, s_pomocou: 0.410, vozik: 0.600, leziaci: 1.340 },
+    statin:    { nie: 0, ano: -0.290 }
     // fajčenie, betablokátor a antiagregans boli z 30-dňového modelu vylúčené (P > .01)
   };
 
+  // 2-ROČNÝ MODEL – VŠETKY bety aj baseline odmerané kalibráciou proti oficiálnej
+  // kalkulačke SVS (23 jednopremenných + 4 viacpremenné profily, riešené naraz ako
+  // sústava). Publikovaná tblSII sa ukázala nepoužiteľná aj pre premenné bez
+  // interakčného člena. Presnosť jednotlivých bét je daná zaokrúhľovaním appky na
+  // celé percentá (~±0,1 v log-hazarde); súčty overené na viacpremenných profiloch.
   var M2R = {
-    baseline: 0.96,              /* kalibrované */
-    vek:       { '<60': 0, '60-70': 0.33, '71-80': 0.63, '>80': 0.99 },
-    rasa:      { biela: 0, ina: -0.20 },
-    indikacia: { kludova_bolest: 0, tkanivova_strata: 0.37 },
-    fajcenie:  { nikdy: 0, byvaly: 0.04, aktivny: 0.07 },
-    ichs:      { ziadna: 0, im_stabilna: 0.172, nestabilna: 0.691 },   /* kalibrované */
-    sz:        { nie: 0, ano: 0.29 },
-    chocbp:    { ziadna: 0, liecena: 0.21, kyslik: 0.38 },
-    ckd:       { '1': 0, '2': 0.05, '3': 0.28, '4': 0.59, '5': 1.03 },
-    ambulacia: { nezavisly: 0, s_pomocou: 0.372, vozik: 0.575, leziaci: 1.307 }, /* kalibrované */
-    betablokator: { nie: 0, ano: 0.19 },
-    antiagregans: { nie: 0, ano: -0.11 },
-    statin:       { nie: 0, ano: -0.19 }
+    baseline: 0.9580,              /* kalibrované */
+    vek:       { '<60': 0, '60-70': 0.361, '71-80': 0.611, '>80': 1.204 },
+    rasa:      { biela: 0, ina: -0.514 },
+    indikacia: { kludova_bolest: 0, tkanivova_strata: 0.463 },
+    fajcenie:  { nikdy: 0, byvaly: 0.084, aktivny: 0.106 },
+    ichs:      { ziadna: 0, im_stabilna: 0.084, nestabilna: 0.290 },
+    sz:        { nie: 0, ano: 0.463 },
+    chocbp:    { ziadna: 0, liecena: 0.435, kyslik: 0.583 },
+    ckd:       { '1': 0, '2': 0.057, '3': 0.105, '4': 0.611, '5': 1.122 },
+    ambulacia: { nezavisly: 0, s_pomocou: 0.290, vozik: 0.463, leziaci: 0.964 },
+    betablokator: { nie: 0, ano: 0.084 },
+    antiagregans: { nie: 0, ano: -0.172 },
+    statin:       { nie: 0, ano: -0.078 }
   };
 
   // Polia, ktoré musí volajúci vyplniť, aby sa dal model počítať.

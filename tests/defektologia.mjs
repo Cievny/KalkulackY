@@ -142,6 +142,29 @@ const glassZhoda = await page.evaluate(()=>{
 check('všetkých 25 kombinácií GLASS sedí s GVG 2019 maticou', glassZhoda === 'ok', glassZhoda);
 await set('#right-glass-fp','2'); await set('#right-glass-ip','3');
 
+// VQI CLTI (sekcia 12) – riziko pacienta, počíta zdieľaný /tools/vqi-clti.js
+const vqiTxt = () => page.$eval('#vqi-skupina', e=>e.textContent);
+const vqiPct = () => page.$eval('#vqi-prezitie', e=>e.textContent);
+check('VQI bez vstupov je nezadané', (await vqiTxt()).includes('nezadané'), await vqiTxt());
+await set('#vqi-vek','60-70');
+check('čiastočný VQI vstup vymenuje, čo chýba',
+  (await page.$eval('#vqi-note', e=>e.textContent)).includes('Chýba'));
+// profil B z oficiálnej kalkulačky SVS: 88 % / 43 % → vysoké riziko
+for (const [k,v] of Object.entries({vek:'71-80', rasa:'biela', indikacia:'tkanivova_strata', ichs:'im_stabilna',
+  sz:'ano', chocbp:'liecena', ckd:'3', ambulacia:'leziaci', fajcenie:'aktivny', statin:'ano',
+  antiagregans:'ano', betablokator:'nie'})) await set('#vqi-'+k, v);
+check('VQI profil B → vysoké riziko', (await vqiTxt()).includes('Vysoké'), await vqiTxt());
+check('VQI profil B → 30 dní 88 %, 2 roky 43 % (ako appka SVS)',
+  (await vqiPct()).includes('88 %') && (await vqiPct()).includes('43 %'), await vqiPct());
+check('VQI karta má triedu vysokého rizika',
+  (await page.$eval('#vqi-card', e=>e.className)).includes('risk-stage-3'));
+// referent → > 99 % / 96 %
+for (const [k,v] of Object.entries({vek:'<60', rasa:'biela', indikacia:'kludova_bolest', ichs:'ziadna',
+  sz:'nie', chocbp:'ziadna', ckd:'1', ambulacia:'nezavisly', fajcenie:'nikdy', statin:'nie',
+  antiagregans:'nie', betablokator:'nie'})) await set('#vqi-'+k, v);
+check('VQI referent → nízke riziko, > 99 % / 96 %',
+  (await vqiTxt()).includes('Nízke') && (await vqiPct()).includes('> 99 %') && (await vqiPct()).includes('96 %'), await vqiPct());
+
 // Nález: nevyplnená končatina sa nesmie hlásiť ako "bez defektu"
 await page.click('#generate-report-btn');
 await page.waitForTimeout(300);
@@ -155,11 +178,15 @@ check('nález obsahuje hlbšie štruktúry', rep.includes('Hlbšie štruktúry: 
 check('nález obsahuje GLASS štádium', rep.includes('11. Anatómia (GLASS): GLASS štádium II'), rep.split('11. Anatómia')[1]?.slice(0,80));
 check('nález obsahuje cieľovú tepnu', rep.includes('a. tibialis posterior'));
 check('záver obsahuje GLASS', /ZÁVER[\s\S]*GLASS II/.test(rep));
+check('nález obsahuje blok RIZIKO PACIENTA (VQI CLTI)', rep.includes('RIZIKO PACIENTA (VQI CLTI)'));
+check('nález uvádza 30-dňové aj 2-ročné prežitie', /30 dní > 99 %, 2 roky 96 %/.test(rep), rep.split('RIZIKO PACIENTA')[1]?.slice(0,160));
+check('záver obsahuje rizikovú skupinu VQI', /ZÁVER[\s\S]*Riziko pacienta podľa VQI: nízke/.test(rep));
 
 // Reset
 await page.click('#reset-btn');
 await page.waitForTimeout(300);
 check('reset vyčistí skóre', (await score()).includes('W-'), await score());
+check('reset vyčistí VQI', (await vqiTxt()).includes('nezadané'), await vqiTxt());
 check('reset skryje ABI upozornenie',
   await page.$eval('#right-abi-warn', e=>e.classList.contains('hidden')));
 
