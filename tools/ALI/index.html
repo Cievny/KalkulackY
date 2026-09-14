@@ -180,44 +180,61 @@
                 return;
             }
 
-            const sVal = parseInt(sRadio.dataset.value);
-            const mVal = parseInt(mRadio.dataset.value);
-            const dvVal = parseInt(dvRadio.dataset.value);
-            
+            const sVal  = parseInt(sRadio.dataset.value);   // 0 žiadny, 1 prsty, 2 viac ako prsty, 3 anestézia
+            const mVal  = parseInt(mRadio.dataset.value);   // 0 žiadny, 1 mierny/stredný, 2 paralýza
+            const daVal = parseInt(daRadio.dataset.value);  // 0 vybaviteľný, 1 nevybaviteľný
+            const dvVal = parseInt(dvRadio.dataset.value);  // 0 vybaviteľný, 1 nevybaviteľný
+
             let title = '';
             let prognosis = '';
             let recommendation = '';
             let colorClasses = [];
+            const upozornenia = [];
 
-            // Determine stage based on the most severe finding
-            if (dvVal === 1 || sVal === 3 || mVal === 2) {
+            // Rutherfordova klasifikácia – trieda III je definovaná KOMBINÁCIOU nálezov
+            // (profundná anestézia + paralýza/rigor + nevybaviteľný venózny signál), nie
+            // ktorýmkoľvek z nich samostatne. Paralýza pri vybaviteľnom venóznom signáli
+            // je IIb – končatina zachrániteľná pri okamžitej revaskularizácii.
+            if (sVal === 3 && mVal === 2 && dvVal === 1) {
                 title = 'Trieda III: Ireverzibilná';
-                prognosis = 'Končatina nie je zachrániteľná.';
-                recommendation = 'Nutná primárna amputácia.';
+                prognosis = 'Rozsiahla strata tkaniva alebo trvalé poškodenie nervu je nevyhnutné.';
+                recommendation = 'Primárna amputácia. Rozhodnutie posúďte v kontexte celkového stavu pacienta.';
                 colorClasses = ['bg-red-600', 'border-red-800'];
-            } else if (sVal === 2 || mVal === 1) {
+                if (daVal === 0) upozornenia.push('Artériový signál je vybaviteľný, čo s obrazom triedy III nesúhlasí – overte vyšetrenie.');
+            } else if (sVal >= 2 || mVal >= 1) {
                 title = 'Trieda IIb: Bezprostredne ohrozená';
                 prognosis = 'Zachrániteľná pri okamžitej revaskularizácii.';
-                recommendation = 'Urgentná operácia.';
+                recommendation = 'Urgentná revaskularizácia bez odkladu.';
                 colorClasses = ['bg-orange-500', 'border-orange-700'];
-            } else if (sVal === 1) {
+                if (mVal === 2 && dvVal === 0) upozornenia.push('Paralýza pri vybaviteľnom venóznom signáli – hraničný nález medzi IIb a III. Rozhoduje čas do revaskularizácie.');
+                if (sVal === 3 && dvVal === 0) upozornenia.push('Anestézia pri vybaviteľnom venóznom signáli – hraničný nález medzi IIb a III.');
+            } else if (sVal === 1 || daVal === 1) {
                 title = 'Trieda IIa: Marginálne ohrozená';
-                prognosis = 'Zachrániteľná pri urgentnej revaskularizácii.';
-                recommendation = 'Urgentná revaskularizácia.';
+                prognosis = 'Zachrániteľná pri včasnej liečbe.';
+                recommendation = 'Urgentné zobrazenie a revaskularizácia.';
                 colorClasses = ['bg-amber-500', 'border-amber-700'];
-            } else { // sVal === 0 and mVal === 0
+                if (sVal === 0 && daVal === 1) upozornenia.push('Bez senzorického deficitu, ale artériový signál nevybaviteľný – podľa Rutherforda ide o IIa, nie o triedu I.');
+            } else {
                 title = 'Trieda I: Životaschopná';
                 prognosis = 'Končatina nie je bezprostredne ohrozená.';
                 recommendation = 'Možnosť elektívnej revaskularizácie.';
                 colorClasses = ['bg-emerald-500', 'border-emerald-700'];
             }
 
+            // Nevybaviteľný venózny signál mimo kompletného obrazu triedy III
+            if (dvVal === 1 && !(sVal === 3 && mVal === 2)) {
+                upozornenia.push('Nevybaviteľný venózny signál bez úplného obrazu triedy III – vyšetrenie zopakujte, ide o varovný nález.');
+            }
+
+            const suhrn = `S${sVal} M${mVal} · artériový ${daVal ? 'nevybaviteľný' : 'vybaviteľný'} · venózny ${dvVal ? 'nevybaviteľný' : 'vybaviteľný'}`;
+
             resultArea.innerHTML = `
                 <h2 class="text-2xl font-bold mb-2">${title}</h2>
                 <p class="text-base">${prognosis}</p>
                 <p class="text-base font-semibold mt-1">${recommendation}</p>
+                <p class="text-sm mt-3 opacity-90">${suhrn}</p>
+                ${upozornenia.map(u => `<p class="text-sm mt-2 bg-black bg-opacity-20 rounded-lg px-3 py-2">${u}</p>`).join('')}
             `;
-
             resultArea.className = 'mt-10 p-6 rounded-xl text-white text-center border-2 transition-all duration-300';
             resultArea.classList.add(...colorClasses, 'visible');
         };

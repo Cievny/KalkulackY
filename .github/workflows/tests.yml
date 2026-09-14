@@ -38,3 +38,5 @@ jobs:
         run: node tests/material-katalog.mjs
       - name: Testy WIfI logiky defektologie
         run: node tests/defektologia.mjs
+      - name: Testy Rutherfordovej klasifikacie ALI
+        run: node tests/ali.mjs
