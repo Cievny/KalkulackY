@@ -36,3 +36,5 @@ jobs:
         run: node tests/staging.mjs
       - name: Testy materialoveho registra
         run: node tests/material-katalog.mjs
+      - name: Testy WIfI logiky defektologie
+        run: node tests/defektologia.mjs

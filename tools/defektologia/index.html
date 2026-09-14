@@ -75,6 +75,8 @@
         </footer>
     </div>
 
+<!-- Zdieľaná WIfI tabuľka (SVS 2014) – rovnaká, akú používa EVK cez /tools/staging.js -->
+<script src="/tools/staging.js"></script>
 <script>
 // --- TEMPLATE FOR CALCULATOR UI ---
 function getCalculatorHTML(side) {
@@ -119,6 +121,34 @@ function getCalculatorHTML(side) {
                 </div>
             </section>
 
+            <!-- 2b. Rozsah rany a gangréna (WIfI Wound) -->
+            <section><h3 class="section-header">2b. Rozsah rany a gangréna <span class="text-sm font-normal text-gray-500">(určuje WIfI stupeň W)</span></h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-sm">Hĺbka / postihnuté štruktúry</label>
+                        <select id="${side}-w-struktury" class="w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="ziadny">Bez rany (len kľudová bolesť / ischémia)</option>
+                            <option value="povrch">Malý plytký vred (koža/podkožie), bez obnaženej kosti</option>
+                            <option value="kost_falanga">Obnažená kosť len distálnej falangy</option>
+                            <option value="kost">Hlbší vred s obnaženou kosťou, kĺbom alebo šľachou</option>
+                            <option value="peta_plytka">Plytký vred päty bez postihnutia kalkanea</option>
+                            <option value="rozsiahly">Rozsiahly hlboký vred prednožia a/alebo stredonožia</option>
+                            <option value="peta_hlboka">Vred päty plnej hrúbky ± postihnutie kalkanea</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Gangréna</label>
+                        <select id="${side}-w-gangrena" class="w-full p-2 border rounded-md">
+                            <option value="">-- Nezadané --</option>
+                            <option value="ziadna">Žiadna</option>
+                            <option value="prsty">Obmedzená na prsty</option>
+                            <option value="extenzivna">Extenzívna (prednožie/stredonožie) alebo nekróza päty plnej hrúbky</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
             <!-- 3. Tvar a okraje -->
             <section><h3 class="section-header">3. Tvar a okraje</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -144,22 +174,44 @@ function getCalculatorHTML(side) {
                 </div>
             </section>
 
-            <!-- 6. Známky infekcie -->
-            <section><h3 class="section-header">6. Známky infekcie</h3>
+            <!-- 6. Známky infekcie (IDSA/IWGDF) -->
+            <section><h3 class="section-header">6. Známky infekcie <span class="text-sm font-normal text-gray-500">(IDSA/IWGDF – určuje WIfI stupeň fI)</span></h3>
+                <h4 class="font-semibold mb-2 text-sm">Lokálne znaky <span class="font-normal text-gray-500">– infekcia sa konštatuje až pri ≥ 2 znakoch</span></h4>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    ${getCheckbox(side, 'infekcia', 'Erytém')}
                     ${getCheckbox(side, 'infekcia', 'Opuch/Indurácia')}
-                    ${getCheckbox(side, 'infekcia', 'Zápach')}
+                    ${getCheckbox(side, 'infekcia', 'Erytém > 0,5 cm okolo vredu')}
+                    ${getCheckbox(side, 'infekcia', 'Lokálna citlivosť/bolesť')}
+                    ${getCheckbox(side, 'infekcia', 'Lokálne zvýšená teplota')}
                     ${getCheckbox(side, 'infekcia', 'Hnisavý výtok')}
-                    ${getCheckbox(side, 'infekcia', 'Lokálna bolesť')}
-                    ${getCheckbox(side, 'infekcia', 'Zvýšená teplota')}
                 </div>
-                <div class="mt-4"><h4 class="font-semibold mb-2">Systémové príznaky (SIRS)</h4>
+                <div class="mt-4">
+                    <label class="text-sm">Rozsah erytému</label>
+                    <select id="${side}-erytem-rozsah" class="w-full md:w-1/2 p-2 border rounded-md">
+                        <option value="">-- Nezadané / bez erytému --</option>
+                        <option value="male">0,5 – 2 cm od okraja vredu</option>
+                        <option value="velke">&gt; 2 cm od okraja vredu</option>
+                    </select>
+                </div>
+                <div class="mt-4"><h4 class="font-semibold mb-2 text-sm">Postihnutie hlbších štruktúr <span class="font-normal text-gray-500">– ktorýkoľvek znak = fI-2</span></h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        ${getCheckbox(side, 'hlbke', 'Absces')}
+                        ${getCheckbox(side, 'hlbke', 'Osteomyelitída')}
+                        ${getCheckbox(side, 'hlbke', 'Septická artritída')}
+                        ${getCheckbox(side, 'hlbke', 'Fasciitída/nekrotizujúca infekcia')}
+                    </div>
+                </div>
+                <div class="mt-4"><h4 class="font-semibold mb-2 text-sm">Systémové príznaky (SIRS) <span class="font-normal text-gray-500">– fI-3 až pri ≥ 2 kritériách</span></h4>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        ${getCheckbox(side, 'sirs', 'Horúčka/Hypotermia')}
-                        ${getCheckbox(side, 'sirs', 'Tachykardia >90/min')}
-                        ${getCheckbox(side, 'sirs', 'Tachypnoe >20/min')}
-                        ${getCheckbox(side, 'sirs', 'Zmeny v KO')}
+                        ${getCheckbox(side, 'sirs', 'Teplota > 38 °C alebo < 36 °C')}
+                        ${getCheckbox(side, 'sirs', 'Tachykardia > 90/min')}
+                        ${getCheckbox(side, 'sirs', 'Tachypnoe > 20/min alebo PaCO₂ < 32 mmHg')}
+                        ${getCheckbox(side, 'sirs', 'Leukocyty > 12 000 alebo < 4 000 (či > 10 % foriem)')}
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="text-sm">Iné popisné znaky</label>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-1">
+                        ${getCheckbox(side, 'infpopis', 'Zápach')}
                     </div>
                 </div>
             </section>
@@ -192,6 +244,7 @@ function getCalculatorHTML(side) {
                     <div><label class="text-sm">ABI</label><input type="number" step="0.01" id="${side}-cievy-abi" placeholder="napr. 0.7" class="w-full p-2 border rounded-md"></div>
                     <div><label class="text-sm">Toe Pressure</label><input type="number" id="${side}-cievy-tp" placeholder="mmHg" class="w-full p-2 border rounded-md"></div>
                 </div>
+                <p id="${side}-abi-warn" class="hidden mt-3 p-3 text-sm rounded-md bg-amber-50 border border-amber-300 text-amber-900"></p>
             </section>
 
             <!-- 10. Neurologický status -->
@@ -209,6 +262,7 @@ function getCalculatorHTML(side) {
                     <h4 id="${side}-wifi-score" class="text-3xl font-bold text-center">W- I- fI-</h4>
                     <p id="${side}-clinical-stage" class="text-xl font-semibold text-center mt-2">Klinické štádium: -</p>
                     <p id="${side}-amputation-risk" class="text-md text-center mt-1">Riziko amputácie (1 rok): -</p>
+                    <p id="${side}-wifi-note" class="text-sm text-center mt-2 text-gray-700"></p>
                 </div>
             </section>
         </div>
@@ -224,12 +278,8 @@ function getCheckbox(side, name, value) {
 document.addEventListener('DOMContentLoaded', function() {
     
     // --- DATA & CONSTANTS ---
-    const riskMatrix = {
-        i0: { w0: [1,1,2,3], w1: [1,1,2,4], w2: [1,2,3,4], w3: [2,3,4,4] },
-        i1: { w0: [1,1,2,4], w1: [1,2,3,4], w2: [2,3,4,4], w3: [3,4,4,4] },
-        i2: { w0: [1,2,3,4], w1: [2,3,4,4], w2: [3,4,4,4], w3: [4,4,4,4] },
-        i3: { w0: [2,3,4,4], w1: [3,4,4,4], w2: [4,4,4,4], w3: [4,4,4,4] },
-    };
+    // Klinické štádium sa počíta zo zdieľanej tabuľky v /tools/staging.js, aby
+    // defektológia a EVK nedávali pre toho istého pacienta iné štádium.
     const riskStageLabels = { 1: "Veľmi nízke", 2: "Nízke", 3: "Stredné", 4: "Vysoké" };
     const riskStageClasses = { 1: "risk-stage-1", 2: "risk-stage-2", 3: "risk-stage-3", 4: "risk-stage-4" };
 
@@ -255,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById(`${side}-form`).reset();
             document.getElementById(`${side}-lokalizacia-ine`).classList.add('hidden');
             document.getElementById(`${side}-form-content`).classList.remove('hidden');
-            updateResultUI(side, { wifiScore: 'W- I- fI-', clinicalStage: 'Štádium -', amputationRisk: '-', riskClass: 'risk-undefined' });
+            collectAndProcessData(side);
         });
         reportOutputContainer.classList.add('hidden');
         copyFeedback.textContent = '';
@@ -330,7 +380,12 @@ document.addEventListener('DOMContentLoaded', function() {
         data.spodinaNekroza = form.querySelector(`#${side}-spodina-nekroza`).value;
         data.exsudatMnozstvo = form.querySelector(`#${side}-exsudat-mnozstvo`).value;
         data.exsudatCharakter = form.querySelector(`#${side}-exsudat-charakter`).value;
+        data.wStruktury = form.querySelector(`#${side}-w-struktury`).value;
+        data.wGangrena = form.querySelector(`#${side}-w-gangrena`).value;
         data.infekciaZnaky = Array.from(form.querySelectorAll(`input[name="${side}-infekcia"]:checked`)).map(el => el.value);
+        data.hlbkeZnaky = Array.from(form.querySelectorAll(`input[name="${side}-hlbke"]:checked`)).map(el => el.value);
+        data.infPopis = Array.from(form.querySelectorAll(`input[name="${side}-infpopis"]:checked`)).map(el => el.value);
+        data.erytemRozsah = form.querySelector(`#${side}-erytem-rozsah`).value;
         data.sirsZnaky = Array.from(form.querySelectorAll(`input[name="${side}-sirs"]:checked`)).map(el => el.value);
         data.okolie = Array.from(form.querySelectorAll(`input[name="${side}-okolie"]:checked`)).map(el => el.value);
         data.podminovanie = form.querySelector(`#${side}-podminovanie-check`).checked;
@@ -347,48 +402,77 @@ document.addEventListener('DOMContentLoaded', function() {
         updateResultUI(side, wifiResult);
     }
 
-    function calculateWIfI(data) {
-        let wGrade = 0;
-        if (data.velkostL || data.velkostW) {
-            const depth = parseFloat(data.velkostD) / 10;
-            if (depth > 1.5) wGrade = 3; 
-            else if (depth > 0.5) wGrade = 2;
-            else wGrade = 1;
-        } else if (data.cievyAbi < 0.4 || data.cievyTp < 30) {
-            wGrade = 0;
-        }
+    // WIfI Wound (W) – podľa SVS: rozhoduje hĺbka/postihnuté štruktúry a rozsah gangrény,
+    // nie rozmer rany v mm. Ak nie je zadané ani jedno, stupeň zámerne zostáva neurčený.
+    function stupenW(data) {
+        const st = data.wStruktury, ga = data.wGangrena;
+        if (ga === 'extenzivna' || st === 'rozsiahly' || st === 'peta_hlboka') return 3;
+        if (ga === 'prsty' || st === 'kost' || st === 'peta_plytka') return 2;
+        if (st === 'povrch' || st === 'kost_falanga') return 1;
+        if (st === 'ziadny' && (ga === 'ziadna' || ga === '')) return 0;
+        return null;
+    }
 
-
+    // WIfI Ischemia (I) – TP/TcPO2 má prednosť pred ABI. Pri ABI > 1,3 (mediokalcinóza)
+    // je ABI nevýpovedné a stupeň sa z neho neodvodzuje.
+    function stupenI(data) {
         const abi = parseFloat(data.cievyAbi);
         const tp = parseFloat(data.cievyTp);
-        let iGrade = null;
         if (!isNaN(tp)) {
-            if (tp >= 60) iGrade = 0; else if (tp >= 40) iGrade = 1; else if (tp >= 30) iGrade = 2; else iGrade = 3;
-        } else if (!isNaN(abi) && abi <= 1.3) {
-            if (abi >= 0.80) iGrade = 0; else if (abi >= 0.60) iGrade = 1; else if (abi >= 0.40) iGrade = 2; else iGrade = 3;
+            if (tp >= 60) return {grade: 0, zdroj: 'TP'};
+            if (tp >= 40) return {grade: 1, zdroj: 'TP'};
+            if (tp >= 30) return {grade: 2, zdroj: 'TP'};
+            return {grade: 3, zdroj: 'TP'};
         }
+        if (!isNaN(abi)) {
+            if (abi > 1.3) return {grade: null, zdroj: 'abi-nevypovedne'};
+            if (abi >= 0.80) return {grade: 0, zdroj: 'ABI'};
+            if (abi >= 0.60) return {grade: 1, zdroj: 'ABI'};
+            if (abi >= 0.40) return {grade: 2, zdroj: 'ABI'};
+            return {grade: 3, zdroj: 'ABI'};
+        }
+        return {grade: null, zdroj: 'chyba'};
+    }
 
-        let fIGrade = 0;
-        if (data.sirsZnaky.length > 0) {
-            fIGrade = 3;
-        } else if (data.infekciaZnaky.length > 0) {
-            if (data.infekciaZnaky.includes('Hnisavý výtok') || data.infekciaZnaky.length > 2) {
-                fIGrade = 2;
-            } else {
-                fIGrade = 1;
-            }
-        }
-        
-        let wifiScore = `W${wGrade ?? '-'} I${iGrade ?? '-'} fI${fIGrade ?? '-'}`;
+    // WIfI foot Infection (fI) – podľa IDSA/IWGDF: infekcia sa konštatuje až pri >= 2 lokálnych
+    // znakoch (alebo postihnutí hlbších štruktúr); fI-2 pri erytéme > 2 cm alebo hlbších
+    // štruktúrach; fI-3 až pri >= 2 kritériách SIRS.
+    function stupenFI(data) {
+        const lokalne = data.infekciaZnaky.length;
+        const hlbke = data.hlbkeZnaky.length > 0;
+        const sirs = data.sirsZnaky.length;
+        if (lokalne < 2 && !hlbke) return 0;
+        if (sirs >= 2) return 3;
+        if (hlbke || data.erytemRozsah === 'velke') return 2;
+        return 1;
+    }
+
+    function calculateWIfI(data) {
+        const wGrade = stupenW(data);
+        const isch = stupenI(data);
+        const iGrade = isch.grade;
+        const fIGrade = stupenFI(data);
+
+        const zn = g => (g === null || g === undefined) ? '-' : g;
+        let wifiScore = `W${zn(wGrade)} I${zn(iGrade)} fI${zn(fIGrade)}`;
         let clinicalStage = 'Štádium -', amputationRisk = '-', riskClass = 'risk-undefined';
-        if (wGrade !== null && iGrade !== null && fIGrade !== null) {
-            const stage = riskMatrix[`i${iGrade}`][`w${wGrade}`][fIGrade];
+        const stage = (window.Staging ? window.Staging.wifi(wGrade, iGrade, fIGrade).stadium : null);
+        if (stage) {
             clinicalStage = `Štádium ${stage}`;
             amputationRisk = riskStageLabels[stage];
             riskClass = riskStageClasses[stage];
         }
 
-        return { wGrade, iGrade, fIGrade, wifiScore, clinicalStage, amputationRisk, riskClass };
+        // Zoznam toho, čo chýba na dopočítanie štádia – lepšie ako tiché dopočítanie nulou.
+        const chyba = [];
+        if (wGrade === null) chyba.push('rozsah rany / gangréna (sekcia 2b)');
+        if (iGrade === null) chyba.push(isch.zdroj === 'abi-nevypovedne'
+            ? 'ABI > 1,3 je nevýpovedné (mediokalcinóza) – zadajte Toe Pressure alebo TcPO₂'
+            : 'ABI alebo Toe Pressure (sekcia 9)');
+        const poznamka = chyba.length ? 'Štádium nie je určené – chýba: ' + chyba.join('; ') + '.' : '';
+        const abiNevypovedne = isch.zdroj === 'abi-nevypovedne';
+
+        return { wGrade, iGrade, fIGrade, wifiScore, clinicalStage, amputationRisk, riskClass, poznamka, abiNevypovedne, ischZdroj: isch.zdroj };
     }
 
     function updateResultUI(side, wifiResult) {
@@ -396,7 +480,35 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById(`${side}-clinical-stage`).textContent = wifiResult.clinicalStage;
         document.getElementById(`${side}-amputation-risk`).textContent = `Riziko amputácie (1 rok): ${wifiResult.amputationRisk}`;
         document.getElementById(`${side}-result-card`).className = `result-card p-6 rounded-lg border-l-4 ${wifiResult.riskClass}`;
+        const note = document.getElementById(`${side}-wifi-note`);
+        if (note) note.textContent = wifiResult.poznamka || '';
+        const warn = document.getElementById(`${side}-abi-warn`);
+        if (warn) {
+            if (wifiResult.abiNevypovedne) {
+                warn.textContent = 'ABI > 1,3 – nestlačiteľné artérie (mediokalcinóza). ABI je nevýpovedné, ischemický stupeň z neho nemožno odvodiť. Zadajte Toe Pressure alebo TcPO₂.';
+                warn.classList.remove('hidden');
+            } else {
+                warn.classList.add('hidden');
+            }
+        }
     }
+
+    const POPIS_STRUKTURY = {
+        ziadny: 'bez rany (len kľudová bolesť/ischémia)',
+        povrch: 'malý plytký vred (koža/podkožie), bez obnaženej kosti',
+        kost_falanga: 'obnažená kosť len distálnej falangy',
+        kost: 'hlbší vred s obnaženou kosťou, kĺbom alebo šľachou',
+        peta_plytka: 'plytký vred päty bez postihnutia kalkanea',
+        rozsiahly: 'rozsiahly hlboký vred prednožia a/alebo stredonožia',
+        peta_hlboka: 'vred päty plnej hrúbky ± postihnutie kalkanea'
+    };
+    const POPIS_GANGRENA = {
+        ziadna: 'žiadna',
+        prsty: 'obmedzená na prsty',
+        extenzivna: 'extenzívna (prednožie/stredonožie) alebo nekróza päty plnej hrúbky'
+    };
+    const popisStruktury = v => POPIS_STRUKTURY[v] || 'nezadané';
+    const popisGangrena = v => POPIS_GANGRENA[v] || 'nezadané';
 
     // --- REPORT GENERATION ---
     function generateFullReport() {
@@ -416,17 +528,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.isDefectFree) {
             return `${sideName.toUpperCase()}\n--------------------------------------------\nBez prítomnosti defektu.`;
         }
-        if (!data.lokalizacia && !data.velkostL) {
-             return `${sideName.toUpperCase()}\n--------------------------------------------\nKončatina bez defektu.`;
+        if (!data.lokalizacia && !data.velkostL && !data.wStruktury && !data.wGangrena) {
+             return `${sideName.toUpperCase()}\n--------------------------------------------\nNehodnotené – údaje neboli zadané.`;
         }
         
         let r = `${sideName.toUpperCase()}\n--------------------------------------------\n`;
         r += `1. Lokalizácia: ${data.lokalizacia || 'N/A'}\n`;
         r += `2. Veľkosť: ${data.velkostL || 'N/A'} x ${data.velkostW || 'N/A'} x ${data.velkostD || 'N/A'} mm\n`;
+        r += `2b. Rozsah rany: ${popisStruktury(data.wStruktury)}; gangréna: ${popisGangrena(data.wGangrena)}\n`;
         r += `3. Tvar a okraje: ${data.tvar || 'N/A'}, okraje ${data.okraje || 'N/A'}\n`;
         r += `4. Spodina rany: Granulácia ${data.spodinaGran || 0}%, Fibrín ${data.spodinaFibrin || 0}%, Nekróza ${data.spodinaNekroza || 0}%\n`;
         r += `5. Exsudát: ${data.exsudatMnozstvo || 'N/A'}, ${data.exsudatCharakter || 'N/A'}\n`;
-        r += `6. Známky infekcie: ${data.infekciaZnaky.join(', ') || 'žiadne'}. SIRS: ${data.sirsZnaky.join(', ') || 'nie'}\n`;
+        r += `6. Známky infekcie: ${data.infekciaZnaky.join(', ') || 'žiadne'}`;
+        if (data.erytemRozsah) r += `; rozsah erytému: ${data.erytemRozsah === 'velke' ? '> 2 cm' : '0,5 – 2 cm'}`;
+        if (data.infPopis && data.infPopis.length) r += `; ${data.infPopis.join(', ').toLowerCase()}`;
+        r += `\n   Hlbšie štruktúry: ${data.hlbkeZnaky.join(', ') || 'bez postihnutia'}. SIRS: ${data.sirsZnaky.join(', ') || 'nie'}\n`;
         r += `7. Okolie rany: ${data.okolie.join(', ') || 'N/A'}\n`;
         r += `8. Podminovanie: ${data.podminovanie ? `áno, ${data.podminovanieRozsah || 'N/A'}` : 'nie'}\n`;
         r += `9. Cievny status: ADP ${data.cievyAdp}, ATP ${data.cievyAtp}, ABI: ${data.cievyAbi || 'N/A'}, TP: ${data.cievyTp || 'N/A'} mmHg\n`;
@@ -434,6 +550,8 @@ document.addEventListener('DOMContentLoaded', function() {
         r += `SVS WIfI HODNOTENIE:\n`;
         r += `- Skóre: ${data.wifiScore}\n`;
         r += `- Klinické štádium: ${data.clinicalStage} (Riziko amputácie: ${data.amputationRisk})\n`;
+        if (data.ischZdroj === 'ABI' || data.ischZdroj === 'TP') r += `- Ischemický stupeň odvodený z: ${data.ischZdroj}\n`;
+        if (data.poznamka) r += `- POZN.: ${data.poznamka}\n`;
         
         return r;
     }
@@ -443,30 +561,35 @@ document.addEventListener('DOMContentLoaded', function() {
         let conclusion = "ZÁVER: ";
         let findings = [];
 
-        if (right.isDefectFree) {
-            findings.push(`pravá DK bez defektu`);
-        } else if (right.clinicalStage && right.clinicalStage !== 'Štádium -') {
-            findings.push(`defekt na pravej DK - ${right.clinicalStage} (riziko ${right.amputationRisk.toLowerCase()})`);
-        }
+        const zhrni = (d, nazov) => {
+            if (d.isDefectFree) return `${nazov} bez defektu`;
+            const zadane = d.lokalizacia || d.velkostL || d.wStruktury || d.wGangrena;
+            if (!zadane) return `${nazov} nehodnotená`;
+            if (d.clinicalStage && d.clinicalStage !== 'Štádium -') {
+                return `defekt na ${nazov} - ${d.clinicalStage} (riziko ${d.amputationRisk.toLowerCase()})`;
+            }
+            return `defekt na ${nazov} - WIfI ${d.wifiScore || 'neúplné'}, štádium neurčené`;
+        };
 
-        if (left.isDefectFree) {
-            findings.push(`ľavá DK bez defektu`);
-        } else if (left.clinicalStage && left.clinicalStage !== 'Štádium -') {
-            findings.push(`defekt na ľavej DK - ${left.clinicalStage} (riziko ${left.amputationRisk.toLowerCase()})`);
-        }
-        
-        if (findings.length === 0) {
-            conclusion += "Obe končatiny bez defektu.";
-        } else {
-            conclusion += findings.join('; ') + ".";
-        }
+        findings.push(zhrni(right, 'pravej DK'));
+        findings.push(zhrni(left, 'ľavej DK'));
+
+        conclusion += findings.join('; ') + ".";
         return conclusion;
     }
 
     function copyReport() {
-        reportOutput.select();
-        try { document.execCommand('copy'); copyFeedback.textContent = 'Nález skopírovaný!'; setTimeout(() => { copyFeedback.textContent = ''; }, 2000); } 
-        catch (err) { copyFeedback.textContent = 'Kopírovanie zlyhalo.'; }
+        const hotovo = () => { copyFeedback.textContent = 'Nález skopírovaný!'; setTimeout(() => { copyFeedback.textContent = ''; }, 2000); };
+        const zalozny = () => {
+            reportOutput.select();
+            try { document.execCommand('copy'); hotovo(); }
+            catch (err) { copyFeedback.textContent = 'Kopírovanie zlyhalo.'; }
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(reportOutput.value).then(hotovo).catch(zalozny);
+        } else {
+            zalozny();
+        }
     }
 
     // --- INITIALIZE THE APP ---
