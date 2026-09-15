@@ -1,6 +1,6 @@
 # cievny.sk – klinické nástroje cievnej chirurgie
 
-Statická webová aplikácia (HTML/JS, bez frameworku) nasadzovaná cez **GitHub Pages z vetvy `main`**.
+Statická webová aplikácia (HTML/JS, bez frameworku) nasadzovaná na **Vercel z vetvy `main`** (Git integrácia). Chránené stránky podáva až po overení prihlásenia – pozri „Server-side brána" nižšie.
 Backend je **Supabase** (PostgREST REST API, Auth cez e‑mail + heslo, Storage pre prílohy).
 
 ## Nástroje
@@ -31,7 +31,7 @@ Skripty možno bezpečne spustiť opakovane (`IF NOT EXISTS` / `IF EXISTS`). Ove
 
 ## Zálohy
 - Automaticky: GitHub Actions workflow `.github/workflows/backup.yml` beží **2× denne** (~6:07 a ~16:07 SELČ), stránkuje všetky tabuľky a sťahuje prílohy z bucketov `aorta-prilohy` aj `oznamy-prilohy`. Pri chybe workflow **spadne** (nezamaskuje prázdnu zálohu).
-- **Repozitár je verejný, preto sa záloha pred nahraním ako artefakt šifruje (GPG AES256).** Artefakt je bez hesla nečitateľný.
+- Záloha sa pred nahraním ako artefakt **šifruje (GPG AES256)** – artefakt je bez hesla nečitateľný.
 - Potrebné secrets (Settings → Secrets and variables → Actions):
   - `SUPABASE_BACKUP_EMAIL`, `SUPABASE_BACKUP_PASSWORD` – prihlásenie do Supabase (účet s prístupom k dátam),
   - `BACKUP_PASSPHRASE` – heslo na šifrovanie zálohy (uchovajte ho bezpečne mimo repozitára – bez neho zálohu neotvoríte).
@@ -44,8 +44,15 @@ Skripty možno bezpečne spustiť opakovane (`IF NOT EXISTS` / `IF EXISTS`). Ove
 - **Obnova do databázy:** po dešifrovaní spustite `python3 scripts/obnova_zalohy.py --dir obnova --email vas@email.sk` (najprv beží nasucho, ostrý zápis s `--naozaj`; vkladá tabuľky v poradí cudzích kľúčov a existujúce riadky preskočí). Prílohy z priečinkov `*-subory` sa nahrávajú ručne cez Supabase Studio → Storage.
 - Ručne (bez šifrovania, len na osobné použitie): `/tools/zaloha/` stiahne JSON všetkých tabuliek (bez súborových príloh).
 
+## Server-side brána (Vercel Routing Middleware)
+`middleware.js` (logika v `lib/brana.mjs`, testy v `tests/brana.mjs`) beží na Verceli **pred podaním súboru**. Pod `/tools/` a `/cz/tools/` je všetko chránené (default-deny) okrem výnimiek vymenovaných v `lib/brana.mjs`: samostatné kalkulačky (ALI, AorticTrauma, CAR, CEAP, SVP, Tromboflebitída, Villa, WELLS, claudication, defektologia, adventný kalendár), login stránky, kioskové brány `/tools/tv/` a `/tools/velin/` (prihlasujú sa kódom priamo v stránke) a JS, ktoré verejné stránky potrebujú (`auth.js`, `staging.js`, `vqi-clti.js`). **Nový nástroj je chránený automaticky** – ak má byť verejný, treba ho pridať do `PUBLIC_DIRS`.
+
+Overenie: po prihlásení `auth.js` (aj kiosky) nastaví cookie `cievny_sess` = Supabase access JWT. Middleware ňou zavolá `GET /rest/v1/povoleni_pouzivatelia?select=email&limit=1` – vďaka RLS `je_povoleny()` je odpoveď neprázdna **len pre allowlist**; inak 302 na `/tools/login/?return=…` (subresource dostane 401, `?tv=1` ide na TV bránu). Login stránka `?return=` prevezme a ak má refresh token, obnoví reláciu potichu. `.vercelignore` bráni podávaniu SQL, testov a README; koreňové config súbory vracia middleware ako 404. Klientská `checkAuth()` ostáva ako druhá vrstva.
+
+Env premenné na Verceli sú voliteľné (`SUPABASE_URL`, `SUPABASE_ANON_KEY`); bez nich sa použijú verejné hodnoty z `auth.js`.
+
 ## Vývoj a nasadenie
-Zmeny sa musia dostať do `main`, aby boli viditeľné na GitHub Pages. Odporúčaný postup:
+Zmeny sa musia dostať do `main`, odkiaľ ich Vercel automaticky nasadí (každá vetva dostane preview URL, rovnako chránené). Odporúčaný postup:
 ```
 git add -A && git commit -m "…"
 git push origin <feature-branch>

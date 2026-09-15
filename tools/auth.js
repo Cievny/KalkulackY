@@ -6,6 +6,18 @@
   const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
   const TK=KEY+'_at', RK=KEY+'_rt', XK=KEY+'_exp', EK=KEY+'_email';
 
+  // Cookie s access tokenom pre server-side bránu (Vercel middleware overuje allowlist
+  // PRED podaním chránenej stránky). Token je aj tak v sessionStorage, takže cookie
+  // čitateľná z JS nepridáva novú expozíciu. Secure len na https (lokálne testy).
+  const CK='cievny_sess';
+  const SECURE=location.protocol==='https:'?'; Secure':'';
+  function setCookie(token,expiresInSec){
+    try{document.cookie=CK+'='+token+'; Path=/; Max-Age='+Math.max(60,(expiresInSec|0)||3600)+'; SameSite=Lax'+SECURE;}catch(e){}
+  }
+  function clearCookie(){
+    try{document.cookie=CK+'=; Path=/; Max-Age=0; SameSite=Lax'+SECURE;}catch(e){}
+  }
+
   function storeSession(d){
     sessionStorage.setItem(KEY,'1');
     if(d&&d.access_token){
@@ -13,7 +25,17 @@
       sessionStorage.setItem(RK,d.refresh_token||'');
       sessionStorage.setItem(XK,String(Date.now()+(d.expires_in?d.expires_in*1000:3600000)));
       if(d.user&&d.user.email)sessionStorage.setItem(EK,d.user.email);
+      setCookie(d.access_token,d.expires_in||3600);
     }
+  }
+
+  // Návrat po prihlásení – len interné cesty: začína '/', druhý znak nie je '/' ani '\'
+  // (prehliadač by '/\evil.com' znormalizoval na '//evil.com'), nikdy nie späť na login.
+  function goAfterLogin(){
+    let ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
+    sessionStorage.removeItem('cievny_return');
+    if(!/^\/[^/\\]/.test(ret)||/^\/(cz\/)?tools\/login\/?/i.test(ret))ret='/tools/EVK/';
+    location.replace(ret);
   }
 
   // Email prihláseného používateľa ('' pri legacy/spoločnom prihlásení bez emailu)
@@ -57,10 +79,7 @@
       return true;
     }
     storeSession(d);
-    let ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
-    sessionStorage.removeItem('cievny_return');
-    if(!/^\/[^/]/.test(ret))ret='/tools/EVK/'; // len interné cesty (ochrana pred open-redirect)
-    location.replace(ret);
+    goAfterLogin();
     return true;
   }
 
@@ -98,6 +117,7 @@
     function deadSession(){
       // prihlásenie je mŕtve → pošli používateľa na login,
       // nech nevidí mätúce chybové hlášky v každom nástroji
+      clearCookie();
       sessionStorage.removeItem(KEY);sessionStorage.removeItem(TK);
       sessionStorage.removeItem(RK);sessionStorage.removeItem(XK);
       if(localStorage.getItem('cievny_tv_kiosk')==='1'){location.replace('/tools/tv/');}
@@ -161,19 +181,13 @@
     const msg=document.getElementById('login-msg');
     if(!email){msg.textContent='Zadajte email.';msg.style.color='#dc2626';document.getElementById('email').focus();return;}
     msg.textContent='Prihlasujem…';msg.style.color='#6b7280';
-    function go(){
-      let ret=sessionStorage.getItem('cievny_return')||'/tools/EVK/';
-      sessionStorage.removeItem('cievny_return');
-      if(!/^\/[^/]/.test(ret))ret='/tools/EVK/'; // len interné cesty (nie //host, nie externé) – ochrana pred open-redirect
-      location.replace(ret);
-    }
     // Supabase Auth – email je povinný
     try{
       const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
         method:'POST',headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
         body:JSON.stringify({email,password:pw})
       });
-      if(r.ok){storeSession(await r.json());go();return;}
+      if(r.ok){storeSession(await r.json());goAfterLogin();return;}
       msg.textContent='Nesprávny email alebo heslo.';
     }catch(e){
       msg.textContent='Chyba siete – skúste znova.';
@@ -197,7 +211,12 @@
     // zruš aj kioskové markery a uložené kódy (TV/veľín) – inak sa zdieľaný
     // tablet po odhlásení sám znovu prihlási a kód sály/TV ostane v plaintexte
     ['cievny_tv_kiosk','cievny_velin','cievny_tv_sala','cievny_tv_code','cievny_sala_code'].forEach(k=>{try{localStorage.removeItem(k);}catch(e){}});
-    location.replace('/tools/login/');
+    clearCookie();
+    // zmaž aj service worker a jeho cache – na zdieľanom zariadení nesmie ostať kópia nástrojov
+    const purge=[];
+    try{if('serviceWorker' in navigator)purge.push(navigator.serviceWorker.getRegistrations().then(rs=>Promise.all(rs.map(r=>r.unregister()))));}catch(e){}
+    try{if('caches' in window)purge.push(caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))));}catch(e){}
+    Promise.race([Promise.allSettled(purge),new Promise(r=>setTimeout(r,800))]).then(()=>location.replace('/tools/login/'));
   };
 
   // Inject shared nav after DOM ready
@@ -321,7 +340,8 @@
   injectPWA();
 
   // Service worker – offline záchranná sieť (statika z cache, dáta vždy zo siete)
-  if('serviceWorker' in navigator){
+  // registruj len prihláseným – neprihlásený návštevník verejnej kalkulačky SW nepotrebuje
+  if('serviceWorker' in navigator&&sessionStorage.getItem(TK)){
     try{navigator.serviceWorker.register('/sw.js').catch(function(){});}catch(e){}
   }
 
@@ -338,8 +358,30 @@
   showOAuthError();
 
   // ak sa vraciame z Google (tokeny v URL fragmente), spracuj a presmeruj – inak bežná inicializácia
-  handleOAuthCallback().then(handled=>{
+  // Login stránka: prevezmi ?return= od server-side brány a ak máme refresh token
+  // (expirovala len cookie, nie relácia), obnov prihlásenie potichu bez hesla.
+  async function loginBootstrap(){
+    if(location.pathname.indexOf('/login')<0)return false;
+    const q=new URLSearchParams(location.search);
+    const ret=q.get('return');
+    if(ret!==null){
+      if(/^\/[^/\\]/.test(ret)&&!/^\/(cz\/)?tools\/login/i.test(ret))sessionStorage.setItem('cievny_return',ret);
+      q.delete('return');
+      history.replaceState(null,'',location.pathname+(q.toString()?'?'+q.toString():''));
+    }
+    if(localStorage.getItem('cievny_tv_kiosk')==='1'){location.replace('/tools/tv/');return true;}
+    if(sessionStorage.getItem(RK)){
+      const m=document.getElementById('login-msg');
+      if(m){m.textContent='Obnovujem prihlásenie…';m.style.color='#6b7280';}
+      if(await refreshToken()){goAfterLogin();return true;}
+      if(m)m.textContent='';
+    }
+    return false;
+  }
+
+  handleOAuthCallback().then(async handled=>{
     if(handled)return; // prebehne presmerovanie
+    if(await loginBootstrap())return;
     if(document.readyState==='loading'){
       document.addEventListener('DOMContentLoaded',injectNav);
     } else {

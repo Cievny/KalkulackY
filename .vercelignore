@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+tests
+scripts
+supabase
+Study
+*.sql
+cz/*.sql
+cz/translate.py
+README.md
+LICENSE

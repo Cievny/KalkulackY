@@ -1,0 +1,8 @@
+{
+  "name": "cievny-sk",
+  "private": true,
+  "description": "cievny.sk – klinické nástroje cievnej chirurgie (statický web + Vercel Routing Middleware)",
+  "dependencies": {
+    "@vercel/functions": "^2"
+  }
+}

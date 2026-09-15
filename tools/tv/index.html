@@ -50,6 +50,7 @@ function storeSession(d){
   sessionStorage.setItem(RK,d.refresh_token||'');
   sessionStorage.setItem(XK,String(Date.now()+((d.expires_in||3600)*1000)));
   if(d.user&&d.user.email)sessionStorage.setItem(EK,d.user.email);
+  try{document.cookie='cievny_sess='+(d.access_token||'')+'; Path=/; Max-Age='+Math.max(60,((d.expires_in||3600)|0))+'; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');}catch(e){} // pre server-side bránu
   localStorage.setItem('cievny_tv_kiosk','1'); // Program vie, že je to TV kiosk (self-healing reload)
 }
 

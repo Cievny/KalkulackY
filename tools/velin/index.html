@@ -177,6 +177,7 @@ function storeSession(d){
   sessionStorage.setItem(RK,d.refresh_token||'');
   sessionStorage.setItem(XK,String(Date.now()+((d.expires_in||3600)*1000)));
   if(d.user&&d.user.email)sessionStorage.setItem(EK,d.user.email);
+  try{document.cookie='cievny_sess='+(d.access_token||'')+'; Path=/; Max-Age='+Math.max(60,((d.expires_in||3600)|0))+'; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');}catch(e){} // pre server-side bránu
   localStorage.setItem('cievny_velin','1');       // self-healing: mŕtva relácia sa vracia sem
   localStorage.removeItem('cievny_tv_kiosk');     // zariadenie je veľín, nie TV
 }
@@ -208,6 +209,7 @@ function odhlasitVelin(){
   if(!confirm('Odhlásiť tablet z veľína? (zabudne sa aj uložený kód sály)'))return;
   localStorage.removeItem(CODE_LS);localStorage.removeItem('cievny_velin');
   [KEY,TK,RK,XK,EK].forEach(k=>sessionStorage.removeItem(k));
+  try{document.cookie='cievny_sess=; Path=/; Max-Age=0; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');}catch(e){}
   location.replace('/tools/velin/'+(TVSALA?'?sala='+TVSALA:''));
 }
 

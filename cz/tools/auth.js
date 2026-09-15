@@ -6,6 +6,16 @@
   const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
   const TK=KEY+'_at', RK=KEY+'_rt', XK=KEY+'_exp', EK=KEY+'_email';
 
+  // Cookie s access tokenem pro server-side bránu (Vercel middleware) – stejná jako v SK verzi.
+  const CK='cievny_sess';
+  const SECURE=location.protocol==='https:'?'; Secure':'';
+  function setCookie(token,expiresInSec){
+    try{document.cookie=CK+'='+token+'; Path=/; Max-Age='+Math.max(60,(expiresInSec|0)||3600)+'; SameSite=Lax'+SECURE;}catch(e){}
+  }
+  function clearCookie(){
+    try{document.cookie=CK+'=; Path=/; Max-Age=0; SameSite=Lax'+SECURE;}catch(e){}
+  }
+
   function storeSession(d){
     sessionStorage.setItem(KEY,'1');
     if(d&&d.access_token){
@@ -13,7 +23,16 @@
       sessionStorage.setItem(RK,d.refresh_token||'');
       sessionStorage.setItem(XK,String(Date.now()+(d.expires_in?d.expires_in*1000:3600000)));
       if(d.user&&d.user.email)sessionStorage.setItem(EK,d.user.email);
+      setCookie(d.access_token,d.expires_in||3600);
     }
+  }
+
+  // Návrat po přihlášení – jen interní cesty (ne //host, ne /\host, ne zpět na login)
+  function goAfterLogin(){
+    let ret=sessionStorage.getItem('cievny_return_cz')||'/cz/tools/EVK/';
+    sessionStorage.removeItem('cievny_return_cz');
+    if(!/^\/[^/\\]/.test(ret)||/^\/(cz\/)?tools\/login\/?/i.test(ret))ret='/cz/tools/EVK/';
+    location.replace(ret);
   }
 
   // Email přihlášeného uživatele ('' při legacy/společném přihlášení bez emailu)
@@ -51,6 +70,7 @@
     const _fetch=window.fetch.bind(window);
     let refreshing=null;
     function deadSession(){
+      clearCookie();
       sessionStorage.removeItem(KEY);sessionStorage.removeItem(TK);
       sessionStorage.removeItem(RK);sessionStorage.removeItem(XK);
       sessionStorage.setItem('cievny_return_cz',location.pathname+location.search);
@@ -104,19 +124,13 @@
     const msg=document.getElementById('login-msg');
     if(!email){msg.textContent='Zadejte email.';msg.style.color='#dc2626';document.getElementById('email').focus();return;}
     msg.textContent='Přihlašuji…';msg.style.color='#6b7280';
-    function go(){
-      let ret=sessionStorage.getItem('cievny_return_cz')||'/cz/tools/EVK/';
-      sessionStorage.removeItem('cievny_return_cz');
-      if(!/^\/[^/]/.test(ret))ret='/cz/tools/EVK/'; // jen interní cesty (ochrana proti open-redirect)
-      location.replace(ret);
-    }
     // Supabase Auth – email je povinný
     try{
       const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
         method:'POST',headers:{'apikey':SB_ANON,'Content-Type':'application/json'},
         body:JSON.stringify({email,password:pw})
       });
-      if(r.ok){storeSession(await r.json());go();return;}
+      if(r.ok){storeSession(await r.json());goAfterLogin();return;}
       msg.textContent='Nesprávný email nebo heslo.';
     }catch(e){
       msg.textContent='Chyba sítě – zkuste znovu.';
@@ -136,7 +150,11 @@
     sessionStorage.removeItem(RK);
     sessionStorage.removeItem(XK);
     sessionStorage.removeItem(EK);
-    location.replace('/cz/tools/login/');
+    clearCookie();
+    const purge=[];
+    try{if('serviceWorker' in navigator)purge.push(navigator.serviceWorker.getRegistrations().then(rs=>Promise.all(rs.map(r=>r.unregister()))));}catch(e){}
+    try{if('caches' in window)purge.push(caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)))));}catch(e){}
+    Promise.race([Promise.allSettled(purge),new Promise(r=>setTimeout(r,800))]).then(()=>location.replace('/cz/tools/login/'));
   };
 
   // Inject shared nav after DOM ready
@@ -198,9 +216,31 @@
   }
   injectPWA();
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',injectNav);
-  } else {
-    injectNav();
+  // Login stránka: převezmi ?return= od server-side brány; s refresh tokenem obnov relaci tiše.
+  async function loginBootstrap(){
+    if(location.pathname.indexOf('/login')<0)return false;
+    const q=new URLSearchParams(location.search);
+    const ret=q.get('return');
+    if(ret!==null){
+      if(/^\/[^/\\]/.test(ret)&&!/^\/(cz\/)?tools\/login/i.test(ret))sessionStorage.setItem('cievny_return_cz',ret);
+      q.delete('return');
+      history.replaceState(null,'',location.pathname+(q.toString()?'?'+q.toString():''));
+    }
+    if(sessionStorage.getItem(RK)){
+      const m=document.getElementById('login-msg');
+      if(m){m.textContent='Obnovuji přihlášení…';m.style.color='#6b7280';}
+      if(await refreshToken()){goAfterLogin();return true;}
+      if(m)m.textContent='';
+    }
+    return false;
   }
+
+  loginBootstrap().then(handled=>{
+    if(handled)return;
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded',injectNav);
+    } else {
+      injectNav();
+    }
+  });
 })();
