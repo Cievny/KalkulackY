@@ -316,7 +316,7 @@
                 <h2>✓ Výsledná klasifikácia</h2>
                 <div class="result-box">
                     <div class="result-label">SVP Klasifikácia:</div>
-                    <div class="result-code" id="resultCode">SxVxPx</div>
+                    <div class="result-code" id="resultCode">Sx Vx Px</div>
                 </div>
                 <p style="margin-top: 16px; color: #6B7280; font-size: 14px;">
                     <strong>Poznámka:</strong> "x" označuje nehodnotené domény.
@@ -328,10 +328,10 @@
             <div class="section">
                 <h2>Interpretácia SVP klasifikácie</h2>
                 <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
-                    Zadajte SVP kód (napr. S2V2PBGV,R,NT)
+                    Zadajte SVP kód (napr. S2,3a V2 P LGV,R,NT; RCIV,O,T)
                 </label>
                 <div class="interpretation-input">
-                    <input type="text" id="svpInput" placeholder="S2V2PBGV,R,NT">
+                    <input type="text" id="svpInput" placeholder="S2 V2 P LGV,R,NT">
                     <button class="btn btn-primary" id="interpretSvpBtn">Interpretovať</button>
                 </div>
                 <div id="interpretationResult"></div>
@@ -523,9 +523,21 @@
             updateResult();
         }
 
+        // viac kódov v jednej doméne sa píše raz s písmenom domény: S2,3a (nie S2,S3a)
+        function spojDomenu(pismeno, kody) {
+            if (kody.length === 0) return pismeno + 'x';
+            var poradie = pismeno === 'S' ? symptomOptions : varicesOptions;
+            var zoradene = kody.slice().sort(function (a, b) {
+                var ia = -1, ib = -1;
+                for (var i = 0; i < poradie.length; i++) { if (poradie[i].value === a) ia = i; if (poradie[i].value === b) ib = i; }
+                return ia - ib;
+            });
+            return pismeno + zoradene.map(function (k) { return k.substring(1); }).join(',');
+        }
+
         function updateResult() {
-            var S = selectedSymptoms.length > 0 ? selectedSymptoms.join(',') : 'Sx';
-            var V = selectedVarices.length > 0 ? selectedVarices.join(',') : 'Vx';
+            var S = spojDomenu('S', selectedSymptoms);
+            var V = spojDomenu('V', selectedVarices);
             
             var P = '';
             if (anatomySegments.length > 0) {
@@ -544,65 +556,79 @@
                     var etiStr = seg.etiology || 'x';
                     pSegments.push(anatStr + ',' + hemStr + ',' + etiStr);
                 }
-                P = 'P' + pSegments.join('; ');
+                P = pSegments.length ? 'P ' + pSegments.join('; ') : 'Px';
             } else {
                 P = 'Px';
             }
 
-            document.getElementById('resultCode').textContent = S + V + P;
+            document.getElementById('resultCode').textContent = S + ' ' + V + ' ' + P;
+        }
+
+        var S_POPIS = {
+            '0': 'Bez renálnych, panvových aj extrapelvických symptómov (S0).',
+            '1': 'Renálne symptómy žilového pôvodu – hematúria, bolesť v boku (S1).',
+            '2': 'Chronická panvová bolesť žilového pôvodu, trvanie > 6 mesiacov (S2).',
+            '3a': 'Lokalizované genitálne symptómy – vulva / skrótum (S3a).',
+            '3b': 'Symptómy nonsafénnych žíl dolnej končatiny, posteromediálne stehno (S3b).',
+            '3c': 'Žilová klaudikácia (S3c).'
+        };
+        var V_POPIS = {
+            '0': 'Bez brušných, panvových aj extrapelvických varixov (V0).',
+            '1': 'Renálne hilové varixy (V1).',
+            '2': 'Panvové varixy – dilatované žily okolo vaječníka / maternice (V2).',
+            '3a': 'Genitálne varixy – vulválne varixy, varikokéla (V3a).',
+            '3b': 'Varixy dolnej končatiny panvového pôvodu, posteromediálne stehno (V3b).'
+        };
+        var ANAT_POPIS = { IVC: 'dolná dutá žila', LRV: 'ľavá renálna žila', GV: 'gonadálna žila', CIV: 'spoločná ilická žila',
+                           EIV: 'vonkajšia ilická žila', IIV: 'vnútorná ilická žila', PELV: 'panvové únikové žily' };
+        var LAT_POPIS = { L: 'ľavá', R: 'pravá', B: 'obojstranne' };
+        var HEM_POPIS = { O: 'obštrukcia', R: 'reflux', 'R,O': 'reflux aj obštrukcia', x: 'hemodynamika neurčená' };
+        var ETI_POPIS = { T: 'trombotická etiológia', NT: 'netrombotická etiológia', C: 'vrodená', x: 'etiológia neurčená' };
+
+        // "S2,3a" aj "S2,S3a" → ['2','3a']
+        function kodyDomeny(text, pismeno) {
+            var re = new RegExp(pismeno + '((?:' + pismeno + '?[0-3][abc]?)(?:,' + pismeno + '?[0-3][abc]?)*)', 'i');
+            var m = text.match(re);
+            if (!m) return null;
+            return m[1].split(',').map(function (k) { return k.replace(new RegExp('^' + pismeno, 'i'), ''); });
+        }
+
+        function popisSegmentuP(seg) {
+            var m = seg.trim().match(/^([LRB]?)(IVC|LRV|GV|CIV|EIV|IIV|PELV)\s*,\s*(R,O|O,R|R|O|x)\s*(?:,\s*(T|NT|C|x))?$/i);
+            if (!m) return 'Nerozpoznaný segment: ' + seg.trim();
+            var lat = m[1] ? LAT_POPIS[m[1].toUpperCase()] + ' ' : '';
+            var hem = m[3].toUpperCase() === 'O,R' ? 'R,O' : (m[3] === 'x' ? 'x' : m[3].toUpperCase());
+            var eti = m[4] ? (m[4] === 'x' ? 'x' : m[4].toUpperCase()) : 'x';
+            return lat + ANAT_POPIS[m[2].toUpperCase()] + ' – ' + HEM_POPIS[hem] + ', ' + ETI_POPIS[eti] + '.';
         }
 
         function interpretSVP() {
             var svpCode = document.getElementById('svpInput').value.trim();
             if (!svpCode) return;
-
             var description = [];
-            
-            var sMatch = svpCode.match(/S([0-3][abc]?,?)+/);
-            if (sMatch) {
-                var sCodes = sMatch[0].substring(1).split(',');
-                description.push('<strong>Klinický obraz:</strong>\n');
-                
-                for (var i = 0; i < sCodes.length; i++) {
-                    var code = sCodes[i];
-                    if (code === '1') {
-                        description.push('Pacient/ka trpí renálnymi symptómami žilového pôvodu.\n');
-                    } else if (code === '2') {
-                        description.push('Prítomná je chronická panvová bolesť žilového pôvodu.\n');
-                    } else if (code === '3a') {
-                        description.push('Pacient/ka má lokalizované genitálne symptómy.\n');
-                    } else if (code === '3b') {
-                        description.push('Prítomné sú symptómy posteromediálneho stehna.\n');
-                    } else if (code === '3c') {
-                        description.push('Pacient/ka trpí žilovou klaudikáciou.\n');
-                    }
-                }
-            }
 
-            var vMatch = svpCode.match(/V([0-3][abc]?,?)+/);
-            if (vMatch) {
-                var vCodes = vMatch[0].substring(1).split(',');
-                description.push('\n<strong>Zobrazovacie nálezy:</strong>\n');
-                
-                for (var i = 0; i < vCodes.length; i++) {
-                    var code = vCodes[i];
-                    if (code === '1') {
-                        description.push('Renálne hilové varixy.\n');
-                    } else if (code === '2') {
-                        description.push('Panvové varixy.\n');
-                    } else if (code === '3a') {
-                        description.push('Genitálne varixy.\n');
-                    } else if (code === '3b') {
-                        description.push('Varixy dolných končatín.\n');
-                    }
-                }
+            var sCodes = kodyDomeny(svpCode, 'S');
+            if (sCodes) {
+                description.push('<strong>Symptómy (S):</strong>\n');
+                sCodes.forEach(function (k) { description.push((S_POPIS[k.toLowerCase()] || 'Neznámy kód S' + k) + '\n'); });
             }
+            var vCodes = kodyDomeny(svpCode, 'V');
+            if (vCodes) {
+                description.push('\n<strong>Varixy (V):</strong>\n');
+                vCodes.forEach(function (k) { description.push((V_POPIS[k.toLowerCase()] || 'Neznámy kód V' + k) + '\n'); });
+            }
+            var pm = svpCode.match(/P\s*([^S]*?)$/i);   // doména P je posledná, segmenty oddelené bodkočiarkou
+            if (pm) {
+                description.push('\n<strong>Patofyziológia (P):</strong>\n');
+                if (/^x$/i.test(pm[1].trim()) || pm[1].trim() === '') description.push('Nehodnotená (Px).\n');
+                else pm[1].split(';').forEach(function (seg) { if (seg.trim()) description.push(popisSegmentuP(seg) + '\n'); });
+            }
+            if (!sCodes && !vCodes && !pm) description.push('Kód sa nepodarilo rozpoznať. Očakávaný tvar: S2,3a V2 P LGV,R,NT; RCIV,O,T\n');
 
             var resultHtml = '<div class="interpretation-result">';
-            resultHtml += '<h3>✓ Popis pacientových ťažkostí</h3>';
+            resultHtml += '<h3>✓ Popis podľa SVP klasifikácie</h3>';
             resultHtml += '<div class="interpretation-text">' + description.join('') + '</div>';
             resultHtml += '</div>';
-            
             document.getElementById('interpretationResult').innerHTML = resultHtml;
         }
 

@@ -259,13 +259,12 @@
         function calculateCarScore(tslev, plaqueUlcerated, sex, car, noccl, age, event, diabetes, mi, pvd, hypert) {
             let val = 0;
             if (sex === "Male") { val += (1 - 0.71854305) * 0.17618; } else { val += (0 - 0.71854305) * 0.17618; }
-            if (car > 0) { val += (car / 10 - 3.62661424) * 0.16201; }
-            if (noccl === "Yes") {
-                val += (1 - 0.03062914) * -0.71454;
-                val += (84.5 / 10 - 3.62661424) * 0.16201;
-            } else {
-                val += (0 - 0.03062914) * -0.71454;
-            }
+            // Stenóza je v modeli JEDINÝ kovariát: pri takmer oklúzii sa zadané % NAHRÁDZA
+            // hodnotou 84,5 % (pôvodná verzia ho pripočítala k zadanej stenóze druhýkrát
+            // a riziko pri takmer oklúzii nadhodnocovala).
+            const stenozaDoModelu = noccl === "Yes" ? 84.5 : car;
+            if (stenozaDoModelu > 0) { val += (stenozaDoModelu / 10 - 3.62661424) * 0.16201; }
+            val += ((noccl === "Yes" ? 1 : 0) - 0.03062914) * -0.71454;
             if (age > 0) {
                 let currentAge = age < 40 ? 40 : age;
                 val += (currentAge / 10 - 6.23071192) * 0.10874;
@@ -381,8 +380,8 @@ KLINICKÝ STAV:
 NÁLEZ NA KAROTIDÁCH:
 - Postihnutá tepna: ${allInputs.laterality} ACI
 - Stupeň stenózy (NASCET): ${allInputs.stenosis}%
-- Ulcerácia plátu: ${allInputs.ulceration}
-- Takmer oklúzia: ${allInputs.nearOcclusion}
+- Ulcerácia plátu: ${allInputs.ulceration === 'Yes' ? 'áno' : 'nie'}
+- Takmer oklúzia: ${allInputs.nearOcclusion === 'Yes' ? 'áno (v modeli sa stenóza berie ako 84,5 %)' : 'nie'}
 
 VÝPOČET RIZIKA (ECST-2 CAR Score):
 - 5-ročné riziko ipsilaterálnej CMP: ${allInputs.finalRiskScore}%
