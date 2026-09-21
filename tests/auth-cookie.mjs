@@ -90,7 +90,10 @@ for (const bad of ['%2F%5Cevil.com','%2F%2Fevil.com','%2Ftools%2Flogin%2F']) {
 
 // 5) odhlásenie → cookie preč, SW cache prázdna
 {
+  // reláciu seedni LEN na stránke EVK – init skript beží pri každej navigácii a na login
+  // stránke by refresh token po odhlásení potichu obnovil prihlásenie (falošný neúspech)
   const ctx = await ctxWithSupabase(()=>{
+    if(!location.pathname.startsWith('/tools/EVK'))return;
     sessionStorage.setItem('cievny_auth','1'); sessionStorage.setItem('cievny_auth_at','tok.abc.def');
     sessionStorage.setItem('cievny_auth_rt','rt-1'); sessionStorage.setItem('cievny_auth_exp',String(Date.now()+3600000));
     sessionStorage.setItem('cievny_auth_email','test@cievny.sk');
@@ -103,9 +106,11 @@ for (const bad of ['%2F%5Cevil.com','%2F%2Fevil.com','%2Ftools%2Flogin%2F']) {
   check('pred odhlásením cookie existuje', !!(await sess(ctx)));
   await page.evaluate(()=>doLogout());
   await page.waitForURL('**/tools/login/**',{timeout:5000}).catch(()=>{});
+  // login stránka sa po načítaní ešte môže raz presmerovať (bootstrap) – počkaj, kým sa usadí
+  await page.waitForLoadState('load').catch(()=>{}); await page.waitForTimeout(500);
   check('po odhlásení je na login stránke', path(page)==='/tools/login/', path(page));
   check('po odhlásení cookie neexistuje', !(await sess(ctx)));
-  const keys = await page.evaluate(()=>caches.keys());
+  const keys = await page.evaluate(()=>caches.keys()).catch(async()=>{ await page.waitForTimeout(500); return page.evaluate(()=>caches.keys()); });
   check('po odhlásení je SW cache prázdna', keys.length===0, JSON.stringify(keys));
   await ctx.close();
 }

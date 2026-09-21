@@ -17,7 +17,10 @@ const PROTECTED = [
   ...['CAS-generator','EVK','PEVAR','analytics','ideas','zaznamy'].map(d => `/cz/tools/${d}/`),
   '/tools/EVK/index.html', '/tools/Program/?tv=1', '/tools//EVK/', '/tools/nova-vec/', '/tools/suhlasy/docs/01_EVAR.docx',
   ...['esc','gen-actionbar','pacient','rc-auto','scrub','vykon-id','drg-ceny','gcal-config','anamneza-parser',
-      'material-katalog','poziadavky-import','program-import'].map(f => `/tools/${f}.js`),
+      'material-katalog','poziadavky-import','program-import','staging','vqi-clti'].map(f => `/tools/${f}.js`),
+  // samostatné kalkulačky sú od 9/2026 tiež len za prihlásením
+  ...['ALI','AorticTrauma','CAR','CEAP','SVP','Tromboflebitída','Villa','WELLS','claudication','defektologia'].map(d => `/tools/${d}/`),
+  '/tools/Tromboflebit%C3%ADda/', '/tools/defektologia/index.html', '/tools/WELLS', '/tools/svp/',
   '/tools/%E0%A4%A',  // chybné kódovanie → chránené
   // bodkové segmenty / spätné lomky za verejným prefixom – nespoliehame sa na normalizáciu servera
   '/tools/defektologia/../EVK/', '/tools/defektologia/%2e%2e/EVK/', '/tools/wells/./../EVK/',
@@ -26,9 +29,8 @@ const PROTECTED = [
 const PUBLIC = [
   '/tools/login/', '/tools/login', '/tools/login/index.html', '/tools/LOGIN/', '/cz/tools/login/',
   '/tools/tv/', '/tools/velin/', '/tools/velin/?sala=A',
-  ...['ALI','AorticTrauma','CAR','CEAP','SVP','Tromboflebitída','Villa','WELLS','adventny-kalendar','claudication','defektologia'].map(d => `/tools/${d}/`),
-  '/tools/Tromboflebit%C3%ADda/', '/tools/defektologia/index.html',
-  '/tools/auth.js', '/cz/tools/auth.js', '/tools/staging.js', '/tools/vqi-clti.js'
+  '/tools/adventny-kalendar/', '/tools/adventny-kalendar/index.html',
+  '/tools/auth.js', '/cz/tools/auth.js'
 ];
 const BLOCKED = ['/middleware.js', '/package.json', '/package-lock.json', '/vercel.json', '/lib/brana.mjs', '/lib/x.js'];
 for (const p of PROTECTED) ok(classify(p.split('?')[0]) === 'protected', `chránené: ${p}`, classify(p.split('?')[0]));
@@ -135,8 +137,12 @@ const loc = r => r.headers.get('Location');
   ok(r && r.status === 302 && loc(r) === 'https://www.cievny.sk/tools/tv/', '?tv=1 bez cookie → TV brána', loc(r)); }
 { resetCache();
   const [f, c] = stub(200, []);
-  ok(await handle(req('/tools/WELLS/'), { fetchImpl: f, now }) === null && c.n === 0, 'verejná kalkulačka → null bez Supabase');
-  ok(await handle(req('/tools/staging.js', { 'sec-fetch-dest': 'script' }), { fetchImpl: f, now }) === null, 'verejný JS → null');
+  ok(await handle(req('/tools/adventny-kalendar/'), { fetchImpl: f, now }) === null && c.n === 0, 'verejný adventný kalendár → null bez Supabase');
+  ok(await handle(req('/tools/auth.js', { 'sec-fetch-dest': 'script' }), { fetchImpl: f, now }) === null, 'verejný JS → null');
+  const rw = await handle(req('/tools/WELLS/'), { fetchImpl: f, now });
+  ok(rw && rw.status === 302, 'kalkulačka WELLS bez cookie → 302 (už nie je verejná)');
+  const rs = await handle(req('/tools/staging.js', { 'sec-fetch-dest': 'script' }), { fetchImpl: f, now });
+  ok(rs && rs.status === 401, 'staging.js bez cookie → 401');
   ok(await handle(req('/tools/login/?return=%2Ftools%2FEVK%2F'), { fetchImpl: f, now }) === null, 'login → null (žiadna slučka)'); }
 { const r = await handle(req('/package.json'), { now });
   ok(r && r.status === 404, 'blokovaný súbor → 404');

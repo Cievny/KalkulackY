@@ -12,15 +12,15 @@ const MIME = {'.html':'text/html','.js':'text/javascript','.css':'text/css'};
 const srv = createServer((req,res)=>{
   let p = decodeURIComponent(req.url.split('?')[0]);
   if(p.endsWith('/')) p += 'index.html';
-  try{
-    res.writeHead(200,{'Content-Type':MIME[extname(p)]||'text/plain'});
-    res.end(readFileSync(join(ROOT,p)));
-  }catch(e){ res.writeHead(404); res.end('nf'); }
+  // súbor načítaj PRED hlavičkami – 404 (napr. manifest z auth.js) inak zhodí server
+  let body; try{ body = readFileSync(join(ROOT,p)); }catch(e){ res.writeHead(404); res.end('nf'); return; }
+  res.writeHead(200,{'Content-Type':MIME[extname(p)]||'text/plain'}); res.end(body);
 });
 await new Promise(r=>srv.listen(8251,r));
 
 const browser = await chromium.launch({executablePath: process.env.CHROMIUM_PATH || undefined});
 const ctx = await browser.newContext();
+await ctx.addInitScript(()=>{ sessionStorage.setItem('cievny_auth','1'); sessionStorage.setItem('cievny_auth_at','tok'); sessionStorage.setItem('cievny_auth_exp',String(Date.now()+3600000)); sessionStorage.setItem('cievny_auth_email','test@cievny.sk'); }); // kalkulačky sú za prihlásením
 const page = await ctx.newPage();
 await page.route('**/cdn.tailwindcss.com/**', r=>r.fulfill({status:200,contentType:'text/javascript',body:''}));
 await page.route('**/fonts.googleapis.com/**', r=>r.fulfill({status:200,contentType:'text/css',body:''}));
