@@ -382,8 +382,8 @@ function getCalculatorHTML(side) {
             <!-- 9. Cievny status -->
             <section><h3 class="section-header">9. Cievny status (Ischémia)</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div><label class="text-sm">a. dors. pedis</label><select id="${side}-cievy-adp" class="w-full p-2 border rounded-md"><option>Hmatná</option><option>Nehmatná</option></select></div>
-                    <div><label class="text-sm">a. tib. post.</label><select id="${side}-cievy-atp" class="w-full p-2 border rounded-md"><option>Hmatná</option><option>Nehmatná</option></select></div>
+                    <div><label class="text-sm">a. dors. pedis</label><select id="${side}-cievy-adp" class="w-full p-2 border rounded-md"><option value="">-- Nezadané --</option><option>Hmatná</option><option>Nehmatná</option></select></div>
+                    <div><label class="text-sm">a. tib. post.</label><select id="${side}-cievy-atp" class="w-full p-2 border rounded-md"><option value="">-- Nezadané --</option><option>Hmatná</option><option>Nehmatná</option></select></div>
                     <div><label class="text-sm">ABI</label><input type="number" step="0.01" id="${side}-cievy-abi" placeholder="napr. 0.7" class="w-full p-2 border rounded-md"></div>
                     <div><label class="text-sm">Toe Pressure</label><input type="number" id="${side}-cievy-tp" placeholder="mmHg" class="w-full p-2 border rounded-md"></div>
                 </div>
@@ -776,21 +776,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // WIfI Ischemia (I) – TP/TcPO2 má prednosť pred ABI. Pri ABI > 1,3 (mediokalcinóza)
     // je ABI nevýpovedné a stupeň sa z neho neodvodzuje.
+    // Hranice (TP ≥60/40/30, ABI ≥0,80/0,60/0,40) drží jediný zdroj – /tools/staging.js.
     function stupenI(data) {
+        const S = window.Staging;
         const abi = parseFloat(data.cievyAbi);
-        const tp = parseFloat(data.cievyTp);
-        if (!isNaN(tp)) {
-            if (tp >= 60) return {grade: 0, zdroj: 'TP'};
-            if (tp >= 40) return {grade: 1, zdroj: 'TP'};
-            if (tp >= 30) return {grade: 2, zdroj: 'TP'};
-            return {grade: 3, zdroj: 'TP'};
-        }
+        const tpG = S ? S.wifiIzTP(data.cievyTp) : null;
+        if (tpG !== null) return {grade: tpG, zdroj: 'TP'};
         if (!isNaN(abi)) {
             if (abi > 1.3) return {grade: null, zdroj: 'abi-nevypovedne'};
-            if (abi >= 0.80) return {grade: 0, zdroj: 'ABI'};
-            if (abi >= 0.60) return {grade: 1, zdroj: 'ABI'};
-            if (abi >= 0.40) return {grade: 2, zdroj: 'ABI'};
-            return {grade: 3, zdroj: 'ABI'};
+            return {grade: S ? S.wifiIzABI(abi) : null, zdroj: 'ABI'};
         }
         return {grade: null, zdroj: 'chyba'};
     }
@@ -799,7 +793,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // znakoch (alebo postihnutí hlbších štruktúr); fI-2 pri erytéme > 2 cm alebo hlbších
     // štruktúrach; fI-3 až pri >= 2 kritériách SIRS.
     function stupenFI(data) {
-        const lokalne = data.infekciaZnaky.length;
+        const maErytem = data.infekciaZnaky.some(z => /^Erytém/.test(z));
+        // rozsah erytému bez zaškrtnutého erytému: lekár erytém opísal, tak ho počítame
+        const lokalne = data.infekciaZnaky.length + ((data.erytemRozsah && !maErytem) ? 1 : 0);
         const hlbke = data.hlbkeZnaky.length > 0;
         const sirs = data.sirsZnaky.length;
         if (lokalne < 2 && !hlbke) return 0;
@@ -838,6 +834,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.glassSfaChoroba === '') ch.push('dĺžka choroby AFS');
             if (data.glassSfaCto === '') ch.push('CTO v AFS');
             if (data.glassPop === '') ch.push('popliteálna tepna');
+            if (data.glassFpKalc === '') ch.push('ťažká kalcifikácia FP (áno/nie)');
             if (data.glassSfaChoroba === '0' && data.glassPop === '1')
                 ch.push('pri FP chorobe treba dĺžku buď v AFS, alebo v popliteálnej tepne');
         }
@@ -849,6 +846,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.glassIpCtoLoc === '') ch.push('lokalizácia CTO');
                 if (data.glassTapOkluzia === '') ch.push('dĺžka CTO v TAP');
             }
+            if (data.glassIpKalc === '') ch.push('ťažká kalcifikácia IP (áno/nie)');
         }
         return ch;
     }
@@ -1074,7 +1072,8 @@ document.addEventListener('DOMContentLoaded', function() {
         r += `2. Veľkosť: ${data.velkostL || 'N/A'} x ${data.velkostW || 'N/A'} x ${data.velkostD || 'N/A'} mm\n`;
         r += `2b. Rozsah rany: ${popisStruktury(data.wStruktury)}; gangréna: ${popisGangrena(data.wGangrena)}\n`;
         r += `3. Tvar a okraje: ${data.tvar || 'N/A'}, okraje ${data.okraje || 'N/A'}\n`;
-        r += `4. Spodina rany: Granulácia ${data.spodinaGran || 0}%, Fibrín ${data.spodinaFibrin || 0}%, Nekróza ${data.spodinaNekroza || 0}%\n`;
+        const pc = v => (v === '' || v == null) ? 'N/A' : v + '%';
+        r += `4. Spodina rany: Granulácia ${pc(data.spodinaGran)}, Fibrín ${pc(data.spodinaFibrin)}, Nekróza ${pc(data.spodinaNekroza)}\n`;
         r += `5. Exsudát: ${data.exsudatMnozstvo || 'N/A'}, ${data.exsudatCharakter || 'N/A'}\n`;
         r += `6. Známky infekcie: ${data.infekciaZnaky.join(', ') || 'žiadne'}`;
         if (data.erytemRozsah) r += `; rozsah erytému: ${data.erytemRozsah === 'velke' ? '> 2 cm' : '0,5 – 2 cm'}`;
@@ -1082,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', function() {
         r += `\n   Hlbšie štruktúry: ${data.hlbkeZnaky.join(', ') || 'bez postihnutia'}. SIRS: ${data.sirsZnaky.join(', ') || 'nie'}\n`;
         r += `7. Okolie rany: ${data.okolie.join(', ') || 'N/A'}\n`;
         r += `8. Podminovanie: ${data.podminovanie ? `áno, ${data.podminovanieRozsah || 'N/A'}` : 'nie'}\n`;
-        r += `9. Cievny status: ADP ${data.cievyAdp}, ATP ${data.cievyAtp}, ABI: ${data.cievyAbi || 'N/A'}, TP: ${data.cievyTp || 'N/A'} mmHg\n`;
+        r += `9. Cievny status: ADP ${data.cievyAdp || 'N/A'}, ATP ${data.cievyAtp || 'N/A'}, ABI: ${data.cievyAbi || 'N/A'}, TP: ${data.cievyTp ? data.cievyTp + ' mmHg' : 'N/A'}\n`;
         r += `10. Neuro status: Senzorika: ${data.neuroSenzorika || 'N/A'}, Motorika: ${data.neuroMotorika || 'N/A'}\n\n`;
         if (data.glass && (data.glass.fp != null || data.glassTap)) {
             r += `11. Anatómia (GLASS): ${data.glass.popis}`;

@@ -2576,7 +2576,9 @@ function stagingUpdate(){
   const bilatPozn=(strany.length>1&&(fp.tasc||gfp.grade))?('hodnotená horšia strana: l.'+(strana==='d'?'dx.':'sin.')):null;
   const ai=Staging.tascAI(model);
   const gip=Staging.glassIP(model,strana,g('stg_tap'));
-  const stad=Staging.glassStadium(gfp.grade,gip.grade==null?(gfp.grade>0?0:null):gip.grade);
+  // bez zvolenej TAP sa IP nedá hodnotiť – štádium sa NEdopočíta s tichým IP 0
+  // (FP 1–3 by mohlo vyjsť nižšie štádium, než aké má pacient)
+  const stad=Staging.glassStadium(gfp.grade,gip.grade);
   const W=g('stg_w')===''?null:parseInt(g('stg_w'));
   const fI=g('stg_fi')===''?null:parseInt(g('stg_fi'));
   const I=g('stg_tp')?Staging.wifiIzTP(g('stg_tp')):Staging.wifiIzABI(g('abi_pred'));
@@ -2588,7 +2590,9 @@ function stagingUpdate(){
   let html='';
   const tascTxt=[ai.tasc?('panva '+ai.tasc):null,fp.tasc?('FP '+fp.tasc):null].filter(Boolean).join(' • ');
   html+=b('TASC II: '+(oT?oT+' (korekcia)':(tascTxt||'–')),'#e0e7ff');
-  html+=b('GLASS: '+(oG?oG+' (korekcia)':(stad?('št. '+stad+' (FP'+gfp.grade+(gip.grade!=null?'/IP'+gip.grade:'')+')'):'–')),'#dbeafe');
+  const glassTxt=stad?('št. '+stad+' (FP'+gfp.grade+'/IP'+gip.grade+')')
+    :(gip.grade==null&&gfp.grade>0?('FP'+gfp.grade+' / IP ? – zvoľte TAP'):(gfp.grade===0&&gip.grade===0?'bez signifikantnej choroby':'–'));
+  html+=b('GLASS: '+(oG?oG+' (korekcia)':glassTxt),'#dbeafe');
   html+=b('WIfI: '+(oW?oW+' (korekcia)':(wf.stadium?('št. '+wf.stadium+' ('+W+'-'+I+'-'+fI+', riziko '+wf.riziko+')'):'–')),'#dcfce7');
   const pozn=[].concat(ai.pozn||[],fp.pozn||[],gfp.pozn||[],gip.pozn||[]);
   if(model.chybajuceDlzky.length)pozn.push('bez dĺžky: '+model.chybajuceDlzky.join(', '));

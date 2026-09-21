@@ -67,6 +67,10 @@ await set('#right-w-struktury','kost');
 // foot Infection – IDSA/IWGDF
 await chk('infekcia','Opuch/Indurácia');
 check('1 lokálny znak = fI0 (nie je to ešte infekcia)', (await score()).endsWith('fI0'), await score());
+await set('#right-erytem-rozsah','male');
+check('zadaný rozsah erytému sa počíta ako lokálny znak → fI1', (await score()).endsWith('fI1'), await score());
+await set('#right-erytem-rozsah','');
+check('bez rozsahu erytému späť na fI0', (await score()).endsWith('fI0'), await score());
 await chk('infekcia','Lokálna citlivosť/bolesť');
 check('2 lokálne znaky = fI1', (await score()).endsWith('fI1'), await score());
 await set('#right-erytem-rozsah','velke');
@@ -125,6 +129,8 @@ await set('#right-glass-fp-sig','1');
 check('po „Áno" sa detail FP zobrazí', await vidno('#right-glass-fp-detail'));
 check('bez zodpovedaných zložiek GLASS čaká', (await glassTxt()).includes('nezadané'), await glassTxt());
 await set('#right-glass-sfa-choroba','2'); await set('#right-glass-sfa-cto','0'); await set('#right-glass-pop','1');
+check('bez odpovede na kalcifikáciu GLASS čaká (žiadne tiché „nie")', (await glassNote()).includes('kalcifikácia FP'), await glassNote());
+await set('#right-glass-fp-kalc','0');
 check('AFS 10–20 cm bez CTO, poplitea čistá → FP 2', (await glassTxt()).includes('FP 2'), await glassTxt());
 
 // ponuka CTO je obmedzená dĺžkou choroby (SVS: CTO nemôže byť dlhšia než lézia)
@@ -153,6 +159,8 @@ await set('#right-glass-sfa-choroba','1'); await set('#right-glass-pop','1'); aw
 await set('#right-glass-ip-sig','1');
 check('po „Áno" sa detail IP zobrazí', await vidno('#right-glass-ip-detail'));
 await set('#right-glass-tap-choroba','3'); await set('#right-glass-ip-cto','0');
+check('bez odpovede na kalcifikáciu IP GLASS čaká', (await glassNote()).includes('kalcifikácia IP'), await glassNote());
+await set('#right-glass-ip-kalc','0');
 check('choroba TAP 1/3–2/3 bez CTO → IP 3', (await glassTxt()).includes('IP 3'), await glassTxt());
 check('bez CTO sa jej lokalizácia neponúka', !(await vidno('#right-glass-ip-cto-loc-wrap')));
 await set('#right-glass-ip-cto','1');
@@ -211,6 +219,7 @@ check('všetkých 25 kombinácií GLASS sedí s GVG 2019 maticou', glassZhoda ==
 await set('#right-glass-fp-sig','1'); await set('#right-glass-sfa-choroba','2');
 await set('#right-glass-sfa-cto','0'); await set('#right-glass-pop','1');
 await set('#right-glass-tap-choroba','3'); await set('#right-glass-ip-cto','0');
+await set('#right-glass-fp-kalc','0'); await set('#right-glass-ip-kalc','0');
 check('FP2 + IP3 = GLASS II', (await glassTxt()).includes('štádium II '), await glassTxt());
 
 // VQI CLTI (sekcia 12) – riziko pacienta, počíta zdieľaný /tools/vqi-clti.js
@@ -245,6 +254,8 @@ check('nevyplnená ľavá DK nie je v náleze "bez defektu"',
 check('nevyplnená ľavá DK je označená ako nehodnotená', rep.includes('Nehodnotené – údaje neboli zadané'));
 check('záver priznáva nehodnotenú ľavú DK', /ľavej DK nehodnotená/.test(rep));
 check('nález obsahuje rozsah rany a gangrénu', rep.includes('2b. Rozsah rany'));
+check('nevyšetrené pulzy nie sú v náleze „Hmatná"', /9\. Cievny status: ADP N\/A, ATP N\/A/.test(rep), rep.split('9. Cievny status')[1]?.slice(0,60));
+check('nevyplnená spodina nie je v náleze „0%"', /4\. Spodina rany: Granulácia N\/A/.test(rep), rep.split('4. Spodina')[1]?.slice(0,60));
 check('nález obsahuje hlbšie štruktúry', rep.includes('Hlbšie štruktúry: Osteomyelitída'));
 check('nález obsahuje GLASS štádium', rep.includes('11. Anatómia (GLASS): GLASS štádium II'), rep.split('11. Anatómia')[1]?.slice(0,80));
 check('nález obsahuje cieľovú tepnu', rep.includes('a. tibialis posterior'));

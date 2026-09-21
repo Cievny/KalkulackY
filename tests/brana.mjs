@@ -18,7 +18,10 @@ const PROTECTED = [
   '/tools/EVK/index.html', '/tools/Program/?tv=1', '/tools//EVK/', '/tools/nova-vec/', '/tools/suhlasy/docs/01_EVAR.docx',
   ...['esc','gen-actionbar','pacient','rc-auto','scrub','vykon-id','drg-ceny','gcal-config','anamneza-parser',
       'material-katalog','poziadavky-import','program-import'].map(f => `/tools/${f}.js`),
-  '/tools/%E0%A4%A'   // chybné kódovanie → chránené
+  '/tools/%E0%A4%A',  // chybné kódovanie → chránené
+  // bodkové segmenty / spätné lomky za verejným prefixom – nespoliehame sa na normalizáciu servera
+  '/tools/defektologia/../EVK/', '/tools/defektologia/%2e%2e/EVK/', '/tools/wells/./../EVK/',
+  '/tools/defektologia/..', '/tools/wells\\..\\EVK/', '/tools/defektologia/%5c..%5cEVK/'
 ];
 const PUBLIC = [
   '/tools/login/', '/tools/login', '/tools/login/index.html', '/tools/LOGIN/', '/cz/tools/login/',
@@ -34,6 +37,10 @@ for (const p of BLOCKED) ok(classify(p) === 'blocked', `blokované: ${p}`, class
 ok(normalize('/tools/EVK') === '/tools/evk/', 'normalize: adresár bez lomky dostane lomku');
 ok(normalize('/tools/EVK/index.html') === '/tools/evk/', 'normalize: index.html sa odstráni');
 ok(normalize('/tools/%E0%A4%A') === null, 'normalize: chybné kódovanie → null');
+ok(normalize('/tools/defektologia/%2e%2e/EVK/') === null, 'normalize: dekódované .. → null (chránené)');
+ok(normalize('/tools/wells/./x/') === null, 'normalize: segment . → null (chránené)');
+ok(normalize('/tools/a\\b/') === null, 'normalize: spätná lomka → null (chránené)');
+ok(normalize('/tools/svp.old/') === '/tools/svp.old/', 'normalize: bodka vo vnútri názvu nie je bodkový segment');
 
 console.log('\n— parseCookie —');
 ok(parseCookie('a=1; cievny_sess=tok.en; b=2', COOKIE) === 'tok.en', 'nájde cookie medzi inými');
