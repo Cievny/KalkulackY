@@ -52,25 +52,95 @@ ok(S.tascFP(M({ AFC: { stav: 'okluzia' } }), 'd').tasc === 'D', 'TASC FP: CTO AF
 ok(S.tascFP(M({ P2: { stav: 'okluzia' }, TTF: { stav: 'okluzia' } }), 'd').tasc === 'D', 'TASC FP: CTO popliteálnej + trifurkácia → D');
 ok(S.tascFP(M(), 'd').tasc === null, 'TASC FP: bez lézií → null');
 
-/* ── GLASS FP ── */
+/* ── GLASS FP ──
+   Hranice podľa oficiálnej kalkulačky SVS (calc.cfm?id=1002):
+   SFA choroba <10/10-20/>20 cm → 1/2/3; SFA CTO non-flush <5/5-10/10-20 cm → 1/2/3,
+   flush <20 cm → 3, akákoľvek >20 cm → 4; popliteálna stenóza <2/2-5/>5 cm → 2/3/4,
+   CTO alebo trifurkácia → 4; ťažká kalcifikácia +1. */
 ok(S.glassFP(M({ AFS: { stav: 'stenoza', dlzka: 80 } }), 'd').grade === 1, 'GLASS FP: stenóza 8 cm → 1');
 ok(S.glassFP(M({ AFS: { stav: 'stenoza', dlzka: 150 } }), 'd').grade === 2, 'GLASS FP: stenóza 15 cm → 2');
-ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 80 } }), 'd').grade === 2, 'GLASS FP: CTO 8 cm → 2');
-ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 150 } }), 'd').grade === 3, 'GLASS FP: CTO 15 cm → 3');
-ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 80, subseg: 'proximálny' } }), 'd').grade === 3, 'GLASS FP: flush CTO → 3');
+ok(S.glassFP(M({ AFS: { stav: 'stenoza', dlzka: 250 } }), 'd').grade === 3, 'GLASS FP: stenóza 25 cm → 3');
+ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 40 } }), 'd').grade === 1, 'GLASS FP: non-flush CTO 4 cm → 1');
+ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 80 } }), 'd').grade === 2, 'GLASS FP: non-flush CTO 8 cm → 2');
+ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 150 } }), 'd').grade === 3, 'GLASS FP: non-flush CTO 15 cm → 3');
+ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 80, subseg: 'proximálny' } }), 'd').grade === 3, 'GLASS FP: flush CTO < 20 cm → 3');
 ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 250 } }), 'd').grade === 4, 'GLASS FP: CTO 25 cm → 4');
+ok(S.glassFP(M({ P2: { stav: 'stenoza', dlzka: 15 } }), 'd').grade === 2, 'GLASS FP: popliteálna stenóza 1,5 cm → 2');
+ok(S.glassFP(M({ P2: { stav: 'stenoza', dlzka: 35 } }), 'd').grade === 3, 'GLASS FP: popliteálna stenóza 3,5 cm → 3');
+ok(S.glassFP(M({ P2: { stav: 'stenoza', dlzka: 70 } }), 'd').grade === 4, 'GLASS FP: popliteálna stenóza 7 cm → 4');
+ok(S.glassFP(M({ P1: { stav: 'stenoza', dlzka: 20 }, P2: { stav: 'stenoza', dlzka: 20 } }), 'd').grade === 3,
+   'GLASS FP: popliteálne stenózy 2+2 cm sa sčítajú → 3');
 ok(S.glassFP(M({ P3: { stav: 'okluzia' } }), 'd').grade === 4, 'GLASS FP: CTO popliteálnej → 4');
+ok(S.glassFP(M({ AFS: { stav: 'stenoza', dlzka: 80 }, TTF: { stav: 'stenoza' } }), 'd').grade === 4,
+   'GLASS FP: choroba do trifurkácie → 4');
 ok(S.glassFP(M({ AFS: { stav: 'stenoza', dlzka: 80, kalcif: true } }), 'd').grade === 2, 'GLASS FP: ťažká kalcifikácia +1');
+ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 250, kalcif: true } }), 'd').grade === 4, 'GLASS FP: kalcifikácia nepresiahne 4');
 ok(S.glassFP(M(), 'd').grade === 0, 'GLASS FP: bez lézií → 0');
+ok(S.glassFP(M({ AFS: { stav: 'mierna' } }), 'd').grade === 0, 'GLASS FP: nesignifikantná stenóza → 0');
 
-/* ── GLASS IP (cieľová tepna) ── */
-ok(S.glassIP(M({ ATA: { stav: 'stenoza', dlzka: 25 } }), 'd', 'ATA').grade === 1, 'GLASS IP: fokálna stenóza → 1');
-ok(S.glassIP(M({ ATA: { stav: 'stenoza', dlzka: 120 } }), 'd', 'ATA').grade === 2, 'GLASS IP: stenóza ~1/3 → 2');
-ok(S.glassIP(M({ ATA: { stav: 'okluzia', dlzka: 60 } }), 'd', 'ATA').grade === 3, 'GLASS IP: CTO ≤1/3 → 3');
+/* ── GLASS IP (cieľová tepna) ──
+   dĺžka choroby <3 cm/≤1/3/1/3-2/3/>2/3 → 1/2/3/4; CTO <3 cm/do 1/3/>1/3 → 2/3/4;
+   odstup TAP → 3; TP trunk → 4, ale len pri TAP = ATP alebo a. peronea. */
+ok(S.glassIP(M({ ATA: { stav: 'stenoza', dlzka: 25 } }), 'd', 'ATA').grade === 1, 'GLASS IP: stenóza 2,5 cm → 1');
+ok(S.glassIP(M({ ATA: { stav: 'stenoza', dlzka: 80 } }), 'd', 'ATA').grade === 2, 'GLASS IP: stenóza 8 cm (≤1/3) → 2');
+ok(S.glassIP(M({ ATA: { stav: 'stenoza', dlzka: 120 } }), 'd', 'ATA').grade === 3, 'GLASS IP: stenóza 12 cm (1/3–2/3) → 3');
+ok(S.glassIP(M({ ATA: { stav: 'stenoza', dlzka: 220 } }), 'd', 'ATA').grade === 4, 'GLASS IP: stenóza 22 cm (>2/3) → 4');
+ok(S.glassIP(M({ ATA: { stav: 'okluzia', dlzka: 25 } }), 'd', 'ATA').grade === 2, 'GLASS IP: CTO 2,5 cm → 2');
+ok(S.glassIP(M({ ATA: { stav: 'okluzia', dlzka: 60 } }), 'd', 'ATA').grade === 3, 'GLASS IP: CTO 6 cm (do 1/3) → 3');
+ok(S.glassIP(M({ ATA: { stav: 'okluzia', dlzka: 150 } }), 'd', 'ATA').grade === 4, 'GLASS IP: CTO 15 cm (>1/3) → 4');
 ok(S.glassIP(M({ ATA: { stav: 'okluzia', subseg: 'celý' } }), 'd', 'ATA').grade === 4, 'GLASS IP: CTO celej tepny → 4');
-ok(S.glassIP(M({ ATP: { stav: 'mierna' }, TTF: { stav: 'okluzia' } }), 'd', 'ATP').grade === 3, 'GLASS IP: TTF oklúzia pri TAP=ATP → min. 3');
+ok(S.glassIP(M({ ATA: { stav: 'okluzia', dlzka: 25, subseg: 'odstup' } }), 'd', 'ATA').grade === 3, 'GLASS IP: krátka CTO v odstupe → 3');
+ok(S.glassIP(M({ ATP: { stav: 'mierna' }, TTF: { stav: 'okluzia' } }), 'd', 'ATP').grade === 4, 'GLASS IP: CTO TP trunku pri TAP=ATP → 4');
+ok(S.glassIP(M({ AFib: { stav: 'mierna' }, TTF: { stav: 'okluzia' } }), 'd', 'AFib').grade === 4, 'GLASS IP: CTO TP trunku pri TAP=peronea → 4');
+ok(S.glassIP(M({ ATA: { stav: 'stenoza', dlzka: 25 }, TTF: { stav: 'okluzia' } }), 'd', 'ATA').grade === 1,
+   'GLASS IP: TP trunk sa pri TAP=ATA neuplatní');
+ok(S.glassIP(M({ ATA: { stav: 'stenoza', dlzka: 25, kalcif: true } }), 'd', 'ATA').grade === 2, 'GLASS IP: ťažká kalcifikácia +1');
 ok(S.glassIP(M({ ATA: { stav: 'stenoza' } }), 'd', null).grade === null, 'GLASS IP: bez TAP → null');
 ok(S.glassIP(M(), 'd', 'ATA').grade === 0, 'GLASS IP: čistá TAP → 0');
+
+/* ── GLASS: kontrolný prípad z oficiálnej kalkulačky SVS ──
+   Zadané tam: FP signifikantná; SFA choroba 10–20 cm (2); SFA CTO non-flush 5–10 cm (2);
+   popliteálna stenóza 2–5 cm (3); FP kalcifikácia áno → FP 4.
+   TAP = a. tibialis anterior; IP signifikantná; dĺžka choroby > 2/3 (4);
+   CTO v odstupe TAP (3); dĺžka CTO do 1/3 (3); IP kalcifikácia áno → IP 4.
+   Výsledok appky: FP 4, IP 4, štádium III (high complexity).
+   Potvrdzuje skladanie maximom, kalcifikáciu +1 aj strop na 4. */
+{
+  const m = M({ AFS: { stav: 'okluzia', dlzka: 150, kalcif: true },
+                P2:  { stav: 'stenoza', dlzka: 35 },
+                ATA: { stav: 'okluzia', dlzka: 220, subseg: 'odstup', kalcif: true } });
+  const fp = S.glassFP(m, 'd').grade;
+  const ip = S.glassIP(m, 'd', 'ATA').grade;
+  ok(fp === 4, 'SVS kalkulačka: FP → 4', 'dostal ' + fp);
+  ok(ip === 4, 'SVS kalkulačka: IP → 4', 'dostal ' + ip);
+  ok(S.glassStadium(fp, ip) === 'III', 'SVS kalkulačka: štádium → III', S.glassStadium(fp, ip));
+}
+
+/* ── GLASS: ďalšie kontrolné prípady z oficiálnej kalkulačky SVS ── */
+{
+  // FP nesignifikantná → FP 0. TAP = a. tibialis posterior, choroba 1/3–2/3,
+  // CTO mimo odstupu, dĺžka CTO do 1/3, IP kalcifikácia → IP 4. Štádium III.
+  const m = M({ ATP: { stav: 'okluzia', dlzka: 150, kalcif: true } });
+  const fp = S.glassFP(m, 'd').grade, ip = S.glassIP(m, 'd', 'ATP').grade;
+  ok(fp === 0, 'SVS #2: FP nesignifikantná → 0', 'dostal ' + fp);
+  ok(ip === 4, 'SVS #2: IP → 4', 'dostal ' + ip);
+  ok(S.glassStadium(fp, ip) === 'III', 'SVS #2: FP0 × IP4 → III', S.glassStadium(fp, ip));
+}
+{
+  // SFA choroba 10–20 cm (2), SFA CTO non-flush < 5 cm (1), popliteálna stenóza
+  // 2–5 cm (3), BEZ kalcifikácie → FP 3. IP nesignifikantná → IP 0. Štádium II.
+  const m = M({ AFS: { stav: 'okluzia', dlzka: 40 }, P2: { stav: 'stenoza', dlzka: 35 } });
+  const fp = S.glassFP(m, 'd').grade, ip = S.glassIP(m, 'd', 'ATA').grade;
+  ok(fp === 3, 'SVS #3: krátka CTO + popliteálna stenóza 2–5 cm → FP 3', 'dostal ' + fp);
+  ok(ip === 0, 'SVS #3: IP nesignifikantná → 0', 'dostal ' + ip);
+  ok(S.glassStadium(fp, ip) === 'II', 'SVS #3: FP3 × IP0 → II', S.glassStadium(fp, ip));
+}
+{
+  // IP: zadaná len CTO v odstupe TAP (3) + kalcifikácia, dĺžky nevyplnené → IP 4.
+  const m = M({ ATA: { stav: 'okluzia', subseg: 'odstup', kalcif: true } });
+  const ip = S.glassIP(m, 'd', 'ATA').grade;
+  ok(ip === 4, 'SVS #4: CTO v odstupe + kalcifikácia (bez dĺžok) → IP 4', 'dostal ' + ip);
+}
 
 /* ── GLASS štádium (matica) ── */
 ok(S.glassStadium(1, 1) === 'I', 'GLASS: FP1+IP1 → I');

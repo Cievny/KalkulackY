@@ -400,7 +400,7 @@ function getCalculatorHTML(side) {
             
             <!-- 11. GLASS -->
             <section><h3 class="section-header">11. Anatómia – GLASS <span class="text-sm font-normal text-gray-500">(GVG 2019, z angiografie)</span></h3>
-                <p class="text-sm text-gray-600 mb-3">Stupne FP a IP zodpovedajú pravidlám, ktoré z nálezu DSA odvodzuje aj EVK. Ak už máš nález v EVK, stupne prevezmi odtiaľ.</p>
+                <p class="text-sm text-gray-600 mb-3">Hranice zodpovedajú oficiálnej kalkulačke SVS. Stupeň segmentu je <strong>najvyššia</strong> z jeho zložiek; ťažkú kalcifikáciu zaškrtni zvlášť – pripočíta +1 (najviac na 4). Rovnaké pravidlá z nálezu DSA odvodzuje aj EVK.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="text-sm">Cieľová tepna (TAP)</label>
@@ -424,24 +424,28 @@ function getCalculatorHTML(side) {
                         <label class="text-sm">Femoropopliteálny stupeň (FP)</label>
                         <select id="${side}-glass-fp" class="w-full p-2 border rounded-md">
                             <option value="">-- Nezadané --</option>
-                            <option value="0">FP 0 – bez signifikantnej choroby</option>
-                            <option value="1">FP 1 – krátka stenóza AFS</option>
-                            <option value="2">FP 2 – CTO AFS &lt; 10 cm (nie odstupová), stenóza &gt; 10 cm alebo fokálna popliteálna stenóza</option>
-                            <option value="3">FP 3 – CTO AFS &gt; 10 cm alebo odstupová, stenóza &gt; 20 cm alebo infrageniculárna popliteálna stenóza</option>
-                            <option value="4">FP 4 – oklúzia popliteálnej tepny/trifurkácie alebo CTO AFS &gt; 20 cm</option>
+                            <option value="0">FP 0 – bez hemodynamicky signifikantnej choroby (&gt; 50 % stenóza)</option>
+                            <option value="1">FP 1 – stenóza AFS &lt; 10 cm alebo non-flush CTO &lt; 5 cm</option>
+                            <option value="2">FP 2 – stenóza AFS 10–20 cm, non-flush CTO 5–10 cm alebo popliteálna stenóza &lt; 2 cm</option>
+                            <option value="3">FP 3 – stenóza AFS &gt; 20 cm, non-flush CTO 10–20 cm, odstupová (flush) CTO &lt; 20 cm alebo popliteálna stenóza 2–5 cm</option>
+                            <option value="4">FP 4 – akákoľvek CTO &gt; 20 cm, popliteálna stenóza &gt; 5 cm alebo do trifurkácie, akákoľvek popliteálna CTO</option>
                         </select>
                     </div>
                     <div>
                         <label class="text-sm">Infrapopliteálny stupeň (IP) – na cieľovej tepne</label>
                         <select id="${side}-glass-ip" class="w-full p-2 border rounded-md">
                             <option value="">-- Nezadané --</option>
-                            <option value="0">IP 0 – bez signifikantnej choroby</option>
-                            <option value="1">IP 1 – fokálna stenóza &lt; 3 cm</option>
-                            <option value="2">IP 2 – stenóza &gt; 10 cm alebo proximálny/stredný úsek</option>
-                            <option value="3">IP 3 – choroba do 2/3, CTO ≤ 1/3 alebo postihnutie odstupu (TTF)</option>
-                            <option value="4">IP 4 – CTO &gt; 1/3 priebehu cieľovej tepny</option>
+                            <option value="0">IP 0 – bez hemodynamicky signifikantnej choroby</option>
+                            <option value="1">IP 1 – choroba TAP &lt; 3 cm</option>
+                            <option value="2">IP 2 – choroba TAP do 1/3 dĺžky alebo CTO &lt; 3 cm</option>
+                            <option value="3">IP 3 – choroba TAP 1/3–2/3, CTO do 1/3 alebo CTO v odstupe TAP</option>
+                            <option value="4">IP 4 – choroba TAP &gt; 2/3, CTO &gt; 1/3 alebo CTO TP trunku (len pri TAP = ATP/peronea)</option>
                         </select>
                     </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <label class="flex items-center text-sm"><input type="checkbox" id="${side}-glass-fp-kalc" class="mr-2">Ťažká kalcifikácia v FP segmente (+1)</label>
+                    <label class="flex items-center text-sm"><input type="checkbox" id="${side}-glass-ip-kalc" class="mr-2">Ťažká kalcifikácia v IP segmente (+1)</label>
                 </div>
                 <div id="${side}-glass-card" class="mt-4 p-4 rounded-lg border-l-4 risk-undefined">
                     <p id="${side}-glass-result" class="font-semibold">GLASS: nezadané</p>
@@ -598,6 +602,8 @@ document.addEventListener('DOMContentLoaded', function() {
         data.glassIm = form.querySelector(`#${side}-glass-im`).value;
         data.glassFp = form.querySelector(`#${side}-glass-fp`).value;
         data.glassIp = form.querySelector(`#${side}-glass-ip`).value;
+        data.glassFpKalc = form.querySelector(`#${side}-glass-fp-kalc`).checked;
+        data.glassIpKalc = form.querySelector(`#${side}-glass-ip-kalc`).checked;
 
         const wifiResult = calculateWIfI(data);
         const glassResult = calculateGLASS(data);
@@ -653,9 +659,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // GLASS (GVG 2019) – štádium z rovnakej matice FP x IP, akú používa EVK.
+    // Ťažká kalcifikácia zvyšuje stupeň segmentu o 1, najviac na 4
+    // („increases the within-segment grade by +1", GLASS App Help, SVS).
+    const sKalcifikaciou = (g, kalc) => (kalc && g > 0) ? Math.min(4, g + 1) : g;
+
     function calculateGLASS(data) {
-        const fp = data.glassFp === '' ? null : parseInt(data.glassFp, 10);
-        const ip = data.glassIp === '' ? null : parseInt(data.glassIp, 10);
+        const fpZ = data.glassFp === '' ? null : parseInt(data.glassFp, 10);
+        const ipZ = data.glassIp === '' ? null : parseInt(data.glassIp, 10);
+        const fp = fpZ === null ? null : sKalcifikaciou(fpZ, data.glassFpKalc);
+        const ip = ipZ === null ? null : sKalcifikaciou(ipZ, data.glassIpKalc);
         if (fp === null || ip === null) {
             return { stadium: null, popis: 'GLASS: nezadané', poznamka: 'Zadajte stupeň FP aj IP (sekcia 11).', riskClass: 'risk-undefined' };
         }
@@ -669,6 +681,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.glassIm === 'P2') poznamka += ' IM P2 – cez členok neprechádza žiadna tepna.';
         else if (data.glassIm === 'P1') poznamka += ' IM P1 – pedálny oblúk chýba alebo je ťažko postihnutý.';
         if (!data.glassTap) poznamka += ' Cieľová tepna (TAP) nie je zvolená – IP stupeň sa vzťahuje na ňu.';
+        const kalc = [];
+        if (data.glassFpKalc && fp !== fpZ) kalc.push(`FP ${fpZ}→${fp}`);
+        if (data.glassIpKalc && ip !== ipZ) kalc.push(`IP ${ipZ}→${ip}`);
+        if (kalc.length) poznamka += ` Ťažká kalcifikácia: ${kalc.join(', ')}.`;
         return { stadium: st, popis: `GLASS štádium ${st} (FP ${fp} / IP ${ip}${data.glassIm ? ', IM ' + data.glassIm : ''})`, poznamka: poznamka, riskClass: trieda };
     }
 

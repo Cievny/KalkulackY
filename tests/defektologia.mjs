@@ -128,6 +128,17 @@ await set('#right-glass-tap','ATP');
 check('po zvolení TAP upozornenie zmizne',
   !(await page.$eval('#right-glass-note', e=>e.textContent)).includes('TAP nie je'));
 
+// ťažká kalcifikácia zvyšuje stupeň segmentu o 1, najviac na 4
+await set('#right-glass-fp','1'); await set('#right-glass-ip','1');
+check('FP1 + IP1 bez kalcifikácie = GLASS I', (await glassTxt()).includes('štádium I ('), await glassTxt());
+await page.check('#right-glass-fp-kalc'); await page.waitForTimeout(120);
+check('kalcifikácia FP: 1 → 2', (await glassTxt()).includes('FP 2'), await glassTxt());
+check('kalcifikácia je uvedená v poznámke',
+  (await page.$eval('#right-glass-note', e=>e.textContent)).includes('FP 1→2'));
+await set('#right-glass-fp','4');
+check('kalcifikácia nepresiahne stupeň 4', (await glassTxt()).includes('FP 4'), await glassTxt());
+await page.uncheck('#right-glass-fp-kalc'); await page.waitForTimeout(120);
+
 // celá matica GLASS musí sedieť s tou v staging.js (žiadna druhá kópia)
 const glassZhoda = await page.evaluate(()=>{
   const ocak = [[0,1,1,2,3],[1,1,2,2,3],[1,2,2,2,3],[2,2,2,3,3],[3,3,3,3,3]];

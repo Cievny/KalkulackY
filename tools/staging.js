@@ -189,60 +189,124 @@
     return { tasc: 'A', pozn: pozn };
   }
 
-  /* ── GLASS femoropopliteálny grade 0–4 pre jednu končatinu ──
-     Ťažká kalcifikácia zvyšuje grade o 1 (max 4). */
+  /* ── GLASS femoropopliteálny grade 0–4 ──────────────────────────────────
+     Hranice prevzaté z oficiálnej kalkulačky SVS (calc.cfm?id=1002), kde sú
+     hodnoty <option> priamo stupne:
+       SFA dĺžka choroby : <10 cm → 1 | 10–20 cm → 2 | >20 cm → 3
+       SFA CTO           : non-flush <5 cm → 1 | 5–10 cm → 2 | 10–20 cm → 3
+                           flush <20 cm → 3 | akákoľvek >20 cm → 4
+       Popliteálna       : stenóza <2 cm → 2 | 2–5 cm → 3
+                           >5 cm alebo do trifurkácie → 4 | akákoľvek CTO → 4
+       „no significant disease" popliteálnej má hodnotu 1 → ak je FP segment
+       hemodynamicky signifikantný, stupeň je aspoň 1.
+     Stupeň segmentu = maximum zo zložiek; ťažká kalcifikácia +1 (max 4)
+     („increases the within-segment grade by +1", GLASS App Help).
+     ZJEDNODUŠENIE: dĺžka popliteálnej stenózy sa sčítava cez P1–P3; ak nie je
+     zadaná, berie sa najmiernejší popliteálny stupeň (2) a doplní sa poznámka. */
   function glassFP(model, strana) {
     var M = model[strana] || {};
     var afs = M.AFS || {}, p1 = M.P1 || {}, p2 = M.P2 || {}, p3 = M.P3 || {};
+    var pop = [p1, p2, p3];
     var pozn = [];
-    var g = 0;
-    var afsL = afs.dlzka || 0;
-    var afsSig = afs.stav === 'stenoza' || afs.stav === 'okluzia';
-    var afsOkl = afs.stav === 'okluzia';
-    var flush = afsOkl && (afs.subseg === 'proximálny' || afs.subseg === 'odstup'); // odstupová oklúzia ~ flush
-    var popSig = [p1, p2, p3].some(function (e) { return e.stav === 'stenoza'; });
-    var popOkl = [p1, p2, p3].some(function (e) { return e.stav === 'okluzia'; });
+    var sigStav = function (e) { return e.stav === 'stenoza' || e.stav === 'okluzia'; };
+
+    var afsSig = sigStav(afs);
+    var popSig = pop.some(sigStav);
     var trif = (M.TTF || {}).stav != null && (M.TTF || {}).stav !== 'mierna';
+    if (!afsSig && !popSig && !trif) return { grade: 0, pozn: pozn };
 
-    if (popOkl || trif) g = 4;
-    else if (afsOkl && (afsL > 200 || (!afsL && afs.subseg === 'celý'))) g = 4;
-    else if (afsOkl && (afsL > 100 || flush)) g = 3;
-    else if (afsSig && !afsOkl && afsL > 200) g = 3;
-    else if ((p2.stav === 'stenoza' || p3.stav === 'stenoza')) g = 3;         // infragenik. popliteálna stenóza
-    else if (afsOkl) g = 2;                                                   // CTO <10 cm, nie flush
-    else if (afsSig && afsL > 100) g = 2;
-    else if (p1.stav === 'stenoza') g = 2;                                    // fokálna popliteálna stenóza
-    else if (afsSig) g = 1;
-    else if (afs.stav === 'mierna' || popSig) g = 1;
+    var g = 1;                      // signifikantná FP choroba = aspoň stupeň 1
+    var afsL = afs.dlzka || 0;
 
-    if (g > 0 && g < 4 && (afs.kalcif || p1.kalcif)) { g += 1; pozn.push('ťažká kalcifikácia: grade +1'); }
+    // SFA – dĺžka choroby
+    if (afsSig) {
+      if (afsL > 200) g = Math.max(g, 3);
+      else if (afsL > 100) g = Math.max(g, 2);
+    }
+
+    // SFA – CTO
+    if (afs.stav === 'okluzia') {
+      var flush = afs.subseg === 'proximálny' || afs.subseg === 'odstup';
+      if (afsL > 200 || (!afsL && afs.subseg === 'celý')) g = Math.max(g, 4);
+      else if (flush) g = Math.max(g, 3);
+      else if (afsL > 100) g = Math.max(g, 3);
+      else if (afsL > 50) g = Math.max(g, 2);
+      else if (afsL > 0) g = Math.max(g, 1);
+      else { g = Math.max(g, 2); pozn.push('dĺžka CTO AFS bez údaja – brané ako 5–10 cm'); }
+    }
+
+    // Popliteálna tepna a trifurkácia
+    if (pop.some(function (e) { return e.stav === 'okluzia'; })) {
+      g = 4; pozn.push('CTO popliteálnej tepny');
+    } else if (trif) {
+      g = 4; pozn.push('choroba zasahuje trifurkáciu');
+    } else if (popSig) {
+      var popL = pop.reduce(function (a, e) { return a + (sigStav(e) ? (e.dlzka || 0) : 0); }, 0);
+      if (popL > 50) g = Math.max(g, 4);
+      else if (popL > 20) g = Math.max(g, 3);
+      else if (popL > 0) g = Math.max(g, 2);
+      else { g = Math.max(g, 2); pozn.push('dĺžka popliteálnej stenózy bez údaja – brané ako < 2 cm'); }
+    }
+
+    if (afs.kalcif || pop.some(function (e) { return e.kalcif; })) {
+      g = Math.min(4, g + 1);
+      pozn.push('ťažká kalcifikácia: grade +1');
+    }
     if (afsSig && !afsL) pozn.push('dĺžka AFS lézie bez údaja');
     return { grade: g, pozn: pozn };
   }
 
-  /* ── GLASS infrapopliteálny grade 0–4 na cieľovej tepne (TAP) ──
-     Subsegmenty ≈ tretiny priebehu; TTF postihnutie = odstupová choroba
-     pre ATP/AFib. */
+  /* ── GLASS infrapopliteálny grade 0–4 na cieľovej tepne (TAP) ────────────
+     Hranice z oficiálnej kalkulačky SVS:
+       dĺžka choroby TAP : <3 cm → 1 | ≤1/3 → 2 | 1/3–2/3 → 3 | >2/3 → 4
+       dĺžka CTO v TAP   : <3 cm → 2 | do 1/3 → 3 | >1/3 → 4
+       lokalizácia CTO   : odstup TAP → 3 | mimo odstupu → 0
+                           TP trunk → 4, ale LEN ak TAP je ATP alebo a. peronea
+                           (pri TAP = ATA appka tú možnosť odstraňuje)
+     Krurálne tepny ~30 cm → 1/3 ≈ 10 cm, 2/3 ≈ 20 cm.
+     Ťažká kalcifikácia +1 (max 4). */
   function glassIP(model, strana, tap) {
     if (!tap) return { grade: null, pozn: ['nezvolená cieľová tepna (TAP)'] };
     var M = model[strana] || {};
     var e = M[tap] || {};
     var ttf = M.TTF || {};
-    var ttfChoroba = (tap === 'ATP' || tap === 'AFib') && (ttf.stav === 'stenoza' || ttf.stav === 'okluzia');
     var pozn = [];
-    var L = e.dlzka || 0;
-    var g = 0;
     var sig = e.stav === 'stenoza' || e.stav === 'okluzia';
-    var okl = e.stav === 'okluzia' || (ttfChoroba && ttf.stav === 'okluzia');
+    // TP trunk je spoločný odstup pre ATP a a. peroneu; pri TAP = ATA sa neuplatní
+    var ttfSig = (tap === 'ATP' || tap === 'AFib') && (ttf.stav === 'stenoza' || ttf.stav === 'okluzia');
+    if (!sig && !ttfSig) return { grade: 0, pozn: pozn };
 
-    if (!sig && !ttfChoroba) return { grade: e.stav === 'mierna' ? 0 : 0, pozn: pozn };
-    var cely = e.subseg === 'celý' || L > 200;
-    if (okl && (cely || (L > 100 && e.subseg !== 'distálny'))) g = 4;             // CTO >1/3
-    else if ((sig && cely) || (okl)) g = 3;                                        // choroba do 2/3 / CTO ≤1/3 (aj odstup)
-    else if (sig && (L > 100 || e.subseg === 'stredný' || e.subseg === 'proximálny')) g = 2;
-    else if (sig) g = 1;                                                           // fokálna stenóza <3 cm
-    if (ttfChoroba && g < 3) { g = 3; pozn.push('postihnutie TTF (odstup TAP)'); }
-    if (sig && !L && !e.subseg) pozn.push('dĺžka/rozsah bez údaja');
+    var L = e.dlzka || (e.subseg === 'celý' ? 300 : 0);
+    var g = 0;
+
+    // dĺžka choroby v TAP
+    if (sig) {
+      if (L > 200) g = Math.max(g, 4);
+      else if (L > 100) g = Math.max(g, 3);
+      else if (L > 30) g = Math.max(g, 2);
+      else if (L > 0) g = Math.max(g, 1);
+      else { g = Math.max(g, 1); pozn.push('dĺžka lézie TAP bez údaja – brané ako < 3 cm'); }
+    }
+
+    // CTO: dĺžka + lokalizácia
+    if (e.stav === 'okluzia') {
+      if (L > 100) g = Math.max(g, 4);
+      else if (L > 30) g = Math.max(g, 3);
+      else if (L > 0) g = Math.max(g, 2);
+      else g = Math.max(g, 3);
+      if (e.subseg === 'odstup' || e.subseg === 'proximálny') {
+        g = Math.max(g, 3);
+        pozn.push('CTO v odstupe cieľovej tepny');
+      }
+    }
+
+    // TP trunk
+    if (ttfSig) {
+      if (ttf.stav === 'okluzia') { g = 4; pozn.push('CTO TP trunku pri TAP = ' + tap); }
+      else { g = Math.max(g, 3); pozn.push('stenóza TP trunku pri TAP = ' + tap); }
+    }
+
+    if (g > 0 && e.kalcif) { g = Math.min(4, g + 1); pozn.push('ťažká kalcifikácia: grade +1'); }
     return { grade: g, pozn: pozn };
   }
 
