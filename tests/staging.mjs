@@ -142,6 +142,88 @@ ok(S.glassIP(M(), 'd', 'ATA').grade === 0, 'GLASS IP: čistá TAP → 0');
   ok(ip === 4, 'SVS #4: CTO v odstupe + kalcifikácia (bez dĺžok) → IP 4', 'dostal ' + ip);
 }
 
+/* ── GLASS zo zložiek: presne tie hodnoty, ktoré sa zadávajú do kalkulačky SVS.
+   Toto je tá istá funkcia, ktorú používa formulár v defektológii – overujeme ju
+   proti štyrom výsledkom, ktoré appka SVS reálne vrátila. ── */
+{
+  // #1: FP 2/2/3 + kalcifikácia → 4;  IP 4/3/3 + kalcifikácia → 4;  štádium III
+  const fp = S.glassFPzoZloziek({ signifikantna: true, sfaChoroba: 2, sfaCto: 2, poplitea: 3, kalcif: true });
+  const ip = S.glassIPzoZloziek({ signifikantna: true, tapChoroba: 4, cto: true, ctoLokalizacia: 3, ctoDlzka: 3, kalcif: true });
+  ok(fp === 4, 'zložky SVS #1: FP → 4', 'dostal ' + fp);
+  ok(ip === 4, 'zložky SVS #1: IP → 4', 'dostal ' + ip);
+  ok(S.glassStadium(fp, ip) === 'III', 'zložky SVS #1: štádium III');
+}
+{
+  // #2: FP nesignifikantná → 0;  IP 3/0/3 + kalcifikácia → 4;  štádium III
+  const fp = S.glassFPzoZloziek({ signifikantna: false, sfaChoroba: 3, poplitea: 4 });
+  const ip = S.glassIPzoZloziek({ signifikantna: true, tapChoroba: 3, cto: true, ctoLokalizacia: 0, ctoDlzka: 3, kalcif: true });
+  ok(fp === 0, 'zložky SVS #2: nesignifikantný segment ignoruje zložky', 'dostal ' + fp);
+  ok(ip === 4, 'zložky SVS #2: IP → 4', 'dostal ' + ip);
+  ok(S.glassStadium(fp, ip) === 'III', 'zložky SVS #2: FP0 × IP4 → III');
+}
+{
+  // #3: FP 2/1/3 bez kalcifikácie → 3;  IP nesignifikantná → 0;  štádium II
+  const fp = S.glassFPzoZloziek({ signifikantna: true, sfaChoroba: 2, sfaCto: 1, poplitea: 3, kalcif: false });
+  const ip = S.glassIPzoZloziek({ signifikantna: false });
+  ok(fp === 3, 'zložky SVS #3: FP → 3', 'dostal ' + fp);
+  ok(ip === 0, 'zložky SVS #3: IP → 0', 'dostal ' + ip);
+  ok(S.glassStadium(fp, ip) === 'II', 'zložky SVS #3: FP3 × IP0 → II');
+}
+{
+  // #4: IP – len CTO v odstupe (3) + kalcifikácia → 4
+  const ip = S.glassIPzoZloziek({ signifikantna: true, cto: true, ctoLokalizacia: 3, kalcif: true });
+  ok(ip === 4, 'zložky SVS #4: CTO v odstupe + kalcifikácia → 4', 'dostal ' + ip);
+}
+// „no significant disease" popliteálnej má v kalkulačke hodnotu 1 → podlaha stupňa
+ok(S.glassFPzoZloziek({ signifikantna: true, sfaChoroba: 0, sfaCto: 0, poplitea: 1 }) === 1,
+   'zložky: signifikantná FP choroba je aspoň stupeň 1');
+// bez CTO sa jej lokalizácia ani dĺžka do stupňa nezapočítajú
+ok(S.glassIPzoZloziek({ signifikantna: true, tapChoroba: 1, cto: false, ctoLokalizacia: 4, ctoDlzka: 4 }) === 1,
+   'zložky: bez CTO sa lokalizácia ani dĺžka CTO neuplatní');
+// kalcifikácia nedvíha nulový stupeň a nikdy nepresiahne 4
+ok(S.glassFPzoZloziek({ signifikantna: true, sfaChoroba: 0, sfaCto: 0, poplitea: 0, kalcif: true }) === 0,
+   'zložky: kalcifikácia nedvíha nulový stupeň');
+ok(S.glassFPzoZloziek({ signifikantna: true, sfaCto: 4, kalcif: true }) === 4, 'zložky: kalcifikácia nepresiahne 4');
+
+/* ── Filter ponuky „CTO nemôže byť dlhšia než lézia" (lenFilter v kalkulačke SVS) ── */
+{
+  const F = S.GLASS_CTO_POVOLENE;
+  const eq = (a, b) => a.join(',') === b.join(',');
+  ok(eq(F.sfa[0], ['0']), 'filter SFA: bez choroby → len „žiadna CTO"');
+  ok(eq(F.sfa[1], ['0', '1', '2', '3f']), 'filter SFA: choroba < 10 cm', F.sfa[1].join(','));
+  ok(eq(F.sfa[2], ['0', '1', '2', '3', '3f']), 'filter SFA: choroba 10–20 cm', F.sfa[2].join(','));
+  ok(eq(F.sfa[3], ['0', '1', '2', '3', '3f', '4']), 'filter SFA: choroba > 20 cm', F.sfa[3].join(','));
+  ok(eq(F.tap[0], []), 'filter TAP: bez choroby → nič');
+  ok(eq(F.tap[1], ['1']), 'filter TAP: choroba < 3 cm → len CTO < 3 cm');
+  ok(eq(F.tap[2], ['1', '2']), 'filter TAP: choroba ≤ 1/3', F.tap[2].join(','));
+  ok(eq(F.tap[3], ['1', '2', '3']), 'filter TAP: choroba 1/3–2/3', F.tap[3].join(','));
+  ok(eq(F.tap[4], ['1', '2', '3']), 'filter TAP: choroba > 2/3', F.tap[4].join(','));
+}
+
+/* ── Dĺžka CTO zadaná zvlášť (EVK) ──
+   Kalkulačka SVS hodnotí celkovú dĺžku choroby a dĺžku samotnej CTO oddelene.
+   Keď lekár v EVK vyplní „Dĺžka CTO", GLASS ju použije; inak sa berie celá lézia. ── */
+ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 250, ctoDlzka: 40 } }), 'd').grade === 3,
+   'AFS: choroba 25 cm, ale CTO len 4 cm → FP 3 (nie 4)',
+   String(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 250, ctoDlzka: 40 } }), 'd').grade));
+ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 250 } }), 'd').grade === 4,
+   'AFS: bez samostatnej dĺžky CTO sa berie celá lézia → FP 4');
+ok(S.glassFP(M({ AFS: { stav: 'okluzia', dlzka: 250 } }), 'd').pozn.some(p => /nezadaná zvlášť/.test(p)),
+   'AFS: chýbajúcu dĺžku CTO nástroj priznáva v poznámke');
+ok(S.glassIP(M({ ATA: { stav: 'okluzia', dlzka: 220, ctoDlzka: 25 } }), 'd', 'ATA').grade === 4,
+   'TAP: choroba > 2/3 drží stupeň 4 aj pri krátkej CTO');
+ok(S.glassIP(M({ ATA: { stav: 'okluzia', dlzka: 120, ctoDlzka: 25 } }), 'd', 'ATA').grade === 3,
+   'TAP: choroba 1/3–2/3 + CTO 2,5 cm → IP 3',
+   String(S.glassIP(M({ ATA: { stav: 'okluzia', dlzka: 120, ctoDlzka: 25 } }), 'd', 'ATA').grade));
+{
+  // dĺžka CTO z intervenčnej položky (EVK: pole „Dĺžka CTO (mm)")
+  const m = S.lezieZEvk({ f_AFS_d: 'oklúzia' },
+    [{ tepna: 'AFS l.dx.', lezia_mm: '250', cto: true, cto_mm: '40' }]);
+  ok(m.d.AFS.dlzka === 250 && m.d.AFS.ctoDlzka === 40, 'EVK: dĺžka lézie aj dĺžka CTO sa prenesú do modelu',
+     JSON.stringify(m.d.AFS));
+  ok(S.glassFP(m, 'd').grade === 3, 'EVK: 25 cm choroba s 4 cm CTO → FP 3', String(S.glassFP(m, 'd').grade));
+}
+
 /* ── GLASS štádium (matica) ── */
 ok(S.glassStadium(1, 1) === 'I', 'GLASS: FP1+IP1 → I');
 ok(S.glassStadium(2, 0) === 'I', 'GLASS: FP2+IP0 → I');

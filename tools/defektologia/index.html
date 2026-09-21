@@ -400,7 +400,7 @@ function getCalculatorHTML(side) {
             
             <!-- 11. GLASS -->
             <section><h3 class="section-header">11. Anatómia – GLASS <span class="text-sm font-normal text-gray-500">(GVG 2019, z angiografie)</span></h3>
-                <p class="text-sm text-gray-600 mb-3">Hranice zodpovedajú oficiálnej kalkulačke SVS. Stupeň segmentu je <strong>najvyššia</strong> z jeho zložiek; ťažkú kalcifikáciu zaškrtni zvlášť – pripočíta +1 (najviac na 4). Rovnaké pravidlá z nálezu DSA odvodzuje aj EVK.</p>
+                <p class="text-sm text-gray-600 mb-3">Otázky aj hranice sú rovnaké ako v oficiálnej kalkulačke SVS. Stupeň segmentu je <strong>najvyššia</strong> zo zložiek, ťažká kalcifikácia potom pripočíta +1 (najviac na 4). Ponuka dĺžky CTO sa obmedzuje dĺžkou choroby – CTO nemôže byť dlhšia než samotná lézia.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="text-sm">Cieľová tepna (TAP)</label>
@@ -420,33 +420,99 @@ function getCalculatorHTML(side) {
                             <option value="P2">P2 – žiadna tepna neprechádza cez členok</option>
                         </select>
                     </div>
+                </div>
+
+                <h4 class="font-semibold text-gray-800 mt-5 mb-2">Femoropopliteálny segment (FP)</h4>
+                <div>
+                    <label class="text-sm">Hemodynamicky signifikantná FP choroba?</label>
+                    <select id="${side}-glass-fp-sig" class="w-full p-2 border rounded-md">
+                        <option value="">-- Nezadané --</option>
+                        <option value="1">Áno</option>
+                        <option value="0">Nie</option>
+                    </select>
+                </div>
+                <div id="${side}-glass-fp-detail" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 hidden">
                     <div>
-                        <label class="text-sm">Femoropopliteálny stupeň (FP)</label>
-                        <select id="${side}-glass-fp" class="w-full p-2 border rounded-md">
-                            <option value="">-- Nezadané --</option>
-                            <option value="0">FP 0 – bez hemodynamicky signifikantnej choroby (&gt; 50 % stenóza)</option>
-                            <option value="1">FP 1 – stenóza AFS &lt; 10 cm alebo non-flush CTO &lt; 5 cm</option>
-                            <option value="2">FP 2 – stenóza AFS 10–20 cm, non-flush CTO 5–10 cm alebo popliteálna stenóza &lt; 2 cm</option>
-                            <option value="3">FP 3 – stenóza AFS &gt; 20 cm, non-flush CTO 10–20 cm, odstupová (flush) CTO &lt; 20 cm alebo popliteálna stenóza 2–5 cm</option>
-                            <option value="4">FP 4 – akákoľvek CTO &gt; 20 cm, popliteálna stenóza &gt; 5 cm alebo do trifurkácie, akákoľvek popliteálna CTO</option>
+                        <label class="text-sm">Dĺžka choroby AFS</label>
+                        <select id="${side}-glass-sfa-choroba" class="w-full p-2 border rounded-md">
+                            <option value="">-- Vyberte --</option>
+                            <option value="0">Žiadna / nevýznamná</option>
+                            <option value="1">&lt; 1/3 (&lt; 10 cm)</option>
+                            <option value="2">1/3–2/3 (10–20 cm)</option>
+                            <option value="3">&gt; 2/3 (&gt; 20 cm)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="text-sm">Infrapopliteálny stupeň (IP) – na cieľovej tepne</label>
-                        <select id="${side}-glass-ip" class="w-full p-2 border rounded-md">
-                            <option value="">-- Nezadané --</option>
-                            <option value="0">IP 0 – bez hemodynamicky signifikantnej choroby</option>
-                            <option value="1">IP 1 – choroba TAP &lt; 3 cm</option>
-                            <option value="2">IP 2 – choroba TAP do 1/3 dĺžky alebo CTO &lt; 3 cm</option>
-                            <option value="3">IP 3 – choroba TAP 1/3–2/3, CTO do 1/3 alebo CTO v odstupe TAP</option>
-                            <option value="4">IP 4 – choroba TAP &gt; 2/3, CTO &gt; 1/3 alebo CTO TP trunku (len pri TAP = ATP/peronea)</option>
+                        <label class="text-sm">CTO v AFS</label>
+                        <select id="${side}-glass-sfa-cto" class="w-full p-2 border rounded-md"></select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Popliteálna tepna</label>
+                        <select id="${side}-glass-pop" class="w-full p-2 border rounded-md">
+                            <option value="">-- Vyberte --</option>
+                            <option value="1">Bez signifikantnej choroby</option>
+                            <option value="2">Stenóza &lt; 2 cm</option>
+                            <option value="3">Stenóza 2–5 cm</option>
+                            <option value="4">Stenóza &gt; 5 cm alebo zasahuje trifurkáciu</option>
+                            <option value="4cto">Akákoľvek CTO</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Ťažká kalcifikácia v FP segmente</label>
+                        <select id="${side}-glass-fp-kalc" class="w-full p-2 border rounded-md">
+                            <option value="">-- Vyberte --</option>
+                            <option value="0">Nie</option>
+                            <option value="1">Áno (+1)</option>
                         </select>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <label class="flex items-center text-sm"><input type="checkbox" id="${side}-glass-fp-kalc" class="mr-2">Ťažká kalcifikácia v FP segmente (+1)</label>
-                    <label class="flex items-center text-sm"><input type="checkbox" id="${side}-glass-ip-kalc" class="mr-2">Ťažká kalcifikácia v IP segmente (+1)</label>
+
+                <h4 class="font-semibold text-gray-800 mt-5 mb-2">Infrapopliteálny segment (IP) – na cieľovej tepne</h4>
+                <div>
+                    <label class="text-sm">Hemodynamicky signifikantná IP choroba?</label>
+                    <select id="${side}-glass-ip-sig" class="w-full p-2 border rounded-md">
+                        <option value="">-- Nezadané --</option>
+                        <option value="1">Áno</option>
+                        <option value="0">Nie</option>
+                    </select>
                 </div>
+                <div id="${side}-glass-ip-detail" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 hidden">
+                    <div>
+                        <label class="text-sm">Dĺžka choroby v TAP</label>
+                        <select id="${side}-glass-tap-choroba" class="w-full p-2 border rounded-md">
+                            <option value="">-- Vyberte --</option>
+                            <option value="1">&lt; 3 cm</option>
+                            <option value="2">≤ 1/3 dĺžky TAP</option>
+                            <option value="3">1/3–2/3 dĺžky TAP</option>
+                            <option value="4">&gt; 2/3 dĺžky TAP</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Je prítomná CTO?</label>
+                        <select id="${side}-glass-ip-cto" class="w-full p-2 border rounded-md">
+                            <option value="">-- Vyberte --</option>
+                            <option value="1">Áno</option>
+                            <option value="0">Nie</option>
+                        </select>
+                    </div>
+                    <div id="${side}-glass-ip-cto-loc-wrap" class="hidden">
+                        <label class="text-sm">Lokalizácia CTO</label>
+                        <select id="${side}-glass-ip-cto-loc" class="w-full p-2 border rounded-md"></select>
+                    </div>
+                    <div id="${side}-glass-tap-okluzia-wrap" class="hidden">
+                        <label class="text-sm">Dĺžka CTO v TAP</label>
+                        <select id="${side}-glass-tap-okluzia" class="w-full p-2 border rounded-md"></select>
+                    </div>
+                    <div>
+                        <label class="text-sm">Ťažká kalcifikácia v IP segmente</label>
+                        <select id="${side}-glass-ip-kalc" class="w-full p-2 border rounded-md">
+                            <option value="">-- Vyberte --</option>
+                            <option value="0">Nie</option>
+                            <option value="1">Áno (+1)</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div id="${side}-glass-card" class="mt-4 p-4 rounded-lg border-l-4 risk-undefined">
                     <p id="${side}-glass-result" class="font-semibold">GLASS: nezadané</p>
                     <p id="${side}-glass-note" class="text-sm mt-1 text-gray-700"></p>
@@ -562,11 +628,87 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('generate-report-btn').addEventListener('click', generateFullReport);
     copyReportButton.addEventListener('click', copyReport);
 
+    /* ── Správanie formulára GLASS presne ako v kalkulačke SVS ──
+       – „Nie" pri hemodynamickej signifikancii skryje a vynuluje celý segment
+       – bez CTO sa neponúka jej lokalizácia ani dĺžka
+       – ponuka dĺžky CTO je obmedzená dĺžkou choroby (CTO nemôže byť dlhšia)
+       – pri TAP = ATA sa z lokalizácie CTO odstraňuje TP trunk            */
+    const GLASS_SFA_CTO_OPT = {
+        '0': ['0', 'Žiadna CTO'],
+        '1': ['1', 'Non-flush CTO &lt; 5 cm'],
+        '2': ['2', 'Non-flush CTO 5–10 cm (&lt; 1/3)'],
+        '3': ['3', 'Non-flush CTO 10–20 cm (1/3–2/3)'],
+        '3f': ['3f', 'Flush CTO &lt; 20 cm (&lt; 2/3)'],
+        '4': ['4', 'Akákoľvek CTO &gt; 20 cm (&gt; 2/3)']
+    };
+    const GLASS_TAP_OKL_OPT = {
+        '1': ['2', '&lt; 3 cm'],
+        '2': ['3', 'Do 1/3 dĺžky TAP'],
+        '3': ['4', '&gt; 1/3 dĺžky TAP']
+    };
+
+    function naplnSelect(el, kluce, katalog) {
+        if (!el) return;
+        const podpis = kluce.join(',');
+        if (el.dataset.opts === podpis) return;   // bez zmeny ponuky sa select neprekresľuje
+        const drzane = el.value;
+        let html = '<option value="">-- Vyberte --</option>';
+        kluce.forEach(k => { const o = katalog[k]; if (o) html += `<option value="${o[0]}">${o[1]}</option>`; });
+        el.innerHTML = html;
+        el.dataset.opts = podpis;
+        // hodnota sa zachová, len ak ju nová (kratšia) ponuka stále obsahuje
+        el.value = Array.from(el.options).some(o => o.value === drzane) ? drzane : '';
+    }
+
+    // Kým dĺžka choroby nie je zadaná, ponúkni celú škálu; po zadaní sa preberie
+    // obmedzenie z kalkulačky SVS („CTO length cannot exceed disease length").
+    function ctoKluce(tab, hodnota, vsetky) {
+        if (hodnota === '' || hodnota == null) return vsetky;
+        return tab[parseInt(hodnota, 10) || 0] || [];
+    }
+
+    function glassSync(side) {
+        const q = id => document.getElementById(`${side}-glass-${id}`);
+        const ukaz = (el, na) => { if (el) el.classList.toggle('hidden', !na); };
+        const vycisti = ids => ids.forEach(id => { const el = q(id); if (el) el.value = ''; });
+        const S = window.Staging;
+        if (!S) return;
+
+        const fpSig = q('fp-sig');
+        const fpOn = fpSig && fpSig.value === '1';
+        ukaz(document.getElementById(`${side}-glass-fp-detail`), fpOn);
+        if (!fpOn) vycisti(['sfa-choroba', 'sfa-cto', 'pop', 'fp-kalc']);
+        naplnSelect(q('sfa-cto'), ctoKluce(S.GLASS_CTO_POVOLENE.sfa, q('sfa-choroba') ? q('sfa-choroba').value : '', Object.keys(GLASS_SFA_CTO_OPT)), GLASS_SFA_CTO_OPT);
+
+        const ipSig = q('ip-sig');
+        const ipOn = ipSig && ipSig.value === '1';
+        ukaz(document.getElementById(`${side}-glass-ip-detail`), ipOn);
+        if (!ipOn) vycisti(['tap-choroba', 'ip-cto', 'ip-cto-loc', 'tap-okluzia', 'ip-kalc']);
+        const ctoOn = ipOn && q('ip-cto') && q('ip-cto').value === '1';
+        ukaz(document.getElementById(`${side}-glass-ip-cto-loc-wrap`), ctoOn);
+        ukaz(document.getElementById(`${side}-glass-tap-okluzia-wrap`), ctoOn);
+        if (!ctoOn) vycisti(['ip-cto-loc', 'tap-okluzia']);
+
+        // lokalizácia CTO – TP trunk len pri TAP = ATP / a. peronea
+        const tap = q('tap') ? q('tap').value : '';
+        const loc = q('ip-cto-loc');
+        if (loc) {
+            const kluce = tap === 'ATA' ? ['3', '0'] : ['3', '0', '4'];
+            naplnSelect(loc, kluce, {
+                '3': ['3', 'Odstup cieľovej tepny'],
+                '0': ['0', 'Mimo odstupu cieľovej tepny'],
+                '4': ['4', 'TP trunk (len pri TAP = ATP / a. peronea)']
+            });
+        }
+        naplnSelect(q('tap-okluzia'), ctoKluce(S.GLASS_CTO_POVOLENE.tap, q('tap-choroba') ? q('tap-choroba').value : '', Object.keys(GLASS_TAP_OKL_OPT)), GLASS_TAP_OKL_OPT);
+    }
+
     // --- CORE LOGIC ---
     function collectAndProcessData(side) {
         if (reportData[side].isDefectFree) return;
 
         const form = document.getElementById(`${side}-form`);
+        glassSync(side);
         const data = {};
         
         const lokalizaciaSelect = form.querySelector(`#${side}-lokalizacia-select`);
@@ -598,12 +740,20 @@ document.addEventListener('DOMContentLoaded', function() {
         data.cievyTp = form.querySelector(`#${side}-cievy-tp`).value;
         data.neuroSenzorika = form.querySelector(`#${side}-neuro-senzorika`).value;
         data.neuroMotorika = form.querySelector(`#${side}-neuro-motorika`).value;
-        data.glassTap = form.querySelector(`#${side}-glass-tap`).value;
-        data.glassIm = form.querySelector(`#${side}-glass-im`).value;
-        data.glassFp = form.querySelector(`#${side}-glass-fp`).value;
-        data.glassIp = form.querySelector(`#${side}-glass-ip`).value;
-        data.glassFpKalc = form.querySelector(`#${side}-glass-fp-kalc`).checked;
-        data.glassIpKalc = form.querySelector(`#${side}-glass-ip-kalc`).checked;
+        const gq = id => { const el = form.querySelector(`#${side}-glass-${id}`); return el ? el.value : ''; };
+        data.glassTap = gq('tap');
+        data.glassIm = gq('im');
+        data.glassFpSig = gq('fp-sig');
+        data.glassSfaChoroba = gq('sfa-choroba');
+        data.glassSfaCto = gq('sfa-cto');
+        data.glassPop = gq('pop');
+        data.glassFpKalc = gq('fp-kalc');
+        data.glassIpSig = gq('ip-sig');
+        data.glassTapChoroba = gq('tap-choroba');
+        data.glassIpCto = gq('ip-cto');
+        data.glassIpCtoLoc = gq('ip-cto-loc');
+        data.glassTapOkluzia = gq('tap-okluzia');
+        data.glassIpKalc = gq('ip-kalc');
 
         const wifiResult = calculateWIfI(data);
         const glassResult = calculateGLASS(data);
@@ -658,22 +808,66 @@ document.addEventListener('DOMContentLoaded', function() {
         return 1;
     }
 
-    // GLASS (GVG 2019) – štádium z rovnakej matice FP x IP, akú používa EVK.
-    // Ťažká kalcifikácia zvyšuje stupeň segmentu o 1, najviac na 4
-    // („increases the within-segment grade by +1", GLASS App Help, SVS).
-    const sKalcifikaciou = (g, kalc) => (kalc && g > 0) ? Math.min(4, g + 1) : g;
+    /* GLASS (GVG 2019) – rovnaké otázky, hranice aj poradie ako v oficiálnej
+       kalkulačke SVS (calc.cfm?id=1002). Hodnota každého <option> je priamo
+       príspevok do stupňa segmentu; stupeň = maximum zložiek, ťažká
+       kalcifikácia potom +1 (strop 4). Samotné skladanie robí window.Staging,
+       tú istú funkciu používa aj EVK. */
+    const glassCislo = v => (v === '' || v == null) ? null : parseInt(v, 10);
+
+    function glassZlozky(data) {
+        const fpSig = data.glassFpSig, ipSig = data.glassIpSig;
+        const fpZ = fpSig === '1'
+            ? { signifikantna: true, sfaChoroba: glassCislo(data.glassSfaChoroba),
+                sfaCto: glassCislo(data.glassSfaCto), poplitea: glassCislo(data.glassPop),
+                kalcif: data.glassFpKalc === '1' }
+            : { signifikantna: false };
+        const ipZ = ipSig === '1'
+            ? { signifikantna: true, tapChoroba: glassCislo(data.glassTapChoroba),
+                cto: data.glassIpCto === '1', ctoLokalizacia: glassCislo(data.glassIpCtoLoc),
+                ctoDlzka: glassCislo(data.glassTapOkluzia), kalcif: data.glassIpKalc === '1' }
+            : { signifikantna: false };
+        return { fpZ, ipZ };
+    }
+
+    // Čo ešte chýba, aby sa dal segment uzavrieť (rovnaké povinné polia ako v SVS)
+    function glassChyba(data) {
+        const ch = [];
+        if (data.glassFpSig === '') ch.push('FP: hemodynamicky signifikantná choroba?');
+        else if (data.glassFpSig === '1') {
+            if (data.glassSfaChoroba === '') ch.push('dĺžka choroby AFS');
+            if (data.glassSfaCto === '') ch.push('CTO v AFS');
+            if (data.glassPop === '') ch.push('popliteálna tepna');
+            if (data.glassSfaChoroba === '0' && data.glassPop === '1')
+                ch.push('pri FP chorobe treba dĺžku buď v AFS, alebo v popliteálnej tepne');
+        }
+        if (data.glassIpSig === '') ch.push('IP: hemodynamicky signifikantná choroba?');
+        else if (data.glassIpSig === '1') {
+            if (data.glassTapChoroba === '') ch.push('dĺžka choroby v TAP');
+            if (data.glassIpCto === '') ch.push('je prítomná CTO?');
+            else if (data.glassIpCto === '1') {
+                if (data.glassIpCtoLoc === '') ch.push('lokalizácia CTO');
+                if (data.glassTapOkluzia === '') ch.push('dĺžka CTO v TAP');
+            }
+        }
+        return ch;
+    }
 
     function calculateGLASS(data) {
-        const fpZ = data.glassFp === '' ? null : parseInt(data.glassFp, 10);
-        const ipZ = data.glassIp === '' ? null : parseInt(data.glassIp, 10);
-        const fp = fpZ === null ? null : sKalcifikaciou(fpZ, data.glassFpKalc);
-        const ip = ipZ === null ? null : sKalcifikaciou(ipZ, data.glassIpKalc);
-        if (fp === null || ip === null) {
-            return { stadium: null, popis: 'GLASS: nezadané', poznamka: 'Zadajte stupeň FP aj IP (sekcia 11).', riskClass: 'risk-undefined' };
+        const chyba = glassChyba(data);
+        if (chyba.length) {
+            return { stadium: null, fp: null, ip: null, popis: 'GLASS: nezadané',
+                     poznamka: 'Chýba: ' + chyba.join('; ') + ' (sekcia 11).', riskClass: 'risk-undefined' };
         }
-        const st = window.Staging ? window.Staging.glassStadium(fp, ip) : null;
+        const { fpZ, ipZ } = glassZlozky(data);
+        const S = window.Staging;
+        if (!S) return { stadium: null, fp: null, ip: null, popis: 'GLASS: nezadané', poznamka: '', riskClass: 'risk-undefined' };
+        const fp = S.glassFPzoZloziek(fpZ);
+        const ip = S.glassIPzoZloziek(ipZ);
+        const st = S.glassStadium(fp, ip);
         if (!st) {
-            return { stadium: null, popis: `GLASS: FP ${fp} / IP ${ip} – bez signifikantnej infrainguinálnej choroby`, poznamka: '', riskClass: 'risk-stage-1' };
+            return { stadium: null, fp, ip, popis: `GLASS: FP ${fp} / IP ${ip} – bez signifikantnej infrainguinálnej choroby`,
+                     poznamka: '', riskClass: 'risk-stage-1' };
         }
         const trieda = { I: 'risk-stage-2', II: 'risk-stage-3', III: 'risk-stage-4' }[st];
         const narocnost = { I: 'nízka anatomická zložitosť', II: 'stredná anatomická zložitosť', III: 'vysoká anatomická zložitosť' }[st];
@@ -682,10 +876,12 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (data.glassIm === 'P1') poznamka += ' IM P1 – pedálny oblúk chýba alebo je ťažko postihnutý.';
         if (!data.glassTap) poznamka += ' Cieľová tepna (TAP) nie je zvolená – IP stupeň sa vzťahuje na ňu.';
         const kalc = [];
-        if (data.glassFpKalc && fp !== fpZ) kalc.push(`FP ${fpZ}→${fp}`);
-        if (data.glassIpKalc && ip !== ipZ) kalc.push(`IP ${ipZ}→${ip}`);
+        if (fpZ.kalcif) kalc.push(`FP ${S.glassFPzoZloziek({ ...fpZ, kalcif: false })}→${fp}`);
+        if (ipZ.kalcif) kalc.push(`IP ${S.glassIPzoZloziek({ ...ipZ, kalcif: false })}→${ip}`);
         if (kalc.length) poznamka += ` Ťažká kalcifikácia: ${kalc.join(', ')}.`;
-        return { stadium: st, popis: `GLASS štádium ${st} (FP ${fp} / IP ${ip}${data.glassIm ? ', IM ' + data.glassIm : ''})`, poznamka: poznamka, riskClass: trieda };
+        return { stadium: st, fp, ip,
+                 popis: `GLASS štádium ${st} (FP ${fp} / IP ${ip}${data.glassIm ? ', IM ' + data.glassIm : ''})`,
+                 poznamka: poznamka, riskClass: trieda };
     }
 
     function calculateWIfI(data) {
@@ -824,8 +1020,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function planAN(side, nazov) {
         const g = (reportData[side] || {}).glass;
         if (!g) return `${nazov} nehodnotená`;
-        if (g.stadium) return `${nazov} GLASS ${g.stadium} (FP ${reportData[side].glassFp} / IP ${reportData[side].glassIp})`;
-        if (reportData[side].glassFp !== '' && reportData[side].glassIp !== '' && reportData[side].glassFp !== undefined) return `${nazov} bez signifikantnej choroby`;
+        if (g.stadium) return `${nazov} GLASS ${g.stadium} (FP ${g.fp} / IP ${g.ip})`;
+        if (g.fp != null && g.ip != null) return `${nazov} bez signifikantnej choroby`;
         return `${nazov} nehodnotená`;
     }
     function planP() {
@@ -888,7 +1084,7 @@ document.addEventListener('DOMContentLoaded', function() {
         r += `8. Podminovanie: ${data.podminovanie ? `áno, ${data.podminovanieRozsah || 'N/A'}` : 'nie'}\n`;
         r += `9. Cievny status: ADP ${data.cievyAdp}, ATP ${data.cievyAtp}, ABI: ${data.cievyAbi || 'N/A'}, TP: ${data.cievyTp || 'N/A'} mmHg\n`;
         r += `10. Neuro status: Senzorika: ${data.neuroSenzorika || 'N/A'}, Motorika: ${data.neuroMotorika || 'N/A'}\n\n`;
-        if (data.glass && (data.glassFp !== '' || data.glassIp !== '' || data.glassTap)) {
+        if (data.glass && (data.glass.fp != null || data.glassTap)) {
             r += `11. Anatómia (GLASS): ${data.glass.popis}`;
             if (data.glassTap) r += `; cieľová tepna: ${POPIS_TAP[data.glassTap] || data.glassTap}`;
             r += `\n\n`;

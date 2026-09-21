@@ -24,7 +24,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 input[type=text],input[type=number],input[type=date],select,textarea{width:100%;padding:6px 9px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;color:#222;background:#fff;transition:border-color .15s}
 input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .row{display:grid;gap:7px;margin-bottom:9px}
-.r2{grid-template-columns:1fr 1fr}.r3{grid-template-columns:1fr 1fr 1fr}
+.r2{grid-template-columns:1fr 1fr}.r3{grid-template-columns:1fr 1fr 1fr}.r4{grid-template-columns:1fr 1fr 1fr 1fr}
 .checks{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:3px}
 .ck{display:flex;align-items:center;gap:5px;font-size:12.5px;cursor:pointer;user-select:none;padding:2px 0}
 .ck input[type=checkbox]{width:auto;accent-color:#3b82f6;cursor:pointer}
@@ -986,6 +986,10 @@ function updateAccess(){
   gen();
 }
 
+// pole „Dĺžka CTO" má zmysel len pri zaškrtnutej CTO; GLASS hodnotí celkovú dĺžku
+// choroby a dĺžku samotnej CTO zvlášť, rovnako ako kalkulačka SVS
+function ctoToggle(id){const c=document.getElementById(id+'_lcto'),w=document.getElementById(id+'_lctowrap');if(!c||!w)return;w.style.display=c.checked?'':'none';if(!c.checked){const m=document.getElementById(id+'_lctomm');if(m)m.value='';}}
+
 // dyn-row template with Tepna + Segment
 function addItem(pfx,kind,silent){
   if(!cnts[pfx])cnts[pfx]=0;
@@ -993,7 +997,7 @@ function addItem(pfx,kind,silent){
   const cont=document.getElementById(pfx+'_list');
   const div=document.createElement('div');div.className='dyn-row';div.dataset.idx=idx;
   const tpRow=`<div class="row r2" style="margin-bottom:6px"><div class="f"><label>Tepna</label><select id="${id}_tp" onchange="gen()">${vsel()}</select></div><div class="f"><label>Segment</label><select id="${id}_sg" onchange="gen()">${sgsel()}</select></div></div>`;
-  const lezRow=`<div class="row r3" style="margin-top:6px;margin-bottom:0"><div class="f" style="margin-bottom:0"><label style="font-size:10px">Dĺžka lézie (mm)</label><input type="number" id="${id}_lmm" placeholder="120" oninput="gen()" style="padding:3px 7px;font-size:11.5px"></div><div class="f" style="margin-bottom:0"><label style="font-size:10px">Kalcifikácia</label><select id="${id}_lkalc" onchange="gen()" style="padding:3px 7px;font-size:11.5px"><option value="">–</option><option>žiadna</option><option>stredná</option><option>ťažká</option></select></div><div class="f" style="margin-bottom:0;display:flex;align-items:flex-end"><label class="ck" style="font-size:11px;color:#5a6a8a"><input type="checkbox" id="${id}_lcto" onchange="gen()"> CTO (chronický uzáver)</label></div></div>`;
+  const lezRow=`<div class="row r4" style="margin-top:6px;margin-bottom:0"><div class="f" style="margin-bottom:0"><label style="font-size:10px">Dĺžka lézie (mm)</label><input type="number" id="${id}_lmm" placeholder="120" oninput="gen()" style="padding:3px 7px;font-size:11.5px"></div><div class="f" style="margin-bottom:0"><label style="font-size:10px">Kalcifikácia</label><select id="${id}_lkalc" onchange="gen()" style="padding:3px 7px;font-size:11.5px"><option value="">–</option><option>žiadna</option><option>stredná</option><option>ťažká</option></select></div><div class="f" style="margin-bottom:0;display:flex;align-items:flex-end"><label class="ck" style="font-size:11px;color:#5a6a8a"><input type="checkbox" id="${id}_lcto" onchange="ctoToggle('${id}');gen()"> CTO (chronický uzáver)</label></div><div class="f" id="${id}_lctowrap" style="margin-bottom:0;display:none"><label style="font-size:10px">Dĺžka CTO (mm)</label><input type="number" id="${id}_lctomm" placeholder="60" oninput="gen()" style="padding:3px 7px;font-size:11.5px"></div></div>`;
   if(kind==='stent'){
     div.innerHTML=`<button type="button" class="del-btn" onclick="delItem('${pfx}',${idx})">✕</button>${tpRow}
       <div class="row r2" style="margin-bottom:6px"><div class="f"><label>Typ</label><select id="${id}_t" onchange="gen()"><option value="">–</option>${STENT_TYP.map(o=>`<option>${o}</option>`).join('')}</select></div><div class="f"><label>Názov</label><select id="${id}_n" onchange="chkVl('${id}_n');gen()">${selOpts(OPTS.stent)}</select><input type="text" id="${id}_n_c" placeholder="Vlastný..." oninput="gen()" style="display:none;margin-top:4px"></div></div>
@@ -1332,6 +1336,7 @@ function collectFullData(){
       item.lezia_mm=g(id+'_lmm');
       item.kalcif=g(id+'_lkalc');
       item.cto=!!document.getElementById(id+'_lcto')?.checked;
+      if(item.cto)item.cto_mm=g(id+'_lctomm');
       interventionDetail.push(item);
     });
   }
@@ -2389,7 +2394,8 @@ function restoreInterventionRows(record){
       svTp(id+'_tp',it.tepna);sv(id+'_sg',it.segment);
       // lézia (mm / kalcifikácia / CTO) – staré záznamy tieto kľúče nemajú
       sv(id+'_lmm',it.lezia_mm);sv(id+'_lkalc',it.kalcif);
-      if(it.cto){const cc=document.getElementById(id+'_lcto');if(cc)cc.checked=true;}
+      if(it.cto){const cc=document.getElementById(id+'_lcto');if(cc)cc.checked=true;sv(id+'_lctomm',it.cto_mm);}
+      ctoToggle(id);
       if(kind==='stent'){
         sv(id+'_t',it.stent_typ);setSel(id+'_n',it.stent_nazov);
         sv(id+'_p',dia(it));sv(id+'_d',it.dlzka);
@@ -2548,7 +2554,8 @@ function stgZbierajInterv(){
     if(!tp||!tp.value||tp.value.indexOf('tepna')>=0)return;
     out.push({tepna:tp.value,lezia_mm:inp.value,
       kalcif:(document.getElementById(base+'_lkalc')||{}).value||'',
-      cto:!!(document.getElementById(base+'_lcto')||{}).checked});
+      cto:!!(document.getElementById(base+'_lcto')||{}).checked,
+      cto_mm:(document.getElementById(base+'_lctomm')||{}).value||''});
   });
   return out;
 }

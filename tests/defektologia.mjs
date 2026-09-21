@@ -107,37 +107,92 @@ check('štádium sa berie zo zdieľanej tabuľky v staging.js (W2 I0 fI2)',
 check('defektológia nemá vlastnú kópiu WIfI matice',
   !(await page.content()).includes('riskMatrix'));
 
-// GLASS (GVG 2019) – štádium z rovnakej matice FP x IP ako EVK
+// GLASS (GVG 2019) – tie isté otázky a hranice ako oficiálna kalkulačka SVS
 const glassTxt = () => page.$eval('#right-glass-result', e=>e.textContent);
-check('bez FP/IP je GLASS nezadané', (await glassTxt()).includes('nezadané'), await glassTxt());
-await set('#right-glass-fp','0'); await set('#right-glass-ip','0');
-check('FP0 + IP0 = bez signifikantnej choroby',
-  (await glassTxt()).includes('bez signifikantnej'), await glassTxt());
-await set('#right-glass-fp','1'); await set('#right-glass-ip','1');
-check('FP1 + IP1 = GLASS I', (await glassTxt()).includes('štádium I (') , await glassTxt());
-await set('#right-glass-fp','2'); await set('#right-glass-ip','3');
-check('FP2 + IP3 = GLASS II', (await glassTxt()).includes('štádium II '), await glassTxt());
-await set('#right-glass-fp','4'); await set('#right-glass-ip','0');
-check('FP4 + IP0 = GLASS III', (await glassTxt()).includes('štádium III'), await glassTxt());
-await set('#right-glass-im','P2');
-check('IM P2 sa vypíše v poznámke',
-  (await page.$eval('#right-glass-note', e=>e.textContent)).includes('P2'));
-check('bez zvolenej TAP nástroj upozorní',
-  (await page.$eval('#right-glass-note', e=>e.textContent)).includes('TAP'));
-await set('#right-glass-tap','ATP');
-check('po zvolení TAP upozornenie zmizne',
-  !(await page.$eval('#right-glass-note', e=>e.textContent)).includes('TAP nie je'));
+const glassNote = () => page.$eval('#right-glass-note', e=>e.textContent);
+const vidno = sel => page.$eval(sel, e=>!e.classList.contains('hidden'));
+const opts = sel => page.$$eval(sel+' option', os=>os.map(o=>o.value).filter(v=>v!==''));
 
-// ťažká kalcifikácia zvyšuje stupeň segmentu o 1, najviac na 4
-await set('#right-glass-fp','1'); await set('#right-glass-ip','1');
+check('bez odpovedí je GLASS nezadané', (await glassTxt()).includes('nezadané'), await glassTxt());
+check('detail FP je skrytý, kým nie je zodpovedaná signifikancia', !(await vidno('#right-glass-fp-detail')));
+
+// obidva segmenty nesignifikantné → žiadne štádium
+await set('#right-glass-fp-sig','0'); await set('#right-glass-ip-sig','0');
+check('FP nie + IP nie = bez signifikantnej choroby', (await glassTxt()).includes('bez signifikantnej'), await glassTxt());
+
+// FP: stenóza AFS 10–20 cm bez CTO, popliteálna čistá → FP 2
+await set('#right-glass-fp-sig','1');
+check('po „Áno" sa detail FP zobrazí', await vidno('#right-glass-fp-detail'));
+check('bez zodpovedaných zložiek GLASS čaká', (await glassTxt()).includes('nezadané'), await glassTxt());
+await set('#right-glass-sfa-choroba','2'); await set('#right-glass-sfa-cto','0'); await set('#right-glass-pop','1');
+check('AFS 10–20 cm bez CTO, poplitea čistá → FP 2', (await glassTxt()).includes('FP 2'), await glassTxt());
+
+// ponuka CTO je obmedzená dĺžkou choroby (SVS: CTO nemôže byť dlhšia než lézia)
+check('pri chorobe AFS 10–20 cm sa CTO > 20 cm neponúka', !(await opts('#right-glass-sfa-cto')).includes('4'), (await opts('#right-glass-sfa-cto')).join(','));
+await set('#right-glass-sfa-choroba','3');
+check('pri chorobe AFS > 20 cm sa CTO > 20 cm ponúkne', (await opts('#right-glass-sfa-cto')).includes('4'));
+await set('#right-glass-sfa-cto','4');
+check('CTO > 20 cm → FP 4', (await glassTxt()).includes('FP 4'), await glassTxt());
+await set('#right-glass-sfa-choroba','1');
+check('skrátenie choroby zruší nekompatibilnú CTO', (await page.$eval('#right-glass-sfa-cto', e=>e.value)) === '');
+check('bez znovuzadanej CTO GLASS čaká', (await glassTxt()).includes('nezadané'), await glassTxt());
+
+// popliteálna tepna: stenóza 2–5 cm → 3; „bez choroby" má v SVS hodnotu 1
+await set('#right-glass-sfa-choroba','1'); await set('#right-glass-sfa-cto','0'); await set('#right-glass-pop','3');
+check('popliteálna stenóza 2–5 cm → FP 3', (await glassTxt()).includes('FP 3'), await glassTxt());
+await set('#right-glass-pop','4cto');
+check('akákoľvek popliteálna CTO → FP 4', (await glassTxt()).includes('FP 4'), await glassTxt());
+
+// SVS vyžaduje dĺžku buď v AFS, alebo v poplitee
+await set('#right-glass-sfa-choroba','0'); await set('#right-glass-pop','1');
+check('AFS „žiadna" + poplitea „bez choroby" nástroj odmietne',
+  (await glassNote()).includes('buď v AFS'), await glassNote());
+
+// IP: choroba TAP 1/3–2/3 bez CTO → IP 3
+await set('#right-glass-sfa-choroba','1'); await set('#right-glass-pop','1'); await set('#right-glass-sfa-cto','0');
+await set('#right-glass-ip-sig','1');
+check('po „Áno" sa detail IP zobrazí', await vidno('#right-glass-ip-detail'));
+await set('#right-glass-tap-choroba','3'); await set('#right-glass-ip-cto','0');
+check('choroba TAP 1/3–2/3 bez CTO → IP 3', (await glassTxt()).includes('IP 3'), await glassTxt());
+check('bez CTO sa jej lokalizácia neponúka', !(await vidno('#right-glass-ip-cto-loc-wrap')));
+await set('#right-glass-ip-cto','1');
+check('pri CTO sa zobrazí lokalizácia aj dĺžka',
+  (await vidno('#right-glass-ip-cto-loc-wrap')) && (await vidno('#right-glass-tap-okluzia-wrap')));
+await set('#right-glass-ip-cto-loc','3'); await set('#right-glass-tap-okluzia','2');
+check('CTO v odstupe TAP → IP 3', (await glassTxt()).includes('IP 3'), await glassTxt());
+await set('#right-glass-tap-okluzia','4');
+check('CTO > 1/3 TAP → IP 4', (await glassTxt()).includes('IP 4'), await glassTxt());
+
+// TP trunk len pri TAP = ATP / a. peronea (kalkulačka SVS ho pri ATA odstraňuje)
+await set('#right-glass-tap','ATA');
+check('pri TAP = ATA sa TP trunk neponúka', !(await opts('#right-glass-ip-cto-loc')).includes('4'), (await opts('#right-glass-ip-cto-loc')).join(','));
+await set('#right-glass-tap','ATP');
+check('pri TAP = ATP sa TP trunk ponúkne', (await opts('#right-glass-ip-cto-loc')).includes('4'));
+
+// ťažká kalcifikácia: +1, najviac na 4
+await set('#right-glass-tap-choroba','1'); await set('#right-glass-ip-cto','0');
+await set('#right-glass-sfa-choroba','1'); await set('#right-glass-sfa-cto','1'); await set('#right-glass-pop','1');
+await set('#right-glass-fp-kalc','0'); await set('#right-glass-ip-kalc','0');
 check('FP1 + IP1 bez kalcifikácie = GLASS I', (await glassTxt()).includes('štádium I ('), await glassTxt());
-await page.check('#right-glass-fp-kalc'); await page.waitForTimeout(120);
+await set('#right-glass-fp-kalc','1');
 check('kalcifikácia FP: 1 → 2', (await glassTxt()).includes('FP 2'), await glassTxt());
-check('kalcifikácia je uvedená v poznámke',
-  (await page.$eval('#right-glass-note', e=>e.textContent)).includes('FP 1→2'));
-await set('#right-glass-fp','4');
+check('kalcifikácia je uvedená v poznámke', (await glassNote()).includes('FP 1→2'), await glassNote());
+await set('#right-glass-sfa-choroba','3'); await set('#right-glass-sfa-cto','4');
 check('kalcifikácia nepresiahne stupeň 4', (await glassTxt()).includes('FP 4'), await glassTxt());
-await page.uncheck('#right-glass-fp-kalc'); await page.waitForTimeout(120);
+await set('#right-glass-fp-kalc','0');
+
+// IM deskriptor a cieľová tepna
+await set('#right-glass-im','P2');
+check('IM P2 sa vypíše v poznámke', (await glassNote()).includes('P2'), await glassNote());
+await set('#right-glass-tap','');
+check('bez zvolenej TAP nástroj upozorní', (await glassNote()).includes('nie je zvolená'), await glassNote());
+await set('#right-glass-tap','ATP');
+check('po zvolení TAP upozornenie zmizne', !(await glassNote()).includes('nie je zvolená'));
+
+// FP „Nie" musí segment aj vynulovať, nielen skryť
+await set('#right-glass-fp-sig','0');
+check('FP „Nie" vynuluje zložky segmentu', (await page.$eval('#right-glass-sfa-choroba', e=>e.value)) === '');
+check('FP 0 × IP 1 = GLASS I', (await glassTxt()).includes('FP 0 / IP 1'), await glassTxt());
 
 // celá matica GLASS musí sedieť s tou v staging.js (žiadna druhá kópia)
 const glassZhoda = await page.evaluate(()=>{
@@ -151,7 +206,12 @@ const glassZhoda = await page.evaluate(()=>{
   return 'ok';
 });
 check('všetkých 25 kombinácií GLASS sedí s GVG 2019 maticou', glassZhoda === 'ok', glassZhoda);
-await set('#right-glass-fp','2'); await set('#right-glass-ip','3');
+
+// stav pre nález nižšie: FP 2 × IP 3 → štádium II
+await set('#right-glass-fp-sig','1'); await set('#right-glass-sfa-choroba','2');
+await set('#right-glass-sfa-cto','0'); await set('#right-glass-pop','1');
+await set('#right-glass-tap-choroba','3'); await set('#right-glass-ip-cto','0');
+check('FP2 + IP3 = GLASS II', (await glassTxt()).includes('štádium II '), await glassTxt());
 
 // VQI CLTI (sekcia 12) – riziko pacienta, počíta zdieľaný /tools/vqi-clti.js
 const vqiTxt = () => page.$eval('#vqi-skupina', e=>e.textContent);
