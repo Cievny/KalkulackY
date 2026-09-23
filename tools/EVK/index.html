@@ -741,6 +741,10 @@ const SEG_OPTS=['–','proximálny','stredný','distálny','celý'];
 const SEG_SEG=['proximálny','stredný','distálny','celý','odstup'];
 const SEG_ADV={'proximálny':'proximálne','stredný':'v strednej tretine','distálny':'distálne','celý':'v celom priebehu','odstup':'v odstupe'};
 const PELV_VESSELS=[['AIC','v_AIC'],['AIE','v_AIE'],['AII','v_AII']];
+// pri samotnej panvovej DSA sa spravidla zobrazí aj proximálna femorálna oblasť –
+// tieto tepny sa dajú popísať s doložkou „v zobrazenom úseku" (predvolene nehodnotené)
+const FEM_ZOBR=[['AFC','f_AFC'],['APF','f_APF'],['AFS','f_AFS']];
+const OPT_NEH='<option value="–">– nehodnotené</option>';
 const FEM_GROUPS=[{st:'Femorálne riečisko',vs:[['AFC','f_AFC'],['APF','f_APF'],['AFS','f_AFS']]},{st:'Popliteálne riečisko',vs:[['P1','p_P1'],['P2','p_P2'],['P3','p_P3']]},{st:'Predkolenie',vs:[['ATA','d_ATA'],['ATP','d_ATP'],['AFib','d_AFib'],['TTF','d_TTF']]}];
 let cnts={}, zaverManual=false, locCnt={};
 
@@ -945,11 +949,43 @@ function buildPelvDSA(){
       c.appendChild(row);
     }
   });
+  // len panva: doplň femorálne tepny, ktoré sa zvyknú zobraziť v tom istom nástreku
+  if(g('territory')==='pelv'){
+    const h2=document.createElement('div');h2.className='st';h2.style.marginTop='12px';
+    h2.innerHTML='Femorálne tepny <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#9ca3af">– v zobrazenom úseku</span>';
+    c.appendChild(h2);
+    FEM_ZOBR.forEach(([lbl,base])=>{
+      const so=OPT_NEH+((lbl==='AFC'||lbl==='APF')?SO_AFC:SO);
+      if(lat==='bilat'){
+        const row=document.createElement('div');row.className='bilat-row';
+        row.innerHTML=`<div class="bilat-lbl">${lbl}</div>
+          <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${so}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(base+'_d')}</div>
+          <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${so}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(base+'_s')}</div>`;
+        c.appendChild(row);
+      } else {
+        const sid=lat==='sin'?base+'_s':base+'_d';
+        const row=document.createElement('div');
+        row.style.cssText='display:grid;grid-template-columns:58px 1fr;gap:6px;margin-bottom:8px;align-items:start';
+        row.innerHTML=`<div class="bilat-lbl">${lbl}</div><div><select id="${sid}" onchange="cC('${sid}');gen()">${so}</select><input type="text" id="${sid}_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(sid)}</div>`;
+        c.appendChild(row);
+      }
+    });
+  }
+}
+// nález femorálnej tepny zobrazenej pri panvovej DSA („–" = nehodnotené → nevypisuje sa)
+function zobrTxt(sid){
+  const el=document.getElementById(sid);if(!el)return'';
+  const main=gV(sid),parts=[];
+  if(main&&main!=='–')parts.push(main);   // „–" = nehodnotené, ale segmentový nález sa vypíše aj tak
+  segExtras(sid).forEach(e=>{if(!e.val||e.val==='–')return;const adv=SEG_ADV[e.seg]||'';parts.push((adv?adv+' ':'')+e.val);});
+  return parts.join(', ');
 }
 
 function buildFemDSA(){
   const lat=g('fem_lat')||'bilat';
   const c=document.getElementById('fem_dsa');c.innerHTML='';
+  // pri „len panva" sú femorálne tepny vykreslené v panvovej sekcii (jedno ID = jedno pole)
+  if(g('territory')==='pelv')return;
   FEM_GROUPS.forEach(group=>{
     const h=document.createElement('div');h.className='st';h.style.marginTop='12px';h.textContent=group.st;c.appendChild(h);
     group.vs.forEach(([lbl,base])=>{
@@ -971,8 +1007,44 @@ function buildFemDSA(){
   });
 }
 
+// femorálne polia sa pri prepnutí riečiska prekresľujú (panva ↔ FP) – hodnoty zachovaj
+function femSnapshot(){
+  const s={};
+  FEM_ZOBR.forEach(([,b])=>['_d','_s'].forEach(x=>{
+    const sid=b+x,el=document.getElementById(sid);if(!el)return;
+    s[sid]={v:el.value,c:g(sid+'_c'),segs:[]};
+    const sc=document.getElementById(sid+'_segs');
+    if(sc)sc.querySelectorAll('.seg-row').forEach(r=>{const n=r.dataset.sn;s[sid].segs.push({seg:g(sid+'_g'+n+'_seg'),val:g(sid+'_g'+n+'_val'),c:g(sid+'_g'+n+'_val_c')});});
+  }));
+  return s;
+}
+function femRestore(s){
+  Object.keys(s||{}).forEach(sid=>{
+    const el=document.getElementById(sid),d=s[sid];if(!el)return;
+    // nedotknuté pole (predvolené „bez závažnej stenózy" bez segmentov) sa neprenáša –
+    // v panvovom režime má ostať „nehodnotené", inak by správa tvrdila niečo nezobrazené
+    const nedotknute=d.v==='bez závažnej stenózy'&&!d.segs.length&&!d.c;
+    if(d.v&&!nedotknute&&[...el.options].some(o=>o.value===d.v))el.value=d.v;
+    const ci=document.getElementById(sid+'_c');if(ci&&d.c)ci.value=d.c;
+    cC(sid);
+    d.segs.forEach(sg=>{
+      addSeg(sid,true);const n=segCnt[sid]-1;
+      const ss=document.getElementById(sid+'_g'+n+'_seg');if(ss&&sg.seg)ss.value=sg.seg;
+      const sv2=document.getElementById(sid+'_g'+n+'_val');if(sv2&&sg.val&&[...sv2.options].some(o=>o.value===sg.val))sv2.value=sg.val;
+      const sc2=document.getElementById(sid+'_g'+n+'_val_c');if(sc2&&sg.c)sc2.value=sg.c;
+      cC(sid+'_g'+n+'_val');
+    });
+  });
+}
+let _femVPanve=false;   // true = femorálne tepny sú práve vykreslené v panvovej sekcii
 function updateTerritory(){
   const t=g('territory'),sp=t==='pelv'||t==='both',sf=t==='fem'||t==='both';
+  if((t==='pelv')!==_femVPanve){
+    const snap=femSnapshot();
+    _femVPanve=(t==='pelv');
+    buildPelvDSA();buildFemDSA();
+    femRestore(snap);
+  }
   document.getElementById('pelv_lat_wrap').style.display=sp?'block':'none';
   document.getElementById('pelv_dsa').style.display=sp?'block':'none';
   document.getElementById('fem_lat_wrap').style.display=sf?'block':'none';
@@ -1301,7 +1373,7 @@ function collectFullData(){
   const dsa={};
   dsaFields.forEach(f=>{
     const el=document.getElementById(f);
-    if(el&&el.value&&el.value!=='bez závažnej stenózy'){
+    if(el&&el.value&&el.value!=='bez závažnej stenózy'&&el.value!=='–'){   // „–" = nehodnotené
       const val=el.value==='vlastný popis'?(g(f+'_c')||el.value):el.value;
       dsa[f]=val;
     }
@@ -1721,6 +1793,15 @@ function gen(){
     const platLbl=platL==='sin'?'l.sin.':platL==='dx'?'l.dx.':'bilat.';
     if(!pdx.length&&!psin.length&&!aoF.abn)L.push('Tepny panvového riečiska '+platLbl+' bez závažnej stenózy.');
     else if(pnorm>0)L.push('Ostatné tepny panvového riečiska bez závažnej stenózy.');
+    // femorálne tepny zachytené tým istým nástrekom (len pri samostatnej panvovej DSA)
+    if(terr==='pelv'){
+      const zob=[];
+      FEM_ZOBR.forEach(([lbl,base])=>{
+        if(platL!=='sin'){const t2=zobrTxt(base+'_d');if(t2)zob.push(lbl+' l.dx. – '+t2);}
+        if(platL!=='dx'){const t2=zobrTxt(base+'_s');if(t2)zob.push(lbl+' l.sin. – '+t2);}
+      });
+      if(zob.length)L.push('V zobrazenom úseku: '+zob.join(', ')+'.');
+    }
   }
   if(sf){
     const lat=g('fem_lat')||'bilat',latL=lat==='bilat'?'bilat.':lat==='sin'?'l.sin.':'l.dx.';
