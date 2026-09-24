@@ -1,0 +1,31 @@
+{
+  "popis": "Diagnostická DSA bez intervencie – dlhá oklúzia AFS, odporučené chirurgické konzílium",
+  "diktat": "Ľavá noha. AFC vľavo prográdne, LA, USG, 5F. Iomeron. DSA: AFC bez stenózy, APF bez stenózy, AFS oklúzia celá, P1 bez stenózy, dobrý odtok trojkmeň. Bez intervencie, odporúčame cievnochirurgické konzílium. Manuálna kompresia 10 minút. Kontrast 40.",
+  "fields": {
+    "pristup": { "arteria": "AFC", "strana": "l.sin.", "technika": "prográdne", "anestezia": "LA", "navigacia": "USG", "sheath_fr": 5 },
+    "kontrast": ["Iomeron 350"],
+    "dsa": [
+      { "tepna": "AFC", "strana": "l.sin.", "nalez": "bez závažnej stenózy" },
+      { "tepna": "APF", "strana": "l.sin.", "nalez": "bez závažnej stenózy" },
+      { "tepna": "AFS", "strana": "l.sin.", "nalez": "oklúzia", "segment": "celý" },
+      { "tepna": "P1", "strana": "l.sin.", "nalez": "bez závažnej stenózy" }
+    ],
+    "bez_intervencie": { "dovod": "Odporúčame cievnochirurgické konzílium" },
+    "uzaver": { "zariadenie": "manuálna kompresia", "kompresia_min": 10, "hemostaza": "po manuálnej kompresii" },
+    "studia": { "kontrast_ml": 40 },
+    "zaver": "Dlhá oklúzia AFS l.sin., nevhodná na EVL – cievnochirurgické konzílium."
+  },
+  "expect": {
+    "vals": {
+      "territory": "fem", "fem_lat": "sin", "sheath": "5 Fr",
+      "f_AFS_s": "oklúzia", "uzatv": "", "kompr": "10", "hemo": "po manuálnej kompresii", "st_contrast": "40",
+      "zaver": "Dlhá oklúzia AFS l.sin., nevhodná na EVL – cievnochirurgické konzílium."
+    },
+    "checked": ["c_bezint"],
+    "radio": { "bezint_r": "Odporúčame cievnochirurgické konzílium" },
+    "out": ["cievnochirurgické konzílium", "oklúzia", "nevhodná na EVL"],
+    "drg_none": true,
+    "unmapped": [],
+    "unmapped_max": 0
+  }
+}

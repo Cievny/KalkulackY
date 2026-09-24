@@ -40,6 +40,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .bilat-hdr{font-size:10px;color:#5a6a8a;font-weight:700;text-align:center;margin-bottom:3px;letter-spacing:.3px;text-transform:uppercase}
 #out{flex:1;width:100%;border:1.5px solid #dde1ea;border-radius:7px;padding:12px;font-size:12px;line-height:1.65;resize:none;font-family:'Courier New',monospace;color:#1a1a2e;background:#fafbfd}
 .btns{display:flex;gap:8px;flex-wrap:wrap}
+/* polia vyplnené z diktátu (AI) – žlté, kým ich lekár neupraví */
+.ai-filled{background:#fefce8!important;box-shadow:inset 0 0 0 2px #fde047!important;border-radius:5px}
+.bdik{background:#fdf4ff;color:#6b21a8;border:1.5px solid #e9d5ff}.bdik:hover{background:#f3e8ff}
 .btn{padding:8px 14px;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;flex:1;justify-content:center}
 .bc{background:#1d6f42;color:#fff}.bc:hover{background:#155e38}
 .bp{background:#1e40af;color:#fff}.bp:hover{background:#1737a0}
@@ -652,6 +655,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
     <button class="btn bstar" id="zp_btn" onclick="zpClick()">⭐ Zaujímavý pacient</button>
     <button class="btn bw" onclick="window.print()">🖨️ Tlač</button>
     <button class="btn" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1" onclick="novyNalez()">🗒 Nový nález</button>
+    <button class="btn bdik" id="btn_diktat" type="button" onclick="DiktatEVK.open()" title="Nadiktovaný heslovitý protokol → AI vyplní formulár (bez osobných údajov)">🎙️ Z diktátu</button>
   </div>
   <div id="cmsg"></div>
 <!-- ⭐ Zaujímavý pacient -->
@@ -2736,6 +2740,8 @@ try{stagingUpdate();}catch(e){}
 <script src="/tools/gen-actionbar.js"></script>
 <script src="/tools/rc-auto.js"></script>
 <script>RcAuto.bind({rc:'rodne_cislo',pohl:'pohl',muz:'M',zena:'Z',vek:'vek',datum:'datum'});</script>
+<script src="/tools/scrub.js"></script>
+<script src="/tools/diktat-evk.js"></script>
 <script src="/tools/vykon-id.js"></script>
 <script>VykonId.bind({sbUrl:SB_URL,headers:()=>sbHeaders(),table:'evk_vykony',datum:'datum'});</script>
 <script>

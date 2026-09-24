@@ -1,0 +1,112 @@
+{
+  "popis": "Panva bilaterálne: dva prístupy, stenózy AIC obojstranne, kissing stenty Dynetic",
+  "diktat": "Panva. AFC vpravo retrográdne, LA, USG, sheath 6F. Druhý vpich AFC vľavo retrográdne 6F. Heparín 5000. Scanlux. DSA: aorta bez stenózy, AIC vľavo stenóza 70 až 90 proximálne, AIC vpravo kritická. Kissing stenty Dynetic 8x37 balónexpandibilné obojstranne. Vľavo AngioSeal 6F, vpravo AngioSeal 6F, hemostáza ihneď. Technický úspech, bez komplikácií.",
+  "fields": {
+    "riecisko": "pelv",
+    "pristup": {
+      "arteria": "AFC",
+      "strana": "l.dx.",
+      "technika": "retrográdne",
+      "anestezia": "LA",
+      "navigacia": "USG",
+      "sheath_fr": 6
+    },
+    "dalsi_pristup": {
+      "arteria": "AFC",
+      "strana": "l.sin.",
+      "technika": "retrográdne",
+      "sheath_fr": 6,
+      "uzaver": "Angio-Seal"
+    },
+    "heparin_iu": 5000,
+    "kontrast": [
+      "Scanlux 370"
+    ],
+    "dsa": [
+      {
+        "tepna": "Aorta",
+        "nalez": "bez závažnej stenózy"
+      },
+      {
+        "tepna": "AIC",
+        "strana": "l.sin.",
+        "nalez": "stenóza 70–90%",
+        "segment": "proximálny"
+      },
+      {
+        "tepna": "AIC",
+        "strana": "l.dx.",
+        "nalez": "kritická stenóza >90%"
+      }
+    ],
+    "kissing": {
+      "stent_sin": {
+        "typ": "balónexpandibilný",
+        "nazov": "Dynetic",
+        "priemer_mm": 8,
+        "dlzka_mm": 37
+      },
+      "stent_dx": {
+        "typ": "balónexpandibilný",
+        "nazov": "Dynetic",
+        "priemer_mm": 8,
+        "dlzka_mm": 37
+      }
+    },
+    "uzaver": {
+      "zariadenie": "AngioSeal 6F",
+      "hemostaza": "ihneď"
+    },
+    "technicky_uspech": "Technický úspech",
+    "komplikacie": [
+      "žiadne"
+    ]
+  },
+  "expect": {
+    "vals": {
+      "territory": "pelv",
+      "pelv_lat": "bilat",
+      "access_art": "AFC",
+      "strana": "l.dx.",
+      "sheath": "6 Fr",
+      "p2_art": "AFC",
+      "p2_strana": "l.sin.",
+      "p2_tech": "retrográdne",
+      "p2_sheath": "6 Fr",
+      "p2_uzaver": "Angio-Seal",
+      "v_Ao": "bez závažnej stenózy",
+      "v_AIC_s": "bez závažnej stenózy",
+      "v_AIC_s_g0_seg": "proximálny",
+      "v_AIC_s_g0_val": "stenóza 70–90%",
+      "v_AIC_d": "kritická stenóza >90%",
+      "kiss_ts": "balónexpandibilný",
+      "kiss_ns": "Dynetic",
+      "kiss_ps": "8",
+      "kiss_ds": "37",
+      "kiss_td": "balónexpandibilný",
+      "kiss_nd": "Dynetic",
+      "kiss_pd": "8",
+      "kiss_dd": "37",
+      "uzatv": "AngioSeal 6F"
+    },
+    "checked": [
+      "c_pristup2",
+      "c_kiss"
+    ],
+    "radio": {
+      "tech_uspech": "Technický úspech"
+    },
+    "out": [
+      "[Kk]issing",
+      "Dynetic",
+      "AIC l\\.sin\\.",
+      "AIC l\\.dx\\.",
+      "Angio-Seal"
+    ],
+    "drg": [
+      "8r880.1i"
+    ],
+    "unmapped": [],
+    "unmapped_max": 0
+  }
+}

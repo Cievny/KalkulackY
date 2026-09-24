@@ -1,0 +1,95 @@
+{
+  "popis": "Hodnoty mimo katalógu (balón Mustang, stent Zilver, katéter Simmons, kontrast Visipaque, uzáver Perclose) sa nestratia – idú do „vlastný“ alebo do zoznamu nezaradených",
+  "diktat": "Pravá noha. AFC vľavo retrográdne kontralaterálne cross-over, Simmons, sheath 6F 45. Visipaque. DSA: AFS vpravo stenóza 70 až 90 proximálne. PTA Mustang 5x100 AFS proximálne. Stent Zilver 6x100 AFS proximálne. Perclose. Technický úspech. Pacient udával bolesť pri inflácii.",
+  "fields": {
+    "pristup": {
+      "arteria": "AFC",
+      "strana": "l.sin.",
+      "technika": "retrográdne",
+      "smer": "kontralaterálna",
+      "sheath_fr": 6,
+      "sheath_dlzka_cm": 45,
+      "kateter": "Simmons"
+    },
+    "kontrast": [
+      "Visipaque"
+    ],
+    "dsa": [
+      {
+        "tepna": "AFS",
+        "strana": "l.dx.",
+        "nalez": "stenóza 70–90%",
+        "segment": "proximálny"
+      }
+    ],
+    "intervencie": [
+      {
+        "typ": "pta",
+        "tepna": "AFS",
+        "strana": "l.dx.",
+        "segment": "proximálny",
+        "device": "Mustang",
+        "priemer_mm": 5,
+        "dlzka_mm": 100
+      },
+      {
+        "typ": "stent",
+        "tepna": "AFS",
+        "strana": "l.dx.",
+        "segment": "proximálny",
+        "device": "Zilver",
+        "priemer_mm": 6,
+        "dlzka_mm": 100
+      }
+    ],
+    "uzaver": {
+      "zariadenie": "Perclose"
+    },
+    "technicky_uspech": "Technický úspech",
+    "nezaradene": [
+      "pacient udával bolesť pri inflácii"
+    ]
+  },
+  "expect": {
+    "vals": {
+      "territory": "fem",
+      "fem_lat": "dx",
+      "strana": "l.sin.",
+      "smer": "kontralaterálna",
+      "sheath": "6 Fr",
+      "sheathdlz": "45 cm",
+      "kat": "vlastný",
+      "pta_0_s": "vlastný",
+      "pta_0_s_c": "Mustang",
+      "pta_0_p": "5",
+      "pta_0_d": "100",
+      "stent_0_n": "vlastný",
+      "stent_0_n_c": "Zilver",
+      "stent_0_p": "6",
+      "stent_0_d": "100",
+      "uzatv": ""
+    },
+    "checked": [
+      "c_pta",
+      "c_stent"
+    ],
+    "out": [
+      "Mustang",
+      "Zilver",
+      "AFS l\\.dx\\."
+    ],
+    "drg": [
+      "8r880",
+      "8r800"
+    ],
+    "unmapped": [
+      "Simmons",
+      "Visipaque",
+      "Mustang",
+      "Zilver",
+      "Perclose",
+      "bolesť pri inflácii"
+    ],
+    "unmapped_max": 6
+  }
+}

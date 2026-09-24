@@ -34,6 +34,8 @@ jobs:
         run: node tests/poziadavky-import.mjs
       - name: Testy scrubbera osobnych udajov
         run: node tests/scrub.mjs
+      - name: Testy diktovania EVK (korpus + okno diktatu)
+        run: node tests/diktat-evk.mjs
       - name: Testy odvodenia pohlavia a veku z RC
         run: node tests/rc-auto.mjs
       - name: Testy staging algoritmov (TASC/GLASS/WIfI)

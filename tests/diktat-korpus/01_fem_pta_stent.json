@@ -1,0 +1,143 @@
+{
+  "popis": "Femoropopliteálny výkon vpravo: oklúzia AFS, predilatácia, stent, postdilatácia, AngioSeal",
+  "diktat": "Pravá noha. AFC vpravo retrográdne, ipsilaterálne, LA, USG, sheath 6F. Heparín 5000. Iomeron. DSA: AFS oklúzia stredný segment, P1 stenóza 70 až 90. Prechod subintimálne, Advantage 0.018. Predilatácia Armada 4x80 AFS stred, 3 minúty, 10 atmosfér. Stent Pulsar 6x120 samoexpandibilný AFS stred. Postdilatácia Armada 6x80 AFS stred. AngioSeal 6F, hemostáza ihneď. Technický úspech, bez komplikácií. Kontrast 80, skia 12 minút.",
+  "fields": {
+    "riecisko": "fem",
+    "pristup": {
+      "arteria": "AFC",
+      "strana": "l.dx.",
+      "technika": "retrográdne",
+      "smer": "ipsilaterálna",
+      "anestezia": "LA",
+      "navigacia": "USG",
+      "sheath_fr": 6
+    },
+    "heparin_iu": 5000,
+    "kontrast": [
+      "Iomeron 350"
+    ],
+    "dsa": [
+      {
+        "tepna": "AFS",
+        "strana": "l.dx.",
+        "nalez": "oklúzia",
+        "segment": "stredný"
+      },
+      {
+        "tepna": "P1",
+        "strana": "l.dx.",
+        "nalez": "stenóza 70–90%"
+      }
+    ],
+    "prechod": [
+      "subintimálne"
+    ],
+    "vodic": "Advantage 0.018\"",
+    "intervencie": [
+      {
+        "typ": "predilatacia",
+        "tepna": "AFS",
+        "strana": "l.dx.",
+        "segment": "stredný",
+        "device": "Armada",
+        "priemer_mm": 4,
+        "dlzka_mm": 80,
+        "inflacia_min": 3,
+        "tlak_atm": 10
+      },
+      {
+        "typ": "stent",
+        "tepna": "AFS",
+        "strana": "l.dx.",
+        "segment": "stredný",
+        "device": "Pulsar",
+        "stent_typ": "samoexpandibilný",
+        "priemer_mm": 6,
+        "dlzka_mm": 120
+      },
+      {
+        "typ": "postdilatacia",
+        "tepna": "AFS",
+        "strana": "l.dx.",
+        "segment": "stredný",
+        "device": "Armada",
+        "priemer_mm": 6,
+        "dlzka_mm": 80
+      }
+    ],
+    "uzaver": {
+      "zariadenie": "AngioSeal 6F",
+      "hemostaza": "ihneď"
+    },
+    "technicky_uspech": "Technický úspech",
+    "komplikacie": [
+      "žiadne"
+    ],
+    "studia": {
+      "kontrast_ml": 80,
+      "skia_min": 12
+    }
+  },
+  "expect": {
+    "vals": {
+      "territory": "fem",
+      "fem_lat": "dx",
+      "access_art": "AFC",
+      "strana": "l.dx.",
+      "tech": "retrográdne",
+      "smer": "ipsilaterálna",
+      "anes": "LA",
+      "nav": "USG",
+      "sheath": "6 Fr",
+      "heparin": "5000",
+      "vodic": "Advantage 0.018\"",
+      "f_AFS_d": "bez závažnej stenózy",
+      "f_AFS_d_g0_seg": "stredný",
+      "f_AFS_d_g0_val": "oklúzia",
+      "p_P1_d": "stenóza 70–90%",
+      "pred_0_tp": "AFS l.dx.",
+      "pred_0_sg": "stredný",
+      "pred_0_s": "Armada",
+      "pred_0_p": "4",
+      "pred_0_d": "80",
+      "pred_0_i": "3",
+      "pred_0_a": "10",
+      "stent_0_tp": "AFS l.dx.",
+      "stent_0_t": "samoexpandibilný",
+      "stent_0_n": "Pulsar",
+      "stent_0_p": "6",
+      "stent_0_d": "120",
+      "post_0_tp": "AFS l.dx.",
+      "post_0_s": "Armada",
+      "post_0_p": "6",
+      "post_0_d": "80",
+      "uzatv": "AngioSeal 6F",
+      "hemo": "ihneď",
+      "st_contrast": "80",
+      "st_fluoro": "12"
+    },
+    "checked": [
+      "c_pred",
+      "c_stent",
+      "c_post"
+    ],
+    "radio": {
+      "tech_uspech": "Technický úspech"
+    },
+    "out": [
+      "AFS l\\.dx\\.",
+      "Pulsar",
+      "6\\s*[x×]\\s*120",
+      "AngioSeal 6F",
+      "Technický úspech",
+      "Iomeron 350",
+      "subintimáln"
+    ],
+    "drg": [
+      "8r880",
+      "8r800"
+    ],
+    "unmapped": [],
+    "unmapped_max": 0
+  }
+}

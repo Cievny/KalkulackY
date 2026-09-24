@@ -1,0 +1,145 @@
+{
+  "popis": "Akútny uzáver AFS vľavo: Rotarex v AFS aj P1, DEB, výmena sheathu, distálna embólia riešená trombektómiou",
+  "diktat": "Ľavá noha, akútna ischémia. AFC vľavo prográdne, LA, USG, sheath 6F. Heparín 5000. Výmena za 8F DuraSheath 45. DSA: AFS oklúzia celá, P1 oklúzia. Prechod intraluminálne, Command 0.018. Rotarex 6F AFS celá aj P1. Potom DEB IN.PACT 5x120 AFS distálne, 3 minúty. Distálna embolizácia do ATA riešená aspiráciou. AngioSeal 8F, hemostáza ihneď. Parciálny úspech.",
+  "fields": {
+    "pristup": {
+      "arteria": "AFC",
+      "strana": "l.sin.",
+      "technika": "prográdne",
+      "anestezia": "LA",
+      "navigacia": "USG",
+      "sheath_fr": 6
+    },
+    "heparin_iu": 5000,
+    "vymena_sheathu": {
+      "fr": 8,
+      "dlzka_cm": 45,
+      "znacka": "DuraSheath"
+    },
+    "dsa": [
+      {
+        "tepna": "AFS",
+        "strana": "l.sin.",
+        "nalez": "oklúzia",
+        "segment": "celý"
+      },
+      {
+        "tepna": "P1",
+        "strana": "l.sin.",
+        "nalez": "oklúzia"
+      }
+    ],
+    "prechod": [
+      "intraluminálne"
+    ],
+    "vodic": "Command 0.018\"",
+    "intervencie": [
+      {
+        "typ": "trombektomia",
+        "metoda": "Rotarex",
+        "velkost_fr": 6,
+        "tepna": "AFS",
+        "strana": "l.sin.",
+        "segment": "celý",
+        "dalsie_tepny": [
+          {
+            "tepna": "P1",
+            "strana": "l.sin."
+          }
+        ]
+      },
+      {
+        "typ": "deb",
+        "tepna": "AFS",
+        "strana": "l.sin.",
+        "segment": "distálny",
+        "device": "IN.PACT",
+        "priemer_mm": 5,
+        "dlzka_mm": 120,
+        "inflacia_min": 3
+      }
+    ],
+    "dalsie_osetrenie": {
+      "dovod": [
+        "distálna embolizácia"
+      ],
+      "technika": [
+        "trombektómia"
+      ],
+      "poznamka": "aspirácia z ATA"
+    },
+    "uzaver": {
+      "zariadenie": "AngioSeal 8F",
+      "hemostaza": "ihneď"
+    },
+    "technicky_uspech": "Parciálny úspech",
+    "komplikacie": [
+      "distálna embólia"
+    ]
+  },
+  "expect": {
+    "vals": {
+      "territory": "fem",
+      "fem_lat": "sin",
+      "access_art": "AFC",
+      "strana": "l.sin.",
+      "tech": "prográdne",
+      "iv_sheath": "8 Fr",
+      "iv_sheath_dlz": "45 cm",
+      "iv_sheath_zn": "DuraSheath",
+      "f_AFS_s": "oklúzia",
+      "p_P1_s": "oklúzia",
+      "vodic": "Command 0.018\"",
+      "rotarex_fr": "6F",
+      "trom_tp": "AFS l.sin.",
+      "trom_sg": "celý",
+      "trom_l0_tp": "P1 l.sin.",
+      "deb_0_tp": "AFS l.sin.",
+      "deb_0_sg": "distálny",
+      "deb_0_s": "IN.PACT",
+      "deb_0_p": "5",
+      "deb_0_d": "120",
+      "deb_0_i": "3",
+      "dal_text": "aspirácia z ATA",
+      "uzatv": "AngioSeal 8F"
+    },
+    "checked": [
+      "c_ivsheath",
+      "c_trom",
+      "trom_rotarex",
+      "c_deb",
+      "c_dal"
+    ],
+    "radio": {
+      "tech_uspech": "Parciálny úspech"
+    },
+    "checked_values": {
+      "prec": [
+        "intraluminálne"
+      ],
+      "dal_d": [
+        "distálna embolizácia"
+      ],
+      "dal_t": [
+        "trombektómia"
+      ],
+      "komp_ck": [
+        "distálna embólia"
+      ]
+    },
+    "out": [
+      "Rotarex",
+      "P1 l\\.sin\\.",
+      "IN\\.PACT",
+      "DuraSheath",
+      "Parciálny úspech",
+      "distálna embol"
+    ],
+    "drg": [
+      "8r821",
+      "8r801"
+    ],
+    "unmapped": [],
+    "unmapped_max": 0
+  }
+}
