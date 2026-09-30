@@ -75,7 +75,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 <div class="row r3">
   <div class="f"><label>Vek</label><input type="number" id="vek" min="18" max="105" oninput="gen()"></div>
   <div class="f"><label>Pohlavie</label><select id="pohl" onchange="gen()"><option value="M">Muž</option><option value="Z">Žena</option></select></div>
-  <div class="f"><label>Rodné číslo <span style="font-weight:400;color:#9ca3af">(len do DB)</span></label><input type="text" id="rodne_cislo" maxlength="11" autocomplete="off"></div>
+  <div class="f"><label>Rodné číslo</label><input type="text" id="rodne_cislo" autocomplete="off" inputmode="numeric" placeholder="bez lomky alebo s lomkou" oninput="gen()">
+    <div style="font-size:10px;color:#6b7280;margin-top:2px">len na interné počítanie unikátnych pacientov</div>
+  </div>
 </div>
 <div class="row r3">
   <div class="f"><label>Pacient ID <span style="font-weight:400;color:#9ca3af">(pridelí sa sám pri uložení)</span></label><input type="text" id="pacient_cislo" inputmode="numeric" autocomplete="off" placeholder="auto"></div>
@@ -164,6 +166,20 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 
 <div class="card">
 <div class="st">Intervencia</div>
+<div class="tog">
+  <label class="thdr"><input type="checkbox" id="c_bezint" onchange="bezIntToggle();gen()"><span>Bez intervencie (len diagnostická fistulografia)</span></label>
+  <div class="tbody" id="b_bezint">
+    <div class="checks" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <label class="ck"><input type="radio" name="bezint_r" value="Primeraný nález na AVF, intervencia nie je indikovaná" onchange="chkBezIntVl();gen()"> Primeraný nález – intervencia nie je indikovaná</label>
+      <label class="ck"><input type="radio" name="bezint_r" value="Nález nevhodný k endovaskulárnej liečbe (EVL)" onchange="chkBezIntVl();gen()"> Nález nevhodný k EVL</label>
+      <label class="ck"><input type="radio" name="bezint_r" value="Odporúčame cievnochirurgické riešenie (revízia / nová AVF)" onchange="chkBezIntVl();gen()"> Odporúčame cievnochirurgické riešenie (revízia / nová AVF)</label>
+      <label class="ck"><input type="radio" name="bezint_r" value="Odporúčame konzervatívny postup a sledovanie" onchange="chkBezIntVl();gen()"> Odporúčame konzervatívny postup a sledovanie</label>
+      <label class="ck"><input type="radio" name="bezint_r" value="vlastny" onchange="chkBezIntVl();gen()"> Vlastné</label>
+    </div>
+    <input type="text" id="bezint_vlastny" placeholder="Vlastný dôvod…" oninput="gen()" style="display:none;margin-top:6px">
+  </div>
+</div>
+<div id="iv_wrap">
 <div class="f"><label>Vodič</label><select id="vodic" onchange="chkVl('vodic');gen()"><option>V-18</option><option>0,014"</option><option>0,018"</option><option>0,035"</option><option>Glidewire</option><option>vlastný</option></select><input type="text" id="vodic_c" style="display:none;margin-top:4px" placeholder="vodič…" oninput="gen()"></div>
 <div id="iv_rows"></div>
 <button type="button" class="addbtn" onclick="ivAdd();gen()">＋ Pridať výkon (PTA / DEB / cutting / stentgraft…)</button>
@@ -176,14 +192,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
     </div>
   </div>
 </div>
+</div>
 <div class="f"><label>Poznámka k intervencii <span style="font-weight:400;color:#9ca3af">(voľný text)</span></label><input type="text" id="iv_pozn" oninput="gen()"></div>
 </div>
 
 <div class="card">
 <div class="st">Výsledok a komplikácie</div>
 <div class="row r3">
-  <div class="f"><label>Záverečná DSA</label><select id="vysl" onchange="gen()"><option>s pekným výsledkom</option><option>s dobrým výsledkom</option><option>s uspokojivým výsledkom</option><option>so suboptimálnym výsledkom</option></select></div>
-  <div class="f"><label>Reziduálna stenóza</label><select id="rezid" onchange="gen()"><option value="">neuvádzať</option><option>bez reziduálnej stenózy</option><option>&lt;10 %</option><option>&lt;30 %</option><option>&gt;30 %</option></select></div>
+  <div class="f" id="f_vysl"><label>Záverečná DSA</label><select id="vysl" onchange="gen()"><option>s pekným výsledkom</option><option>s dobrým výsledkom</option><option>s uspokojivým výsledkom</option><option>so suboptimálnym výsledkom</option></select></div>
+  <div class="f" id="f_rezid"><label>Reziduálna stenóza</label><select id="rezid" onchange="gen()"><option value="">neuvádzať</option><option>bez reziduálnej stenózy</option><option>&lt;10 %</option><option>&lt;30 %</option><option>&gt;30 %</option></select></div>
   <div class="f"><label>Hemostáza</label><select id="hemostaza" onchange="gen()"><option>ihneď</option><option>do 5 minút</option><option>po dlhšej kompresii</option></select></div>
 </div>
 <div class="checks" style="margin-bottom:8px">
@@ -299,6 +316,20 @@ function updateIdPrefix(){document.getElementById('id_prefix').textContent='AVF-
 function msg(id,t,c){const el=document.getElementById(id);el.textContent=t;el.style.color=c;setTimeout(()=>{if(el.textContent===t)el.textContent='';},5000);}
 function fuExitusToggle(){document.getElementById('fu_exitus_box').style.display=chk('fu_exitus')?'block':'none';}
 function resetZaver(){zaverManual=false;gen();}
+// Bez intervencie: riadky výkonov sa skryjú a ignorujú (neodstránia sa – odškrtnutie ich vráti)
+function bezIntToggle(){
+  tB('bezint');
+  const on=chk('c_bezint');
+  document.getElementById('iv_wrap').style.display=on?'none':'';
+  ['f_vysl','f_rezid'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=on?'none':'';});
+  chkBezIntVl();
+}
+function chkBezIntVl(){const r=document.querySelector('input[name="bezint_r"]:checked');document.getElementById('bezint_vlastny').style.display=(r&&r.value==='vlastny')?'block':'none';}
+function bezIntDovod(){
+  if(!chk('c_bezint'))return '';
+  const r=document.querySelector('input[name="bezint_r"]:checked');if(!r)return '';
+  return (r.value==='vlastny'?g('bezint_vlastny').trim():r.value).replace(/[.!?]\s*$/,'');
+}
 function getKomp(){return [...document.querySelectorAll('.komp_ck:checked')].map(c=>c.value).filter(v=>v!=='žiadne');}
 function fmtD(iso){if(!iso)return '';const p=iso.slice(0,10).split('-');return p[2]+'.'+p[1]+'.'+p[0];}
 // akuzatív pre „prístup cez …" a „Z-steh na …"
@@ -361,6 +392,7 @@ function ivAdd(pre){
 }
 function ivVl(sel){const c=sel.closest('.f').querySelector('.iv_lok_c');if(c)c.style.display=sel.value==='vlastná'?'':'none';}
 function ivList(){
+  if(chk('c_bezint'))return [];
   return [...document.querySelectorAll('#iv_rows .ivrow')].map(d=>{
     const lk=d.querySelector('.iv_lok').value;
     const ms=d.querySelector('.iv_nazov_sel'),mc=d.querySelector('.iv_nazov_c');
@@ -431,6 +463,13 @@ function buildAutoZaver(){
   const rows=ivList();
   const komp=getKomp();
   let z;
+  if(chk('c_bezint')){
+    z=(chk('d_tromb')?'Trombóza AVF – diagnostická DSA':'Diagnostická DSA AVF')+', bez intervencie'+(bezIntDovod()?' – '+bezIntDovod():'')+'.';
+    if(komp.length)z+=' Komplikácie: '+komp.join(', ')+(g('komp_text')?' – '+g('komp_text'):'')+'.';
+    else z+=' Bez komplikácií.';
+    z+=' Kontrola miesta vpichu, pri krvácaní kompresia.';
+    return z;
+  }
   if(rows.length){
     const typy=[...new Set(rows.map(r=>r.typ))].join(' + ');
     const loky=[...new Set(rows.map(r=>r.lok))].join(' a ');
@@ -501,16 +540,22 @@ function gen(){
       if(chk('c_vymena'))veta+=(veta?', ':'')+'výmena sheathu za '+g('vymena_f')+(g('vymena_dovod').trim()?' ('+g('vymena_dovod').trim()+')':'');
     }
     iv.push(veta.charAt(0).toUpperCase()+veta.slice(1)+'.');
-  }else iv.push('Diagnostická DSA, bez intervencie.');
+  }else iv.push('Diagnostická DSA, bez intervencie.'+(bezIntDovod()?' '+bezIntDovod()+'.':''));
   if(g('iv_pozn').trim())iv.push(g('iv_pozn').trim()+(/[.!?]$/.test(g('iv_pozn').trim())?'':'.'));
   L.push('INTERVENCIA: '+iv.join(' '));
   // Záverečná DSA
-  let zd='Záverečná DSA '+g('vysl');
-  if(g('rezid'))zd+=', '+g('rezid');
-  if(g('dsa_centralna')==='bez stenózy')zd+=', centrálna véna bez stenózy';
-  zd+='.';
-  if(chk('thrill'))zd+=' Nad AVF hmatný vír (thrill).';
-  L.push(zd);
+  let zd;
+  if(chk('c_bezint')){
+    zd=g('dsa_centralna')==='bez stenózy'?'Centrálna véna bez stenózy.':'';
+    if(chk('thrill'))zd+=(zd?' ':'')+'Nad AVF hmatný vír (thrill).';
+  }else{
+    zd='Záverečná DSA '+g('vysl');
+    if(g('rezid'))zd+=', '+g('rezid');
+    if(g('dsa_centralna')==='bez stenózy')zd+=', centrálna véna bez stenózy';
+    zd+='.';
+    if(chk('thrill'))zd+=' Nad AVF hmatný vír (thrill).';
+  }
+  if(zd)L.push(zd);
   const komp=getKomp();
   const peri=[];
   if(g('kontrast_ml'))peri.push('Kontrast: '+g('kontrast_ml')+' ml');
@@ -586,13 +631,15 @@ function collectPayload(){
     dsa_tromboza:chk('d_tromb'),
     dsa_centralna:g('dsa_centralna')||null,
     dsa_text:g('dsa_text').trim()||null,
-    vodic:vN('vodic'),
+    vodic:chk('c_bezint')?null:vN('vodic'),
+    bez_intervencie:chk('c_bezint'),
+    bez_intervencie_dovod:bezIntDovod()||null,
     intervencie:JSON.stringify(ivList()),
     vymena_sheath:chk('c_vymena')?g('vymena_f'):null,
     vymena_dovod:chk('c_vymena')?(g('vymena_dovod').trim()||null):null,
     intervencia_pozn:g('iv_pozn').trim()||null,
-    vysledok:g('vysl'),
-    rezidualna_stenoza:g('rezid')||null,
+    vysledok:chk('c_bezint')?null:g('vysl'),
+    rezidualna_stenoza:chk('c_bezint')?null:(g('rezid')||null),
     thrill:chk('thrill'),
     hemostaza:g('hemostaza'),
     komplikacie:getKomp().join(', ')||'žiadne',
@@ -657,7 +704,7 @@ async function saveAVF(){
     }
     if(_isEdit){
       // pri edite ostávajú null hodnoty – vyprázdnené polia sa musia dať v DB vymazať
-      const keepNull=['vek','qa_pred','indikacia_text','avf_rok','faza','indikacie','pristup_vztah','pristup_anes','pristup_nav','pristup2_miesto','pristup2_smer','pristup2_sheath','pristup2_uzaver','dsa_vena','dsa_kolateraly','dsa_centralna','dsa_text','vymena_sheath','vymena_dovod','intervencia_pozn','rezidualna_stenoza','komplikacie_struct','komplikacie_text','clavien_dindo','kontrast_ml','fluoro_time_min','dap','drg_kody','rodne_cislo'];
+      const keepNull=['vek','vodic','bez_intervencie_dovod','vysledok','qa_pred','indikacia_text','avf_rok','faza','indikacie','pristup_vztah','pristup_anes','pristup_nav','pristup2_miesto','pristup2_smer','pristup2_sheath','pristup2_uzaver','dsa_vena','dsa_kolateraly','dsa_centralna','dsa_text','vymena_sheath','vymena_dovod','intervencia_pozn','rezidualna_stenoza','komplikacie_struct','komplikacie_text','clavien_dindo','kontrast_ml','fluoro_time_min','dap','drg_kody','rodne_cislo'];
       Object.keys(payload).forEach(k=>{if(payload[k]==null&&!keepNull.includes(k))delete payload[k];});
       delete payload.vykon_id;
     }
@@ -759,6 +806,14 @@ function loadEditRecord(){
     setVl('vodic',record.vodic);
     try{const iv=typeof record.intervencie==='string'?JSON.parse(record.intervencie):record.intervencie;if(Array.isArray(iv))iv.forEach(r=>ivAdd(r));}catch(e){}
     if(record.vymena_sheath){document.getElementById('c_vymena').checked=true;tB('vymena');sv('vymena_f',record.vymena_sheath);if(record.vymena_dovod!=null)document.getElementById('vymena_dovod').value=record.vymena_dovod;}
+    if(record.bez_intervencie){
+      document.getElementById('c_bezint').checked=true;
+      const dv=record.bez_intervencie_dovod||'';
+      const r=[...document.querySelectorAll('input[name="bezint_r"]')].find(x=>x.value===dv);
+      if(r)r.checked=true;
+      else if(dv){const vl=document.querySelector('input[name="bezint_r"][value="vlastny"]');if(vl)vl.checked=true;document.getElementById('bezint_vlastny').value=dv;}
+      bezIntToggle();
+    }
     sv('iv_pozn',record.intervencia_pozn);
     sv('vysl',record.vysledok);
     document.getElementById('rezid').value=record.rezidualna_stenoza||'';

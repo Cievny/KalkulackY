@@ -512,3 +512,7 @@ END $kiosk$;
 
 -- ── 3w · Požiadavky: krátka epikríza pacienta (voľný text v sekcii 1) ──
 ALTER TABLE aorta_indikacie ADD COLUMN IF NOT EXISTS epikriza TEXT;
+
+-- ── 3x · AVF: „Bez intervencie" (diagnostická fistulografia) – príznak + dôvod ──
+ALTER TABLE avf_vykony ADD COLUMN IF NOT EXISTS bez_intervencie BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE avf_vykony ADD COLUMN IF NOT EXISTS bez_intervencie_dovod TEXT;
