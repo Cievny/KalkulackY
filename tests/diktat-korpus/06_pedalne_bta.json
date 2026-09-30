@@ -1,0 +1,44 @@
+{
+  "popis": "CLTI vľavo s pedálnym nálezom: ATA oklúzia, ADP stenóza, nekompletný oblúk (Kawarada 2A), angiozóm dorza nepriamo perfundovaný; PTA ATA + ADP tým istým balónom",
+  "diktat": "Ľavá noha, defekt na dorze nohy. AFC vľavo prográdne, LA, USG, sheath 5F. Heparín 5000. DSA: ATA oklúzia celá, ATP bez stenózy, AFib bez stenózy. Pod členkom: dorsalis pedis stenóza 70 až 90, plantaris lateralis bez stenózy, plantaris medialis oklúzia. Pedálny oblúk nekompletný, Kawarada 2A, plantaris profunda priechodná. Metatarzálne vetvy s čiastočnou rekonštitúciou, digitálne bez rekonštitúcie. Výtok cez laterálnu plantárnu. Angiozóm rany dorzum nohy, perfúzia nepriama cez oblúk. Prechod intraluminálne, Command 0.014. PTA Passeo 2.5x120 ATA celá, aj dorsalis pedis. Manuálna kompresia. Technický úspech, bez komplikácií.",
+  "fields": {
+    "pristup": { "arteria": "AFC", "strana": "l.sin.", "technika": "prográdne", "anestezia": "LA", "navigacia": "USG", "sheath_fr": 5 },
+    "heparin_iu": 5000,
+    "dsa": [
+      { "tepna": "ATA", "strana": "l.sin.", "nalez": "oklúzia", "segment": "celý" },
+      { "tepna": "ATP", "strana": "l.sin.", "nalez": "bez závažnej stenózy" },
+      { "tepna": "AFib", "strana": "l.sin.", "nalez": "bez závažnej stenózy" },
+      { "tepna": "ADP", "strana": "l.sin.", "nalez": "stenóza 70–90%" },
+      { "tepna": "APL", "strana": "l.sin.", "nalez": "bez závažnej stenózy" },
+      { "tepna": "APM", "strana": "l.sin.", "nalez": "oklúzia" }
+    ],
+    "pedal": [
+      { "strana": "l.sin.", "obluk": "nekompletný", "kawarada": "typ 2A – priechodná len ADP", "plantaris_profunda": "priechodná", "metatarzalne": "čiastočná rekonštitúcia", "digitalne": "bez rekonštitúcie", "vytok": "cez APL", "angiozom": "ATA/ADP – dorzum nohy a prsty", "perfuzia": "nepriama perfúzia (kolaterály / pedálny oblúk)" }
+    ],
+    "prechod": ["intraluminálne"],
+    "vodic": "Command 0.014\"",
+    "intervencie": [
+      { "typ": "pta", "tepna": "ATA", "strana": "l.sin.", "segment": "celý", "device": "Passeo", "priemer_mm": 2.5, "dlzka_mm": 120, "dalsie_tepny": [ { "tepna": "ADP", "strana": "l.sin." } ] }
+    ],
+    "uzaver": { "zariadenie": "manuálna kompresia" },
+    "technicky_uspech": "Technický úspech",
+    "komplikacie": ["žiadne"]
+  },
+  "expect": {
+    "vals": {
+      "territory": "fem", "fem_lat": "sin",
+      "d_ATA_s": "oklúzia", "b_ADP_s": "stenóza 70–90%", "b_APL_s": "bez závažnej stenózy", "b_APM_s": "oklúzia",
+      "b_arch_s": "nekompletný", "b_kaw_s": "typ 2A – priechodná len ADP", "b_app_s": "priechodná",
+      "b_mt_s": "čiastočná rekonštitúcia", "b_dg_s": "bez rekonštitúcie", "b_out_s": "cez APL",
+      "b_angz_s": "ATA/ADP – dorzum nohy a prsty", "b_angp_s": "nepriama perfúzia (kolaterály / pedálny oblúk)",
+      "pta_0_tp": "ATA l.sin.", "pta_0_s": "Passeo", "pta_0_p": "2.5", "pta_0_d": "120", "pta_0_l0_tp": "ADP l.sin.",
+      "uzatv": ""
+    },
+    "checked": ["c_pta"],
+    "radio": { "tech_uspech": "Technický úspech" },
+    "out": ["Pedálne riečisko \\(BTA\\) l\\.sin\\.: ADP – stenóza 70–90%", "APM – oklúzia", "Pedálny oblúk nekompletný, Kawarada typ 2A", "A\\. plantaris profunda priechodná", "Metatarzálne vetvy: čiastočná rekonštitúcia; digitálne vetvy: bez rekonštitúcie", "Výtokové cievy: cez APL", "Angiozóm rany \\(ATA/ADP – dorzum nohy a prsty\\): nepriama perfúzia", "Passeo", "ADP l\\.sin\\."],
+    "drg": ["8r800.m"],
+    "unmapped": [],
+    "unmapped_max": 0
+  }
+}

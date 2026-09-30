@@ -67,7 +67,7 @@ Pravidlá:
 - Priemery a dĺžky sú čísla v mm. Rozmery aorty typicky 20–120 mm.`;
 
 /* ───────────── 2) EVK – heslovitý diktát endovaskulárneho výkonu ───────────── */
-const TEPNA = ['Aorta', 'AIC', 'AIE', 'AII', 'AFC', 'APF', 'AFS', 'P1', 'P2', 'P3', 'ATA', 'ATP', 'AFib', 'TTF'];
+const TEPNA = ['Aorta', 'AIC', 'AIE', 'AII', 'AFC', 'APF', 'AFS', 'P1', 'P2', 'P3', 'ATA', 'ATP', 'AFib', 'TTF', 'ADP', 'APM', 'APL'];
 const STRANA = ['l.sin.', 'l.dx.'];
 const SEGMENT = ['proximálny', 'stredný', 'distálny', 'celý', 'odstup'];
 const DSA_NALEZ = ['bez závažnej stenózy', 'stenóza do 50%', 'stenóza 50–70%', 'stenóza 70–90%', 'kritická stenóza >90%',
@@ -217,6 +217,26 @@ const SCHEMA_EVK = {
       properties: { dlzka_min: { type: 'number' }, skia_min: { type: 'number' }, dap: { type: 'number' }, kontrast_ml: { type: 'number' } },
       additionalProperties: false,
     },
+    pedal: {
+      type: 'array',
+      description: 'pedálne riečisko (pod členkom) – oblúk, Kawarada, plantaris profunda, malé vetvy, angiozóm; jedna položka na stranu',
+      items: {
+        type: 'object',
+        properties: {
+          strana: { type: 'string', enum: STRANA },
+          obluk: { type: 'string', enum: ['kompletný', 'nekompletný', 'nezobrazený (neprítomný)'] },
+          kawarada: { type: 'string', enum: ['typ 1 – ADP aj APL priechodné, oblúk kompletný', 'typ 2A – priechodná len ADP', 'typ 2B – priechodná len APL', 'typ 3 – ADP aj APL uzavreté'] },
+          plantaris_profunda: { type: 'string', enum: ['priechodná', 'stenóza', 'oklúzia', 'nezobrazená'] },
+          metatarzalne: { type: 'string', enum: ['rekonštitúcia zachovaná', 'čiastočná rekonštitúcia', 'bez rekonštitúcie'] },
+          digitalne: { type: 'string', enum: ['rekonštitúcia zachovaná', 'čiastočná rekonštitúcia', 'bez rekonštitúcie'] },
+          vytok: { type: 'string', description: 'výtokové cievy voľným textom, napr. „ADP → arcus → APL"' },
+          angiozom: { type: 'string', enum: ['ATA/ADP – dorzum nohy a prsty', 'ATP/APM – mediálna planta', 'ATP/APL – laterálna planta', 'ATP/a. calcanea med. – päta mediálne', 'AFib/a. calcanea lat. – päta laterálne, laterálny členok', 'AFib/r. perforans – anterolaterálny členok'] },
+          perfuzia: { type: 'string', enum: ['priama perfúzia cieľovej lézie', 'nepriama perfúzia (kolaterály / pedálny oblúk)', 'bez perfúzie angiozómu'] },
+        },
+        required: ['strana'],
+        additionalProperties: false,
+      },
+    },
     zaver: { type: 'string', description: 'odporúčanie / záver, ak bol nadiktovaný (liečba, kontrola)' },
     nezaradene: {
       type: 'array', items: { type: 'string' },
@@ -234,7 +254,8 @@ ZÁKLADNÉ PRAVIDLÁ
 - Text je zbavený osobných údajov (zástupky [MENO], [RČ]…). Ignoruj ich.
 
 SKRATKY TEPIEN (vždy použi presne tieto kódy)
-AIC = a. iliaca communis, AIE = a. iliaca externa, AII = a. iliaca interna, AFC = a. femoralis communis, APF = a. profunda femoris, AFS = a. femoralis superficialis, P1/P2/P3 = a. poplitea (nad kolenom / za kolenom / pod kolenom), ATA = a. tibialis anterior, ATP = a. tibialis posterior, AFib = a. fibularis (peronea), TTF = truncus tibiofibularis.
+AIC = a. iliaca communis, AIE = a. iliaca externa, AII = a. iliaca interna, AFC = a. femoralis communis, APF = a. profunda femoris, AFS = a. femoralis superficialis, P1/P2/P3 = a. poplitea (nad kolenom / za kolenom / pod kolenom), ATA = a. tibialis anterior, ATP = a. tibialis posterior, AFib = a. fibularis (peronea), TTF = truncus tibiofibularis, ADP = a. dorsalis pedis (pedálna), APM = a. plantaris medialis, APL = a. plantaris lateralis.
+Stenózy/oklúzie ADP/APM/APL idú do "dsa" ako ostatné tepny. Pedálny oblúk (kompletný/nekompletný), Kawarada typ, a. plantaris profunda, metatarzálne/digitálne vetvy (rekonštitúcia), výtokové cievy a angiozóm rany (priama/nepriama perfúzia) idú do "pedal" (jedna položka na stranu).
 Panvové tepny (AIC/AIE/AII/Aorta) → riecisko "pelv"; femorálne/popliteálne/krurálne → "fem"; oboje → "both".
 
 STRANA A SEGMENT

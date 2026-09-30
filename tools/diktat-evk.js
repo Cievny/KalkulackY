@@ -78,7 +78,7 @@
   }
 
   /* ── tepny ── */
-  var DSA_SID = { Aorta: 'v_Ao', AIC: 'v_AIC', AIE: 'v_AIE', AII: 'v_AII', AFC: 'f_AFC', APF: 'f_APF', AFS: 'f_AFS', P1: 'p_P1', P2: 'p_P2', P3: 'p_P3', ATA: 'd_ATA', ATP: 'd_ATP', AFib: 'd_AFib', TTF: 'd_TTF' };
+  var DSA_SID = { Aorta: 'v_Ao', AIC: 'v_AIC', AIE: 'v_AIE', AII: 'v_AII', AFC: 'f_AFC', APF: 'f_APF', AFS: 'f_AFS', P1: 'p_P1', P2: 'p_P2', P3: 'p_P3', ATA: 'd_ATA', ATP: 'd_ATP', AFib: 'd_AFib', TTF: 'd_TTF', ADP: 'b_ADP', APM: 'b_APM', APL: 'b_APL' };
   var PELV = ['Aorta', 'AIC', 'AIE', 'AII'];
   function grp(tepna) { return PELV.indexOf(tepna) >= 0 ? 'pelv' : 'fem'; }
   function vesselStr(e) { return e && e.tepna && e.strana ? e.tepna + ' ' + e.strana : ''; }
@@ -179,6 +179,23 @@
           call('cC', sid);
         }
         add('DSA ' + lbl);
+      });
+    });
+
+    // 3b) pedálne riečisko – oblúk, Kawarada, plantaris profunda, malé vetvy, angiozóm
+    (F.pedal || []).forEach(function (P) {
+      safe('pedálne riečisko', function () {
+        var x = sideSuffix(P.strana, 'fem');
+        if (!x) { miss('pedálne riečisko: neuvedená strana'); return; }
+        if (!$('b_arch' + x)) { miss('pedálne riečisko ' + (P.strana || '') + ': polia nie sú zobrazené pri tomto riečisku/lateralite'); return; }
+        var n = 0;
+        var M = { obluk: 'b_arch', kawarada: 'b_kaw', plantaris_profunda: 'b_app', metatarzalne: 'b_mt', digitalne: 'b_dg', angiozom: 'b_angz', perfuzia: 'b_angp' };
+        Object.keys(M).forEach(function (k) {
+          if (!P[k]) return;
+          if (setSel(M[k] + x, P[k])) n++; else miss('pedálne riečisko – ' + k + ': „' + P[k] + '"');
+        });
+        if (setVal('b_out' + x, P.vytok)) n++;
+        if (n) add('pedálne riečisko ' + (P.strana || ''));
       });
     });
 

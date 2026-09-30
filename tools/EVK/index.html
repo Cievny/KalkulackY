@@ -740,7 +740,7 @@ const STENT_TYP=['balónexpandibilný','samoexpandibilný','liekový (DES)'];
 // genitív typu stentu do vety „implantácia … stentu" (t+'ho' by dalo „liekový (DES)ho")
 const STENT_TYP_GEN={'balónexpandibilný':'balónexpandibilného','samoexpandibilný':'samoexpandibilného','liekový (DES)':'liekového (DES)'};
 const stGen=t=>STENT_TYP_GEN[t]||t;
-const VESSEL_OPTS=['– tepna –','AIC l.sin.','AIC l.dx.','AIE l.sin.','AIE l.dx.','AII l.sin.','AII l.dx.','AFC l.sin.','AFC l.dx.','APF l.sin.','APF l.dx.','AFS l.sin.','AFS l.dx.','P1 l.sin.','P1 l.dx.','P2 l.sin.','P2 l.dx.','P3 l.sin.','P3 l.dx.','ATA l.sin.','ATA l.dx.','ATP l.sin.','ATP l.dx.','AFib l.sin.','AFib l.dx.','TTF l.sin.','TTF l.dx.'];
+const VESSEL_OPTS=['– tepna –','AIC l.sin.','AIC l.dx.','AIE l.sin.','AIE l.dx.','AII l.sin.','AII l.dx.','AFC l.sin.','AFC l.dx.','APF l.sin.','APF l.dx.','AFS l.sin.','AFS l.dx.','P1 l.sin.','P1 l.dx.','P2 l.sin.','P2 l.dx.','P3 l.sin.','P3 l.dx.','ATA l.sin.','ATA l.dx.','ATP l.sin.','ATP l.dx.','AFib l.sin.','AFib l.dx.','TTF l.sin.','TTF l.dx.','ADP l.sin.','ADP l.dx.','APM l.sin.','APM l.dx.','APL l.sin.','APL l.dx.'];
 const SEG_OPTS=['–','proximálny','stredný','distálny','celý'];
 const SEG_SEG=['proximálny','stredný','distálny','celý','odstup'];
 const SEG_ADV={'proximálny':'proximálne','stredný':'v strednej tretine','distálny':'distálne','celý':'v celom priebehu','odstup':'v odstupe'};
@@ -749,6 +749,68 @@ const PELV_VESSELS=[['AIC','v_AIC'],['AIE','v_AIE'],['AII','v_AII']];
 // tieto tepny sa dajú popísať s doložkou „v zobrazenom úseku" (predvolene nehodnotené)
 const FEM_ZOBR=[['AFC','f_AFC'],['APF','f_APF'],['AFS','f_AFS']];
 const OPT_NEH='<option value="–">– nehodnotené</option>';
+// Pedálne riečisko (BTA – below the ankle): tepny + oblúk (Kawarada) + malé vetvy + angiozóm.
+// Predvolene „nehodnotené" – vypisuje sa len to, čo lekár skutočne zhodnotil.
+const PED_VS=[['ADP','b_ADP','a. dorsalis pedis'],['APM','b_APM','a. plantaris medialis'],['APL','b_APL','a. plantaris lateralis']];
+const PED_EXTRA=[
+  ['arch','Pedálny oblúk',['kompletný','nekompletný','nezobrazený (neprítomný)']],
+  ['kaw','Kawarada',['typ 1 – ADP aj APL priechodné, oblúk kompletný','typ 2A – priechodná len ADP','typ 2B – priechodná len APL','typ 3 – ADP aj APL uzavreté']],
+  ['app','A. plantaris profunda',['priechodná','stenóza','oklúzia','nezobrazená']],
+  ['mt','Metatarzálne vetvy',['rekonštitúcia zachovaná','čiastočná rekonštitúcia','bez rekonštitúcie']],
+  ['dg','Digitálne vetvy',['rekonštitúcia zachovaná','čiastočná rekonštitúcia','bez rekonštitúcie']],
+  ['angz','Angiozóm rany',['ATA/ADP – dorzum nohy a prsty','ATP/APM – mediálna planta','ATP/APL – laterálna planta','ATP/a. calcanea med. – päta mediálne','AFib/a. calcanea lat. – päta laterálne, laterálny členok','AFib/r. perforans – anterolaterálny členok']],
+  ['angp','Perfúzia cieľovej lézie',['priama perfúzia cieľovej lézie','nepriama perfúzia (kolaterály / pedálny oblúk)','bez perfúzie angiozómu']]
+];
+function pedExtraUI(x){
+  const sel=(k,lbl,opts)=>`<div class="f" style="margin-bottom:5px"><label style="font-size:10px">${lbl}</label><select id="b_${k}_${x}" onchange="gen()" style="font-size:11.5px"><option value="">–</option>${opts.map(o=>`<option>${o}</option>`).join('')}</select></div>`;
+  let h='';
+  PED_EXTRA.forEach(([k,lbl,opts])=>{
+    h+=sel(k,lbl,opts);
+    if(k==='dg')h+=`<div class="f" style="margin-bottom:5px"><label style="font-size:10px">Výtokové cievy (outflow)</label><input type="text" id="b_out_${x}" placeholder="napr. ADP → arcus plantaris → APL" oninput="gen()" style="font-size:11.5px"></div>`;
+  });
+  return h;
+}
+function pedFields(){
+  const out=[];
+  ['_d','_s'].forEach(x=>{PED_VS.forEach(([,b])=>out.push(b+x));PED_EXTRA.forEach(([k])=>out.push('b_'+k+x));out.push('b_out'+x);});
+  return out;
+}
+// riadky správy pre jednu stranu; prázdne = nič nehodnotené
+function pedReport(x){
+  const lat=x==='d'?'l.dx.':'l.sin.';
+  const parts=[];
+  const tep=[];
+  PED_VS.forEach(([lbl,b])=>{const sid=b+'_'+x,el=document.getElementById(sid);if(!el||!el.value||el.value==='–')return;const f=vesselFinding(sid);tep.push(lbl+' – '+(f.abn?f.txt:'bez závažnej stenózy'));});
+  if(tep.length)parts.push(tep.join(', '));
+  const v=k=>g('b_'+k+'_'+x);
+  const ob=[];
+  if(v('arch'))ob.push('pedálny oblúk '+v('arch'));
+  if(v('kaw'))ob.push('Kawarada '+v('kaw'));
+  if(ob.length)parts.push(ob.join(', '));
+  if(v('app'))parts.push('a. plantaris profunda '+v('app'));
+  const mv=[];
+  if(v('mt'))mv.push('metatarzálne vetvy: '+v('mt'));
+  if(v('dg'))mv.push('digitálne vetvy: '+v('dg'));
+  if(mv.length)parts.push(mv.join('; '));
+  if(v('out').trim())parts.push('výtokové cievy: '+v('out').trim());
+  if(v('angz')||v('angp'))parts.push('angiozóm rany'+(v('angz')?' ('+v('angz')+')':'')+(v('angp')?': '+v('angp'):''));
+  if(!parts.length)return '';
+  return 'Pedálne riečisko (BTA) '+lat+': '+parts.map((t,i)=>i?t.charAt(0).toUpperCase()+t.slice(1):t).join('. ')+'.';
+}
+// GLASS inframaleolárny modifikátor (P0 – oblúk zachovaný, P1 – oblúk nekompletný/chorý, P2 – žiadna tepna cez členok)
+function pedIM(x){
+  const v=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  const adp=v('b_ADP_'+x),apl=v('b_APL_'+x),apm=v('b_APM_'+x),arch=v('b_arch_'+x),kaw=v('b_kaw_'+x);
+  const hod=s=>s&&s!=='–';
+  if(![adp,apl,apm].some(hod)&&!arch&&!kaw)return null;
+  const occl=s=>/oklúzia|hypoplastická|nezobraz/.test(s);
+  const patent=s=>hod(s)&&!occl(s);
+  if(/typ 3/.test(kaw)||(hod(adp)&&hod(apl)&&occl(adp)&&occl(apl)&&!patent(apm)))return {p:2,txt:'P2 – žiadna cieľová tepna neprechádza cez členok'};
+  if(arch==='kompletný'||/typ 1/.test(kaw))return {p:0,txt:'P0 – tepna cez členok, pedálny oblúk zachovaný'};
+  if(arch||/typ 2/.test(kaw))return {p:1,txt:'P1 – tepna cez členok, oblúk nekompletný / chorý'};
+  if(patent(adp)||patent(apl)||patent(apm))return {p:null,txt:'P0/P1 – doplňte pedálny oblúk'};
+  return null;
+}
 const FEM_GROUPS=[{st:'Femorálne riečisko',vs:[['AFC','f_AFC'],['APF','f_APF'],['AFS','f_AFS']]},{st:'Popliteálne riečisko',vs:[['P1','p_P1'],['P2','p_P2'],['P3','p_P3']]},{st:'Predkolenie',vs:[['ATA','d_ATA'],['ATP','d_ATP'],['AFib','d_AFib'],['TTF','d_TTF']]}];
 let cnts={}, zaverManual=false, locCnt={};
 
@@ -1009,6 +1071,35 @@ function buildFemDSA(){
       }
     });
   });
+  // Pedálne riečisko (BTA) – predvolene nehodnotené
+  const ph=document.createElement('div');ph.className='st';ph.style.marginTop='12px';
+  ph.innerHTML='Pedálne riečisko (BTA – pod členkom) <span style="font-weight:400;color:#9ca3af;text-transform:none;letter-spacing:0">nehodnotené = nevypisuje sa</span>';
+  c.appendChild(ph);
+  const soP=OPT_NEH+SO;
+  PED_VS.forEach(([lbl,base,full])=>{
+    if(lat==='bilat'){
+      const row=document.createElement('div');row.className='bilat-row';
+      row.innerHTML=`<div class="bilat-lbl" title="${full}">${lbl}</div>
+        <div><div class="bilat-hdr">l.dx.</div><select id="${base}_d" onchange="cC('${base}_d');gen()">${soP}</select><input type="text" id="${base}_d_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(base+'_d')}</div>
+        <div><div class="bilat-hdr">l.sin.</div><select id="${base}_s" onchange="cC('${base}_s');gen()">${soP}</select><input type="text" id="${base}_s_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(base+'_s')}</div>`;
+      c.appendChild(row);
+    } else {
+      const sid=lat==='sin'?base+'_s':base+'_d';
+      const row=document.createElement('div');
+      row.style.cssText='display:grid;grid-template-columns:58px 1fr;gap:6px;margin-bottom:8px;align-items:start';
+      row.innerHTML=`<div class="bilat-lbl" title="${full}">${lbl}</div><div><select id="${sid}" onchange="cC('${sid}');gen()">${soP}</select><input type="text" id="${sid}_c" placeholder="Popis..." oninput="gen()" style="display:none;margin-top:3px;font-size:12px">${segUI(sid)}</div>`;
+      c.appendChild(row);
+    }
+  });
+  const ex=document.createElement('div');
+  if(lat==='bilat'){
+    ex.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px';
+    ex.innerHTML=`<div><div class="bilat-hdr">l.dx.</div>${pedExtraUI('d')}</div><div><div class="bilat-hdr">l.sin.</div>${pedExtraUI('s')}</div>`;
+  } else {
+    ex.style.cssText='margin-top:6px';
+    ex.innerHTML=pedExtraUI(lat==='sin'?'s':'d');
+  }
+  c.appendChild(ex);
 }
 
 // femorálne polia sa pri prepnutí riečiska prekresľujú (panva ↔ FP) – hodnoty zachovaj
@@ -1373,7 +1464,7 @@ function collectFullData(){
   const dsaFields=['v_Ao','v_AIC_s','v_AIC_d','v_AIE_s','v_AIE_d','v_AII_s','v_AII_d',
     'f_AFC_s','f_AFC_d','f_APF_s','f_APF_d','f_AFS_s','f_AFS_d',
     'p_P1_s','p_P1_d','p_P2_s','p_P2_d','p_P3_s','p_P3_d',
-    'd_ATA_s','d_ATA_d','d_ATP_s','d_ATP_d','d_AFib_s','d_AFib_d','d_TTF_s','d_TTF_d'];
+    'd_ATA_s','d_ATA_d','d_ATP_s','d_ATP_d','d_AFib_s','d_AFib_d','d_TTF_s','d_TTF_d'].concat(pedFields());
   const dsa={};
   dsaFields.forEach(f=>{
     const el=document.getElementById(f);
@@ -1826,6 +1917,8 @@ function gen(){
     }
     if(!fdx.length&&!fsin.length)L.push('Tepny femoropopliteálneho riečiska a predkolenia '+latL+' bez závažnej stenózy.');
     else if(fnorm>0)L.push('Ostatné tepny femoropopliteálneho riečiska bez závažnej stenózy.');
+    if(lat!=='sin'){const pd=pedReport('d');if(pd)L.push(pd);}
+    if(lat!=='dx'){const ps=pedReport('s');if(ps)L.push(ps);}
   }
 
   L.push('INTERVENCIA:');
@@ -1916,7 +2009,7 @@ function vesselSuffix(tp){
   const t=tp.split(' ')[0];
   if(['AIC','AIE','AII'].includes(t))return'i';
   if(['AFC','APF','AFS','P1','P2','P3'].includes(t))return'n';
-  if(['ATA','ATP','AFib','TTF'].includes(t))return'm';
+  if(['ATA','ATP','AFib','TTF','ADP','APM','APL'].includes(t))return'm';
   return null;
 }
 function vesselSuffixAtek(tp){
@@ -2346,7 +2439,7 @@ function applyDSAfromRecord(record){
     // pri odvodzovaní laterality zohľadni aj tepny, kde je patológia iba v segmente
     const allKeys=Object.keys(dsa).filter(k=>k!=='_segs').concat(segSids);
     // Fem lateralita — stĺpec fem_lat v DB neexistuje, odvodíme z uložených DSA kľúčov
-    const femKeys=allKeys.filter(k=>/^[fpd]_/.test(k));
+    const femKeys=allKeys.filter(k=>/^[fpdb]_/.test(k));
     if(femKeys.length){
       const hasS=femKeys.some(k=>/_s(_c)?$/.test(k)),hasD=femKeys.some(k=>/_d(_c)?$/.test(k));
       sv('fem_lat',hasS&&hasD?'bilat':hasS?'sin':'dx');
@@ -2593,7 +2686,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(d.diagnoza){const el=document.getElementById('diag');if(el&&!el.value)el.value=d.diagnoza;}
     prefillSelect('operator',d.operator);
   });
-  updateTerritory();gen();
+  updateVsel();updateTerritory();gen();
   zpCheck();
   window._dirty=false;
 });
@@ -2668,7 +2761,8 @@ function stagingUpdate(){
   const fI=g('stg_fi')===''?null:parseInt(g('stg_fi'));
   const I=g('stg_tp')?Staging.wifiIzTP(g('stg_tp')):Staging.wifiIzABI(g('abi_pred'));
   const wf=Staging.wifi(W,I,fI);
-  _stgAuto={tasc_ai:ai.tasc,tasc_fp:fp.tasc,glass_fp:gfp.grade,glass_ip:gip.grade,glass_stadium:stad,
+  const im=typeof pedIM==='function'?pedIM(strana):null;
+  _stgAuto={tasc_ai:ai.tasc,tasc_fp:fp.tasc,glass_fp:gfp.grade,glass_ip:gip.grade,glass_stadium:stad,glass_im:im?im.p:null,
             wifi_w:W,wifi_i:I,wifi_fi:fI,wifi_stadium:wf.stadium,wifi_riziko:wf.riziko};
   const oT=g('stg_o_tasc'),oG=g('stg_o_glass'),oW=g('stg_o_wifi');
   const b=(t,c)=>'<span style="display:inline-block;background:'+c+';border-radius:6px;padding:1px 8px;font-weight:800;margin-right:6px">'+t+'</span>';
@@ -2678,6 +2772,7 @@ function stagingUpdate(){
   const glassTxt=stad?('št. '+stad+' (FP'+gfp.grade+'/IP'+gip.grade+')')
     :(gip.grade==null&&gfp.grade>0?('FP'+gfp.grade+' / IP ? – zvoľte TAP'):(gfp.grade===0&&gip.grade===0?'bez signifikantnej choroby':'–'));
   html+=b('GLASS: '+(oG?oG+' (korekcia)':glassTxt),'#dbeafe');
+  if(im)html+=b('GLASS IM: '+im.txt,'#e0f2fe');
   html+=b('WIfI: '+(oW?oW+' (korekcia)':(wf.stadium?('št. '+wf.stadium+' ('+W+'-'+I+'-'+fI+', riziko '+wf.riziko+')'):'–')),'#dcfce7');
   const pozn=[].concat(ai.pozn||[],fp.pozn||[],gfp.pozn||[],gip.pozn||[]);
   if(model.chybajuceDlzky.length)pozn.push('bez dĺžky: '+model.chybajuceDlzky.join(', '));
@@ -2692,7 +2787,7 @@ function collectStagingJSON(){
   const a=_stgAuto||{};
   const o={tasc:g('stg_o_tasc')||null,glass:g('stg_o_glass')||null,wifi:g('stg_o_wifi')||null};
   const vst={tap:g('stg_tap')||null,w:g('stg_w')||null,fi:g('stg_fi')||null,tp:g('stg_tp')||null};
-  const maAuto=a.tasc_ai||a.tasc_fp||a.glass_stadium||a.wifi_stadium!=null;
+  const maAuto=a.tasc_ai||a.tasc_fp||a.glass_stadium||a.glass_im!=null||a.wifi_stadium!=null;
   const maVstup=vst.tap||vst.w||vst.fi||vst.tp||o.tasc||o.glass||o.wifi;
   if(!maAuto&&!maVstup)return null;
   return JSON.stringify({auto:a,vstupy:vst,korekcie:o});
