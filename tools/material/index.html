@@ -85,23 +85,20 @@ async function readCache(){try{const db=await idb();return await new Promise((re
 async function writeCache(rows){try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put({ts:Date.now(),rows},CACHE_KEY);t.oncomplete=res;t.onerror=()=>rej(t.error);});}catch(e){}}
 async function clearCache(){try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').delete(CACHE_KEY);t.oncomplete=res;t.onerror=()=>rej(t.error);});}catch(e){}}
 
-// sťahovanie po 1000 (limit PostgREST) cez offset/limit – bez hlavičiek Range/Content-Range,
-// ktoré Safari a CORS nemusia prepustiť; strany idú v skupinách po 8 naraz
+// sťahovanie po 1000 (limit PostgREST) podľa ID (keyset): každý dopyt siahne len na svojich 1000
+// riadkov – stránkovanie cez offset nútilo server prejsť aj všetky preskočené riadky (aj s RLS)
+// a pri 13 000 položkách končilo na „statement timeout"
 async function fetchAll(){
-  const step=1000,group=8;
-  const page=async(from)=>{
-    const r=await fetch(`${SB_URL}/rest/v1/${T}?select=${COLS}&order=id.asc&offset=${from}&limit=${step}`,{headers:H()});
-    if(r.status===416)return [];
+  const step=1000,out=[];
+  let last=0;
+  for(let i=0;i<200;i++){
+    const r=await fetch(`${SB_URL}/rest/v1/${T}?select=${COLS},id&order=id.asc&id=gt.${last}&limit=${step}`,{headers:H()});
     if(!r.ok){let t='';try{t=(await r.text()).slice(0,120);}catch(e){}throw new Error('HTTP '+r.status+(t?' '+t:''));}
     const a=await r.json();
-    if(from===0)console.log('material_katalog:',r.status,a.length);
-    return a;
-  };
-  const out=[];
-  for(let from=0;from<100000;from+=step*group){
-    const pages=await Promise.all(Array.from({length:group},(_,i)=>page(from+i*step)));
-    pages.forEach(a=>out.push(...a));
-    if(pages[pages.length-1].length<step)break;
+    if(i===0)console.log('material_katalog:',r.status,a.length);
+    if(!a.length)break;
+    out.push(...a);last=a[a.length-1].id;
+    if(a.length<step)break;
   }
   return out;
 }

@@ -31,9 +31,11 @@ ALTER TABLE material_katalog ADD COLUMN IF NOT EXISTS cena_bez_dph NUMERIC;
 CREATE INDEX IF NOT EXISTS material_katalog_ref_idx ON material_katalog (ref);
 CREATE INDEX IF NOT EXISTS material_katalog_nis_idx ON material_katalog (nis_kod);
 
--- RLS: čítajú všetci povolení (aj TV), meniť (import) môže len administrátor
+-- RLS: čítajú všetci povolení (aj TV), meniť (import) môže len administrátor.
+-- (SELECT fn()) namiesto fn(): Postgres vyhodnotí funkciu RAZ na dopyt, nie pre každý
+-- z 13 000 riadkov – bez toho čítanie katalógu končilo na „statement timeout".
 ALTER TABLE material_katalog ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "pov sel material_katalog" ON material_katalog;
 DROP POLICY IF EXISTS "adm all material_katalog" ON material_katalog;
-CREATE POLICY "pov sel material_katalog" ON material_katalog FOR SELECT TO authenticated USING (je_povoleny());
-CREATE POLICY "adm all material_katalog" ON material_katalog FOR ALL TO authenticated USING (je_admin()) WITH CHECK (je_admin());
+CREATE POLICY "pov sel material_katalog" ON material_katalog FOR SELECT TO authenticated USING ((SELECT je_povoleny()));
+CREATE POLICY "adm all material_katalog" ON material_katalog FOR ALL TO authenticated USING ((SELECT je_admin())) WITH CHECK ((SELECT je_admin()));
