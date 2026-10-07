@@ -85,14 +85,23 @@ async function readCache(){try{const db=await idb();return await new Promise((re
 async function writeCache(rows){try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put({ts:Date.now(),rows},CACHE_KEY);t.oncomplete=res;t.onerror=()=>rej(t.error);});}catch(e){}}
 async function clearCache(){try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').delete(CACHE_KEY);t.oncomplete=res;t.onerror=()=>rej(t.error);});}catch(e){}}
 
+// sťahovanie po 1000 (limit PostgREST); prvá strana vráti celkový počet, ostatné strany sa stiahnu naraz
 async function fetchAll(){
-  const out=[];const step=1000;
-  for(let from=0;from<50000;from+=step){
-    const r=await fetch(`${SB_URL}/rest/v1/${T}?select=${COLS}&order=id.asc`,{headers:{...H(),'Range-Unit':'items','Range':`${from}-${from+step-1}`}});
+  const step=1000;
+  const page=async(from,count)=>{
+    const h={...H(),'Range-Unit':'items','Range':`${from}-${from+step-1}`};
+    if(count)h['Prefer']='count=exact';
+    const r=await fetch(`${SB_URL}/rest/v1/${T}?select=${COLS}&order=id.asc`,{headers:h});
     if(!r.ok)throw new Error('HTTP '+r.status);
-    const a=await r.json();if(from===0)console.log('material_katalog:',r.status,r.headers.get('content-range'),a.length);
-    out.push(...a);if(a.length<step)break;
-  }
+    const a=await r.json();
+    if(from===0)console.log('material_katalog:',r.status,r.headers.get('content-range'),a.length);
+    return {rows:a,total:parseInt((r.headers.get('content-range')||'').split('/')[1])||null};
+  };
+  const first=await page(0,true);
+  const total=first.total!=null?first.total:(first.rows.length<step?first.rows.length:50000);
+  const starts=[];for(let from=step;from<total;from+=step)starts.push(from);
+  const rest=await Promise.all(starts.map(f=>page(f,false)));
+  const out=first.rows.slice();rest.forEach(p=>out.push(...p.rows));
   return out;
 }
 
