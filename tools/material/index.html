@@ -90,7 +90,8 @@ async function fetchAll(){
   for(let from=0;from<50000;from+=step){
     const r=await fetch(`${SB_URL}/rest/v1/${T}?select=${COLS}&order=id.asc`,{headers:{...H(),'Range-Unit':'items','Range':`${from}-${from+step-1}`}});
     if(!r.ok)throw new Error('HTTP '+r.status);
-    const a=await r.json();out.push(...a);if(a.length<step)break;
+    const a=await r.json();if(from===0)console.log('material_katalog:',r.status,r.headers.get('content-range'),a.length);
+    out.push(...a);if(a.length<step)break;
   }
   return out;
 }
@@ -180,22 +181,28 @@ document.getElementById('imp').addEventListener('click',async()=>{
   if(!Array.isArray(data)||!data.length){msg.textContent='Súbor neobsahuje položky.';return;}
   if(!confirm(`Nahradiť celý katalóg ${data.length} položkami?`))return;
   // najprv nahrať novú verziu, až potom zmazať starú – pri výpadku uprostred
-  // importu ostane v DB stará (kompletná) verzia, nie prázdny alebo polovičný katalóg
+  // importu ostane v DB stará (kompletná) verzia, nie prázdny alebo polovičný katalóg.
+  // Hranica starej/novej verzie je číselné ID (bez textových filtrov, ktoré by server mohol zle rozparsovať).
   const verzia=new Date().toISOString().slice(0,16).replace('T',' ');
   const rows=data.map(it=>mapItem(it,verzia));
   try{
+    const r0=await fetch(`${SB_URL}/rest/v1/${T}?select=id&order=id.desc&limit=1`,{headers:H()});
+    if(!r0.ok)throw new Error('čítanie HTTP '+r0.status);
+    const a0=await r0.json();const oldMax=a0.length?Number(a0[0].id):0;
     for(let i=0;i<rows.length;i+=500){
       msg.textContent=`Nahrávam ${Math.min(i+500,rows.length)} / ${rows.length}…`;
       const r=await fetch(`${SB_URL}/rest/v1/${T}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(rows.slice(i,i+500))});
       if(!r.ok){
         const t=(await r.text()).slice(0,200);
-        try{await fetch(`${SB_URL}/rest/v1/${T}?verzia=eq.${encodeURIComponent(verzia)}`,{method:'DELETE',headers:H()});}catch(e2){}
+        try{await fetch(`${SB_URL}/rest/v1/${T}?id=gt.${oldMax}`,{method:'DELETE',headers:H()});}catch(e2){}
         throw new Error('zápis HTTP '+r.status+' '+t+' – stará verzia ostala nedotknutá');
       }
     }
-    msg.textContent='Odstraňujem starú verziu…';
-    const d=await fetch(`${SB_URL}/rest/v1/${T}?or=(verzia.neq.${encodeURIComponent(verzia)},verzia.is.null)`,{method:'DELETE',headers:H()});
-    if(!d.ok)throw new Error('mazanie starej verzie HTTP '+d.status);
+    if(oldMax>0){
+      msg.textContent='Odstraňujem starú verziu…';
+      const d=await fetch(`${SB_URL}/rest/v1/${T}?id=lte.${oldMax}`,{method:'DELETE',headers:H()});
+      if(!d.ok)throw new Error('mazanie starej verzie HTTP '+d.status);
+    }
     msg.textContent=`✓ Nahraných ${rows.length} položiek (verzia ${verzia}).`;
     await clearCache();load();
   }catch(e){msg.textContent='Chyba: '+e.message;}
