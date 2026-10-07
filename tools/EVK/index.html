@@ -144,6 +144,9 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="f"><label>Rodné číslo</label><input type="text" id="rodne_cislo" autocomplete="off" inputmode="numeric" placeholder="bez lomky alebo s lomkou" oninput="gen()">
     <div style="font-size:10px;color:#6b7280;margin-top:2px">len na interné počítanie unikátnych pacientov</div>
   </div>
+  <div class="f"><label>Telefón pacienta</label><input type="text" id="telefon" autocomplete="off" inputmode="tel" placeholder="0905 123 456">
+    <div style="font-size:10px;color:#6b7280;margin-top:2px">len do databázy – do nálezu sa nepíše</div>
+  </div>
   <div class="f"><label>Pacient ID <span style="font-weight:400;color:#9ca3af">(pridelí sa sám pri uložení)</span></label><input type="text" id="pacient_cislo" inputmode="numeric" autocomplete="off" placeholder="auto"></div>
   <div class="f"><label>ABI pred výkonom</label><input type="number" id="abi_pred" step="0.01" min="0" max="2" placeholder="0,55" oninput="gen()"></div>
 </div>
@@ -1630,6 +1633,7 @@ function collectFullData(){
     vek:g('vek')?parseInt(g('vek')):null,
     pohlavie:g('pohl')==='M'?'Muž':'Žena',
     rodne_cislo:g('rodne_cislo').trim()||null,
+    telefon:g('telefon').trim()||null,
     egfr:egfrNum,
     abi_pred:g('abi_pred')||null,
     rutherford:g('ruth'),
@@ -2306,7 +2310,7 @@ function loadEditRecord(){
     sv('operator',record.operator);
     sv('vek',record.vek);
     if(record.pohlavie){const el=document.getElementById('pohl');if(el)el.value=record.pohlavie==='Muž'?'M':'Z';}
-    sv('rodne_cislo',record.rodne_cislo);
+    sv('rodne_cislo',record.rodne_cislo);sv('telefon',record.telefon);
     sv('abi_pred',record.abi_pred);
     sv('ruth',record.rutherford);
     sv('diag',record.diag||record.diagnoza);

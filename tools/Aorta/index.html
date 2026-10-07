@@ -170,7 +170,8 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
     <div class="m-grid">
       <div class="fld"><label>Kategória</label><select id="af_kategoria" onchange="toggleKategoria()"><option value="aorta">🫀 Aorta</option><option value="ine">📋 Iné</option></select></div>
       <div class="fld"><label>Rodné číslo * <span style="font-weight:400;color:#9ca3af">(povinné)</span></label><input id="af_rodne_cislo" maxlength="11" placeholder="511224/1234" autocomplete="off"><div id="rc_warn" style="font-size:11.5px;color:#b45309;margin-top:3px"></div></div>
-      <div class="fld" style="grid-column:span 2"><label>Meno / iniciály</label><input id="af_inicialy" autocomplete="off" placeholder="napr. J.K. alebo Horváth Ladislav"></div>
+      <div class="fld"><label>Meno / iniciály</label><input id="af_inicialy" autocomplete="off" placeholder="napr. J.K. alebo Horváth Ladislav"></div>
+      <div class="fld"><label>Telefón pacienta</label><input id="af_telefon" inputmode="tel" autocomplete="off" placeholder="0905 123 456"></div>
       <div class="fld"><label>Ročník narodenia</label><input id="af_rocnik" type="number" min="1900" max="2030" placeholder="doplní sa z r.č."></div>
       <div class="fld"><label>Pohlavie</label><select id="af_pohlavie"><option value="M">Muž</option><option value="Ž">Žena</option></select></div>
       <div class="fld"><label>Žiadateľ / oddelenie</label><input id="af_ziadatel" placeholder="napr. interné odd., MUDr. …"></div>
@@ -467,7 +468,7 @@ async function loadItems(){
 
 function matchesSearch(it,q){
   if(!q)return true;
-  const hay=[it.inicialy,it.rocnik,it.rodne_cislo,it.diagnoza,it.ziadatel,it.material,it.poznamka,it.epikriza].join(' ').toLowerCase();
+  const hay=[it.inicialy,it.rocnik,it.rodne_cislo,it.telefon,it.diagnoza,it.ziadatel,it.material,it.poznamka,it.epikriza].join(' ').toLowerCase();
   return hay.includes(q);
 }
 
@@ -670,13 +671,14 @@ function cardEl(it){
   const nPril=PRILOHY.filter(p=>p.indikacia_id===it.id).length;
   const prilBadge=nPril?'<span class="badge" style="background:#e0e7ff;color:#3730a3">📎 '+nPril+'</span>':'';
   const title=it.inicialy?escHtml(it.inicialy)+(it.rocnik?' '+it.rocnik:''):escHtml(it.rodne_cislo||'?');
+  const telHtml=it.telefon?'<div class="card-line">📞 <a href="tel:'+escHtml(String(it.telefon).replace(/[^+\d]/g,''))+'" draggable="false" onclick="event.stopPropagation()" style="color:#1e40af;text-decoration:none">'+escHtml(it.telefon)+'</a></div>':'';
   if(it.status==='konzervativa'||it.status==='chirurgia'){
     // zbalená karta: pacient odovzdaný na konzervatívu/chirurgiu – stačí meno + r.č.
     // (detaily po 📂 Otvoriť); po 90 dňoch v tomto stave sa karta archivuje sama
     const zost=dIn!==null?Math.max(0,90-dIn):null;
     div.innerHTML=`
     <div class="card-id">${title}${it.pohlavie?' ('+it.pohlavie+')':''} ${esvsBadge}${prilBadge}</div>
-    ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}
+    ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}${telHtml}
     <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stave':''}${zost!==null?' • 🗄 auto-archív o <b>'+zost+' d</b>':''}</div>
     <div class="card-actions">
       <button class="btn-edit" onclick="openModal('${it.id}')">📂 Otvoriť</button>
@@ -687,7 +689,7 @@ function cardEl(it){
   }
   div.innerHTML=`
     <div class="card-id">${title}${it.pohlavie?' ('+it.pohlavie+')':''} ${urgBadge}${esvsBadge}${prilBadge}${watchBadge}</div>
-    ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}
+    ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}${telHtml}
     ${dg?'<div class="card-line">'+escHtml(dg)+'</div>':''}
     ${it.ziadatel?'<div class="card-line">👤 '+escHtml(it.ziadatel)+'</div>':''}
     ${(it.indikoval1||it.indikoval2)?'<div class="card-line">⚕️ indikoval: '+escHtml([it.indikoval1,it.indikoval2].filter(Boolean).join(' + '))+'</div>':''}
@@ -727,7 +729,7 @@ function renderArchive(q){
 }
 
 // ── Modal detail ─────────────────────────────────────────────
-const FIELDS=['kategoria','rodne_cislo','inicialy','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','epikriza','diagnoza','symptomy',
+const FIELDS=['kategoria','rodne_cislo','inicialy','telefon','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','epikriza','diagnoza','symptomy',
   'priemer','rast','datum_ct','krcok_dlzka','krcok_priemer','krcok_angulacia','iliaky',
   'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','vykon_typ','vykon_cieva','indikacia_poznamka','material','material_objednany','material_dodany','termin','zaver_seminara','poznamka','endoleak_typ','dalsia_kontrola'];
 // mapovanie form id -> DB stĺpec
