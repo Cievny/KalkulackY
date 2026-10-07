@@ -85,23 +85,24 @@ async function readCache(){try{const db=await idb();return await new Promise((re
 async function writeCache(rows){try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put({ts:Date.now(),rows},CACHE_KEY);t.oncomplete=res;t.onerror=()=>rej(t.error);});}catch(e){}}
 async function clearCache(){try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').delete(CACHE_KEY);t.oncomplete=res;t.onerror=()=>rej(t.error);});}catch(e){}}
 
-// sťahovanie po 1000 (limit PostgREST); prvá strana vráti celkový počet, ostatné strany sa stiahnu naraz
+// sťahovanie po 1000 (limit PostgREST) cez offset/limit – bez hlavičiek Range/Content-Range,
+// ktoré Safari a CORS nemusia prepustiť; strany idú v skupinách po 8 naraz
 async function fetchAll(){
-  const step=1000;
-  const page=async(from,count)=>{
-    const h={...H(),'Range-Unit':'items','Range':`${from}-${from+step-1}`};
-    if(count)h['Prefer']='count=exact';
-    const r=await fetch(`${SB_URL}/rest/v1/${T}?select=${COLS}&order=id.asc`,{headers:h});
-    if(!r.ok)throw new Error('HTTP '+r.status);
+  const step=1000,group=8;
+  const page=async(from)=>{
+    const r=await fetch(`${SB_URL}/rest/v1/${T}?select=${COLS}&order=id.asc&offset=${from}&limit=${step}`,{headers:H()});
+    if(r.status===416)return [];
+    if(!r.ok){let t='';try{t=(await r.text()).slice(0,120);}catch(e){}throw new Error('HTTP '+r.status+(t?' '+t:''));}
     const a=await r.json();
-    if(from===0)console.log('material_katalog:',r.status,r.headers.get('content-range'),a.length);
-    return {rows:a,total:parseInt((r.headers.get('content-range')||'').split('/')[1])||null};
+    if(from===0)console.log('material_katalog:',r.status,a.length);
+    return a;
   };
-  const first=await page(0,true);
-  const total=first.total!=null?first.total:(first.rows.length<step?first.rows.length:50000);
-  const starts=[];for(let from=step;from<total;from+=step)starts.push(from);
-  const rest=await Promise.all(starts.map(f=>page(f,false)));
-  const out=first.rows.slice();rest.forEach(p=>out.push(...p.rows));
+  const out=[];
+  for(let from=0;from<100000;from+=step*group){
+    const pages=await Promise.all(Array.from({length:group},(_,i)=>page(from+i*step)));
+    pages.forEach(a=>out.push(...a));
+    if(pages[pages.length-1].length<step)break;
+  }
   return out;
 }
 
@@ -116,7 +117,7 @@ async function load(){
     st.className='status';st.textContent=rows.length?`${ROWS.length} položiek${v}`:'Katalóg je prázdny – administrátor ho musí nahrať.';
   }catch(e){
     if(c){st.className='status off';st.textContent=`Offline – zobrazujem uloženú verziu z ${new Date(c.ts).toLocaleString('sk-SK')} (${ROWS.length} položiek).`;}
-    else{st.className='status off';st.textContent='Katalóg sa nepodarilo načítať a v zariadení nie je uložená kópia.';}
+    else{st.className='status off';st.textContent='Katalóg sa nepodarilo načítať a v zariadení nie je uložená kópia ('+(e&&e.message||e)+').';}
   }
 }
 
