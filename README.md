@@ -7,6 +7,7 @@ Backend je **Supabase** (PostgREST REST API, Auth cez e‑mail + heslo, Storage 
 - **📅 Program** (`/tools/Program/`) – denný program výkonov, stavy pacienta + stopky trvania, denný/týždňový/mesačný pohľad, TV režim (`?tv=1`).
 - **📥 Požiadavky** (`/tools/Aorta/`) – pipeline indikácií (Aorta + Iné), ESVS 2024 upozornenia, dispenzarizácia, prílohy.
 - **🩻 Objednávky CEUS/CT** (`/tools/objednavky/`) – odblokované dni (kapacita alebo časové termíny po nastaviteľnom kroku), objednávanie pacientov na termín, viac termínov na pacienta. Otvárať dni môžu len administrátori.
+- **📦 Katalóg materiálu** (`/tools/material/`) – vyhľadávanie materiálu podľa názvu, objednávkového čísla (REF), kódu NIS a dodávateľa; posledná verzia sa drží v zariadení a funguje aj offline. Dáta sú v tabuľke `material_katalog` (SQL `material_katalog.sql`), nahráva ich administrátor zo súboru `katalog_materialu.json` priamo na stránke – do repozitára sa nedávajú.
 - **📝 Popisy** – `/tools/EVK/`, `/tools/CAS-generator/`, `/tools/PEVAR/`, `/tools/zaznamy/` (generátory nálezov + NIS‑safe kopírovanie).
 - **📢 Oznamy** (`/tools/oznamy/`), **💡 Nápady** (`/tools/ideas/`), **📊 Štatistiky** (`/tools/analytics/`), **💾 Záloha** (`/tools/zaloha/`).
 - **🔑 Prístupy** (`/tools/pristupy/`) – správa zoznamu povolených e‑mailov (allowlist); len administrátori.
@@ -26,6 +27,7 @@ Skripty sú idempotentné, ale **poradie je dôležité**:
 1. `supabase_setup.sql` – hlavný skript (SK tabuľky, stĺpce, buckety, základné RLS politiky).
 2. `cz/supabase_setup.sql` – české `cz_*` tabuľky a ich RLS.
 3. **`spustit_na_konci.sql`** – doplní stĺpce objednávok, zámok proti dvojitému objednaniu a **allowlist + roly (`je_povoleny`/`je_tv`/`je_admin`)**. **Bez tohto kroku ostane DB v režime „ktokoľvek prihlásený" – nezabudnite ho spustiť ako posledný.**
+4. `material_katalog.sql` – tabuľka katalógu materiálu (potrebuje funkcie z kroku 3).
 
 Skripty možno bezpečne spustiť opakovane (`IF NOT EXISTS` / `IF EXISTS`). Overené na Postgres 16.
 

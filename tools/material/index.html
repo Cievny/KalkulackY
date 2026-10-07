@@ -1,0 +1,206 @@
+<!doctype html><html lang="sk"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Katalóg materiálu</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;background:#f0f2f5;color:#1a1a2e}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:6px 0 2px}
+.sub{font-size:12.5px;color:#6b7280;margin-bottom:14px}
+.search{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.search input[type=search]{flex:1;min-width:240px;padding:12px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:16px;font-family:inherit}
+.search select{padding:10px;border:1.5px solid #cbd5e1;border-radius:10px;font-size:14px;background:#fff;max-width:260px}
+.opts{display:flex;gap:14px;align-items:center;font-size:13px;color:#374151;margin-bottom:10px;flex-wrap:wrap}
+.status{font-size:12px;color:#6b7280;margin-bottom:10px;min-height:16px}
+.status.off{color:#b45309;font-weight:600}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.card .t{font-size:15px;font-weight:700;line-height:1.3}
+.card .dod{display:inline-block;margin-top:6px;font-size:13px;font-weight:700;color:#1e40af;background:#eff6ff;border-radius:6px;padding:2px 8px}
+.card .dod.unk{color:#92400e;background:#fef3c7}
+.row{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:13px;align-items:center}
+.lbl{color:#6b7280;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;margin-right:4px}
+.code{font-family:ui-monospace,Menlo,monospace;font-size:14px;font-weight:700;background:#f1f5f9;border-radius:6px;padding:2px 6px}
+.cp{font-size:11px;padding:2px 7px;border:1px solid #cbd5e1;background:#fff;border-radius:6px;cursor:pointer;margin-left:4px}
+.meta{font-size:12px;color:#64748b;margin-top:6px}
+.b{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:2px 8px}
+.b.ks{background:#dbeafe;color:#1e3a8a}.b.vs{background:#dcfce7;color:#166534}.b.no{background:#f1f5f9;color:#64748b}
+.empty{color:#94a3b8;font-size:14px;padding:20px 0;text-align:center}
+.adm{background:#fff;border:1px dashed #cbd5e1;border-radius:12px;padding:12px 14px;margin-top:18px;font-size:13px;display:none}
+.adm button{padding:7px 14px;border:none;border-radius:8px;background:#1e40af;color:#fff;font-weight:700;cursor:pointer}
+.more{text-align:center;font-size:12.5px;color:#6b7280;padding:8px}
+</style>
+</head>
+<body>
+<script src="/tools/auth.js"></script>
+<script>checkAuth();</script>
+<div class="wrap">
+  <h1>📦 Katalóg materiálu</h1>
+  <div class="sub">Hľadajte podľa názvu, objednávkového čísla (REF), kódu NIS alebo dodávateľa. Funguje aj bez internetu z poslednej načítanej verzie.</div>
+  <div class="search">
+    <input type="search" id="q" placeholder="napr. sterling 5x20, eluvia, H749390315, rotarex…" autocomplete="off" autofocus>
+    <select id="fdod"><option value="">Všetci dodávatelia</option></select>
+  </div>
+  <div class="opts">
+    <label><input type="checkbox" id="fused" checked> len materiál, ktorý používame</label>
+  </div>
+  <div class="status" id="status">Načítavam katalóg…</div>
+  <div id="out"></div>
+  <div class="adm" id="adm">
+    <b>Administrácia:</b> nahrať novú verziu katalógu (súbor <code>katalog_materialu.json</code>) – nahradí celý obsah.
+    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="file" id="file" accept=".json,application/json">
+      <button id="imp">Nahrať katalóg</button>
+      <span id="impmsg"></span>
+    </div>
+  </div>
+</div>
+<script>
+const SB_URL='https://ncqtiicfqhaturjlfxcj.supabase.co';
+const SB_ANON='sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k';
+const H=()=>({'apikey':SB_ANON,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
+const T='material_katalog';
+const CACHE_KEY='cievny_material_katalog_v1';
+const COLS='dodavatel,vyrobca,rada,nazov,ref,order_no,nis_kod,nis_nazov,cena,cena_bez_dph,vydaj_12m,rezim,priemer,dlzka,shaft,hladanie,verzia';
+const ADMINS=['vincze.lukas@gmail.com','oira@cievny.sk'];
+let ADMIN_ME=ADMINS.includes((window.sbUserEmail?sbUserEmail():'').toLowerCase());
+let ROWS=[];
+
+function esc(t){return (t==null?'':''+t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function norm(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();}
+function compact(s){return norm(s).replace(/[^a-z0-9]/g,'');}
+function eur(n){return n==null||n===''?'':Number(n).toLocaleString('sk-SK',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
+
+async function loadAdmin(){
+  const me=(window.sbUserEmail?sbUserEmail():'').toLowerCase();if(!me)return;
+  try{const r=await fetch(`${SB_URL}/rest/v1/povoleni_pouzivatelia?email=eq.${encodeURIComponent(me)}&select=admin`,{headers:H()});
+    if(r.ok){const a=await r.json();if(a.length&&typeof a[0].admin==='boolean')ADMIN_ME=a[0].admin;}}catch(e){}
+  document.getElementById('adm').style.display=ADMIN_ME?'block':'none';
+}
+
+// offline kópia: IndexedDB (localStorage má limit ~5 MB, 13 000 položiek sa doň nezmestí)
+function idb(){return new Promise((res,rej)=>{if(!window.indexedDB)return rej(new Error('bez IndexedDB'));const o=indexedDB.open('cievny_material',1);o.onupgradeneeded=()=>o.result.createObjectStore('kv');o.onsuccess=()=>res(o.result);o.onerror=()=>rej(o.error);});}
+async function readCache(){try{const db=await idb();return await new Promise((res,rej)=>{const r=db.transaction('kv').objectStore('kv').get(CACHE_KEY);r.onsuccess=()=>res(r.result&&Array.isArray(r.result.rows)?r.result:null);r.onerror=()=>rej(r.error);});}catch(e){return null;}}
+async function writeCache(rows){try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').put({ts:Date.now(),rows},CACHE_KEY);t.oncomplete=res;t.onerror=()=>rej(t.error);});}catch(e){}}
+async function clearCache(){try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction('kv','readwrite');t.objectStore('kv').delete(CACHE_KEY);t.oncomplete=res;t.onerror=()=>rej(t.error);});}catch(e){}}
+
+async function fetchAll(){
+  const out=[];const step=1000;
+  for(let from=0;from<50000;from+=step){
+    const r=await fetch(`${SB_URL}/rest/v1/${T}?select=${COLS}&order=id.asc`,{headers:{...H(),'Range-Unit':'items','Range':`${from}-${from+step-1}`}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const a=await r.json();out.push(...a);if(a.length<step)break;
+  }
+  return out;
+}
+
+async function load(){
+  const st=document.getElementById('status');
+  const c=await readCache();
+  if(c){ROWS=c.rows;afterLoad();st.textContent=`Katalóg z pamäte zariadenia (${ROWS.length} položiek) – overujem aktuálnu verziu…`;}
+  try{
+    const rows=await fetchAll();
+    if(rows.length){ROWS=rows;await writeCache(rows);afterLoad();}
+    const v=ROWS[0]&&ROWS[0].verzia?` · verzia ${ROWS[0].verzia}`:'';
+    st.className='status';st.textContent=rows.length?`${ROWS.length} položiek${v}`:'Katalóg je prázdny – administrátor ho musí nahrať.';
+  }catch(e){
+    if(c){st.className='status off';st.textContent=`Offline – zobrazujem uloženú verziu z ${new Date(c.ts).toLocaleString('sk-SK')} (${ROWS.length} položiek).`;}
+    else{st.className='status off';st.textContent='Katalóg sa nepodarilo načítať a v zariadení nie je uložená kópia.';}
+  }
+}
+
+function afterLoad(){
+  const sel=document.getElementById('fdod');const cur=sel.value;
+  const cnt={};ROWS.forEach(r=>{const d=r.dodavatel||'–';cnt[d]=(cnt[d]||0)+1;});
+  sel.innerHTML='<option value="">Všetci dodávatelia</option>'+Object.keys(cnt).sort((a,b)=>a.localeCompare(b,'sk')).map(d=>`<option ${d===cur?'selected':''} value="${esc(d)}">${esc(d)} (${cnt[d]})</option>`).join('');
+  render();
+}
+
+function render(){
+  const q=document.getElementById('q').value.trim();
+  const fd=document.getElementById('fdod').value;
+  const used=document.getElementById('fused').checked;
+  const toks=norm(q).split(/\s+/).filter(Boolean);
+  let res=ROWS.filter(r=>{
+    if(fd&&(r.dodavatel||'–')!==fd)return false;
+    if(used&&!(Number(r.vydaj_12m)>0||r.nis_kod))return false;
+    if(!toks.length)return true;
+    const h=r.hladanie||'';
+    return toks.every(t=>h.includes(t)||h.includes(compact(t)));
+  });
+  res.sort((a,b)=>(Number(b.vydaj_12m)||0)-(Number(a.vydaj_12m)||0));
+  const out=document.getElementById('out');
+  if(!q&&!fd){out.innerHTML='<div class="empty">Začnite písať názov materiálu, REF alebo kód NIS.</div>';return;}
+  if(!res.length){out.innerHTML='<div class="empty">Nič sa nenašlo.'+(used?' Skúste vypnúť „len materiál, ktorý používame“.':'')+'</div>';return;}
+  const LIM=150;
+  out.innerHTML=res.slice(0,LIM).map(r=>{
+    const unk=/^nezn/i.test(r.dodavatel||'');
+    const rz=r.rezim||'';const bc=/konsign/i.test(rz)?'ks':/vlastn/i.test(rz)?'vs':'no';
+    const par=[r.priemer?'Ø '+r.priemer:'',r.dlzka?'L '+r.dlzka+' mm':'',r.shaft?r.shaft+' cm':''].filter(Boolean).join(' · ');
+    return `<div class="card">
+      <div class="t">${esc(r.nazov||r.nis_nazov||r.ref)}</div>
+      <span class="dod ${unk?'unk':''}">${esc(r.dodavatel||'dodávateľ neznámy')}</span>
+      <div class="row">
+        ${r.ref?`<span><span class="lbl">Objednávkové č.</span><span class="code">${esc(r.ref)}</span><button class="cp" data-c="${esc(r.ref)}">kopírovať</button></span>`:''}
+        ${r.order_no?`<span><span class="lbl">Order No.</span><span class="code">${esc(r.order_no)}</span></span>`:''}
+        ${r.nis_kod?`<span><span class="lbl">NIS</span><span class="code">${esc(r.nis_kod)}</span><button class="cp" data-c="${esc(r.nis_kod)}">kopírovať</button></span>`:''}
+      </div>
+      <div class="row">
+        ${rz?`<span class="b ${bc}">${esc(rz)}</span>`:''}
+        ${r.cena?`<span><span class="lbl">Cena NIS s DPH</span>${eur(r.cena)}</span>`:''}
+        ${r.cena_bez_dph?`<span><span class="lbl">Cenník bez DPH</span>${eur(r.cena_bez_dph)}</span>`:''}
+        ${Number(r.vydaj_12m)>0?`<span><span class="lbl">Výdaj 12 m</span>${esc(r.vydaj_12m)} ks</span>`:''}
+      </div>
+      <div class="meta">${esc([r.vyrobca,r.rada,par].filter(Boolean).join(' · '))}${r.nis_nazov&&r.nis_nazov!==r.nazov?' · NIS: '+esc(r.nis_nazov):''}</div>
+    </div>`;}).join('')+(res.length>LIM?`<div class="more">Zobrazených ${LIM} z ${res.length} – spresnite hľadanie.</div>`:'');
+}
+
+document.getElementById('out').addEventListener('click',e=>{
+  const b=e.target.closest('.cp');if(!b)return;
+  navigator.clipboard&&navigator.clipboard.writeText(b.dataset.c).then(()=>{b.textContent='✓';setTimeout(()=>b.textContent='kopírovať',1200);});
+});
+let tmr;document.getElementById('q').addEventListener('input',()=>{clearTimeout(tmr);tmr=setTimeout(render,120);});
+document.getElementById('fdod').addEventListener('change',render);
+document.getElementById('fused').addEventListener('change',render);
+
+// --- import (admin) ---
+function mapItem(it,verzia){
+  const r={dodavatel:it.d||null,vyrobca:it.v||null,rada:it.r||null,nazov:it.n||null,ref:it.ref||null,order_no:it.o||null,nis_kod:it.mat||null,
+    nis_nazov:it.nn||null,cena:typeof it.p==='number'?it.p:null,cena_bez_dph:typeof it.pb==='number'?it.pb:null,vydaj_12m:typeof it.q==='number'?it.q:null,rezim:it.m||null,
+    priemer:it.dm!=null?String(it.dm):null,dlzka:it.lm!=null?String(it.lm):null,shaft:it.sh!=null?String(it.sh):null,verzia};
+  const txt=[r.nazov,r.nis_nazov,r.ref,r.order_no,r.nis_kod,r.dodavatel,r.vyrobca,r.rada,r.priemer&&r.dlzka?r.priemer+'x'+r.dlzka:''].filter(Boolean).join(' ');
+  r.hladanie=norm(txt)+' '+[r.ref,r.nis_kod,r.order_no].filter(Boolean).map(compact).join(' ');
+  return r;
+}
+document.getElementById('imp').addEventListener('click',async()=>{
+  const msg=document.getElementById('impmsg');const f=document.getElementById('file').files[0];
+  if(!f){msg.textContent='Vyberte súbor.';return;}
+  let data;try{data=JSON.parse(await f.text());}catch(e){msg.textContent='Súbor nie je platný JSON.';return;}
+  if(!Array.isArray(data)||!data.length){msg.textContent='Súbor neobsahuje položky.';return;}
+  if(!confirm(`Nahradiť celý katalóg ${data.length} položkami?`))return;
+  // najprv nahrať novú verziu, až potom zmazať starú – pri výpadku uprostred
+  // importu ostane v DB stará (kompletná) verzia, nie prázdny alebo polovičný katalóg
+  const verzia=new Date().toISOString().slice(0,16).replace('T',' ');
+  const rows=data.map(it=>mapItem(it,verzia));
+  try{
+    for(let i=0;i<rows.length;i+=500){
+      msg.textContent=`Nahrávam ${Math.min(i+500,rows.length)} / ${rows.length}…`;
+      const r=await fetch(`${SB_URL}/rest/v1/${T}`,{method:'POST',headers:{...H(),'Prefer':'return=minimal'},body:JSON.stringify(rows.slice(i,i+500))});
+      if(!r.ok){
+        const t=(await r.text()).slice(0,200);
+        try{await fetch(`${SB_URL}/rest/v1/${T}?verzia=eq.${encodeURIComponent(verzia)}`,{method:'DELETE',headers:H()});}catch(e2){}
+        throw new Error('zápis HTTP '+r.status+' '+t+' – stará verzia ostala nedotknutá');
+      }
+    }
+    msg.textContent='Odstraňujem starú verziu…';
+    const d=await fetch(`${SB_URL}/rest/v1/${T}?or=(verzia.neq.${encodeURIComponent(verzia)},verzia.is.null)`,{method:'DELETE',headers:H()});
+    if(!d.ok)throw new Error('mazanie starej verzie HTTP '+d.status);
+    msg.textContent=`✓ Nahraných ${rows.length} položiek (verzia ${verzia}).`;
+    await clearCache();load();
+  }catch(e){msg.textContent='Chyba: '+e.message;}
+});
+
+loadAdmin();load();
+</script>
+</body></html>

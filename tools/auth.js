@@ -235,6 +235,7 @@
       {href:'/tools/zaznamy/',label:'📁 Záznamy výkonov'},
     ]},
     {href:'/tools/kontroly/',label:'🩺 Kontroly'},
+    {href:'/tools/material/',label:'📦 Materiál'},
     {href:'/tools/pacient/',label:'🧍 Cesta pacienta'},
     {href:'/tools/suhlasy/',label:'📄 Súhlasy'},
     {href:'/tools/kalendar/',label:'📆 Kalendár'},

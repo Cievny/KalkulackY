@@ -94,6 +94,17 @@ for(const [name,path] of [['RAS','/tools/RAS/'],['AVF','/tools/AVF/'],['VIS','/t
   await ctx.close();
 }
 
+// Katalóg materiálu – načítanie bez JS chýb, prázdna DB → zrozumiteľný stav, hľadanie nespadne
+{
+  const {page, ctx, errs} = await openPage('/tools/material/');
+  await page.fill('#q','eluvia').catch(()=>{});
+  await page.waitForTimeout(300);
+  const status = await page.$eval('#status',e=>e.textContent).catch(()=>'');
+  const out = await page.$eval('#out',e=>e.textContent).catch(()=>'');
+  check('Katalóg materiálu bez JS chýb (prázdny katalóg + hľadanie)', errs.length===0 && /prázdny|položiek/.test(status) && out.length>0);
+  await ctx.close();
+}
+
 await browser.close();
 srv.close();
 console.log(failed ? `\n${failed} testov ZLYHALO` : '\nVšetky smoke testy prešli.');
