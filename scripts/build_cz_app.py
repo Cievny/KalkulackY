@@ -1,0 +1,214 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Generátor NEZÁVISLEJ českej kópie appky (vlastná Supabase databáza, vlastné nasadenie).
+
+Zo slovenských zdrojov (tools/…) vyrobí samostatný web v priečinku cz-app/, ktorý sa
+nasadzuje ako SAMOSTATNÝ Vercel projekt (Root Directory = cz-app) a hovorí s VLASTNÝM
+Supabase projektom. Nič nezdieľa so slovenskou prevádzkou – ani databázu, ani prihlásenie.
+
+Zásady:
+  • kópia je 1:1 – stránky sa NEPREPISUJÚ ručne, ale generujú odtiaľto; zmena v SK
+    zdroji sa do kópie dostane opätovným spustením (CI kontroluje, že kópia je aktuálna)
+  • všetko špecifické pre CZ inštanciu je v cz-app/config.json (URL a anon kľúč Supabase,
+    názov), do generovaných súborov sa dosadí automaticky
+  • rozsah sa riadi zoznamom TOOLS – zatiaľ len Požiadavky (ďalšie nástroje sa pridajú
+    doplnením do zoznamu)
+
+Použitie:
+  python3 scripts/build_cz_app.py           # vygeneruje cz-app/
+  python3 scripts/build_cz_app.py --check   # len overí, že cz-app/ zodpovedá zdrojom (CI)
+"""
+import json, os, re, shutil, sys, hashlib
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT = os.path.join(ROOT, 'cz-app')
+CFG = json.load(open(os.path.join(OUT, 'config.json'), encoding='utf-8'))
+
+SK_URL = 'https://ncqtiicfqhaturjlfxcj.supabase.co'
+SK_ANON = 'sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k'
+
+# nástroje zahrnuté do kópie: cesta pod tools/ → popis karty na úvodnej stránke
+TOOLS = [
+    ('Aorta', '📥 Požiadavky na terapiu (Aorta + Iné)'),
+]
+# zdieľané skripty, ktoré zahrnuté nástroje potrebujú
+SHARED_JS = ['auth.js', 'scrub.js', 'poziadavky-import.js']
+# položky navigácie, ktoré v kópii ostanú (ostatné nástroje v nej nie sú)
+NAV_KEEP = ['/tools/', '/tools/Aorta/']
+
+GENERATED = {}   # relatívna cesta → obsah (text alebo bytes)
+
+
+def read(rel):
+    with open(os.path.join(ROOT, rel), encoding='utf-8') as f:
+        return f.read()
+
+
+def swap_supabase(src):
+    """pevné SK hodnoty → čítanie z config.js (window.APP_CONFIG)"""
+    src = src.replace("'" + SK_URL + "'", 'window.APP_CONFIG.SB_URL')
+    src = src.replace("'" + SK_ANON + "'", 'window.APP_CONFIG.SB_ANON')
+    assert SK_URL not in src and SK_ANON not in src, 'ostal odkaz na slovenský Supabase'
+    return src
+
+
+def add_config_script(html):
+    """config.js sa musí načítať PRED auth.js"""
+    return html.replace('<script src="/tools/auth.js"></script>',
+                        '<script src="/tools/config.js"></script>\n<script src="/tools/auth.js"></script>')
+
+
+def build_auth():
+    s = swap_supabase(read('tools/auth.js'))
+    # navigácia: len nástroje, ktoré kópia obsahuje
+    m = re.search(r"  const NAV_LINKS=\[\n(.*?)\n  \];", s, re.S)
+    assert m, 'NAV_LINKS sa nenašlo'
+    keep = []
+    for line in m.group(1).split('\n'):
+        mm = re.match(r"\s*\{href:'([^']+)',label:'([^']+)'\},?", line)
+        if mm and mm.group(1) in NAV_KEEP:
+            keep.append("    {href:'%s',label:'%s'}," % (mm.group(1), mm.group(2)))
+    s = s[:m.start(1)] + '\n'.join(keep) + s[m.end(1):]
+    # po prihlásení domov na Požiadavky (EVK v kópii nie je)
+    s = s.replace("'/tools/EVK/'", "'/tools/Aorta/'")
+    # kiosk (TV/veľín) a service worker v kópii nie sú
+    s = s.replace("navigator.serviceWorker.register('/sw.js')", "Promise.resolve()")
+    s = s.replace('// Shared auth + navigation for cievny.sk tools',
+                  '// Shared auth + navigation – NEZÁVISLÁ CZ KÓPIA (generované zo tools/auth.js, needitovať ručne)')
+    return s
+
+
+def build_login():
+    s = read('tools/login/index.html')
+    # len e-mail + heslo (bez Google – vyžadovalo by OAuth klienta pre novú inštanciu)
+    s = re.sub(r'\s*<div class="divider"><span>alebo</span></div>\s*<button class="gbtn".*?</button>', '', s, flags=re.S)
+    s = s.replace('🫀 cievny.sk', '🫀 ' + CFG['APP_NAME'])
+    s = s.replace('Klinické nástroje – prihlásenie', 'Klinické nástroje – prihlásenie (CZ)')
+    s = add_config_script(s)
+    return s
+
+
+def build_tool(name):
+    s = swap_supabase(read('tools/%s/index.html' % name))
+    return add_config_script(s)
+
+
+def build_index():
+    cards = '\n'.join('  <a class="card" href="/tools/%s/"><h3>%s</h3></a>' % (p, l) for p, l in TOOLS)
+    return """<!doctype html><html lang="sk"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nástroje – %s</title>
+<style>
+ body{font-family:system-ui;max-width:1000px;margin:40px auto;padding:0 16px}
+ .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+ .card{border:1px solid #e5e7eb;border-radius:14px;padding:14px;text-decoration:none;color:#111}
+ .card:hover{box-shadow:0 6px 18px rgba(0,0,0,.08);transform:translateY(-1px)}
+</style>
+<body>
+<script src="/tools/config.js"></script>
+<script src="/tools/auth.js"></script>
+<script>checkAuth();</script>
+<h1>Nástroje – %s</h1>
+<div class="grid">
+%s
+</div>
+</body></html>
+""" % (CFG['APP_NAME'], CFG['APP_NAME'], cards)
+
+
+def build_config_js():
+    return ("// Nastavenie tejto inštancie – jediné miesto s údajmi o Supabase projekte.\n"
+            "// Hodnoty sa berú z cz-app/config.json (generované, needitovať ručne).\n"
+            "window.APP_CONFIG=%s;\n" % json.dumps({'SB_URL': CFG['SB_URL'], 'SB_ANON': CFG['SB_ANON'], 'APP_NAME': CFG['APP_NAME']}, ensure_ascii=False))
+
+
+def build_brana():
+    s = read('lib/brana.mjs')
+    s = s.replace("export const SB_URL_DEFAULT = '%s';" % SK_URL, "export const SB_URL_DEFAULT = '%s';" % CFG['SB_URL'])
+    s = s.replace("export const SB_ANON_DEFAULT = '%s';" % SK_ANON, "export const SB_ANON_DEFAULT = '%s';" % CFG['SB_ANON'])
+    assert SK_URL not in s and SK_ANON not in s
+    return s
+
+
+def build_vercel_json():
+    s = read('vercel.json')
+    assert SK_URL in s
+    return s.replace(SK_URL, CFG['SB_URL'])
+
+
+def build_manifest():
+    return json.dumps({
+        "name": CFG['APP_NAME'] + " – požiadavky",
+        "short_name": CFG['APP_NAME'],
+        "description": "Požiadavky na terapiu – nezávislá CZ inštancia",
+        "start_url": "/tools/Aorta/",
+        "display": "standalone",
+        "background_color": "#f0f2f7",
+        "theme_color": "#5b0e1a",
+        "icons": [
+            {"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+        ]
+    }, ensure_ascii=False, indent=2) + '\n'
+
+
+def build():
+    GENERATED['tools/config.js'] = build_config_js()
+    GENERATED['tools/auth.js'] = build_auth()
+    GENERATED['tools/login/index.html'] = build_login()
+    GENERATED['tools/index.html'] = build_index()
+    for js in SHARED_JS:
+        if js != 'auth.js':
+            GENERATED['tools/' + js] = read('tools/' + js)
+    for name, _ in TOOLS:
+        GENERATED['tools/%s/index.html' % name] = build_tool(name)
+    GENERATED['lib/brana.mjs'] = build_brana()
+    GENERATED['middleware.js'] = read('middleware.js')
+    GENERATED['vercel.json'] = build_vercel_json()
+    GENERATED['manifest.webmanifest'] = build_manifest()
+    GENERATED['package.json'] = json.dumps({
+        "name": "cz-app", "private": True,
+        "description": CFG['APP_NAME'] + " – nezávislá CZ kópia (statický web + Vercel Routing Middleware)",
+        "dependencies": {"@vercel/functions": "^2"}
+    }, ensure_ascii=False, indent=2) + '\n'
+    GENERATED['index.html'] = '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/tools/Aorta/"><title>%s</title>' % CFG['APP_NAME']
+    for ic in ('icon-192.png', 'icon-512.png'):
+        with open(os.path.join(ROOT, 'icons', ic), 'rb') as f:
+            GENERATED['icons/' + ic] = f.read()
+
+
+def write_all():
+    for rel, content in GENERATED.items():
+        p = os.path.join(OUT, rel)
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        mode = 'wb' if isinstance(content, bytes) else 'w'
+        with open(p, mode, **({} if mode == 'wb' else {'encoding': 'utf-8'})) as f:
+            f.write(content)
+
+
+def check_all():
+    bad = []
+    for rel, content in GENERATED.items():
+        p = os.path.join(OUT, rel)
+        if not os.path.exists(p):
+            bad.append(rel + ' (chýba)'); continue
+        with open(p, 'rb') as f:
+            cur = f.read()
+        exp = content if isinstance(content, bytes) else content.encode('utf-8')
+        if cur != exp:
+            bad.append(rel + ' (líši sa od zdroja)')
+    return bad
+
+
+if __name__ == '__main__':
+    build()
+    if '--check' in sys.argv:
+        bad = check_all()
+        if bad:
+            print('cz-app/ nie je aktuálna voči SK zdrojom – spustite: python3 scripts/build_cz_app.py')
+            for b in bad: print('  ✗ ' + b)
+            sys.exit(1)
+        print('cz-app/ je aktuálna (%d súborov).' % len(GENERATED))
+    else:
+        write_all()
+        print('Vygenerované do cz-app/ (%d súborov).' % len(GENERATED))

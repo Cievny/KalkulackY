@@ -10,6 +10,7 @@ export const config = {
     '/tools/:path*',
     '/cz/tools/:path*',
     '/lib/:path*',
+    '/cz-app/:path*',
     '/middleware.js',
     '/package.json',
     '/package-lock.json',

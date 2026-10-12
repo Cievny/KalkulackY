@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Požiadavky na terapiu – cievny.sk</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f7;min-height:100vh;}
+h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
+.page-sub{font-size:13px;color:#6b7280;padding:4px 20px 0;}
+.toolbar{display:flex;gap:10px;align-items:center;padding:14px 20px 0;flex-wrap:wrap;}
+.btn-new{padding:8px 16px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-new:hover{background:#1737a0;}
+.search{padding:8px 12px;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;outline:none;min-width:220px;flex:1;max-width:360px;}
+@media(max-width:700px){.search{min-width:0;max-width:none;width:100%;}.toolbar .btn-new{width:100%;}}
+.search:focus{border-color:#3b82f6;}
+.board{display:flex;gap:12px;padding:10px 20px 16px;overflow-x:auto;align-items:flex-start;
+  /* náznak horizontálneho scrollu: tieň na okraji sa zobrazí len keď je čo odscrollovať */
+  background:
+    linear-gradient(to right,#f0f2f7 30%,rgba(240,242,247,0)),
+    linear-gradient(to left,#f0f2f7 30%,rgba(240,242,247,0)),
+    linear-gradient(to right,rgba(26,39,69,.16),rgba(26,39,69,0)),
+    linear-gradient(to left,rgba(26,39,69,.16),rgba(26,39,69,0));
+  background-position:left center,right center,left center,right center;
+  background-repeat:no-repeat;
+  background-size:40px 100%,40px 100%,16px 100%,16px 100%;
+  background-attachment:local,local,scroll,scroll;}
+.board-loading{font-size:13px;font-weight:600;color:#6b7280;padding:14px 4px;}
+.lane-title{font-size:14px;font-weight:800;letter-spacing:.6px;color:#1a2745;padding:14px 20px 0;display:flex;align-items:center;gap:8px;}
+.lane-title .lane-cnt{font-size:11px;font-weight:600;background:#fff;color:#6b7280;border-radius:10px;padding:2px 8px;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.col{background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:8px;min-width:248px;max-width:248px;flex-shrink:0;}
+.col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;}
+.col-title{font-size:12.5px;font-weight:700;letter-spacing:.2px;}
+.col-count{font-size:11px;font-weight:600;background:#f0f2f7;color:#6b7280;border-radius:10px;padding:2px 8px;}
+.card{background:#f8faff;border:1.5px solid #e5e9f5;border-radius:8px;padding:9px 10px;cursor:grab;}
+.card.dragging{opacity:.45;}
+.col.drop-ok{outline:2px dashed #3b82f6;outline-offset:-2px;background:#eff6ff;}
+.arch-wrap details.drop-ok{outline:2px dashed #6b7280;outline-offset:-2px;background:#f3f4f6;}
+.card-id{font-size:13.5px;font-weight:700;color:#1a2745;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.badge{font-size:11px;font-weight:700;padding:1px 6px;border-radius:8px;letter-spacing:.3px;}
+.badge-urg{background:#fef3c7;color:#b45309;}
+.badge-emerg{background:#fee2e2;color:#dc2626;}
+.badge-esvs{background:#dc2626;color:#fff;}
+.badge-late{background:#7f1d1d;color:#fff;}
+.badge-soon{background:#ffedd5;color:#c2410c;}
+.card-line{font-size:12px;color:#374151;margin-top:3px;line-height:1.4;}
+.card-mat{font-size:11.5px;color:#0e7490;background:#ecfeff;border-left:3px solid #06b6d4;border-radius:0 5px 5px 0;padding:4px 7px;margin-top:5px;line-height:1.4;}
+.card-plan{font-size:12px;color:#92400e;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0 5px 5px 0;padding:5px 8px;margin-top:5px;line-height:1.5;font-weight:600;}
+.card-plan .pl-late{color:#b91c1c;}.card-plan .pl-soon{color:#b45309;}
+.card-pozn{font-size:11.5px;color:#713f12;background:#fefce8;border-left:3px solid #eab308;border-radius:0 5px 5px 0;padding:4px 7px;margin-top:5px;line-height:1.4;white-space:pre-wrap;word-break:break-word;}
+.card-meta{font-size:11px;color:#9ca3af;margin-top:5px;}
+.card-meta b{color:#6b7280;}
+.card-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;align-items:center;}
+.btn-edit{font-size:11px;font-weight:600;padding:3px 8px;border:1.5px solid #dde1ea;border-radius:5px;background:#fff;cursor:pointer;color:#374151;}
+.btn-edit:hover{background:#f0f2f7;}
+.sel-move{font-size:11px;font-weight:600;padding:3px 5px;border:1.5px solid #bfdbfe;border-radius:5px;background:#fff;color:#1e40af;cursor:pointer;max-width:120px;}
+.btn-arch{font-size:11px;font-weight:600;padding:3px 8px;border:1.5px solid #d1d5db;border-radius:5px;background:#fff;cursor:pointer;color:#6b7280;}
+.btn-arch:hover{background:#f9fafb;}
+/* modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,30,61,.55);z-index:300;overflow-y:auto;padding:24px 12px;}
+.overlay.open{display:block;}
+.modal{background:#fff;border-radius:14px;max-width:720px;margin:0 auto;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25);}
+.modal h2{font-size:16px;color:#1a2745;margin-bottom:4px;}
+/* hlavička modálu ostáva pri scrollovaní hore – Uložiť je dostupné počas celého vypisovania */
+.m-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:#fff;margin:-20px -22px 4px;padding:16px 22px 10px;border-bottom:1px solid #e5e9f5;border-radius:14px 14px 0 0;}
+.btn-save-top{padding:7px 14px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.btn-save-top:hover{background:#1737a0;}
+.m-sec{font-size:11.5px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;border-bottom:1px solid #e5e9f5;padding-bottom:4px;}
+.m-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.m-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fld label{display:block;font-size:11px;font-weight:600;color:#6b7280;margin-bottom:3px;}
+.fld input,.fld select,.fld textarea{width:100%;padding:7px 9px;border:1.5px solid #dde1ea;border-radius:7px;font-size:13px;font-family:inherit;outline:none;color:#1a2745;background:#fff;}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:#3b82f6;}
+.fld textarea{resize:vertical;min-height:52px;}
+.alerts{margin-top:14px;display:flex;flex-direction:column;gap:6px;}
+.alert-red{font-size:12.5px;font-weight:700;background:#fef2f2;color:#b91c1c;border-left:4px solid #dc2626;padding:7px 10px;border-radius:0 7px 7px 0;}
+.alert-yellow{font-size:12.5px;background:#fffbeb;color:#92400e;border-left:4px solid #f59e0b;padding:7px 10px;border-radius:0 7px 7px 0;}
+.m-btns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.btn-save{padding:9px 20px;background:#1e40af;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-save:hover{background:#1737a0;}
+.btn-copy{padding:9px 16px;background:#1d6f42;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-copy:hover{background:#175c37;}
+.btn-close{padding:9px 16px;background:#fff;color:#374151;border:1.5px solid #dde1ea;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+.m-msg{font-size:12.5px;font-weight:600;align-self:center;}
+/* sizing / IFU */
+.ifu-chip{display:inline-block;font-size:12px;font-weight:700;padding:5px 10px;border-radius:8px;line-height:1.4;}
+.ifu-ok{background:#dcfce7;color:#15803d;}
+.ifu-warn{background:#fef3c7;color:#b45309;}
+.ifu-info{background:#f0f2f7;color:#6b7280;font-weight:600;}
+.btn-nalez{padding:9px 16px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+.btn-nalez:hover{background:#6d28d9;}
+.btn-nalez-done{display:inline-block;padding:9px 16px;background:#dcfce7;color:#15803d;border:1.5px solid #86efac;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;}
+.card-nalez{color:#15803d;font-weight:700;text-decoration:none;}
+/* archív */
+.arch-wrap{padding:0 20px 30px;}
+.arch-wrap details{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;}
+.arch-wrap summary{font-size:14px;font-weight:700;color:#1a2745;cursor:pointer;}
+.arch-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12.5px;}
+.arch-table th{text-align:left;color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;border-bottom:2px solid #e5e9f5;}
+.arch-table td{padding:7px 8px;border-bottom:1px solid #f0f2f7;color:#1a2745;}
+.btn-mini{font-size:11px;font-weight:600;padding:2px 8px;border:1.5px solid #dde1ea;border-radius:5px;background:#fff;cursor:pointer;color:#374151;}
+.btn-mini-del{border-color:#fca5a5;color:#dc2626;}
+@media(max-width:700px){.m-grid,.m-grid2{grid-template-columns:1fr;}.m-grid .fld{grid-column:auto !important;}}
+@media(max-width:700px),(pointer:coarse){
+.card-actions{gap:8px;}
+.btn-edit,.btn-arch,.btn-mini{min-height:36px;min-width:36px;padding:8px 12px;font-size:12px;}
+.sel-move{min-height:36px;padding:8px 6px;font-size:12px;}
+}
+</style>
+</head>
+<body>
+<script src="/tools/config.js"></script>
+<script src="/tools/auth.js"></script>
+<script>checkAuth();</script>
+
+<h1>📥 Požiadavky na terapiu</h1>
+<p class="page-sub">Pipeline pacientov: primárna požiadavka → prezerané → indikované → chirurgia / konzervatíva / endovaskulárne (materiál, termín). Rozdelené na AORTA a INÉ.</p>
+
+<div class="toolbar">
+  <button class="btn-new" onclick="openModal(null)">+ Nová požiadavka</button>
+  <button class="btn-new" style="background:#0e7490" onclick="openSeminar()">📋 Seminár</button>
+  <input class="search" id="search" placeholder="🔍 Hľadať (iniciály, diagnóza, žiadateľ…)" oninput="render()">
+  <span class="m-msg" id="top_msg"></span>
+</div>
+
+<div class="lane-title">🫀 AORTA <span class="lane-cnt" id="lane_cnt_aorta">0</span></div>
+<div class="board" id="board_aorta"><div class="board-loading">⏳ Načítavam…</div></div>
+
+<div class="lane-title">📋 INÉ <span class="lane-cnt" id="lane_cnt_ine">0</span></div>
+<div class="board" id="board_ine"><div class="board-loading">⏳ Načítavam…</div></div>
+
+<div class="arch-wrap" style="padding-bottom:8px">
+  <details id="kontroly_det">
+    <summary>🩻 Blížiace sa kontroly zobrazenia (do 30 dní + po termíne) – <span id="kontroly_cnt">0</span></summary>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <table class="arch-table">
+      <thead><tr><th>Pacient</th><th>R.č.</th><th>Diagnóza</th><th>Kontrola dňa</th><th>Stav</th><th></th></tr></thead>
+      <tbody id="kontroly_body"></tbody>
+    </table>
+    </div>
+  </details>
+</div>
+
+<div class="arch-wrap">
+  <details id="archiv_det">
+    <summary>🗄 Archív (vybavené požiadavky) – <span id="arch_cnt">0</span></summary>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <table class="arch-table">
+      <thead><tr><th>Pacient</th><th>Kat.</th><th>Diagnóza</th><th>Priemer</th><th>Výsledok</th><th>Požiadavka</th><th>Uzavreté</th><th>Dní celkom</th><th>Pridal</th><th></th></tr></thead>
+      <tbody id="arch_body"></tbody>
+    </table>
+    </div>
+  </details>
+</div>
+
+<!-- Modal: detail pacienta -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="m-head">
+      <h2 id="m_title" style="margin:0">Nová požiadavka</h2>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="m-msg" id="m_msg_top"></span>
+        <button type="button" class="btn-save-top" onclick="saveCard()">💾 Uložiť</button>
+        <button type="button" onclick="PoziadavkyImport.openPZ()" title="Vyplní polia z vloženého textu žiadanky, CT popisu alebo mailu – spracuje sa len v prehliadači" style="padding:6px 12px;border:1.5px solid #2563eb;background:#eff6ff;color:#1d4ed8;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600">📋 Z textu žiadanky / CT</button>
+      </div>
+    </div>
+
+    <div class="m-sec" data-t="Pacient a žiadanka">1. Pacient a žiadanka</div>
+    <div class="m-grid">
+      <div class="fld"><label>Kategória</label><select id="af_kategoria" onchange="toggleKategoria()"><option value="aorta">🫀 Aorta</option><option value="ine">📋 Iné</option></select></div>
+      <div class="fld"><label>Rodné číslo * <span style="font-weight:400;color:#9ca3af">(povinné)</span></label><input id="af_rodne_cislo" maxlength="11" placeholder="511224/1234" autocomplete="off"><div id="rc_warn" style="font-size:11.5px;color:#b45309;margin-top:3px"></div></div>
+      <div class="fld"><label>Meno / iniciály</label><input id="af_inicialy" autocomplete="off" placeholder="napr. J.K. alebo Horváth Ladislav"></div>
+      <div class="fld"><label>Telefón pacienta</label><input id="af_telefon" inputmode="tel" autocomplete="off" placeholder="0905 123 456"></div>
+      <div class="fld"><label>Ročník narodenia</label><input id="af_rocnik" type="number" min="1900" max="2030" placeholder="doplní sa z r.č."></div>
+      <div class="fld"><label>Pohlavie</label><select id="af_pohlavie"><option value="M">Muž</option><option value="Ž">Žena</option></select></div>
+      <div class="fld"><label>Žiadateľ / oddelenie</label><input id="af_ziadatel" placeholder="napr. interné odd., MUDr. …"></div>
+      <div class="fld"><label>Dátum požiadavky</label><input id="af_datum_poziadavky" type="date"></div>
+      <div class="fld"><label>Urgencia</label><select id="af_urgencia"><option>elektívne</option><option>urgentné</option><option>emergentné</option></select></div>
+      <div class="fld" style="grid-column:span 3"><label>Krátka epikríza <span style="font-weight:400;color:#9ca3af">(stručné zhrnutie pacienta – anamnéza, doterajší priebeh)</span></label><textarea id="af_epikriza" placeholder="napr. 71-r. pacientka, AAA 67 mm s rastom 5 mm/rok, ICHS po IM 2019, CHOCHP, CT-AG 8/2026…" style="min-height:70px"></textarea></div>
+    </div>
+
+    <div class="m-sec" data-t="Prílohy (prepis mailu, dokument, fotka)">2. Prílohy (prepis mailu, dokument, fotka)</div>
+    <p class="page-sub" id="pril_hint" style="padding:0 0 6px">Prílohy môžete pridávať po uložení požiadavky.</p>
+    <div id="pril_box" style="display:none">
+      <div id="pril_list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+      <div class="m-grid2">
+        <div>
+          <div class="fld"><textarea id="pril_text" placeholder="Voľný text – napr. prepis mailu…"></textarea></div>
+          <button class="btn-edit" style="margin-top:6px" onclick="addTextPriloha()">📝 Uložiť text ako prílohu</button>
+        </div>
+        <div>
+          <div class="fld"><label>Dokument alebo fotka (max 20 MB)</label><input type="file" id="pril_file" accept="image/*,.pdf,.doc,.docx,.txt,.rtf"></div>
+          <button class="btn-edit" style="margin-top:6px" onclick="uploadPriloha()">📤 Nahrať súbor</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="m-sec" data-t="Indikácia a morfológia">3. Indikácia a morfológia</div>
+    <div class="m-grid">
+      <div class="fld"><label>Diagnóza</label><select id="af_diagnoza" onchange="toggleEndoleak()">
+        <option>AAA infrarenálna</option><option>AAA juxtarenálna</option><option>AAA suprarenálna</option>
+        <option>TAAA</option><option>Aneuryzma hrudnej aorty</option><option>Disekcia typ B</option>
+        <option>PAU</option><option>IMH</option><option>Aneuryzma iliaky</option>
+        <option>Endoleak po EVAR/TEVAR</option><option>Reintervencia po EVAR/TEVAR</option><option>Koarktácia aorty</option><option>Iné</option><option value="vlastné">vlastné…</option>
+      </select><input id="af_diagnoza_vl" placeholder="dopíšte vlastnú diagnózu…" style="display:none;margin-top:4px"><input id="af_diagnoza_ine" placeholder="voľný text – napr. stenóza AFS l.dx." style="display:none"></div>
+      <div class="fld" id="fld_endoleak" style="display:none"><label>Typ endoleaku</label><select id="af_endoleak_typ">
+        <option value="">neurčený</option><option>typ Ia</option><option>typ Ib</option><option>typ II</option><option>typ III</option><option>typ IV</option><option>typ V (endotenzia)</option>
+      </select></div>
+      <div class="fld"><label>Klinický stav</label><select id="af_symptomy"><option>asymptomatický</option><option>symptomatický</option><option>ruptúra</option></select></div>
+      <div class="fld" id="fld_priemer"><label>Max. priemer (mm)</label><input id="af_priemer" type="number" step="0.1" placeholder="55"></div>
+      <div class="fld" id="fld_rast"><label>Rast (mm/rok)</label><input id="af_rast" type="number" step="0.1" placeholder="5"></div>
+      <div class="fld"><label id="lbl_ct">Dátum CT angio</label><input id="af_datum_ct" type="date"></div>
+    </div>
+
+    <div id="sec_anat">
+    <div class="m-sec" data-t="Anatómia (CT angio)">4. Anatómia (CT angio)</div>
+    <div class="m-grid">
+      <div class="fld"><label>Krčok – dĺžka (mm)</label><input id="af_krcok_dlzka" type="number" step="0.1" placeholder="ideál ≥15"></div>
+      <div class="fld"><label>Krčok – priemer (mm)</label><input id="af_krcok_priemer" type="number" step="0.1" placeholder="ideál <30"></div>
+      <div class="fld"><label>Krčok – angulácia</label><select id="af_krcok_angulacia"><option value="">–</option><option value="&lt;60">&lt; 60°</option><option value="&gt;60">&gt; 60° (hostile)</option></select></div>
+      <div class="fld" style="grid-column:span 3"><label>Iliacký prístup</label><select id="af_iliaky">
+        <option value="">–</option><option>priechodné</option><option>stenotické / kalcifikované</option><option>výrazná tortuozita (kinking)</option><option>aneuryzma iliaky</option>
+      </select></div>
+    </div>
+    </div>
+
+    <div id="sec_sizing">
+    <div class="m-sec" data-t="📐 Sizing (CT merania)">5. 📐 Sizing (CT merania)</div>
+    <details id="sizing_det">
+      <summary style="font-size:12px;font-weight:600;color:#1e40af;cursor:pointer;margin-bottom:8px">Rozbaliť merania (priemery, dĺžky, prístup, IFU kontrola)</summary>
+      <p class="page-sub" style="padding:0 0 8px">Priemer krčka, dĺžka a angulácia sa preberajú zo sekcie Anatómia; max. priemer aorty zo sekcie Indikácia (neduplikujú sa).</p>
+      <div class="m-grid">
+        <div class="fld"><label>Aorta suprarenálne (mm)</label><input id="sz_aorta_suprarenal_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Aorta juxtarenálne (mm)</label><input id="sz_aorta_juxtarenal_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Bifurkácia (mm)</label><input id="sz_bifurkacia_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>AIC dx (mm)</label><input id="sz_AIC_dx_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>AIC sin (mm)</label><input id="sz_AIC_sin_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>AIE dx (mm)</label><input id="sz_AIE_dx_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>AIE sin (mm)</label><input id="sz_AIE_sin_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Dĺžka renálky → bifurkácia (mm)</label><input id="sz_dlzka_renalka_bifurkacia_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Dĺžka AIC dx (mm)</label><input id="sz_dlzka_AIC_dx_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Dĺžka AIC sin (mm)</label><input id="sz_dlzka_AIC_sin_mm" type="number" step="0.1"></div>
+        <div class="fld"><label>Najužší prístup (mm)</label><input id="sz_pristup_min_mm" type="number" step="0.1"></div>
+      </div>
+      <div class="m-grid" style="margin-top:10px">
+        <div class="fld"><label>Plánovaný graft (IFU)</label><select id="sz_graft">
+          <option value="">–</option><option>Endurant II</option><option>Excluder</option><option>Zenith Alpha</option><option>Treo</option><option>E-vita</option><option>vlastný</option>
+        </select></div>
+        <div id="ifu_verdikt" style="grid-column:span 2;align-self:end"></div>
+      </div>
+    </details>
+    </div>
+
+    <div id="sec_fit">
+    <div class="m-sec" data-t="Fitness &amp; riziko">5. Fitness &amp; riziko</div>
+    <div class="m-grid">
+      <div class="fld"><label>Kardiálne riziko</label><select id="af_kardio"><option value="">–</option><option>stabilné / nízke riziko</option><option>stredné riziko</option><option>vysoké riziko (NYHA III–IV)</option></select></div>
+      <div class="fld"><label>Renálne funkcie (eGFR)</label><input id="af_renalne" placeholder="napr. 52"></div>
+      <div class="fld"><label>Pľúcny status</label><select id="af_pulmo"><option value="">–</option><option>bez ťažkostí</option><option>CHOCHP / obmedzenie</option><option>ťažké obmedzenie</option></select></div>
+      <div class="fld"><label>Frailty (krehkosť)</label><select id="af_frailty"><option value="nie">Nie (fit)</option><option value="ano">Áno (krehký)</option></select></div>
+      <div class="fld"><label>Očakávané dožitie</label><select id="af_dozitie"><option value="&gt;2">&gt; 2 roky</option><option value="&lt;2">&lt; 2 roky</option></select></div>
+      <div class="fld"><label>Antitrombotická liečba</label><input id="af_medikacia" placeholder="ASA, NOAK…"></div>
+    </div>
+    </div>
+
+    <div class="m-sec" data-t="Plán (indikácia, postup a termín)">6. Plán (indikácia, postup a termín)</div>
+    <div class="m-grid">
+      <div class="fld"><label>Indikoval (1)</label><select id="af_indikoval1"><option value="">–</option><option>Dr. Vincze</option><option>Dr. Fľak</option><option>Dr. Širila</option><option>Dr. Vařejka</option><option>Dr. Kocan</option><option>Doc. Maďarič</option><option hidden>Vincze</option><option hidden>Vařejka</option><option hidden>Širila</option></select></div>
+      <div class="fld"><label>Indikoval (2)</label><select id="af_indikoval2"><option value="">–</option><option>Dr. Vincze</option><option>Dr. Fľak</option><option>Dr. Širila</option><option>Dr. Vařejka</option><option>Dr. Kocan</option><option>Doc. Maďarič</option><option hidden>Vincze</option><option hidden>Vařejka</option><option hidden>Širila</option></select></div>
+      <div class="fld"><label>Plánovaný termín výkonu</label><input id="af_termin" type="date"></div>
+      <div class="fld" id="fld_vykon"><label>Plánovaný výkon / postup</label><select id="af_vykon_typ" onchange="toggleVykon()">
+        <option value="">–</option>
+        <optgroup label="Endovaskulárny výkon">
+          <option>PEVAR</option><option>EVAR</option><option>TEVAR</option><option>FEVAR</option><option>BEVAR</option>
+          <option>ISLF+ThEVAR</option><option>ISL+EVAR</option><option>Embolizácia</option>
+        </optgroup>
+        <optgroup label="Iný postup">
+          <option>Konzervatívny postup</option>
+          <option>Kontrola s odstupom</option>
+          <option>Chirurgické riešenie (otvorená operácia)</option>
+          <option>Hybridný výkon</option>
+          <option>Odoslanie na iné pracovisko</option>
+          <option>Prezentovať na indikačnom seminári</option>
+          <option value="vlastné">✏️ vlastný text…</option>
+        </optgroup>
+      </select><input id="af_vykon_vl" placeholder="dopíšte plánovaný výkon / postup…" style="display:none;margin-top:4px"></div>
+      <div class="fld" id="fld_vykon_cieva" style="grid-column:span 2;display:none"><label id="lbl_vykon_cieva">Embolizácia – akej cievy</label><input id="af_vykon_cieva" placeholder="napr. a. mesenterica inferior, lumbálne artérie…"></div>
+      <div class="fld" id="fld_indik_pozn" style="grid-column:span 3"><label>Poznámka k indikácii</label><input id="af_indikacia_poznamka" placeholder="voľný text k indikácii…"></div>
+      <div class="fld" style="grid-column:span 3"><label id="lbl_material">Materiál na objednanie (stentgraft, rozmery…)</label><input id="af_material" placeholder="napr. Endurant II 28×16×145 + extenzie"></div>
+      <div class="fld"><label>Materiál objednaný dňa</label><input id="af_material_objednany" type="date"></div>
+      <div class="fld"><label>Materiál dodaný</label><select id="af_material_dodany"><option value="nie">Nie</option><option value="ano">Áno</option></select></div>
+      <div class="fld"><label>Ďalšia kontrola zobrazenia (CT/USG)</label><input id="af_dalsia_kontrola" type="date"></div>
+      <div class="fld" id="fld_esvs_navrh" style="align-self:end;grid-column:span 2">
+        <button type="button" class="btn-edit" onclick="navrhKontrolu()">📅 Návrh intervalu podľa ESVS (z priemeru)</button>
+        <span id="esvs_navrh_info" style="font-size:11px;color:#6b7280;display:block;margin-top:3px"></span>
+      </div>
+    </div>
+
+    <div id="sec_zaver_sem" style="display:none">
+    <div class="m-sec" data-t="Záver indikačného seminára">7. Záver indikačného seminára</div>
+    <div class="fld"><textarea id="af_zaver_seminara" placeholder="Záver indikačného seminára…"></textarea></div>
+    </div>
+
+    <div class="m-sec" data-t="Poznámka">7. Poznámka</div>
+    <div class="fld"><textarea id="af_poznamka" placeholder="Ďalšie informácie…"></textarea></div>
+
+    <div id="sec_hist" style="display:none">
+    <div class="m-sec" data-t="História">8. História</div>
+    <div id="hist_list" style="font-size:12.5px;color:#374151;display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+
+    <div class="alerts" id="m_alerts"></div>
+
+    <div class="m-btns">
+      <button class="btn-save" onclick="saveCard()">💾 Uložiť</button>
+      <button class="btn-copy" onclick="copyZapis()">📋 Kopírovať zápis do NIS</button>
+      <button class="btn-nalez" id="btn_nalez" style="display:none" onclick="napisatNalez()">📝 Napísať nález</button>
+      <a class="btn-nalez-done" id="btn_nalez_done" style="display:none" href="/tools/zaznamy/" title="nález napísaný">📝</a>
+      <button class="btn-close" onclick="closeModal()">Zavrieť</button>
+      <span class="m-msg" id="m_msg"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: program seminára -->
+<div class="overlay" id="sem_overlay" onclick="if(event.target===this)closeSeminar()">
+  <div class="modal" style="max-width:640px">
+    <h2>📋 Program indikačného seminára</h2>
+    <p class="page-sub" style="padding:4px 0 10px">Pacienti v stavoch Prezerané a Indikované na výkon.</p>
+    <div class="fld"><textarea id="sem_text" style="min-height:340px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px"></textarea></div>
+    <div class="m-btns">
+      <button class="btn-copy" onclick="copySeminar()">📋 Kopírovať (NIS-safe)</button>
+      <button class="btn-close" onclick="window.print()">🖨️ Tlač</button>
+      <button class="btn-close" onclick="closeSeminar()">Zavrieť</button>
+      <span class="m-msg" id="sem_msg"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: archivácia -->
+<div class="overlay" id="arch_overlay" onclick="if(event.target===this)closeArch()">
+  <div class="modal" style="max-width:420px">
+    <h2>🗄 Uzavrieť požiadavku</h2>
+    <p class="page-sub" style="padding:4px 0 10px">S akým výsledkom sa požiadavka uzatvára?</p>
+    <div class="fld"><select id="arch_vysledok">
+      <option>výkon vykonaný – endovaskulárne</option>
+      <option>výkon vykonaný – chirurgicky</option>
+      <option>zamietnuté – neindikované</option>
+      <option>konzervatívny postup – odovzdané na sledovanie</option>
+      <option>pacient odmietol</option>
+      <option>odoslaný na iné pracovisko</option>
+      <option>exitus</option>
+      <option>iné</option>
+    </select></div>
+    <div class="fld" style="margin-top:10px"><label>Doplnenie (nepovinné)</label><input id="arch_note"></div>
+    <div class="m-btns">
+      <button class="btn-save" onclick="confirmArch()">Uzavrieť do archívu</button>
+      <button class="btn-close" onclick="closeArch()">Zrušiť</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL=window.APP_CONFIG.SB_URL;
+const SB_KEY=window.APP_CONFIG.SB_ANON;
+const SB_HEAD=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/json'});
+const TBL='aorta_indikacie';
+const TBL_PRIL='aorta_prilohy';
+const BUCKET='aorta-prilohy';
+
+const STATUSES=[
+  {key:'poziadavka',   label:'📥 Primárna požiadavka', color:'#3b82f6'},
+  {key:'prezerane',    label:'👁️ Prezerané',           color:'#8b5cf6'},
+  {key:'indikovane',   label:'✅ Indikované na výkon',  color:'#f59e0b'},
+  {key:'endo_termin',  label:'📅 Endo – čaká na termín', color:'#1e40af'},
+  {key:'endo_material',label:'📦 Endo – objednanie materiálu', color:'#0891b2'},
+  {key:'konzervativa', label:'💊 Konzervatívny postup', color:'#059669'},
+  {key:'chirurgia',    label:'🔪 Chirurgické riešenie', color:'#dc2626'},
+];
+const STATUS_LABEL=Object.fromEntries(STATUSES.map(s=>[s.key,s.label]));
+STATUS_LABEL['archiv']='🗄 Archív';
+
+let ITEMS=[];
+let PRILOHY=[];    // všetky prílohy (pre počty na kartách + zoznam v modáli)
+let editId=null;   // id práve otvorenej karty v modáli (null = nová)
+let archId=null;   // id karty pre archiváciu
+
+function escHtml(t){return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function isoLocal(d){const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
+function today(){return isoLocal(new Date());}
+function fmtD(d){if(!d)return'–';const x=new Date(d);return isNaN(x)?'–':x.toLocaleDateString('sk-SK');}
+const DNI_SK=['nedeľa','pondelok','utorok','streda','štvrtok','piatok','sobota'];
+// dátum aj s dňom v týždni – „streda 17.09.2026" (prehľadné plánovanie sály)
+function fmtDW(d){if(!d)return'–';const x=new Date(d);return isNaN(x)?'–':DNI_SK[x.getDay()]+' '+x.toLocaleDateString('sk-SK');}
+function daysBetween(a,b){const A=new Date(a),B=new Date(b);if(isNaN(A)||isNaN(B))return null;return Math.max(0,Math.round((B-A)/86400000));}
+function parseHist(item){try{const h=JSON.parse(item.historia||'[]');return Array.isArray(h)?h:[];}catch{return[];}}
+function msg(id,t,c){
+  // hlásenie z modálu sa zobrazí dole aj v lepivej hlavičke (pri hornom Uložiť)
+  const els=[document.getElementById(id)];
+  if(id==='m_msg')els.push(document.getElementById('m_msg_top'));
+  els.filter(Boolean).forEach(el=>{el.textContent=t;el.style.color=c;setTimeout(()=>{if(el.textContent===t)el.textContent='';},4000);});
+}
+function shortMail(e){return (e||'').split('@')[0];}
+function me(){return (typeof sbUserEmail==='function'?sbUserEmail():'')||null;}
+function kat(it){return it&&it.kategoria==='ine'?'ine':'aorta';} // staré záznamy bez kategórie = aorta
+
+// ── ESVS 2024 upozornenia ────────────────────────────────────
+function esvsAlerts(it){
+  const A=[];const d=parseFloat(it.priemer_mm);
+  const isAorta=kat(it)==='aorta';
+  if(it.symptomy==='ruptúra')A.push({t:'red',x:'RUPTÚRA – emergentný výkon!'});
+  else if(it.symptomy==='symptomatický')A.push({t:'red',x:isAorta?'Symptomatická aneuryzma – urgentná indikácia':'Symptomatický pacient – urgentné posúdenie'});
+  const isAneur=/^(AAA|TAAA|Aneuryzma hrudnej)/.test(it.diagnoza||'');
+  if(isAorta&&isAneur){
+    if(it.pohlavie==='M'&&d>=55)A.push({t:'red',x:'ESVS: Muž ≥ 55 mm = indikácia na intervenciu (Class I)'});
+    if(it.pohlavie==='Ž'&&d>=50)A.push({t:'red',x:'ESVS: Žena ≥ 50 mm = indikácia na intervenciu (Class IIa)'});
+    if(parseFloat(it.rast_mm_rok)>=10)A.push({t:'red',x:'Rýchly rast (≥ 10 mm/rok) = indikácia'});
+    if(it.krcok_dlzka_mm&&parseFloat(it.krcok_dlzka_mm)<15)A.push({t:'yellow',x:'Anatómia: krátky krčok (< 15 mm) – riziko pre štandardný EVAR'});
+    if(it.krcok_angulacia==='>60')A.push({t:'yellow',x:'Anatómia: angulácia > 60° – riziko pre štandardný EVAR'});
+  }
+  const egfr=parseFloat(it.renalne);
+  if(!isNaN(egfr)&&egfr<45)A.push({t:'yellow',x:'Pozor: eGFR < 45 – riziko kontrastnej nefropatie (CIN)'});
+  if(it.frailty===true||it.frailty==='ano')A.push({t:'yellow',x:'Krehký pacient – zvážiť konzervatívny postup / endo prvá voľba'});
+  if(it.dozitie==='<2')A.push({t:'yellow',x:'Očakávané dožitie < 2 roky – prehodnotiť benefit intervencie'});
+  return A;
+}
+
+// ── Rodné číslo: validácia + odvodenie ročníka a pohlavia ────
+function parseRC(rc){
+  const m=(rc||'').replace(/\s/g,'').match(/^(\d{2})(\d{2})(\d{2})\/?(\d{3,4})$/);
+  if(!m)return null;
+  const yy=+m[1];let mm=+m[2];let pohl='M';
+  if(mm>50){pohl='Ž';mm-=50;}
+  if(mm>20&&mm<=32)mm-=20; // po r. 2004: mužom +20, ženám +70 (už po odčítaní 50)
+  if(mm<1||mm>12)return null;
+  // 3-miestna prípona = narodení pred 1954; 4-miestna: 20xx len ak nie je v budúcnosti
+  const rok=m[4].length===3?1900+yy:(2000+yy>new Date().getFullYear()?1900+yy:2000+yy);
+  return {rok,pohl};
+}
+
+// ── Načítanie a render ───────────────────────────────────────
+async function fetchAllRows(table){
+  let all=[],offset=0;
+  while(true){
+    const r=await fetch(`${SB_URL}/rest/v1/${table}?order=created_at.asc,id.asc&limit=1000&offset=${offset}`,{headers:SB_HEAD()});
+    if(!r.ok)throw new Error(r.status);
+    const chunk=await r.json();
+    all=all.concat(chunk);
+    if(chunk.length<1000)break;
+    offset+=1000;
+  }
+  return all;
+}
+async function loadItems(){
+  try{
+    ITEMS=await fetchAllRows(TBL);
+  }catch(e){
+    if(ITEMS.length){msg('top_msg','⚠️ Obnovenie zlyhalo – zobrazené sú posledné načítané dáta','#b45309');return;}
+    ITEMS=[];msg('top_msg','⚠️ Tabuľka '+TBL+' nie je dostupná (spustite setup SQL) – '+e.message,'#b45309');render();return;
+  }
+  try{
+    PRILOHY=await fetchAllRows(TBL_PRIL);
+  }catch{PRILOHY=[];}
+  render();
+  if(editId)renderPrilohy();
+}
+
+function matchesSearch(it,q){
+  if(!q)return true;
+  const hay=[it.inicialy,it.rocnik,it.rodne_cislo,it.telefon,it.diagnoza,it.ziadatel,it.material,it.poznamka,it.epikriza].join(' ').toLowerCase();
+  return hay.includes(q);
+}
+
+function render(){
+  const q=(document.getElementById('search').value||'').trim().toLowerCase();
+  ['aorta','ine'].forEach(lane=>{
+    const board=document.getElementById('board_'+lane);board.innerHTML='';
+    const laneItems=ITEMS.filter(i=>i.status!=='archiv'&&kat(i)===lane&&matchesSearch(i,q));
+    document.getElementById('lane_cnt_'+lane).textContent=laneItems.length;
+    STATUSES.forEach(st=>{
+      const colItems=laneItems.filter(i=>i.status===st.key);
+      const col=document.createElement('div');col.className='col';col.style.borderTop='3px solid '+st.color;
+      col.innerHTML=`<div class="col-header"><span class="col-title" style="color:${st.color}">${st.label}</span><span class="col-count">${colItems.length}</span></div>`;
+      colItems.forEach(it=>col.appendChild(cardEl(it)));
+      // drag & drop cieľ – len v rámci vlastného radu (AORTA/INÉ)
+      col.addEventListener('dragover',e=>{
+        if(DRAG.id&&DRAG.lane===lane&&DRAG.status!==st.key){e.preventDefault();col.classList.add('drop-ok');}
+      });
+      col.addEventListener('dragleave',()=>col.classList.remove('drop-ok'));
+      col.addEventListener('drop',e=>{
+        e.preventDefault();col.classList.remove('drop-ok');
+        if(DRAG.id&&DRAG.lane===lane&&DRAG.status!==st.key)moveCard(DRAG.id,st.key);
+        DRAG={};
+      });
+      board.appendChild(col);
+    });
+  });
+  renderArchive(q);
+  renderKontroly(q);
+}
+
+function renderKontroly(q){
+  const limit=new Date();limit.setDate(limit.getDate()+30);
+  const lim=isoLocal(limit);
+  const rows=ITEMS.filter(i=>i.status!=='archiv'&&i.dalsia_kontrola&&i.dalsia_kontrola<=lim&&matchesSearch(i,q||''))
+    .sort((a,b)=>(a.dalsia_kontrola||'').localeCompare(b.dalsia_kontrola||''));
+  document.getElementById('kontroly_cnt').textContent=rows.length;
+  const tb=document.getElementById('kontroly_body');tb.innerHTML='';
+  rows.forEach(it=>{
+    const past=new Date(it.dalsia_kontrola)<new Date(today());
+    const dK=past?-daysBetween(it.dalsia_kontrola,today()):daysBetween(today(),it.dalsia_kontrola);
+    const kedy=past?'<b style="color:#dc2626">'+fmtD(it.dalsia_kontrola)+' (pred '+(-dK)+' d)</b>':fmtD(it.dalsia_kontrola)+' (o '+dK+' d)';
+    const tr=document.createElement('tr');
+    tr.style.cursor='pointer';
+    tr.onclick=()=>openModal(it.id);
+    tr.innerHTML=`<td><b>${escHtml(it.inicialy||'?')}${it.rocnik?' '+it.rocnik:''}</b></td>
+      <td>${escHtml(it.rodne_cislo||'–')}</td>
+      <td>${escHtml(it.diagnoza||'–')}${it.priemer_mm?' • '+it.priemer_mm+' mm':''}</td>
+      <td>${kedy}</td>
+      <td>${STATUS_LABEL[it.status]||it.status}</td>
+      <td><button class="btn-mini" onclick="event.stopPropagation();openModal('${it.id}')">✏️ Otvoriť</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// drag & drop stav + archív ako cieľ
+let DRAG={};
+function initArchDrop(){
+  const det=document.getElementById('archiv_det');
+  det.addEventListener('dragover',e=>{if(DRAG.id){e.preventDefault();det.classList.add('drop-ok');}});
+  det.addEventListener('dragleave',()=>det.classList.remove('drop-ok'));
+  det.addEventListener('drop',e=>{
+    e.preventDefault();det.classList.remove('drop-ok');
+    if(DRAG.id)openArch(DRAG.id);
+    DRAG={};
+  });
+}
+
+function toggleKategoria(){
+  const ine=document.getElementById('af_kategoria').value==='ine';
+  document.getElementById('af_diagnoza').style.display=ine?'none':'';
+  document.getElementById('af_diagnoza_ine').style.display=ine?'':'none';
+  document.getElementById('fld_priemer').style.display=ine?'none':'';
+  document.getElementById('fld_rast').style.display=ine?'none':'';
+  document.getElementById('sec_anat').style.display=ine?'none':'';
+  document.getElementById('sec_sizing').style.display=ine?'none':'';
+  document.getElementById('sec_fit').style.display=ine?'none':'';
+  document.getElementById('sec_zaver_sem').style.display=ine?'':'none';
+  document.getElementById('lbl_ct').textContent=ine?'Dátum CT / MR vyšetrenia':'Dátum CT angio';
+  document.getElementById('lbl_material').textContent=ine?'Navrhovaný postup':'Materiál na objednanie (stentgraft, rozmery…)';
+  document.getElementById('af_material').placeholder=ine?'napr. PTA + DEB AFS l.dx.':'napr. Endurant II 28×16×145 + extenzie';
+  document.getElementById('fld_vykon').style.display=ine?'none':'';
+  document.getElementById('fld_indik_pozn').style.display=ine?'none':'';
+  toggleVykon();
+  toggleEndoleak();
+  updateNalezBtn();
+  // prečíslovanie viditeľných sekcií
+  let n=0;
+  document.querySelectorAll('.modal .m-sec').forEach(el=>{
+    const wrap=el.closest('#sec_anat,#sec_sizing,#sec_fit,#sec_zaver_sem,#sec_hist');
+    if(wrap&&wrap.style.display==='none')return;
+    n++;el.innerHTML=n+'. '+el.dataset.t;
+  });
+}
+
+// Detailné pole sa mení podľa zvoleného postupu (cieva / časové okno / typ operácie / pracovisko)
+const VYKON_DETAIL={
+  'Embolizácia':['Embolizácia – akej cievy','napr. a. mesenterica inferior, lumbálne artérie…'],
+  'Kontrola s odstupom':['Kontrola – časové okno','napr. CT-AG o 6 mesiacov, USG o 3 mesiace…'],
+  'Chirurgické riešenie (otvorená operácia)':['Chirurgické riešenie – aký výkon','napr. resekcia AAA s tubulárnou náhradou…'],
+  'Hybridný výkon':['Hybridný výkon – popis','napr. debranching + TEVAR…'],
+  'Odoslanie na iné pracovisko':['Odoslanie – kam','napr. NÚSCH Bratislava…'],
+  'Konzervatívny postup':['Konzervatívny postup – dôvod / plán','napr. nejasná dynamika nálezu, optimalizácia medikácie…']
+};
+function toggleVykon(){
+  const ine=document.getElementById('af_kategoria').value==='ine';
+  const v=document.getElementById('af_vykon_typ').value;
+  const det=VYKON_DETAIL[v];
+  document.getElementById('af_vykon_vl').style.display=(!ine&&v==='vlastné')?'':'none';
+  document.getElementById('fld_vykon_cieva').style.display=(!ine&&det)?'':'none';
+  if(det){
+    document.getElementById('lbl_vykon_cieva').textContent=det[0];
+    document.getElementById('af_vykon_cieva').placeholder=det[1];
+  }
+}
+
+// Návrh ďalšej kontroly podľa ESVS 2024 (surveillance AAA podľa max. priemeru)
+function navrhKontrolu(){
+  const info=document.getElementById('esvs_navrh_info');
+  const d=parseFloat(document.getElementById('af_priemer').value);
+  if(document.getElementById('af_kategoria').value==='ine'){info.textContent='Návrh podľa ESVS platí pre aortu – pri INÉ zadajte dátum ručne.';return;}
+  if(isNaN(d)){info.textContent='Najprv vyplňte max. priemer (mm) v sekcii Indikácia.';return;}
+  let mes,txt;
+  if(d<30){mes=48;txt='< 30 mm → kontrola o 4 roky';}
+  else if(d<40){mes=36;txt='30–39 mm → kontrola o 3 roky';}
+  else if(d<45){mes=12;txt='40–44 mm → kontrola o 1 rok';}
+  else if(d<50){mes=6;txt='45–49 mm → kontrola o 6 mesiacov';}
+  else{mes=3;txt='≥ 50 mm → kontrola o 3 mesiace (zvážiť indikáciu na výkon!)';}
+  const t=new Date();t.setDate(1);t.setMonth(t.getMonth()+mes); // deň=1 zabráni pretečeniu mesiaca
+  t.setDate(Math.min(new Date().getDate(),new Date(t.getFullYear(),t.getMonth()+1,0).getDate()));
+  document.getElementById('af_dalsia_kontrola').value=isoLocal(t);
+  info.textContent='ESVS: '+txt;
+}
+
+function toggleEndoleak(){
+  const ine=document.getElementById('af_kategoria').value==='ine';
+  const v=document.getElementById('af_diagnoza').value;
+  document.getElementById('fld_endoleak').style.display=(!ine&&v.startsWith('Endoleak'))?'':'none';
+  document.getElementById('af_diagnoza_vl').style.display=(!ine&&v==='vlastné')?'':'none';
+}
+
+function cardEl(it){
+  const div=document.createElement('div');div.className='card';
+  div.draggable=true;
+  div.addEventListener('dragstart',e=>{
+    DRAG={id:it.id,lane:kat(it),status:it.status};
+    e.dataTransfer.effectAllowed='move';
+    div.classList.add('dragging');
+  });
+  div.addEventListener('dragend',()=>{div.classList.remove('dragging');DRAG={};});
+  const alerts=esvsAlerts(it);
+  const hasRed=alerts.some(a=>a.t==='red');
+  const hist=parseHist(it);
+  const enteredCur=hist.length?hist[hist.length-1].d:it.created_at?.slice(0,10);
+  const dIn=enteredCur?daysBetween(enteredCur,today()):null;
+  const dTotal=it.datum_poziadavky?daysBetween(it.datum_poziadavky,today()):null;
+  const urgBadge=it.urgencia==='urgentné'?'<span class="badge badge-urg">URG</span>':it.urgencia==='emergentné'?'<span class="badge badge-emerg">EMERG</span>':'';
+  // stráženie termínu a materiálu
+  let watchBadge='';
+  if(it.termin){
+    const dT=daysBetween(today(),it.termin); // záporné = po termíne
+    const past=new Date(it.termin)<new Date(today());
+    if(past)watchBadge+='<span class="badge badge-late" title="plánovaný termín '+fmtD(it.termin)+' už prešiel">⏰ PO TERMÍNE</span>';
+    else if(dT!==null&&dT<=7)watchBadge+='<span class="badge badge-soon" title="plánovaný termín '+fmtD(it.termin)+'">⏰ o '+dT+' d</span>';
+  }
+  if(it.material_objednany&&!it.material_dodany){
+    const dM=daysBetween(it.material_objednany,today());
+    if(dM!==null&&dM>14)watchBadge+='<span class="badge badge-soon" title="materiál objednaný '+fmtD(it.material_objednany)+', stále nedodaný">📦 '+dM+' d bez dodania</span>';
+  }
+  if(it.dalsia_kontrola){
+    const past=new Date(it.dalsia_kontrola)<new Date(today());
+    const dK=daysBetween(today(),it.dalsia_kontrola);
+    if(past)watchBadge+='<span class="badge badge-late" title="kontrola zobrazenia mala byť '+fmtD(it.dalsia_kontrola)+'">🩻 KONTROLA PREŠLA</span>';
+    else if(dK!==null&&dK<=30)watchBadge+='<span class="badge badge-soon" title="kontrola zobrazenia '+fmtD(it.dalsia_kontrola)+'">🩻 kontrola o '+dK+' d</span>';
+  }
+  const esvsBadge=hasRed?'<span class="badge badge-esvs" title="'+escHtml(alerts.filter(a=>a.t==='red').map(a=>a.x).join(' | '))+'">'+(kat(it)==='aorta'?'⚠ ESVS':'⚠')+'</span>':'';
+  const dg=[it.diagnoza?it.diagnoza+(it.endoleak_typ?' ('+it.endoleak_typ+')':''):'',it.priemer_mm?it.priemer_mm+' mm':'',it.rast_mm_rok?'rast '+it.rast_mm_rok+' mm/r':''].filter(Boolean).join(' • ');
+  let matHtml='';
+  if(it.status==='endo_material'||it.status==='endo_termin'){
+    const m=[];
+    if(it.material)m.push('🧾 '+escHtml(it.material));
+    if(it.material_objednany)m.push('objednané '+fmtD(it.material_objednany)+(it.material_dodany?' ✓ dodané':' – čaká sa'));
+    if(it.termin)m.push('📅 termín: '+fmtDW(it.termin));
+    if(m.length)matHtml='<div class="card-mat">'+m.join('<br>')+'</div>';
+  }
+  // indikovaný pacient: na prvý pohľad NA AKÝ DEŇ a NA AKÝ VÝKON je navrhnutý
+  let planHtml='';
+  if(it.status==='indikovane'){
+    const vyk=it.vykon_typ?escHtml(it.vykon_typ+(it.vykon_cieva?' – '+it.vykon_cieva:'')):'výkon zatiaľ neurčený';
+    let den;
+    if(it.termin){
+      const dT=daysBetween(today(),it.termin);
+      const past=new Date(it.termin)<new Date(today());
+      const kedy=past?'<span class="pl-late">termín prešiel</span>':(dT===0?'<span class="pl-soon">dnes</span>':(dT!==null?(dT<=7?'<span class="pl-soon">o '+dT+' d</span>':'o '+dT+' d'):''));
+      den='🗓 '+fmtDW(it.termin)+(kedy?' · '+kedy:'');
+    }else den='🗓 <span class="pl-soon">termín zatiaľ neurčený</span>';
+    planHtml='<div class="card-plan">'+den+'<br>🛠 '+vyk+'</div>';
+  }
+  const moveOpts=STATUSES.filter(s=>s.key!==it.status).map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+  const nPril=PRILOHY.filter(p=>p.indikacia_id===it.id).length;
+  const prilBadge=nPril?'<span class="badge" style="background:#e0e7ff;color:#3730a3">📎 '+nPril+'</span>':'';
+  const title=it.inicialy?escHtml(it.inicialy)+(it.rocnik?' '+it.rocnik:''):escHtml(it.rodne_cislo||'?');
+  const telHtml=it.telefon?'<div class="card-line">📞 <a href="tel:'+escHtml(String(it.telefon).replace(/[^+\d]/g,''))+'" draggable="false" onclick="event.stopPropagation()" style="color:#1e40af;text-decoration:none">'+escHtml(it.telefon)+'</a></div>':'';
+  if(it.status==='konzervativa'||it.status==='chirurgia'){
+    // zbalená karta: pacient odovzdaný na konzervatívu/chirurgiu – stačí meno + r.č.
+    // (detaily po 📂 Otvoriť); po 90 dňoch v tomto stave sa karta archivuje sama
+    const zost=dIn!==null?Math.max(0,90-dIn):null;
+    div.innerHTML=`
+    <div class="card-id">${title}${it.pohlavie?' ('+it.pohlavie+')':''} ${esvsBadge}${prilBadge}</div>
+    ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}${telHtml}
+    <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stave':''}${zost!==null?' • 🗄 auto-archív o <b>'+zost+' d</b>':''}</div>
+    <div class="card-actions">
+      <button class="btn-edit" onclick="openModal('${it.id}')">📂 Otvoriť</button>
+      <select class="sel-move" onchange="if(this.value){moveCard('${it.id}',this.value)}"><option value="">Presunúť…</option>${moveOpts}</select>
+      <button class="btn-arch" onclick="openArch('${it.id}')">🗄</button>
+    </div>`;
+    return div;
+  }
+  div.innerHTML=`
+    <div class="card-id">${title}${it.pohlavie?' ('+it.pohlavie+')':''} ${urgBadge}${esvsBadge}${prilBadge}${watchBadge}</div>
+    ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}${telHtml}
+    ${dg?'<div class="card-line">'+escHtml(dg)+'</div>':''}
+    ${it.ziadatel?'<div class="card-line">👤 '+escHtml(it.ziadatel)+'</div>':''}
+    ${(it.indikoval1||it.indikoval2)?'<div class="card-line">⚕️ indikoval: '+escHtml([it.indikoval1,it.indikoval2].filter(Boolean).join(' + '))+'</div>':''}
+    ${(it.vykon_typ&&!planHtml)?'<div class="card-line">🛠 plán: '+escHtml(it.vykon_typ+(it.vykon_cieva?' – '+it.vykon_cieva:''))+'</div>':''}
+    ${it.nalez_vykon_id?'<div class="card-line"><a class="card-nalez" href="/tools/zaznamy/" title="nález napísaný" draggable="false" onclick="event.stopPropagation()">📝 '+escHtml(it.nalez_vykon_id)+'</a></div>':''}
+    ${planHtml}${matHtml}
+    ${it.poznamka?'<div class="card-pozn">💬 '+escHtml(it.poznamka)+'</div>':''}
+    <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stave':''}${dTotal!==null?' • od požiadavky <b>'+dTotal+' d</b>':''}${it.created_by?' • pridal <b>'+escHtml(shortMail(it.created_by))+'</b>':''}</div>
+    <div class="card-actions">
+      <button class="btn-edit" onclick="openModal('${it.id}')">📂 Otvoriť</button>
+      <select class="sel-move" onchange="if(this.value){moveCard('${it.id}',this.value)}"><option value="">Presunúť…</option>${moveOpts}</select>
+      <button class="btn-arch" onclick="openArch('${it.id}')">🗄</button>
+    </div>`;
+  return div;
+}
+
+function renderArchive(q){
+  const rows=ITEMS.filter(i=>i.status==='archiv'&&matchesSearch(i,q||''));
+  document.getElementById('arch_cnt').textContent=rows.length;
+  const tb=document.getElementById('arch_body');tb.innerHTML='';
+  rows.sort((a,b)=>(b.updated_at||b.created_at||'').localeCompare(a.updated_at||a.created_at||''));
+  rows.forEach(it=>{
+    const hist=parseHist(it);
+    const closed=hist.length?hist[hist.length-1].d:null;
+    const dTotal=(it.datum_poziadavky&&closed)?daysBetween(it.datum_poziadavky,closed):null;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${escHtml(it.inicialy||it.rodne_cislo||'?')}${it.rocnik?' '+it.rocnik:''}</b></td>
+      <td>${kat(it)==='ine'?'📋 iné':'🫀 aorta'}</td>
+      <td>${escHtml(it.diagnoza||'–')}</td><td>${it.priemer_mm?it.priemer_mm+' mm':'–'}</td>
+      <td>${escHtml(it.vysledok||'–')}</td><td>${fmtD(it.datum_poziadavky)}</td><td>${fmtD(closed)}</td>
+      <td>${dTotal!==null?dTotal+' d':'–'}</td>
+      <td>${it.created_by?escHtml(shortMail(it.created_by)):'–'}</td>
+      <td style="white-space:nowrap"><button class="btn-mini" onclick="restoreCard('${it.id}')">↩ Obnoviť</button>
+      <button class="btn-mini btn-mini-del" onclick="delCard('${it.id}')">🗑</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ── Modal detail ─────────────────────────────────────────────
+const FIELDS=['kategoria','rodne_cislo','inicialy','telefon','rocnik','pohlavie','ziadatel','datum_poziadavky','urgencia','epikriza','diagnoza','symptomy',
+  'priemer','rast','datum_ct','krcok_dlzka','krcok_priemer','krcok_angulacia','iliaky',
+  'kardio','renalne','pulmo','frailty','dozitie','medikacia','indikoval1','indikoval2','vykon_typ','vykon_cieva','indikacia_poznamka','material','material_objednany','material_dodany','termin','zaver_seminara','poznamka','endoleak_typ','dalsia_kontrola'];
+// mapovanie form id -> DB stĺpec
+const DBMAP={priemer:'priemer_mm',rast:'rast_mm_rok',krcok_dlzka:'krcok_dlzka_mm',krcok_priemer:'krcok_priemer_mm'};
+
+function formToObj(){
+  const o={};
+  FIELDS.forEach(f=>{
+    let v=document.getElementById('af_'+f).value.trim();
+    const col=DBMAP[f]||f;
+    if(f==='frailty'||f==='material_dodany')o[col]=(v==='ano');
+    else if(['rocnik','priemer','rast','krcok_dlzka','krcok_priemer'].includes(f))o[col]=v===''?null:parseFloat(v);
+    else o[col]=v||null;
+  });
+  const sz=sizingToObj();
+  o.sizing=Object.keys(sz).length?JSON.stringify(sz):null;
+  if(o.kategoria==='ine'){
+    o.diagnoza=document.getElementById('af_diagnoza_ine').value.trim()||null;
+    // skryté sekcie (morfológia, anatómia, fitness, sizing, aortálny výkon) sa pri INÉ neukladajú
+    ['priemer_mm','rast_mm_rok','krcok_dlzka_mm','krcok_priemer_mm','krcok_angulacia','iliaky',
+     'kardio','renalne','pulmo','frailty','dozitie','medikacia','vykon_typ','vykon_cieva','indikacia_poznamka','endoleak_typ','sizing'].forEach(k=>o[k]=null);
+  }else{
+    o.zaver_seminara=null; // záver seminára je len pre INÉ
+    if(document.getElementById('af_diagnoza').value==='vlastné')
+      o.diagnoza=document.getElementById('af_diagnoza_vl').value.trim()||'Iné';
+    // vlastný plánovaný výkon sa ukladá priamo do vykon_typ (karta, seminár aj
+    // program ho potom vypíšu ako ktorýkoľvek iný výkon)
+    if(document.getElementById('af_vykon_typ').value==='vlastné')
+      o.vykon_typ=document.getElementById('af_vykon_vl').value.trim()||null;
+  }
+  if(!VYKON_DETAIL[o.vykon_typ])o.vykon_cieva=null; // detail len pri postupoch, ktoré ho majú
+  if(!document.getElementById('af_diagnoza').value.startsWith('Endoleak'))o.endoleak_typ=null; // typ len pri endoleaku (pri vlastnej dg je select typu skryty)
+  return o;
+}
+function objToForm(it){
+  FIELDS.forEach(f=>{
+    const col=DBMAP[f]||f;const el=document.getElementById('af_'+f);
+    let v=it?it[col]:null;
+    if(f==='frailty'||f==='material_dodany')el.value=(v===true)?'ano':'nie';
+    else el.value=v??'';
+    if(el.tagName==='SELECT'&&el.selectedIndex===-1)el.selectedIndex=0;
+  });
+  document.getElementById('af_diagnoza_ine').value=(it&&kat(it)==='ine')?(it.diagnoza||''):'';
+  {const dgSel=document.getElementById('af_diagnoza'),dgVl=document.getElementById('af_diagnoza_vl');
+   const dgVal=it&&kat(it)!=='ine'?(it.diagnoza||''):'';
+   if(dgVal&&![...dgSel.options].some(o=>o.value===dgVal||o.text===dgVal)){dgSel.value='vlastné';dgVl.value=dgVal;}
+   else dgVl.value='';}
+  {const vSel=document.getElementById('af_vykon_typ'),vVl=document.getElementById('af_vykon_vl');
+   const vVal=it&&kat(it)!=='ine'?(it.vykon_typ||''):'';
+   if(vVal&&![...vSel.options].some(o=>o.value===vVal||o.text===vVal)){vSel.value='vlastné';vVl.value=vVal;}
+   else vVl.value='';}
+  sizingToForm(it);
+  if(it)document.getElementById('af_kategoria').value=kat(it);
+  toggleKategoria();
+  if(!it)document.getElementById('af_datum_poziadavky').value=today();
+}
+
+// ── 📐 Sizing (CT merania) – JSON stĺpec `sizing` ────────────
+const SIZING_FIELDS=['aorta_suprarenal_mm','aorta_juxtarenal_mm','bifurkacia_mm','AIC_dx_mm','AIC_sin_mm',
+  'AIE_dx_mm','AIE_sin_mm','dlzka_renalka_bifurkacia_mm','dlzka_AIC_dx_mm','dlzka_AIC_sin_mm','pristup_min_mm'];
+function sizingToObj(){
+  const s={};
+  SIZING_FIELDS.forEach(k=>{
+    const v=document.getElementById('sz_'+k).value.trim();
+    if(v!==''&&!isNaN(parseFloat(v)))s[k]=parseFloat(v);
+  });
+  const g=document.getElementById('sz_graft').value;
+  if(g)s.graft=g;
+  return s;
+}
+function sizingToForm(it){
+  let s={};
+  try{
+    const raw=it?it.sizing:null;
+    s=typeof raw==='string'?(JSON.parse(raw)||{}):(raw||{});
+  }catch{s={};}
+  if(typeof s!=='object'||Array.isArray(s))s={};
+  SIZING_FIELDS.forEach(k=>{document.getElementById('sz_'+k).value=s[k]??'';});
+  const g=document.getElementById('sz_graft');
+  g.value=s.graft||'';
+  if(g.selectedIndex===-1)g.selectedIndex=0;
+  document.getElementById('sizing_det').open=Object.keys(s).length>0;
+  ifuEval();
+}
+
+// IFU limity (typické infrarenálne IFU – informatívne, neblokuje)
+const IFU={
+  'Endurant II':{krcok_dlzka_min:10,krcok_priemer:[19,32],angulacia_max:60,angulacia_ext:{max:75,dlzka_min:15},aic:[8,25]},
+  'Excluder':   {krcok_dlzka_min:15,krcok_priemer:[19,32],angulacia_max:60,aic:[8,25]},
+  'Zenith Alpha':{krcok_dlzka_min:15,krcok_priemer:[18,32],angulacia_max:60,aic:[8,20]},
+  'Treo':       {krcok_dlzka_min:15,krcok_priemer:[17,32],angulacia_max:60,angulacia_ext:{max:75,dlzka_min:15},aic:[8,20]},
+  'E-vita':     {krcok_dlzka_min:15,krcok_priemer:[18,32],angulacia_max:60,aic:[8,25]}
+};
+function ifuEval(){
+  const box=document.getElementById('ifu_verdikt');
+  const g=document.getElementById('sz_graft').value;
+  if(!g){box.innerHTML='';return;}
+  const lim=IFU[g];
+  if(!lim){box.innerHTML='<span class="ifu-chip ifu-info">ℹ️ vlastný graft – IFU kontrola nedostupná</span>';return;}
+  const V=[];
+  const dl=parseFloat(document.getElementById('af_krcok_dlzka').value);
+  const pr=parseFloat(document.getElementById('af_krcok_priemer').value);
+  const ang=document.getElementById('af_krcok_angulacia').value;
+  if(!isNaN(dl)&&dl<lim.krcok_dlzka_min)V.push('krčok '+dl+' mm (<'+lim.krcok_dlzka_min+')');
+  if(!isNaN(pr)&&(pr<lim.krcok_priemer[0]||pr>lim.krcok_priemer[1]))V.push('priemer krčka '+pr+' mm (mimo '+lim.krcok_priemer[0]+'–'+lim.krcok_priemer[1]+')');
+  if(ang==='>60'){
+    // presný uhol nad 60° nevieme z formulára overiť – varujeme aj pri graftoch s limitom do 75°
+    let t='angulácia >60° (limit ≤'+lim.angulacia_max+'°)';
+    if(lim.angulacia_ext&&!isNaN(dl)&&dl>=lim.angulacia_ext.dlzka_min)t='angulácia >60° (graft do '+lim.angulacia_ext.max+'° pri krčku ≥'+lim.angulacia_ext.dlzka_min+' mm – overiť presný uhol)';
+    V.push(t);
+  }
+  [['AIC_dx_mm','AIC dx'],['AIC_sin_mm','AIC sin']].forEach(([k,lbl])=>{
+    const v=parseFloat(document.getElementById('sz_'+k).value);
+    if(!isNaN(v)&&(v<lim.aic[0]||v>lim.aic[1]))V.push(lbl+' '+v+' mm (mimo '+lim.aic[0]+'–'+lim.aic[1]+')');
+  });
+  box.innerHTML=V.length
+    ?'<span class="ifu-chip ifu-warn">⚠️ mimo IFU: '+escHtml(V.join(' · '))+'</span>'
+    :'<span class="ifu-chip ifu-ok">✅ v rámci IFU</span>';
+}
+SIZING_FIELDS.forEach(k=>{const el=document.getElementById('sz_'+k);el.addEventListener('input',ifuEval);el.addEventListener('change',ifuEval);});
+document.getElementById('sz_graft').addEventListener('change',ifuEval);
+['af_krcok_dlzka','af_krcok_priemer','af_krcok_angulacia'].forEach(id=>{const el=document.getElementById(id);el.addEventListener('input',ifuEval);el.addEventListener('change',ifuEval);});
+
+// ── 📝 Napísať nález (handoff do PEVAR) ──────────────────────
+function updateNalezBtn(){
+  const it=editId?ITEMS.find(i=>i.id===editId):null;
+  const isAorta=document.getElementById('af_kategoria').value!=='ine';
+  const done=!!(it&&it.nalez_vykon_id);
+  document.getElementById('btn_nalez').style.display=(isAorta&&!done)?'':'none';
+  const bd=document.getElementById('btn_nalez_done');
+  bd.style.display=(isAorta&&done)?'':'none';
+  if(done)bd.textContent='📝 '+it.nalez_vykon_id;
+}
+function napisatNalez(){
+  if(!editId){msg('m_msg','⚠️ Najprv požiadavku uložte (💾), potom napíšte nález','#b45309');return;}
+  const o=formToObj();
+  const payload={
+    tool:'PEVAR',
+    from:'aorta',
+    poziadavka_id:editId,
+    inicialy:o.inicialy,
+    rocnik:o.rocnik,
+    rodne_cislo:o.rodne_cislo,
+    diagnoza:o.diagnoza,
+    priemer_mm:o.priemer_mm,
+    krcok_dlzka_mm:o.krcok_dlzka_mm,
+    krcok_priemer_mm:o.krcok_priemer_mm,
+    krcok_angulacia:o.krcok_angulacia,
+    material:o.material,
+    vykon_typ:o.vykon_typ,
+    sizing:sizingToObj()
+  };
+  sessionStorage.setItem('cievny_novy_nalez',JSON.stringify(payload));
+  location.href='/tools/PEVAR/';
+}
+
+function openModal(id){
+  editId=id;
+  const it=id?ITEMS.find(i=>i.id===id):null;
+  document.getElementById('m_title').textContent=it?('Detail: '+(it.inicialy||it.rodne_cislo||'?')+(it.rocnik?' '+it.rocnik:'')+' – '+(STATUS_LABEL[it.status]||'')):'Nová požiadavka';
+  objToForm(it);
+  updateAlerts();
+  rcCheck();
+  document.getElementById('pril_hint').style.display=editId?'none':'';
+  document.getElementById('pril_box').style.display=editId?'':'none';
+  document.getElementById('pril_text').value='';
+  const pf=document.getElementById('pril_file');if(pf)pf.value='';
+  if(editId)renderPrilohy();
+  document.getElementById('sec_hist').style.display=editId?'':'none';
+  if(it)renderHistoria(it);
+  toggleKategoria(); // prečísluje sekcie aj s Históriou
+  document.getElementById('overlay').classList.add('open');
+}
+
+function renderHistoria(it){
+  const box=document.getElementById('hist_list');
+  const rows=[];
+  parseHist(it).forEach(h=>rows.push({d:h.d,txt:(STATUS_LABEL[h.s]||h.s)+(h.by?' – '+h.by:'')}));
+  if(it.material_objednany)rows.push({d:it.material_objednany,txt:'🧾 Materiál objednaný'+(it.material_dodany?' (dodaný)':'')});
+  if(it.termin)rows.push({d:it.termin,txt:'📅 Plánovaný termín výkonu'});
+  if(it.dalsia_kontrola)rows.push({d:it.dalsia_kontrola,txt:'🩻 Ďalšia kontrola zobrazenia'});
+  rows.sort((a,b)=>(a.d||'').localeCompare(b.d||''));
+  box.innerHTML=rows.length?rows.map(r=>'<div><b style="color:#6b7280">'+fmtD(r.d)+'</b> — '+escHtml(r.txt)+'</div>').join(''):'<span style="color:#9ca3af">Bez záznamov.</span>';
+}
+
+// ── Program indikačného seminára ─────────────────────────────
+function buildSeminar(){
+  const rows=ITEMS.filter(i=>['prezerane','indikovane'].includes(i.status))
+    .sort((a,b)=>(kat(a)+(a.datum_poziadavky||'')).localeCompare(kat(b)+(b.datum_poziadavky||'')));
+  const L=[];
+  L.push('INDIKAČNÝ SEMINÁR – POŽIADAVKY NA TERAPIU');
+  L.push('Dátum: '+new Date().toLocaleDateString('sk-SK')+' | Pacientov: '+rows.length);
+  L.push('-'.repeat(46));
+  ['aorta','ine'].forEach(lane=>{
+    const laneRows=rows.filter(r=>kat(r)===lane);
+    if(!laneRows.length)return;
+    L.push(lane==='aorta'?'AORTA:':'INÉ:');
+    laneRows.forEach((r,i)=>{
+      const dg=(r.diagnoza||'?')+(r.endoleak_typ?' – '+r.endoleak_typ:'')+(r.priemer_mm?', '+r.priemer_mm+' mm':'')+(r.rast_mm_rok?' (rast '+r.rast_mm_rok+' mm/r)':'');
+      L.push((i+1)+') '+(r.inicialy||'?')+(r.rocnik?' ('+r.rocnik+')':'')+(r.rodne_cislo?', r.č. '+r.rodne_cislo:'')+' – '+dg+(r.symptomy?', '+r.symptomy:'')+(r.urgencia&&r.urgencia!=='elektívne'?', '+r.urgencia.toUpperCase():''));
+      const det=[];
+      if(r.ziadatel)det.push('žiadateľ: '+r.ziadatel);
+      det.push('stav: '+(STATUS_LABEL[r.status]||r.status).replace(/^[^\w]+\s*/,''));
+      if(r.datum_poziadavky){const d=daysBetween(r.datum_poziadavky,today());if(d!==null)det.push('čaká '+d+' d');}
+      L.push('   '+det.join(' | '));
+      if(r.vykon_typ||r.material||r.indikacia_poznamka)L.push('   plán: '+[r.vykon_typ?r.vykon_typ+(r.vykon_cieva?' – '+r.vykon_cieva:''):'',r.material,r.indikacia_poznamka].filter(Boolean).join(' | '));
+    });
+  });
+  if(!rows.length)L.push('Žiadni pacienti v stavoch Prezerané / Indikované.');
+  return L.join('\n');
+}
+function openSeminar(){
+  document.getElementById('sem_text').value=buildSeminar();
+  document.getElementById('sem_overlay').classList.add('open');
+}
+function closeSeminar(){document.getElementById('sem_overlay').classList.remove('open');}
+function copySeminar(){
+  const txt=nisSafeTxt(document.getElementById('sem_text').value);
+  const ok=()=>msg('sem_msg','✓ Skopírované','#1d6f42');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok).catch(()=>msg('sem_msg','⚠️ Označte text ručne','#b45309'));
+  else msg('sem_msg','⚠️ Označte text ručne','#b45309');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open');editId=null;}
+
+function updateAlerts(){
+  const o=formToObj();
+  const A=esvsAlerts(o);
+  document.getElementById('m_alerts').innerHTML=A.map(a=>`<div class="alert-${a.t}">${a.t==='red'?'🔴':'🟡'} ${escHtml(a.x)}</div>`).join('');
+}
+FIELDS.forEach(f=>{const el=document.getElementById('af_'+f);el.addEventListener('input',updateAlerts);el.addEventListener('change',updateAlerts);});
+
+// r.č. -> automaticky odvodíme ročník a pohlavie + kontrola duplicity a kontrolnej číslice
+function rcNorm(rc){return (rc||'').replace(/\D/g,'');}
+function rcCheck(){
+  const raw=document.getElementById('af_rodne_cislo').value.trim();
+  const warn=document.getElementById('rc_warn');
+  const W=[];
+  const digits=rcNorm(raw);
+  if(digits.length>=9){
+    // duplicita na boarde / v archíve
+    const dup=ITEMS.find(i=>i.id!==editId&&rcNorm(i.rodne_cislo)===digits);
+    if(dup)W.push('⚠️ Pacient s týmto r.č. už existuje – '+(dup.status==='archiv'?'v archíve ('+(dup.vysledok||'uzavreté')+')':(STATUS_LABEL[dup.status]||dup.status)));
+    // kontrolná číslica (len 10-miestne r.č.); výnimka: staršie r.č. so zvyškom 10 → posledná číslica 0
+    if(digits.length===10){
+      const num=Number(digits), pref=Number(digits.slice(0,9));
+      const ok = num%11===0 || (pref%11===10 && digits[9]==='0');
+      if(!ok)W.push('⚠️ R.č. nesedí na kontrolu deliteľnosti 11 – skontrolujte preklep');
+    }
+    // mesiac/formát platí pre 9- aj 10-miestne r.č. (parseRC vráti null pri neplatnom mesiaci)
+    if(!parseRC(raw))W.push('⚠️ Neplatný mesiac v r.č.');
+  }
+  warn.textContent=W.join(' · ');
+}
+document.getElementById('af_rodne_cislo').addEventListener('input',()=>{
+  const p=parseRC(document.getElementById('af_rodne_cislo').value);
+  if(p){document.getElementById('af_rocnik').value=p.rok;document.getElementById('af_pohlavie').value=p.pohl;updateAlerts();}
+  rcCheck();
+});
+
+// Staršia DB bez niektorého stĺpca (napr. epikriza pred spustením setup SQL) by
+// zhodila celé uloženie – chýbajúci stĺpec odstránime podľa chyby a skúsime znova.
+async function sendCard(url,method,payload){
+  const send=()=>fetch(url,{method,headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify(payload)});
+  let r=await send(),guard=0;
+  while(r.status===400&&guard++<8){
+    let t='';try{t=await r.clone().text();}catch{}
+    const m=t.match(/'([a-zA-Z0-9_]+)' column/)||t.match(/column "?([a-zA-Z0-9_]+)"?/);
+    if(!m||!(m[1] in payload))break;
+    delete payload[m[1]];
+    r=await send();
+  }
+  return r;
+}
+
+async function saveCard(){
+  if(saveCard._busy)return;
+  const o=formToObj();
+  if(!o.rodne_cislo){msg('m_msg','⚠️ Rodné číslo je povinné','#b45309');document.getElementById('af_rodne_cislo').focus();return;}
+  // prepnutie hotovej aortálnej karty na INÉ nenávratne maže CT merania a sizing – potvrdiť
+  if(o.kategoria==='ine'&&editId){
+    const cur=ITEMS.find(i=>i.id===editId);
+    if(cur&&kat(cur)!=='ine'&&(cur.priemer_mm||cur.sizing||cur.krcok_dlzka_mm)&&
+       !confirm('Kategória INÉ vymaže CT merania, anatómiu a sizing tejto karty. Pokračovať?'))return;
+  }
+  saveCard._busy=true;
+  try{
+    let r;
+    if(editId){
+      o.updated_at=new Date().toISOString();
+      // ochrana pred prepísaním: PATCH prejde len ak sa záznam medzitým nezmenil
+      const cur=ITEMS.find(i=>i.id===editId);
+      const guard=cur&&cur.updated_at?'&updated_at=eq.'+encodeURIComponent(cur.updated_at):'';
+      r=await sendCard(`${SB_URL}/rest/v1/${TBL}?id=eq.${editId}${guard}`,'PATCH',o);
+      if(r.ok){
+        const rows=await r.json();
+        if(!rows.length&&guard){
+          await loadItems();   // obnov základňu updated_at, ale FORMULÁR nechaj – rozpísané údaje sa nesmú stratiť
+          msg('m_msg','⚠️ Kartu medzitým zmenil niekto iný. Vaše údaje ostali vo formulári – skontrolujte ich a Uložte znova (prepíše jeho verziu).','#b45309');
+          return;
+        }
+        msg('m_msg','✓ Uložené','#1d6f42');await loadItems();updateNalezBtn();
+      }
+      else msg('m_msg','❌ Chyba pri ukladaní: '+r.status,'#dc2626');
+    }else{
+      o.status='poziadavka';
+      o.historia=JSON.stringify([{s:'poziadavka',d:today(),by:shortMail(me())||undefined}]);
+      r=await sendCard(`${SB_URL}/rest/v1/${TBL}`,'POST',o);
+      if(r.ok){
+        const rows=await r.json();
+        editId=rows[0]?rows[0].id:null;  // ostávame v modáli – dajú sa hneď pridať prílohy
+        msg('m_msg','✓ Uložené – teraz môžete pridať prílohy','#1d6f42');
+        await loadItems();updateNalezBtn();
+        if(editId){
+          document.getElementById('pril_hint').style.display='none';
+          document.getElementById('pril_box').style.display='';
+          renderPrilohy();
+        }
+      }else msg('m_msg','❌ Chyba pri ukladaní: '+r.status,'#dc2626');
+    }
+  }catch(e){msg('m_msg','❌ Chyba siete','#dc2626');}
+  finally{saveCard._busy=false;}
+}
+
+// ── Prílohy (text / dokument / fotka) ────────────────────────
+function renderPrilohy(){
+  const box=document.getElementById('pril_list');
+  const rows=PRILOHY.filter(p=>p.indikacia_id===editId);
+  if(!rows.length){box.innerHTML='<span style="font-size:12px;color:#9ca3af">Zatiaľ žiadne prílohy.</span>';return;}
+  box.innerHTML='';
+  rows.forEach(p=>{
+    const d=new Date(p.created_at).toLocaleDateString('sk-SK');
+    const ico=p.typ==='text'?'📝':(p.mime||'').startsWith('image/')?'📷':'📄';
+    const div=document.createElement('div');
+    div.style.cssText='background:#f8faff;border:1.5px solid #e5e9f5;border-radius:7px;padding:7px 10px;font-size:12.5px;';
+    div.innerHTML=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="flex:1;min-width:120px">${ico} <b>${escHtml(p.nazov||'príloha')}</b> <span style="color:#9ca3af">(${d}${p.created_by?', '+escHtml(shortMail(p.created_by)):''})</span></span>
+      <button class="btn-mini" onclick="openPriloha('${p.id}')">${p.typ==='text'?'Zobraziť':'Otvoriť'}</button>
+      <button class="btn-mini btn-mini-del" onclick="delPriloha('${p.id}')">🗑</button></div>
+      <div id="pril_obsah_${p.id}" style="display:none;white-space:pre-wrap;word-break:break-word;color:#374151;margin-top:6px;border-top:1px solid #e5e9f5;padding-top:6px"></div>`;
+    box.appendChild(div);
+  });
+}
+
+async function addTextPriloha(){
+  if(!editId)return;
+  const t=document.getElementById('pril_text').value.trim();
+  if(!t){msg('m_msg','⚠️ Napíšte text prílohy','#b45309');return;}
+  const nazov=t.split('\n')[0].slice(0,60);
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},
+      body:JSON.stringify({indikacia_id:editId,typ:'text',nazov,obsah:t})});
+    if(r.ok){document.getElementById('pril_text').value='';msg('m_msg','✓ Text uložený','#1d6f42');await loadItems();}
+    else msg('m_msg','❌ Chyba: '+r.status+(r.status===404?' (spustite setup SQL – tabuľka príloh)':''),'#dc2626');
+  }catch{msg('m_msg','❌ Chyba siete','#dc2626');}
+}
+
+async function uploadPriloha(){
+  if(!editId)return;
+  const inp=document.getElementById('pril_file');
+  const f=inp.files&&inp.files[0];
+  if(!f){msg('m_msg','⚠️ Vyberte súbor','#b45309');return;}
+  if(f.size>20*1024*1024){msg('m_msg','⚠️ Súbor je väčší ako 20 MB','#b45309');return;}
+  msg('m_msg','⏳ Nahrávam…','#3b82f6');
+  const safeName=f.name.replace(/[^\w.\-]+/g,'_');
+  const path=editId+'/'+Date.now()+'_'+safeName;
+  try{
+    const up=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${path}`,{method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':f.type||'application/octet-stream','x-upsert':'false'},body:f});
+    if(!up.ok){msg('m_msg','❌ Upload zlyhal: '+up.status+(up.status===400||up.status===404?' (vytvorte bucket – spustite setup SQL)':''),'#dc2626');return;}
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},
+      body:JSON.stringify({indikacia_id:editId,typ:'subor',nazov:f.name,storage_path:path,mime:f.type||null})});
+    if(r.ok){inp.value='';msg('m_msg','✓ Súbor nahraný','#1d6f42');await loadItems();}
+    else msg('m_msg','❌ Chyba pri zápise prílohy: '+r.status,'#dc2626');
+  }catch{msg('m_msg','❌ Chyba siete','#dc2626');}
+}
+
+async function openPriloha(id){
+  const p=PRILOHY.find(x=>x.id===id);if(!p)return;
+  if(p.typ==='text'){
+    const el=document.getElementById('pril_obsah_'+id);
+    if(el.style.display==='none'){el.textContent=p.obsah||'';el.style.display='';}
+    else el.style.display='none';
+    return;
+  }
+  try{
+    const r=await fetch(`${SB_URL}/storage/v1/object/sign/${BUCKET}/${p.storage_path}`,{method:'POST',headers:SB_HEAD(),body:JSON.stringify({expiresIn:3600})});
+    if(!r.ok){msg('m_msg','❌ Nepodarilo sa otvoriť súbor: '+r.status,'#dc2626');return;}
+    const j=await r.json();
+    window.open(SB_URL+'/storage/v1'+j.signedURL,'_blank');
+  }catch{msg('m_msg','❌ Chyba siete','#dc2626');}
+}
+
+async function delPriloha(id){
+  const p=PRILOHY.find(x=>x.id===id);if(!p)return;
+  if(!confirm('Zmazať prílohu „'+(p.nazov||'')+'"?'))return;
+  try{
+    if(p.typ==='subor'&&p.storage_path)await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${p.storage_path}`,{method:'DELETE',headers:SB_HEAD()});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD()});
+    if(r.ok){msg('m_msg','✓ Príloha zmazaná','#1d6f42');await loadItems();}
+  }catch{msg('m_msg','❌ Chyba siete','#dc2626');}
+}
+
+// ── Presun medzi stavmi ──────────────────────────────────────
+async function moveCard(id,newStatus,vysledok,retried){
+  const it=ITEMS.find(i=>i.id===id);if(!it)return;
+  const hist=parseHist(it);hist.push({s:newStatus,d:today(),by:shortMail(me())||undefined});
+  const body={status:newStatus,historia:JSON.stringify(hist),updated_at:new Date().toISOString()};
+  if(vysledok!==undefined)body.vysledok=vysledok;
+  const guard=it.updated_at?'&updated_at=eq.'+encodeURIComponent(it.updated_at):'';
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}${guard}`,{method:'PATCH',headers:{...SB_HEAD(),'Prefer':'return=representation'},body:JSON.stringify(body)});
+    if(r.ok){
+      const rows=await r.json();
+      if(!rows.length&&guard&&!retried){
+        // záznam sa medzitým zmenil – načítame čerstvý stav a presun zopakujeme raz
+        await loadItems();
+        return moveCard(id,newStatus,vysledok,true);
+      }
+      if(!rows.length&&guard&&retried)msg('top_msg','⚠️ Presun karty neprešiel (medzitým ju zmenil niekto iný) – skúste znova','#b45309');
+      await loadItems();
+    }else msg('top_msg','❌ Chyba: '+r.status,'#dc2626');
+  }catch{msg('top_msg','❌ Chyba siete','#dc2626');}
+}
+
+// ── Archivácia ───────────────────────────────────────────────
+function openArch(id){archId=id;document.getElementById('arch_note').value='';const _av=document.getElementById('arch_vysledok');if(_av)_av.selectedIndex=0;document.getElementById('arch_overlay').classList.add('open');}
+function closeArch(){document.getElementById('arch_overlay').classList.remove('open');archId=null;}
+async function confirmArch(){
+  if(!archId)return;
+  const v=document.getElementById('arch_vysledok').value;
+  const n=document.getElementById('arch_note').value.trim();
+  await moveCard(archId,'archiv',n?v+' – '+n:v);
+  closeArch();
+}
+async function restoreCard(id){await moveCard(id,'poziadavka','');}
+async function delCard(id){
+  if(!confirm('Definitívne zmazať tento záznam z archívu (vrátane príloh)?'))return;
+  try{
+    // najprv prílohy: súbory zo storage + riadky
+    const pr=PRILOHY.filter(p=>p.indikacia_id===id);
+    for(const p of pr){
+      if(p.typ==='subor'&&p.storage_path)await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${p.storage_path}`,{method:'DELETE',headers:SB_HEAD()});
+    }
+    if(pr.length)await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}?indikacia_id=eq.${id}`,{method:'DELETE',headers:SB_HEAD()});
+    const r=await fetch(`${SB_URL}/rest/v1/${TBL}?id=eq.${id}`,{method:'DELETE',headers:SB_HEAD()});
+    if(r.ok)await loadItems();
+  }catch{msg('top_msg','❌ Chyba siete','#dc2626');}
+}
+
+// ── Zápis do NIS ─────────────────────────────────────────────
+function nisSafeTxt(t){
+  return t.replace(/─/g,'-').replace(/\n\n/g,'\n \n').replace(/\r?\n/g,'\r\n');
+}
+function buildZapis(){
+  const o=formToObj();
+  const it=editId?ITEMS.find(i=>i.id===editId):null;
+  const A=esvsAlerts(o);
+  const L=[];
+  const isAorta=o.kategoria!=='ine';
+  const pacient='Pacient: '+(o.inicialy||'?')+(o.rocnik?' ('+o.rocnik+')':'')+(o.rodne_cislo?' | r.č. '+o.rodne_cislo:'')+(o.pohlavie?' | '+(o.pohlavie==='M'?'MUŽ':'ŽENA'):'');
+  if(!isAorta){
+    // ── INÉ: jednoduchší zápis ──
+    L.push('ZÁPIS Z INDIKAČNÉHO SEMINÁRA / POŽIADAVKA NA TERAPIU');
+    L.push('Dátum: '+new Date().toLocaleDateString('sk-SK'));
+    L.push(pacient);
+    if(it)L.push('Stav v pipeline: '+(STATUS_LABEL[it.status]||it.status).replace(/^[^\w]+\s*/,''));
+    L.push('-'.repeat(46));
+    L.push('1. INDIKÁCIA');
+    L.push('- Klinický stav: '+(o.symptomy||'?').toUpperCase()+(o.urgencia?' ('+o.urgencia+')':''));
+    L.push('- Diagnóza: '+(o.diagnoza||'?'));
+    if(o.datum_ct)L.push('- Zobrazenie (CT / MR): '+fmtD(o.datum_ct));
+    if(o.indikoval1||o.indikoval2||o.material||o.termin){
+      L.push('2. PLÁN');
+      if(o.indikoval1||o.indikoval2)L.push('- Indikoval: '+[o.indikoval1,o.indikoval2].filter(Boolean).join(' + '));
+      if(o.material)L.push('- Navrhovaný postup: '+o.material+(o.material_objednany?' (materiál objednaný '+fmtD(o.material_objednany)+(o.material_dodany?', dodaný':', čaká sa na dodanie')+')':''));
+      if(o.termin)L.push('- Plánovaný termín výkonu: '+fmtD(o.termin));
+    }
+    if(o.zaver_seminara)L.push('ZÁVER INDIKAČNÉHO SEMINÁRA: '+o.zaver_seminara);
+    if(A.length){L.push('UPOZORNENIA:');A.forEach(a=>L.push('- '+(a.t==='red'?'[!] ':'')+a.x));}
+    if(o.poznamka)L.push('POZNÁMKA: '+o.poznamka);
+    if(!o.zaver_seminara)L.push('OTÁZKA NA KONZÍLIUM: prosím o posúdenie vhodnosti endovaskulárnej vs. chirurgickej vs. konzervatívnej liečby.');
+    return L.join('\n');
+  }
+  // ── AORTA: plný zápis ──
+  L.push('ZÁPIS Z AORTÁLNEHO TÍMU / INDIKÁCIA NA TERAPIU AORTY');
+  L.push('Dátum: '+new Date().toLocaleDateString('sk-SK'));
+  L.push(pacient);
+  if(it)L.push('Stav v pipeline: '+(STATUS_LABEL[it.status]||it.status).replace(/^[^\w]+\s*/,''));
+  L.push('-'.repeat(46));
+  L.push('1. INDIKÁCIA A MORFOLÓGIA');
+  L.push('- Klinický stav: '+(o.symptomy||'?').toUpperCase()+(o.urgencia?' ('+o.urgencia+')':''));
+  L.push('- Diagnóza: '+(o.diagnoza||'?')+(o.endoleak_typ?' – '+o.endoleak_typ:''));
+  L.push('- Max. priemer: '+(o.priemer_mm??'?')+' mm'+(o.rast_mm_rok?' (rast: '+o.rast_mm_rok+' mm/rok)':''));
+  L.push('2. ANATOMICKÉ PARAMETRE (CT angio: '+(o.datum_ct?fmtD(o.datum_ct):'doplniť')+')');
+  L.push('- Proximálny krčok: dĺžka '+(o.krcok_dlzka_mm??'?')+' mm | priemer '+(o.krcok_priemer_mm??'?')+' mm | angulácia '+(o.krcok_angulacia==='<60'?'< 60° (priaznivá)':o.krcok_angulacia==='>60'?'> 60° (nepriaznivá)':'?'));
+  L.push('- Iliacký prístup: '+(o.iliaky||'?'));
+  L.push('3. RIZIKOVÝ PROFIL (FITNESS FOR SURGERY)');
+  L.push('- Kardiálne riziko: '+(o.kardio||'nezadané'));
+  L.push('- Renálne funkcie (eGFR): '+(o.renalne||'nezadané'));
+  L.push('- Pľúcny status: '+(o.pulmo||'nezadaný'));
+  L.push('- Frailty: '+(o.frailty?'ÁNO (krehký pacient)':'nie (fit)'));
+  L.push('- Očakávané dožitie: '+(o.dozitie==='<2'?'< 2 roky':'> 2 roky'));
+  L.push('- Antitrombotická liečba: '+(o.medikacia||'bez špecifikácie'));
+  if(o.material||o.termin||o.indikoval1||o.indikoval2||o.vykon_typ||o.indikacia_poznamka){
+    L.push('4. ENDOVASKULÁRNY PLÁN');
+    if(o.indikoval1||o.indikoval2)L.push('- Indikoval: '+[o.indikoval1,o.indikoval2].filter(Boolean).join(' + '));
+    if(o.vykon_typ)L.push('- Plánovaný výkon: '+o.vykon_typ+(o.vykon_cieva?' – '+o.vykon_cieva:''));
+    if(o.indikacia_poznamka)L.push('- Poznámka k indikácii: '+o.indikacia_poznamka);
+    if(o.material)L.push('- Materiál: '+o.material+(o.material_objednany?' (objednaný '+fmtD(o.material_objednany)+(o.material_dodany?', dodaný':', čaká sa na dodanie')+')':''));
+    if(o.termin)L.push('- Plánovaný termín výkonu: '+fmtD(o.termin));
+  }
+  if(A.length){
+    L.push('UPOZORNENIA (ESVS 2024):');
+    A.forEach(a=>L.push('- '+(a.t==='red'?'[!] ':'')+a.x));
+  }
+  if(o.poznamka)L.push('POZNÁMKA: '+o.poznamka);
+  L.push('OTÁZKA NA KONZÍLIUM: prosím o posúdenie vhodnosti EVAR vs. OSR vs. dispenzarizácia.');
+  return L.join('\n');
+}
+function copyZapis(){
+  const txt=nisSafeTxt(buildZapis());
+  const ok=()=>msg('m_msg','✓ Zápis skopírovaný','#1d6f42');
+  const fail=()=>msg('m_msg','⚠️ Kopírovanie zlyhalo','#b45309');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(ok).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');ok();}catch{fail();}
+    document.body.removeChild(ta);
+  });
+  else fail();
+}
+
+// ── Automatická archivácia: po 90 dňoch (3 mes.) od presunu do konzervatívy
+//    alebo chirurgického riešenia sa karta sama presunie do archívu ──
+let _autoArchBezalo=false;
+async function autoArchivujStare(){
+  if(_autoArchBezalo)return;_autoArchBezalo=true;
+  const ids=ITEMS.filter(it=>{
+    if(it.status!=='konzervativa'&&it.status!=='chirurgia')return false;
+    const hist=parseHist(it);
+    const entered=hist.length?hist[hist.length-1].d:(it.created_at||'').slice(0,10);
+    const d=entered?daysBetween(entered,today()):null;
+    return d!==null&&d>=90;
+  }).map(it=>it.id);
+  let n=0;
+  for(const id of ids){
+    const it=ITEMS.find(i=>i.id===id);       // po každom moveCard sa ITEMS obnovia
+    if(!it||it.status==='archiv')continue;
+    const dovod=(it.status==='konzervativa'?'konzervatívny postup – odovzdané na sledovanie':'odovzdané na chirurgické riešenie')+' (automatická archivácia po 90 d)';
+    try{await moveCard(id,'archiv',dovod);n++;}catch(e){}
+  }
+  if(n)msg('top_msg','🗄 Automaticky archivované po 90 dňoch v konzervatíve/chirurgii: '+n,'#059669');
+}
+
+loadItems().then(autoArchivujStare);
+initArchDrop();
+
+// auto-refresh boardu každých 60 s (keď nie je otvorený modál a stránka je viditeľná)
+setInterval(()=>{
+  if(document.visibilityState!=='visible')return;
+  if(document.getElementById('overlay').classList.contains('open'))return;
+  if(document.getElementById('arch_overlay').classList.contains('open'))return;
+  if(document.getElementById('sem_overlay').classList.contains('open'))return;
+  loadItems();
+},60000);
+</script>
+<script src="/tools/scrub.js"></script>
+<script src="/tools/poziadavky-import.js"></script>
+</body>
+</html>

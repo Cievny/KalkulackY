@@ -14,6 +14,7 @@ Backend je **Supabase** (PostgREST REST API, Auth cez e‑mail + heslo, Storage 
 - **📺 TV brána** (`/tools/tv/`) – kiosk prihlásenie krátkym kódom pod kontom `tv@cievny.sk` (len na čítanie), spustí Program v TV režime.
 - **📬 Schránka** (`/schranka/`) – verejný anonymný formulár podnetov (jediný anon zápis do DB).
 - Česká verzia je pod `/cz/` (samostatné `cz_*` tabuľky).
+- **Nezávislá česká kópia** s vlastnou databázou je v `cz-app/` (generuje `scripts/build_cz_app.py`, nasadzuje sa ako samostatný Vercel projekt; zatiaľ len Požiadavky) – pozri `cz-app/README.md`.
 
 ## Prihlásenie a bezpečnosť
 - Prihlásenie **vlastným e‑mailom a heslom** (kontá sa zakladajú v Supabase → Authentication → Users) alebo **cez Google** (OAuth; treba zapnúť provider v Supabase + OAuth client v Google Cloud s redirect URI `https://<projekt>.supabase.co/auth/v1/callback`). Prihlásenie len heslom (bez e‑mailu) nie je možné. CZ verzia je zámerne len e‑mail+heslo (bez Google).

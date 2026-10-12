@@ -1,0 +1,8 @@
+{
+  "name": "cz-app",
+  "private": true,
+  "description": "cievny.cz – nezávislá CZ kópia (statický web + Vercel Routing Middleware)",
+  "dependencies": {
+    "@vercel/functions": "^2"
+  }
+}

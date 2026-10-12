@@ -32,7 +32,7 @@ const PUBLIC = [
   '/tools/adventny-kalendar/', '/tools/adventny-kalendar/index.html',
   '/tools/auth.js', '/cz/tools/auth.js'
 ];
-const BLOCKED = ['/middleware.js', '/package.json', '/package-lock.json', '/vercel.json', '/lib/brana.mjs', '/lib/x.js'];
+const BLOCKED = ['/middleware.js', '/package.json', '/package-lock.json', '/vercel.json', '/lib/brana.mjs', '/lib/x.js', '/cz-app/tools/Aorta/', '/cz-app/config.json'];
 for (const p of PROTECTED) ok(classify(p.split('?')[0]) === 'protected', `chránené: ${p}`, classify(p.split('?')[0]));
 for (const p of PUBLIC) ok(classify(p.split('?')[0]) === 'public', `verejné: ${p}`, classify(p.split('?')[0]));
 for (const p of BLOCKED) ok(classify(p) === 'blocked', `blokované: ${p}`, classify(p));

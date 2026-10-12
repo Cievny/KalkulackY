@@ -1,0 +1,6 @@
+{
+  "APP_NAME": "cievny.cz",
+  "SB_URL": "https://DOPLNIT-PROJECT-REF.supabase.co",
+  "SB_ANON": "sb_publishable_DOPLNIT",
+  "_pozn": "Jediné miesto s údajmi o českom Supabase projekte. Po vyplnení spustiť: python3 scripts/build_cz_app.py (dosadí sa do tools/config.js, lib/brana.mjs a vercel.json). Anon (publishable) kľúč je verejný – do repozitára patrí; service_role kľúč sem NIKDY."
+}
