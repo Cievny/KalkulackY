@@ -78,6 +78,18 @@ ok(await lp.evaluate(() => typeof doGoogle === 'function'), 'login: doGoogle dos
 ok(/cievny\.cz/.test(await lp.$eval('.logo', e => e.textContent)), 'login nesie názov inštancie z config.json');
 ok((await lp.evaluate(() => document.body.innerText)).includes('Přihlásit se'), 'login po česky');
 const hp = await ctx.newPage(); await hp.goto('http://localhost:8997/tools/', { waitUntil: 'domcontentloaded' }); await hp.waitForTimeout(300);
-ok((await hp.$$('.card')).length === 1, 'úvodná stránka má len kartu Požiadavky');
+ok((await hp.$$('.card')).length === 2, 'úvodná stránka má karty Požiadavky a Prístupy');
+ok(brana.classify('/tools/pozvanka/') === 'public' && brana.classify('/tools/pristupy/') === 'protected', 'brána: pozvánka verejná (pozvaný ešte nie je v allowliste), Prístupy chránené');
+// Prístupy: admin vidí zoznam, texty po česky, žiadny odkaz na SK projekt
+const pp = await ctx.newPage(); const perr = []; pp.on('pageerror', e => perr.push(e.message));
+await pp.route('**/*.supabase.co/**', route => { const u = route.request().url(); hosts.push(new URL(u).host);
+  if (u.includes('povoleni_pouzivatelia')) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ email: 'test@cievny.cz', meno: 'Test', admin: true, pridal: null }]) });
+  route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }); });
+await pp.goto('http://localhost:8997/tools/pristupy/', { waitUntil: 'domcontentloaded' }); await pp.waitForTimeout(900);
+const ptxt = await pp.evaluate(() => document.body.innerText);
+ok(perr.length === 0 && /Přístupy – povolení uživatelé/.test(ptxt) && /test@cievny\.cz/.test(ptxt), 'Prístupy: načítanie, zoznam, po česky' + (perr.length ? ' (' + perr[0] + ')' : ''));
+ok(/Zvací odkazy/.test(ptxt) && !/[ľĺŕäô]/.test(ptxt), 'Prístupy: pozývacie linky, bez slovenských písmen');
+const pz = await ctx.newPage(); await pz.goto('http://localhost:8997/tools/pozvanka/?t=abc', { waitUntil: 'domcontentloaded' }); await pz.waitForTimeout(600);
+ok(!/\/tools\/EVK\//.test(readFileSync(join(ROOT, 'tools/pozvanka/index.html'), 'utf8')), 'pozvánka: po uplatnení vedie na Požiadavky, nie na EVK');
 await browser.close(); srv.close();
 console.log(`\n${pass} prešlo, ${fail} zlyhalo`); process.exit(fail ? 1 : 0);

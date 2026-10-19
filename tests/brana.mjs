@@ -13,7 +13,7 @@ console.log('— classify —');
 const PROTECTED = [
   '/tools/', '/tools', '/tools/index.html', '/cz/tools/', '/cz/tools',
   ...['AVF','Aorta','CAS-generator','EVK','PEVAR','Program','RAS','VIS','analytics','ideas','kalendar','kontroly',
-      'objednavky','oznamy','pacient','pozvanka','pristupy','suhlasy','zaloha','zaznamy','upload'].map(d => `/tools/${d}/`),
+      'objednavky','oznamy','pacient','pristupy','suhlasy','zaloha','zaznamy','upload'].map(d => `/tools/${d}/`),
   ...['CAS-generator','EVK','PEVAR','analytics','ideas','zaznamy'].map(d => `/cz/tools/${d}/`),
   '/tools/EVK/index.html', '/tools/Program/?tv=1', '/tools//EVK/', '/tools/nova-vec/', '/tools/suhlasy/docs/01_EVAR.docx',
   ...['esc','gen-actionbar','pacient','rc-auto','scrub','vykon-id','drg-ceny','gcal-config','anamneza-parser',
@@ -30,8 +30,7 @@ const PUBLIC = [
   '/tools/login/', '/tools/login', '/tools/login/index.html', '/tools/LOGIN/', '/cz/tools/login/',
   '/tools/tv/', '/tools/velin/', '/tools/velin/?sala=A',
   '/tools/adventny-kalendar/', '/tools/adventny-kalendar/index.html',
-  '/tools/auth.js', '/cz/tools/auth.js'
-];
+  '/tools/auth.js', '/cz/tools/auth.js', '/tools/pozvanka/?t=abc'];
 const BLOCKED = ['/middleware.js', '/package.json', '/package-lock.json', '/vercel.json', '/lib/brana.mjs', '/lib/x.js', '/cz-app/tools/Aorta/', '/cz-app/config.json'];
 for (const p of PROTECTED) ok(classify(p.split('?')[0]) === 'protected', `chránené: ${p}`, classify(p.split('?')[0]));
 for (const p of PUBLIC) ok(classify(p.split('?')[0]) === 'public', `verejné: ${p}`, classify(p.split('?')[0]));

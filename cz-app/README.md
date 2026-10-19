@@ -21,6 +21,8 @@ cz-app/
   tools/auth.js        ← prihlásenie + navigácia (len nástroje v kópii)
   tools/login/         ← e-mail + heslo, Google (OAuth cez český projekt)
   tools/Aorta/         ← Požiadavky
+  tools/pristupy/      ← Prístupy: povolení používatelia, admini, pozývacie linky
+  tools/pozvanka/      ← cieľ pozývacieho linku (pozvaný sa sám pridá do zoznamu)
   middleware.js, lib/  ← server-side brána (Vercel), rovnaká ako v SK
   vercel.json          ← hlavičky + CSP s URL českého projektu
 ```
@@ -45,8 +47,10 @@ cz-app/
    použijú hodnoty z `config.json`). Vlastná doména podľa potreby.
 5. Otvorte `/tools/login/`, prihláste sa, Požiadavky sú na `/tools/Aorta/`.
 
-Ďalších lekárov pridáte do `povoleni_pouzivatelia` (SQL) a založíte im konto
-v Authentication → Users. Nástroj Prístupy sa doplní s ďalšou fázou.
+Ďalších lekárov pridá administrátor v nástroji **🔑 Prístupy** (`/tools/pristupy/`):
+buď e-mailom do zoznamu, alebo pozývacím linkom, cez ktorý sa kolega po prihlásení
+(Google/heslo) pridá sám. Konto s heslom musí existovať v Authentication → Users;
+pri Google prihlásení sa konto vytvorí samo.
 
 ## Čo v tejto fáze chýba (zámerne)
 

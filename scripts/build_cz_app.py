@@ -32,7 +32,10 @@ SK_ANON = 'sb_publishable_DX_FaXYGNx70dB6m-PfhAA_H5NHyH3k'
 # nástroje zahrnuté do kópie: cesta pod tools/ → popis karty na úvodnej stránke
 TOOLS = [
     ('Aorta', '📥 Požiadavky na terapiu (Aorta + Iné)'),
+    ('pristupy', '🔑 Prístupy (povolení používatelia)'),
 ]
+# stránky bez karty na úvode (otvárajú sa z odkazu): cieľ pozývacieho linku
+HIDDEN_TOOLS = ['pozvanka']
 # zdieľané skripty, ktoré zahrnuté nástroje potrebujú
 SHARED_JS = ['auth.js', 'scrub.js', 'poziadavky-import.js']
 # položky navigácie, ktoré v kópii ostanú (ostatné nástroje v nej nie sú)
@@ -123,6 +126,7 @@ def build_login():
 def build_tool(name):
     s = swap_supabase(read('tools/%s/index.html' % name))
     s = re.sub(r'<title>(.*?)</title>', lambda m: '<title>CZ – ' + m.group(1) + '</title>', s, count=1)
+    s = s.replace('/tools/EVK/', '/tools/Aorta/')   # EVK v kópii (zatiaľ) nie je – domov sú Požiadavky
     # stavy nástenky (STATUSES) majú vlastné farby s významom – tie sa neprefarbujú
     s = theme(add_config_script(s), protect=('const STATUSES=[',))
     return preloz(s)
@@ -215,7 +219,7 @@ def build():
     for js in SHARED_JS:
         if js != 'auth.js':
             GENERATED['tools/' + js] = read('tools/' + js)
-    for name, _ in TOOLS:
+    for name in [t for t, _ in TOOLS] + HIDDEN_TOOLS:
         GENERATED['tools/%s/index.html' % name] = build_tool(name)
     GENERATED['lib/brana.mjs'] = build_brana()
     GENERATED['middleware.js'] = build_middleware()

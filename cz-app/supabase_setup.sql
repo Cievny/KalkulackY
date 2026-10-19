@@ -163,6 +163,37 @@ CREATE POLICY "aorta prilohy storage select" ON storage.objects FOR SELECT TO au
 CREATE POLICY "aorta prilohy storage insert" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='aorta-prilohy' AND (SELECT je_povoleny() AND NOT je_tv()));
 CREATE POLICY "aorta prilohy storage delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id='aorta-prilohy' AND (SELECT je_povoleny() AND NOT je_tv()));
 
+-- ── 4) Pozývacie linky (nástroj Prístupy): admin vytvorí link, pozvaný sa cezeň sám pridá ──
+CREATE TABLE IF NOT EXISTS pozvanky (
+  token      TEXT PRIMARY KEY,
+  ako_admin  BOOLEAN NOT NULL DEFAULT false,
+  poznamka   TEXT,
+  expiruje   TIMESTAMPTZ,
+  aktivna    BOOLEAN NOT NULL DEFAULT true,
+  created_by TEXT DEFAULT (auth.jwt()->>'email'),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE pozvanky ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "pozvanky admin" ON pozvanky;
+CREATE POLICY "pozvanky admin" ON pozvanky FOR ALL TO authenticated
+  USING ((SELECT je_admin())) WITH CHECK ((SELECT je_admin()));
+-- uplatnenie pozvánky: pridá PRIHLÁSENÉHO používateľa do allowlistu (len pri platnom, aktívnom tokene)
+CREATE OR REPLACE FUNCTION uplatni_pozvanku(p_token TEXT) RETURNS text
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE r pozvanky%rowtype; myemail text;
+BEGIN
+  myemail := lower(coalesce(auth.jwt()->>'email',''));
+  IF myemail = '' THEN RETURN 'NEPRIHLASENY'; END IF;
+  SELECT * INTO r FROM pozvanky WHERE token = p_token;
+  IF NOT FOUND OR NOT r.aktivna THEN RETURN 'NEPLATNA'; END IF;
+  IF r.expiruje IS NOT NULL AND r.expiruje < now() THEN RETURN 'EXPIROVANA'; END IF;
+  INSERT INTO povoleni_pouzivatelia(email, admin) VALUES (myemail, r.ako_admin)
+    ON CONFLICT (email) DO UPDATE SET admin = (povoleni_pouzivatelia.admin OR r.ako_admin);
+  RETURN 'OK';
+END $$;
+REVOKE ALL ON FUNCTION uplatni_pozvanku(text) FROM public;
+GRANT EXECUTE ON FUNCTION uplatni_pozvanku(text) TO authenticated;
+
 -- ── KONTROLA ──
 -- SELECT relname, n_live_tup FROM pg_stat_user_tables WHERE schemaname='public';
 -- SELECT * FROM povoleni_pouzivatelia;
