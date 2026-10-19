@@ -171,6 +171,13 @@ def build():
         "description": CFG['APP_NAME'] + " – nezávislá CZ kópia (statický web + Vercel Routing Middleware)",
         "dependencies": {"@vercel/functions": "^2"}
     }, ensure_ascii=False, indent=2) + '\n'
+    # rovnaký lockfile ako hlavný web – závislosť middleware (@vercel/functions) sa nainštaluje
+    # deterministicky; bez lockfile Vercel inštaluje inak a middleware padal (MIDDLEWARE_INVOCATION_FAILED)
+    lock = json.loads(read('package-lock.json'))
+    lock['name'] = 'cz-app'
+    if '' in lock.get('packages', {}):
+        lock['packages']['']['name'] = 'cz-app'
+    GENERATED['package-lock.json'] = json.dumps(lock, ensure_ascii=False, indent=2) + '\n'
     GENERATED['index.html'] = '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/tools/Aorta/"><title>%s</title>' % CFG['APP_NAME']
     for ic in ('icon-192.png', 'icon-512.png'):
         with open(os.path.join(ROOT, 'icons', ic), 'rb') as f:
