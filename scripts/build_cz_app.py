@@ -38,6 +38,36 @@ NAV_KEEP = ['/tools/', '/tools/Aorta/']
 
 GENERATED = {}   # relatívna cesta → obsah (text alebo bytes)
 
+# Farebná téma CZ inštancie: modrý „chrome" SK verzie (navigácia, nadpisy, hlavné
+# tlačidlá, pozadie) → červený, aby sa na prvý pohľad odlíšila od slovenskej.
+# Sémantické farby (stavy na nástenke, urgencia, varovania) ostávajú nedotknuté.
+THEME = [
+    ('#0f1e3d', '#5b0e1a'),   # navigácia – pozadie
+    ('#1a2c52', '#7a1f2e'),   # navigácia – hover / aktívna položka menu
+    ('#2a3f66', '#8c3545'),   # navigácia – rám rozbaľovacieho menu
+    ('#8fa3c8', '#f1b8b8'),   # navigácia – neaktívny text
+    ('#3b82f6', '#f87171'),   # navigácia – podčiarknutie aktívnej / focus
+    ('#1e40af', '#991b1b'),   # hlavné tlačidlá
+    ('#1737a0', '#7f1d1d'),   # hlavné tlačidlá – hover
+    ('#1a2745', '#5b0e1a'),   # nadpisy
+    ('#f0f2f7', '#fdf2f2'),   # pozadie stránky
+    ('#f7f8f8', '#fdf2f2'),   # pozadie loginu
+]
+def theme(src, protect=()):
+    """prefarbí text; úseky začínajúce reťazcom z `protect` (po najbližšie '];') ostanú pôvodné"""
+    keep = []
+    for marker in protect:
+        i = src.find(marker)
+        if i < 0: continue
+        j = src.find('];', i) + 2
+        keep.append(src[i:j]); src = src[:i] + ('\0KEEP%d\0' % (len(keep) - 1)) + src[j:]
+    for a, b in THEME:
+        src = src.replace(a, b)
+    for k, seg in enumerate(keep):
+        src = src.replace('\0KEEP%d\0' % k, seg)
+    return src
+
+
 
 def read(rel):
     with open(os.path.join(ROOT, rel), encoding='utf-8') as f:
@@ -75,22 +105,24 @@ def build_auth():
     s = s.replace("navigator.serviceWorker.register('/sw.js')", "Promise.resolve()")
     s = s.replace('// Shared auth + navigation for cievny.sk tools',
                   '// Shared auth + navigation – NEZÁVISLÁ CZ KÓPIA (generované zo tools/auth.js, needitovať ručne)')
-    return s
+    s = s.replace("{href:'/tools/',label:'🏠'}", "{href:'/tools/',label:'🏠 CZ'}")
+    return theme(s)
 
 
 def build_login():
     s = read('tools/login/index.html')
-    # len e-mail + heslo (bez Google – vyžadovalo by OAuth klienta pre novú inštanciu)
-    s = re.sub(r'\s*<div class="divider"><span>alebo</span></div>\s*<button class="gbtn".*?</button>', '', s, flags=re.S)
+    # e-mail + heslo aj Google (provider Google treba zapnúť v českom Supabase projekte – pozri README)
     s = s.replace('🫀 cievny.sk', '🫀 ' + CFG['APP_NAME'])
     s = s.replace('Klinické nástroje – prihlásenie', 'Klinické nástroje – prihlásenie (CZ)')
     s = add_config_script(s)
-    return s
+    return theme(s)
 
 
 def build_tool(name):
     s = swap_supabase(read('tools/%s/index.html' % name))
-    return add_config_script(s)
+    s = re.sub(r'<title>(.*?)</title>', lambda m: '<title>CZ – ' + m.group(1) + '</title>', s, count=1)
+    # stavy nástenky (STATUSES) majú vlastné farby s významom – tie sa neprefarbujú
+    return theme(add_config_script(s), protect=('const STATUSES=[',))
 
 
 def build_index():
@@ -99,7 +131,8 @@ def build_index():
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Nástroje – %s</title>
 <style>
- body{font-family:system-ui;max-width:1000px;margin:40px auto;padding:0 16px}
+ body{font-family:system-ui;max-width:1000px;margin:40px auto;padding:0 16px;background:#fdf2f2}
+ h1{color:#5b0e1a}
  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
  .card{border:1px solid #e5e7eb;border-radius:14px;padding:14px;text-decoration:none;color:#111}
  .card:hover{box-shadow:0 6px 18px rgba(0,0,0,.08);transform:translateY(-1px)}

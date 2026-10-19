@@ -221,7 +221,7 @@
 
   // Inject shared nav after DOM ready
   const NAV_LINKS=[
-    {href:'/tools/',label:'🏠'},
+    {href:'/tools/',label:'🏠 CZ'},
     {href:'/tools/Aorta/',label:'📥 Požiadavky'},
   ];
 
@@ -231,9 +231,9 @@
     if(existing)return;
     const nav=document.createElement('div');
     nav.className='shared-nav';
-    nav.style.cssText='background:#0f1e3d;display:flex;align-items:center;padding:0 16px;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;';
+    nav.style.cssText='background:#5b0e1a;display:flex;align-items:center;padding:0 16px;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;';
     const cur=location.pathname.replace(/\/$/,'');
-    const linkCss=act=>'padding:9px 16px;font-size:13px;font-weight:600;color:'+(act?'#fff':'#8fa3c8')+';text-decoration:none;border-bottom:3px solid '+(act?'#3b82f6':'transparent')+';transition:.15s;white-space:nowrap;flex-shrink:0;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer;font-family:inherit;';
+    const linkCss=act=>'padding:9px 16px;font-size:13px;font-weight:600;color:'+(act?'#fff':'#f1b8b8')+';text-decoration:none;border-bottom:3px solid '+(act?'#f87171':'transparent')+';transition:.15s;white-space:nowrap;flex-shrink:0;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer;font-family:inherit;';
     NAV_LINKS.forEach(l=>{
       if(l.children){
         // rozbaľovacie menu (Popisy)
@@ -242,15 +242,15 @@
         btn.textContent=l.label+' ▾';
         btn.style.cssText=linkCss(active);
         const menu=document.createElement('div');
-        menu.style.cssText='position:fixed;display:none;background:#0f1e3d;border:1px solid #2a3f66;border-radius:0 0 10px 10px;box-shadow:0 12px 30px rgba(0,0,0,.4);z-index:1000;min-width:250px;padding:6px 0;';
+        menu.style.cssText='position:fixed;display:none;background:#5b0e1a;border:1px solid #8c3545;border-radius:0 0 10px 10px;box-shadow:0 12px 30px rgba(0,0,0,.4);z-index:1000;min-width:250px;padding:6px 0;';
         l.children.forEach(c=>{
           const ca=document.createElement('a');
           ca.href=c.href;
           const cact=cur===c.href.replace(/\/$/,'');
           ca.textContent=c.label;
-          ca.style.cssText='display:block;padding:10px 16px;font-size:13px;font-weight:600;color:'+(cact?'#fff':'#8fa3c8')+';text-decoration:none;white-space:nowrap;'+(cact?'background:#1a2c52;':'');
-          ca.onmouseover=()=>{ca.style.background='#1a2c52';ca.style.color='#fff';};
-          ca.onmouseout=()=>{ca.style.background=cact?'#1a2c52':'none';ca.style.color=cact?'#fff':'#8fa3c8';};
+          ca.style.cssText='display:block;padding:10px 16px;font-size:13px;font-weight:600;color:'+(cact?'#fff':'#f1b8b8')+';text-decoration:none;white-space:nowrap;'+(cact?'background:#7a1f2e;':'');
+          ca.onmouseover=()=>{ca.style.background='#7a1f2e';ca.style.color='#fff';};
+          ca.onmouseout=()=>{ca.style.background=cact?'#7a1f2e':'none';ca.style.color=cact?'#fff':'#f1b8b8';};
           menu.appendChild(ca);
         });
         document.body.appendChild(menu);
@@ -263,7 +263,7 @@
         document.addEventListener('click',()=>{menu.style.display='none';});
         nav.addEventListener('scroll',()=>{menu.style.display='none';});
         btn.onmouseover=()=>{if(!active)btn.style.color='#fff';};
-        btn.onmouseout=()=>{if(!active)btn.style.color='#8fa3c8';};
+        btn.onmouseout=()=>{if(!active)btn.style.color='#f1b8b8';};
         nav.appendChild(btn);
         return;
       }
@@ -272,7 +272,7 @@
       const active=cur===l.href.replace(/\/$/,'');
       a.style.cssText=linkCss(active);
       a.onmouseover=()=>{if(!active)a.style.color='#fff';};
-      a.onmouseout=()=>{if(!active)a.style.color='#8fa3c8';};
+      a.onmouseout=()=>{if(!active)a.style.color='#f1b8b8';};
       a.textContent=l.label;
       nav.appendChild(a);
     });
@@ -281,14 +281,14 @@
     if(ue){
       const who=document.createElement('span');
       who.textContent='👤 '+ue;
-      who.style.cssText='font-size:12px;color:#8fa3c8;margin-right:10px;white-space:nowrap;';
+      who.style.cssText='font-size:12px;color:#f1b8b8;margin-right:10px;white-space:nowrap;';
       nav.appendChild(who);
     }
     const out=document.createElement('button');
     out.textContent='Odhlásiť';
-    out.style.cssText='padding:6px 12px;font-size:12px;font-weight:600;background:none;border:1.5px solid #4a5568;color:#8fa3c8;border-radius:6px;cursor:pointer;white-space:nowrap;flex-shrink:0;';
+    out.style.cssText='padding:6px 12px;font-size:12px;font-weight:600;background:none;border:1.5px solid #4a5568;color:#f1b8b8;border-radius:6px;cursor:pointer;white-space:nowrap;flex-shrink:0;';
     out.onmouseover=()=>out.style.color='#fff';
-    out.onmouseout=()=>out.style.color='#8fa3c8';
+    out.onmouseout=()=>out.style.color='#f1b8b8';
     out.onclick=doLogout;
     nav.appendChild(out);
     // obal: sticky pozíciu drží wrapper, aby fade (absolútny overlay) nescrolloval s obsahom
@@ -299,7 +299,7 @@
     // fade na pravom okraji – signalizuje, že navigácia pokračuje (mobil)
     const fade=document.createElement('div');
     fade.className='shared-nav-fade';
-    fade.style.cssText='position:absolute;top:0;right:0;bottom:0;width:36px;background:linear-gradient(to left,#0f1e3d 20%,rgba(15,30,61,0));pointer-events:none;opacity:0;transition:opacity .2s;';
+    fade.style.cssText='position:absolute;top:0;right:0;bottom:0;width:36px;background:linear-gradient(to left,#5b0e1a 20%,rgba(15,30,61,0));pointer-events:none;opacity:0;transition:opacity .2s;';
     wrap.appendChild(fade);
     function updFade(){
       const max=nav.scrollWidth-nav.clientWidth;
@@ -316,7 +316,7 @@
     if(document.querySelector('link[rel="manifest"]'))return;
     const l=document.createElement('link');l.rel='manifest';l.href='/manifest.webmanifest';document.head.appendChild(l);
     const a=document.createElement('link');a.rel='apple-touch-icon';a.href='/icons/icon-192.png';document.head.appendChild(a);
-    const m=document.createElement('meta');m.name='theme-color';m.content='#0f1e3d';document.head.appendChild(m);
+    const m=document.createElement('meta');m.name='theme-color';m.content='#5b0e1a';document.head.appendChild(m);
   }
   injectPWA();
 
