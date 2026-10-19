@@ -29,8 +29,8 @@
     }
   }
 
-  // Návrat po prihlásení – len interné cesty: začína '/', druhý znak nie je '/' ani '\'
-  // (prehliadač by '/\evil.com' znormalizoval na '//evil.com'), nikdy nie späť na login.
+  // Návrat po prihlásení – len interné cesty: začína '/', druhý znak ne je '/' ani '\'
+  // (prehliadač by '/\evil.com' znormalizoval na '//evil.com'), nikdy ne späť na login.
   function goAfterLogin(){
     let ret=sessionStorage.getItem('cievny_return')||'/tools/Aorta/';
     sessionStorage.removeItem('cievny_return');
@@ -44,7 +44,7 @@
   };
 
   // Prihlásenie cez Google (OAuth) – presmeruje na Supabase, ten na Google a späť.
-  // POZOR: vlastný „state" parameter sa do /authorize posielať NESMIE – GoTrue si
+  // POZOR: vlastní „state" parameter sa do /authorize posielať NESMIE – GoTrue si
   // state spravuje sám (podpísaný JWT) a cudzí odmietne s chybou bad_oauth_state.
   // Ochrana pred session fixation je marker v sessionStorage nižšie.
   window.doGoogle=function(){
@@ -70,7 +70,7 @@
     history.replaceState(null,'',location.pathname+location.search); // vyčisti tokeny z URL
     if(!emailOk){
       // bez overeného emailu reláciu neukladáme (email je potrebný pre allowlist)
-      const showErr=()=>{const m=document.getElementById('login-msg');if(m){m.textContent='Prihlásenie cez Google sa nepodarilo overiť – skúste znova.';m.style.color='#dc2626';}};
+      const showErr=()=>{const m=document.getElementById('login-msg');if(m){m.textContent='Přihlášení přes Google se nepodařilo ověřit – zkuste znovu.';m.style.color='#dc2626';}};
       if(location.pathname.indexOf('/login')>=0){
         if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showErr);else showErr();
         return true; // ostaň na login stránke s hláškou
@@ -83,14 +83,14 @@
     return true;
   }
 
-  // Token pre REST volania: JWT prihláseného usera, fallback na anon kľúč (kým nie je RLS sprísnené)
+  // Token pre REST volania: JWT prihláseného usera, fallback na anon kľúč (kým ne je RLS sprísnené)
   window.sbToken=function(){
     return sessionStorage.getItem(TK)||SB_ANON;
   };
   window.sbHeaders=function(){
     return {'apikey':SB_ANON,'Authorization':'Bearer '+window.sbToken(),'Content-Type':'application/json'};
   };
-  window.SB_BASE=SB_URL; // pre volania edge funkcií (napr. /functions/v1/extrakcia)
+  window.SB_BASE=SB_URL; // pre volania edge funkcií (např. /functions/v1/extrakcia)
 
   async function refreshToken(){
     const rt=sessionStorage.getItem(RK);
@@ -109,7 +109,7 @@
   window.sbRefresh=refreshToken; // umožní nástrojom obnoviť token pri 401 a zopakovať dotaz
 
   // Globálna samooprava: ak Supabase odmietne REST dotaz kvôli expirovanému
-  // tokenu (401 – napr. po uspatí notebooka), obnov token a zopakuj dotaz raz.
+  // tokenu (401 – např. po uspatí notebooka), obnov token a zopakuj dotaz raz.
   // 401 znamená, že sa dotaz NEVYKONAL, takže opakovanie je bezpečné aj pri zápise.
   (function(){
     const _fetch=window.fetch.bind(window);
@@ -139,7 +139,7 @@
           if(ok)return _fetch(input,{...init,headers:{...init.headers,'Authorization':'Bearer '+window.sbToken()}});
           deadSession(); // refresh zlyhal
         }
-        // dotaz odišiel anonymne (relácia bez tokenu, napr. karta otvorená spred
+        // dotaz odišiel anonymne (relácia bez tokenu, např. karta otvorená spred
         // emailového loginu): RLS zamietne zápis s 403 – jediná náprava je nový login
         if(r.status===403 && auth==='Bearer '+SB_ANON &&
            sessionStorage.getItem(KEY)==='1' && !sessionStorage.getItem(TK)){
@@ -162,7 +162,7 @@
     // anonym (prázdne zoznamy) a každé uloženie by padalo na RLS 403 → vyžaduj token
     if(sessionStorage.getItem(KEY)!=='1'||!sessionStorage.getItem(TK)){
       sessionStorage.removeItem(KEY);
-      // TV kiosk (bez klávesnice) → obnov cez TV bránu s uloženým kódom, nie cez ľudský login
+      // TV kiosk (bez klávesnice) → obnov cez TV bránu s uloženým kódom, ne cez ľudský login
       const tvParam=new URLSearchParams(location.search).get('tv')==='1';
       if(localStorage.getItem('cievny_tv_kiosk')==='1'||tvParam){location.replace('/tools/tv/');return;}
       sessionStorage.setItem('cievny_return',location.pathname+location.search);
@@ -179,8 +179,8 @@
     const emailEl=document.getElementById('email');
     const email=emailEl?emailEl.value.trim():'';
     const msg=document.getElementById('login-msg');
-    if(!email){msg.textContent='Zadajte email.';msg.style.color='#dc2626';document.getElementById('email').focus();return;}
-    msg.textContent='Prihlasujem…';msg.style.color='#6b7280';
+    if(!email){msg.textContent='Zadejte e-mail.';msg.style.color='#dc2626';document.getElementById('email').focus();return;}
+    msg.textContent='Přihlašuji…';msg.style.color='#6b7280';
     // Supabase Auth – email je povinný
     try{
       const r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
@@ -188,9 +188,9 @@
         body:JSON.stringify({email,password:pw})
       });
       if(r.ok){storeSession(await r.json());goAfterLogin();return;}
-      msg.textContent='Nesprávny email alebo heslo.';
+      msg.textContent='Nesprávný e-mail nebo heslo.';
     }catch(e){
-      msg.textContent='Chyba siete – skúste znova.';
+      msg.textContent='Chyba sítě – zkuste znovu.';
     }
     msg.style.color='#dc2626';
     document.getElementById('pw').value='';
@@ -222,7 +222,7 @@
   // Inject shared nav after DOM ready
   const NAV_LINKS=[
     {href:'/tools/',label:'🏠 CZ'},
-    {href:'/tools/Aorta/',label:'📥 Požiadavky'},
+    {href:'/tools/Aorta/',label:'📥 Požadavky'},
   ];
 
   function injectNav(){
@@ -285,7 +285,7 @@
       nav.appendChild(who);
     }
     const out=document.createElement('button');
-    out.textContent='Odhlásiť';
+    out.textContent='Odhlásit';
     out.style.cssText='padding:6px 12px;font-size:12px;font-weight:600;background:none;border:1.5px solid #4a5568;color:#f1b8b8;border-radius:6px;cursor:pointer;white-space:nowrap;flex-shrink:0;';
     out.onmouseover=()=>out.style.color='#fff';
     out.onmouseout=()=>out.style.color='#f1b8b8';
@@ -332,7 +332,7 @@
     const q=new URLSearchParams(location.search);
     if(!q.get('error')&&!q.get('error_code'))return;
     const desc=q.get('error_description')||q.get('error_code')||q.get('error');
-    const show=()=>{const m=document.getElementById('login-msg');if(m){m.textContent='Prihlásenie cez Google zlyhalo: '+desc+' – skúste znova.';m.style.color='#dc2626';}};
+    const show=()=>{const m=document.getElementById('login-msg');if(m){m.textContent='Přihlášení přes Google selhalo: '+desc+' – zkuste znovu.';m.style.color='#dc2626';}};
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',show);else show();
     history.replaceState(null,'',location.pathname); // vyčisti chybu z URL
   }
@@ -340,7 +340,7 @@
 
   // ak sa vraciame z Google (tokeny v URL fragmente), spracuj a presmeruj – inak bežná inicializácia
   // Login stránka: prevezmi ?return= od server-side brány a ak máme refresh token
-  // (expirovala len cookie, nie relácia), obnov prihlásenie potichu bez hesla.
+  // (expirovala len cookie, ne relácia), obnov prihlásenie potichu bez hesla.
   async function loginBootstrap(){
     if(location.pathname.indexOf('/login')<0)return false;
     const q=new URLSearchParams(location.search);
@@ -353,7 +353,7 @@
     if(localStorage.getItem('cievny_tv_kiosk')==='1'){location.replace('/tools/tv/');return true;}
     if(sessionStorage.getItem(RK)){
       const m=document.getElementById('login-msg');
-      if(m){m.textContent='Obnovujem prihlásenie…';m.style.color='#6b7280';}
+      if(m){m.textContent='Obnovuji přihlášení…';m.style.color='#6b7280';}
       if(await refreshToken()){goAfterLogin();return true;}
       if(m)m.textContent='';
     }

@@ -63,6 +63,11 @@ const th = await page.evaluate(() => ({ nav: getComputedStyle(document.querySele
 ok(th.nav === 'rgb(91, 14, 26)' && th.body === 'rgb(253, 242, 242)', 'červená téma: navigácia a pozadie (' + th.nav + ')');
 ok(th.st0 === '#3b82f6' && th.st3 === '#1e40af', 'farby stavov nástenky ostali pôvodné');
 ok(/^CZ – /.test(th.title), 'titulok karty začína „CZ –"');
+const cz = await page.evaluate(() => ({ h1: document.querySelector('h1').textContent.trim(), nav: [...document.querySelectorAll('.shared-nav a')].map(a => a.textContent.trim()).join('|'), st: STATUSES.map(s => s.label).join('|'), lang: document.documentElement.lang, urg: [...document.querySelectorAll('#af_urgencia option')].map(o => o.value).join('|') }));
+ok(cz.h1 === '📥 Požadavky na terapii' && /📥 Požadavky/.test(cz.nav) && cz.lang === 'cs', 'preklad: nadpis, navigácia, lang=cs (' + cz.h1 + ')');
+ok(/Primární požadavek\|👁️ Prohlíženo\|✅ Indikováno k výkonu/.test(cz.st), 'preklad: stavy nástenky po česky');
+ok(cz.urg === 'elektivní|urgentní|emergentní', 'preklad: hodnoty urgencie konzistentne (' + cz.urg + ')');
+ok(!/[ľĺŕäô]/.test(await page.evaluate(() => document.body.innerText)), 'v texte stránky nie sú slovenské písmená ľ ĺ ŕ ä ô');
 ok(await page.evaluate(() => !!document.getElementById('af_rodne_cislo') && !!document.getElementById('af_telefon') && !!document.getElementById('af_epikriza')), 'formulár požiadavky má polia ako SK (r.č., telefón, epikríza)');
 await page.evaluate(() => openModal(null)); await page.waitForTimeout(100);
 ok(await page.evaluate(() => typeof formToObj === 'function' && 'telefon' in formToObj()), 'formToObj funguje v kópii');
@@ -71,6 +76,7 @@ await lp.goto('http://localhost:8997/tools/login/', { waitUntil: 'domcontentload
 ok(lerr.length === 0 && await lp.$('#email') && await lp.$('.gbtn'), 'login: e-mail + heslo aj Google, bez chýb');
 ok(await lp.evaluate(() => typeof doGoogle === 'function'), 'login: doGoogle dostupné (OAuth cez český projekt)');
 ok(/cievny\.cz/.test(await lp.$eval('.logo', e => e.textContent)), 'login nesie názov inštancie z config.json');
+ok((await lp.evaluate(() => document.body.innerText)).includes('Přihlásit se'), 'login po česky');
 const hp = await ctx.newPage(); await hp.goto('http://localhost:8997/tools/', { waitUntil: 'domcontentloaded' }); await hp.waitForTimeout(300);
 ok((await hp.$$('.card')).length === 1, 'úvodná stránka má len kartu Požiadavky');
 await browser.close(); srv.close();

@@ -19,6 +19,8 @@ Použitie:
   python3 scripts/build_cz_app.py --check   # len overí, že cz-app/ zodpovedá zdrojom (CI)
 """
 import json, os, re, shutil, sys, hashlib
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from cz_preklad import preloz, zvysky   # slovník SK → CZ (scripts/cz_preklad.py)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'cz-app')
@@ -106,7 +108,7 @@ def build_auth():
     s = s.replace('// Shared auth + navigation for cievny.sk tools',
                   '// Shared auth + navigation – NEZÁVISLÁ CZ KÓPIA (generované zo tools/auth.js, needitovať ručne)')
     s = s.replace("{href:'/tools/',label:'🏠'}", "{href:'/tools/',label:'🏠 CZ'}")
-    return theme(s)
+    return preloz(theme(s))
 
 
 def build_login():
@@ -115,19 +117,20 @@ def build_login():
     s = s.replace('🫀 cievny.sk', '🫀 ' + CFG['APP_NAME'])
     s = s.replace('Klinické nástroje – prihlásenie', 'Klinické nástroje – prihlásenie (CZ)')
     s = add_config_script(s)
-    return theme(s)
+    return preloz(theme(s))
 
 
 def build_tool(name):
     s = swap_supabase(read('tools/%s/index.html' % name))
     s = re.sub(r'<title>(.*?)</title>', lambda m: '<title>CZ – ' + m.group(1) + '</title>', s, count=1)
     # stavy nástenky (STATUSES) majú vlastné farby s významom – tie sa neprefarbujú
-    return theme(add_config_script(s), protect=('const STATUSES=[',))
+    s = theme(add_config_script(s), protect=('const STATUSES=[',))
+    return preloz(s)
 
 
 def build_index():
     cards = '\n'.join('  <a class="card" href="/tools/%s/"><h3>%s</h3></a>' % (p, l) for p, l in TOOLS)
-    return """<!doctype html><html lang="sk"><meta charset="utf-8">
+    return preloz("""<!doctype html><html lang="cs"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Nástroje – %s</title>
 <style>
@@ -146,7 +149,7 @@ def build_index():
 %s
 </div>
 </body></html>
-""" % (CFG['APP_NAME'], CFG['APP_NAME'], cards)
+""" % (CFG['APP_NAME'], CFG['APP_NAME'], cards))
 
 
 def build_config_js():
@@ -263,3 +266,7 @@ if __name__ == '__main__':
     else:
         write_all()
         print('Vygenerované do cz-app/ (%d súborov).' % len(GENERATED))
+        if '--zvysky' in sys.argv:
+            for name, _ in TOOLS:
+                for l in zvysky(GENERATED['tools/%s/index.html' % name]):
+                    print('  SK? ' + l[:140])

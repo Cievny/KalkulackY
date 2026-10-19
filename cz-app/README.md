@@ -9,7 +9,7 @@ aby sa na prvý pohľad odlíšila od slovenskej; farby stavov na nástenke ost�
 ## Ako je to postavené
 
 Súbory v tomto priečinku sú **generované** zo slovenských zdrojov skriptom
-`scripts/build_cz_app.py` – kópia je vždy 1:1 so SK verziou. **Needitujte ich ručne**,
+`scripts/build_cz_app.py` – kópia je vždy 1:1 so SK verziou a preložená do češtiny slovníkom `scripts/cz_preklad.py`. **Needitujte ich ručne**,
 pri ďalšom generovaní by sa zmeny prepísali (a CI test `tests/cz-app.mjs` kontroluje,
 že kópia zodpovedá zdrojom). Všetko špecifické pre túto inštanciu je v `config.json`.
 
@@ -54,7 +54,7 @@ v Authentication → Users. Nástroj Prístupy sa doplní s ďalšou fázou.
   v kópii ešte nie sú – doplnia sa pri rozšírení rozsahu v `TOOLS` v generátore
 - AI import požiadavky (🤖 Skús AI) potrebuje edge funkciu `extrakcia` nasadenú
   v českom projekte + vlastný API kľúč; bez nej stránka funguje po náhľad očisteného textu
-- texty sú zatiaľ slovenské (1:1 kópia); preklad do češtiny je samostatný krok
+- preklad je slovníkový (`scripts/cz_preklad.py`): nová slovenská fráza v SK zdroji ostane po slovensky, kým sa do slovníka nedoplní (generátor s `--zvysky` vypíše podozrivé riadky)
 
 ## Bezpečnosť
 
