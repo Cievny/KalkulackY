@@ -14,7 +14,7 @@
 //   200 + [..] → povolený používateľ
 // Čokoľvek iné (timeout, sieť, 5xx) = zamietnuť (fail-closed).
 
-export const SB_URL_DEFAULT = 'https://DOPLNIT-PROJECT-REF.supabase.co';
+export const SB_URL_DEFAULT = 'https://ngtinhzqvfggqjmdbkcu.supabase.co';
 export const SB_ANON_DEFAULT = 'sb_publishable_DOPLNIT';
 export const COOKIE = 'cievny_sess';
 
