@@ -26,6 +26,17 @@ const sk = files.filter(f => /ncqtiicfqhaturjlfxcj/.test(readFileSync(join(ROOT,
 ok(sk.length === 0, 'bez odkazu na SK Supabase projekt' + (sk.length ? ': ' + sk.join(', ') : ''));
 ok(readFileSync(join(ROOT, 'vercel.json'), 'utf8').includes(cfg.SB_URL), 'CSP connect-src má URL českého projektu');
 
+// 2b) brána kópie: config.js verejný (login ho potrebuje), middleware bez npm importu a funkčný
+const brana = await import(join(ROOT, 'lib/brana.mjs'));
+ok(brana.classify('/tools/config.js') === 'public' && brana.classify('/tools/auth.js') === 'public' && brana.classify('/tools/Aorta/') === 'protected', 'brána: config.js a auth.js verejné, Požiadavky chránené');
+ok(!/from ['"]@vercel/.test(readFileSync(join(ROOT, 'middleware.js'), 'utf8')), 'middleware bez npm závislosti');
+const mw = await import(join(ROOT, 'middleware.js'));
+const r1 = await mw.default(new Request('https://cz.example/tools/Aorta/'));
+const r2 = await mw.default(new Request('https://cz.example/tools/login/'));
+const r3 = await mw.default(new Request('https://cz.example/tools/config.js'));
+ok(r1.status === 302 && /\/tools\/login\//.test(r1.headers.get('location')), 'middleware: neprihlásený → 302 na login');
+ok(r2.headers.get('x-middleware-next') === '1' && r3.headers.get('x-middleware-next') === '1', 'middleware: login a config.js prejdú (x-middleware-next)');
+
 // 3) stránky v prehliadači
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
 const srv = createServer((req, res) => {

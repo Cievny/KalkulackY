@@ -126,8 +126,27 @@ def build_brana():
     s = read('lib/brana.mjs')
     s = s.replace("export const SB_URL_DEFAULT = '%s';" % SK_URL, "export const SB_URL_DEFAULT = '%s';" % CFG['SB_URL'])
     s = s.replace("export const SB_ANON_DEFAULT = '%s';" % SK_ANON, "export const SB_ANON_DEFAULT = '%s';" % CFG['SB_ANON'])
+    # config.js načítava verejná login stránka pred auth.js – musí byť verejný tak ako auth.js
+    old = "  '/tools/auth.js', '/cz/tools/auth.js'"
+    assert old in s, 'PUBLIC_FILES sa nenašlo'
+    s = s.replace(old, "  '/tools/auth.js', '/cz/tools/auth.js', '/tools/config.js'")
     assert SK_URL not in s and SK_ANON not in s
     return s
+
+
+def build_middleware():
+    s = read('middleware.js')
+    old = "import { next } from '@vercel/functions';"
+    assert old in s
+    # rovnaká funkcia ako v @vercel/functions: Response s hlavičkou x-middleware-next: 1
+    # (= pustiť požiadavku na statický súbor) + hlavičky, ktoré sa majú pridať do odpovede
+    inline = ("// next() bez npm závislosti (kópia je statický web bez inštalácie balíkov)\n"
+              "function next(init) {\n"
+              "  const headers = new Headers((init && init.headers) || {});\n"
+              "  headers.set('x-middleware-next', '1');\n"
+              "  return new Response(null, { headers });\n"
+              "}")
+    return s.replace(old, inline)
 
 
 def build_vercel_json():
@@ -163,21 +182,13 @@ def build():
     for name, _ in TOOLS:
         GENERATED['tools/%s/index.html' % name] = build_tool(name)
     GENERATED['lib/brana.mjs'] = build_brana()
-    GENERATED['middleware.js'] = read('middleware.js')
+    GENERATED['middleware.js'] = build_middleware()
     GENERATED['vercel.json'] = build_vercel_json()
     GENERATED['manifest.webmanifest'] = build_manifest()
     GENERATED['package.json'] = json.dumps({
-        "name": "cz-app", "private": True,
-        "description": CFG['APP_NAME'] + " – nezávislá CZ kópia (statický web + Vercel Routing Middleware)",
-        "dependencies": {"@vercel/functions": "^2"}
+        "name": "cz-app", "private": True, "type": "module",
+        "description": CFG['APP_NAME'] + " – nezávislá CZ kópia (statický web + Vercel Routing Middleware, bez závislostí)"
     }, ensure_ascii=False, indent=2) + '\n'
-    # rovnaký lockfile ako hlavný web – závislosť middleware (@vercel/functions) sa nainštaluje
-    # deterministicky; bez lockfile Vercel inštaluje inak a middleware padal (MIDDLEWARE_INVOCATION_FAILED)
-    lock = json.loads(read('package-lock.json'))
-    lock['name'] = 'cz-app'
-    if '' in lock.get('packages', {}):
-        lock['packages']['']['name'] = 'cz-app'
-    GENERATED['package-lock.json'] = json.dumps(lock, ensure_ascii=False, indent=2) + '\n'
     GENERATED['index.html'] = '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/tools/Aorta/"><title>%s</title>' % CFG['APP_NAME']
     for ic in ('icon-192.png', 'icon-512.png'):
         with open(os.path.join(ROOT, 'icons', ic), 'rb') as f:

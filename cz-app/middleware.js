@@ -2,7 +2,12 @@
 // Beží PRED podaním statického súboru; logika je v lib/brana.mjs (testovaná
 // v tests/brana.mjs). Env premenné sú voliteľné – fallback sú rovnaké verejné
 // hodnoty ako v tools/auth.js.
-import { next } from '@vercel/functions';
+// next() bez npm závislosti (kópia je statický web bez inštalácie balíkov)
+function next(init) {
+  const headers = new Headers((init && init.headers) || {});
+  headers.set('x-middleware-next', '1');
+  return new Response(null, { headers });
+}
 import { handle, classify } from './lib/brana.mjs';
 
 export const config = {

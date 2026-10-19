@@ -25,7 +25,7 @@ const PUBLIC_DIRS = [
   '/tools/adventny-kalendar/'                          // odkazovaný z verejného webu (prakticke-nastroje.html)
 ];
 const PUBLIC_FILES = new Set([
-  '/tools/auth.js', '/cz/tools/auth.js'                // potrebuje login stránka a kiosky
+  '/tools/auth.js', '/cz/tools/auth.js', '/tools/config.js'                // potrebuje login stránka a kiosky
 ]);
 const BLOCKED = new Set(['/middleware.js', '/package.json', '/package-lock.json', '/vercel.json']);
 
