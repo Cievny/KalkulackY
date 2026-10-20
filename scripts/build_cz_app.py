@@ -127,6 +127,12 @@ def build_tool(name):
     s = swap_supabase(read('tools/%s/index.html' % name))
     s = re.sub(r'<title>(.*?)</title>', lambda m: '<title>CZ – ' + m.group(1) + '</title>', s, count=1)
     s = s.replace('/tools/EVK/', '/tools/Aorta/')   # EVK v kópii (zatiaľ) nie je – domov sú Požiadavky
+    if name == 'Aorta':
+        # „Indikoval“ – slovenskí operatéri sem nepatria; kým nebude zoznam českých lekárov,
+        # meno sa píše ručne (formToObj/objToForm čítajú .value, funguje aj s inputom)
+        s, n = re.subn(r'<select id="af_(indikoval[12])">.*?</select>',
+                       r'<input id="af_\1" type="text" placeholder="jméno lékaře" autocomplete="off">', s)
+        assert n == 2, 'Indikoval: v SK zdroji sa nenašli 2 selecty (%d)' % n
     # stavy nástenky (STATUSES) majú vlastné farby s významom – tie sa neprefarbujú
     s = theme(add_config_script(s), protect=('const STATUSES=[',))
     return preloz(s)

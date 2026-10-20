@@ -71,6 +71,7 @@ ok(!/[ľĺŕäô]/.test(await page.evaluate(() => document.body.innerText)), 'v 
 ok(await page.evaluate(() => !!document.getElementById('af_rodne_cislo') && !!document.getElementById('af_telefon') && !!document.getElementById('af_epikriza')), 'formulár požiadavky má polia ako SK (r.č., telefón, epikríza)');
 await page.evaluate(() => openModal(null)); await page.waitForTimeout(100);
 ok(await page.evaluate(() => typeof formToObj === 'function' && 'telefon' in formToObj()), 'formToObj funguje v kópii');
+ok(await page.evaluate(() => { const el = document.getElementById('af_indikoval1'); el.value = 'MUDr. Test'; return el.tagName === 'INPUT' && formToObj().indikoval1 === 'MUDr. Test' && !document.body.innerHTML.includes('Dr. Vincze'); }), 'Indikoval: voľný text, bez slovenských operatérov');
 const lp = await ctx.newPage(); const lerr = []; lp.on('pageerror', e => lerr.push(e.message));
 await lp.goto('http://localhost:8997/tools/login/', { waitUntil: 'domcontentloaded' }); await lp.waitForTimeout(400);
 ok(lerr.length === 0 && await lp.$('#email') && await lp.$('.gbtn'), 'login: e-mail + heslo aj Google, bez chýb');
