@@ -140,3 +140,7 @@ vite.config.ts.timestamp-*
 
 # Katalóg materiálu – dáta sa nahrávajú cez /tools/material/, do verejného repozitára nepatria
 katalog_materialu*.json
+
+# Python cache (generátor cz-app)
+__pycache__/
+*.pyc
