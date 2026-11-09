@@ -116,7 +116,7 @@ h1{font-size:18px;font-weight:700;color:#5b0e1a;padding:20px 20px 0;}
 <script>checkAuth();</script>
 
 <h1>📥 Požadavky na terapii</h1>
-<p class="page-sub">Pipeline pacientů: primární požadavek → prohlíženo → indikováno → chirurgie / konzervativa / endovaskulárně (materiál, termín). Rozděleno na AORTA a JINÉ.</p>
+<p class="page-sub">Pipeline pacientů: primární požadavek → prohlíženo → indikováno → chirurgie / konzervativa / endovaskulárně (materiál, termín) → ošetřeno. Rozděleno na AORTA a JINÉ.</p>
 
 <div class="toolbar">
   <button class="btn-new" onclick="openModal(null)">+ Nový požadavek</button>
@@ -378,7 +378,10 @@ const STATUSES=[
   {key:'endo_material',label:'📦 Endo – objednání materiálu', color:'#0891b2'},
   {key:'konzervativa', label:'💊 Konzervativní postup', color:'#059669'},
   {key:'chirurgia',    label:'🔪 Chirurgické řešení', color:'#dc2626'},
+  {key:'osetrene',     label:'🩹 Ošetřeno',             color:'#475569'},
 ];
+// po koľkých dňoch v stave sa karta sama archivuje
+const AUTO_ARCH_DNI={konzervativa:90,chirurgia:90,osetrene:30};
 const STATUS_LABEL=Object.fromEntries(STATUSES.map(s=>[s.key,s.label]));
 STATUS_LABEL['archiv']='🗄 Archiv';
 
@@ -673,13 +676,15 @@ function cardEl(it){
   const prilBadge=nPril?'<span class="badge" style="background:#e0e7ff;color:#3730a3">📎 '+nPril+'</span>':'';
   const title=it.inicialy?escHtml(it.inicialy)+(it.rocnik?' '+it.rocnik:''):escHtml(it.rodne_cislo||'?');
   const telHtml=it.telefon?'<div class="card-line">📞 <a href="tel:'+escHtml(String(it.telefon).replace(/[^+\d]/g,''))+'" draggable="false" onclick="event.stopPropagation()" style="color:#991b1b;text-decoration:none">'+escHtml(it.telefon)+'</a></div>':'';
-  if(it.status==='konzervativa'||it.status==='chirurgia'){
-    // zbalená karta: pacient odovzdaný na konzervatívu/chirurgiu – stačí meno + r.č.
-    // (detaily po 📂 Otevřít); po 90 dňoch v tomto stavu sa karta archivuje sama
-    const zost=dIn!==null?Math.max(0,90-dIn):null;
+  if(AUTO_ARCH_DNI[it.status]){
+    // zbalená karta: pacient odovzdaný na konzervatívu/chirurgiu nebo už ošetrený – stačí meno + r.č.
+    // (detaily po 📂 Otevřít); po AUTO_ARCH_DNI dňoch v tomto stavu sa karta archivuje sama
+    const zost=dIn!==null?Math.max(0,AUTO_ARCH_DNI[it.status]-dIn):null;
+    const osHtml=it.status==='osetrene'&&(it.vykon_typ||it.termin)
+      ?'<div class="card-line">🛠 '+escHtml([it.vykon_typ?it.vykon_typ+(it.vykon_cieva?' – '+it.vykon_cieva:''):'',it.termin?fmtD(it.termin):''].filter(Boolean).join(' · '))+'</div>':'';
     div.innerHTML=`
     <div class="card-id">${title}${it.pohlavie?' ('+it.pohlavie+')':''} ${esvsBadge}${prilBadge}</div>
-    ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}${telHtml}
+    ${it.rodne_cislo&&it.inicialy?'<div class="card-line" style="color:#9ca3af">r.č. '+escHtml(it.rodne_cislo)+'</div>':''}${telHtml}${osHtml}
     <div class="card-meta">${dIn!==null?'<b>'+dIn+' d</b> v tomto stavu':''}${zost!==null?' • 🗄 auto-archiv za <b>'+zost+' d</b>':''}</div>
     <div class="card-actions">
       <button class="btn-edit" onclick="openModal('${it.id}')">📂 Otevřít</button>
@@ -1263,25 +1268,27 @@ function copyZapis(){
 }
 
 // ── Automatická archivácia: po 90 dňoch (3 mes.) od presunu do konzervatívy
-//    nebo chirurgického riešenia sa karta sama presunie do archívu ──
+//    nebo chirurgického riešenia a po 30 dňoch v stĺpci Ošetrené sa karta
+//    sama presunie do archívu (lehoty v AUTO_ARCH_DNI) ──
 let _autoArchBezalo=false;
 async function autoArchivujStare(){
   if(_autoArchBezalo)return;_autoArchBezalo=true;
   const ids=ITEMS.filter(it=>{
-    if(it.status!=='konzervativa'&&it.status!=='chirurgia')return false;
+    const lim=AUTO_ARCH_DNI[it.status];
+    if(!lim)return false;
     const hist=parseHist(it);
     const entered=hist.length?hist[hist.length-1].d:(it.created_at||'').slice(0,10);
     const d=entered?daysBetween(entered,today()):null;
-    return d!==null&&d>=90;
+    return d!==null&&d>=lim;
   }).map(it=>it.id);
   let n=0;
   for(const id of ids){
     const it=ITEMS.find(i=>i.id===id);       // po každom moveCard sa ITEMS obnovia
     if(!it||it.status==='archiv')continue;
-    const dovod=(it.status==='konzervativa'?'konzervativní postup – předáno ke sledování':'předáno k chirurgickému řešení')+' (automatická archivace po 90 d)';
+    const dovod=(it.status==='konzervativa'?'konzervativní postup – předáno ke sledování':it.status==='chirurgia'?'předáno k chirurgickému řešení':'výkon proveden – ošetřeno')+' (automatická archivace po '+AUTO_ARCH_DNI[it.status]+' d)';
     try{await moveCard(id,'archiv',dovod);n++;}catch(e){}
   }
-  if(n)msg('top_msg','🗄 Automaticky archivováno po 90 dnech v konzervativě/chirurgii: '+n,'#059669');
+  if(n)msg('top_msg','🗄 Automaticky archivováno (konzervativa/chirurgie po 90 d, ošetřeno po 30 d): '+n,'#059669');
 }
 
 loadItems().then(autoArchivujStare);

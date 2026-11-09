@@ -847,7 +847,7 @@ async function loadPOZ(){
     statCard('Uzavreté (archív)',arch.length),
     statCard('Medián dní do uzavretia',median??'–'),
   ].join('');
-  const STATUS_LBL={poziadavka:'Požiadavka',prezerane:'Prezerané',indikovane:'Indikované',chirurgia:'Chirurgia',konzervativa:'Konzervatíva',endo_material:'Endo–materiál',endo_termin:'Endo–termín'};
+  const STATUS_LBL={poziadavka:'Požiadavka',prezerane:'Prezerané',indikovane:'Indikované',chirurgia:'Chirurgia',konzervativa:'Konzervatíva',endo_material:'Endo–materiál',endo_termin:'Endo–termín',osetrene:'Ošetrené'};
   const stF={};active.forEach(r=>{const k=STATUS_LBL[r.status]||r.status;stF[k]=(stF[k]||0)+1;});
   mkChart('ch-poz-status','bar',Object.keys(stF),Object.values(stF),false);
   const mF={};rows.forEach(r=>{const k=monthKey(r.datum_poziadavky||r.created_at);if(k)mF[k]=(mF[k]||0)+1;});

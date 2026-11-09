@@ -28,8 +28,8 @@ PAIRS = [
     ('Zadajte email.', 'Zadejte e-mail.'),
     ('Odhlásiť', 'Odhlásit'),
     # ── Požiadavky: hlavička, nástenka ──
-    ('Pipeline pacientov: primárna požiadavka → prezerané → indikované → chirurgia / konzervatíva / endovaskulárne (materiál, termín). Rozdelené na AORTA a INÉ.',
-     'Pipeline pacientů: primární požadavek → prohlíženo → indikováno → chirurgie / konzervativa / endovaskulárně (materiál, termín). Rozděleno na AORTA a JINÉ.'),
+    ('Pipeline pacientov: primárna požiadavka → prezerané → indikované → chirurgia / konzervatíva / endovaskulárne (materiál, termín) → ošetrené. Rozdelené na AORTA a INÉ.',
+     'Pipeline pacientů: primární požadavek → prohlíženo → indikováno → chirurgie / konzervativa / endovaskulárně (materiál, termín) → ošetřeno. Rozděleno na AORTA a JINÉ.'),
     ('🩻 Blížiace sa kontroly zobrazenia (do 30 dní + po termíne) –', '🩻 Blížící se kontroly zobrazení (do 30 dnů + po termínu) –'),
     ('🗄 Automaticky archivované po 90 dňoch v konzervatíve/chirurgii: ', '🗄 Automaticky archivováno po 90 dnech v konzervativě/chirurgii: '),
     ('Vyplní polia z vloženého textu žiadanky, CT popisu alebo mailu – spracuje sa len v prehliadači',
@@ -339,6 +339,11 @@ PAIRS = [
     ('Pozvánka – cievny.sk', 'Pozvánka'),
     ('Chýba pozvánka', 'Chybí pozvánka'),
     ('Máte prístup!', 'Máte přístup!'),
+    # ── stĺpec Ošetrené ──
+    ('🗄 Automaticky archivované (konzervatíva/chirurgia po 90 d, ošetrené po 30 d): ', '🗄 Automaticky archivováno (konzervativa/chirurgie po 90 d, ošetřeno po 30 d): '),
+    ('výkon vykonaný – ošetrené', 'výkon proveden – ošetřeno'),
+    ('🩹 Ošetrené', '🩹 Ošetřeno'),
+    (' (automatická archivácia po ', ' (automatická archivace po '),
     # ── dni v týždni ──
     ('nedeľa', 'neděle'), ('pondelok', 'pondělí'), ('utorok', 'úterý'), ('streda', 'středa'),
     ('štvrtok', 'čtvrtek'), ('piatok', 'pátek'), ('sobota', 'sobota'),
