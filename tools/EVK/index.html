@@ -547,6 +547,8 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
       <div class="f"><label>Tepna</label><select id="sg_tp" onchange="gen()"><option>– tepna –</option><option>AIC l.sin.</option><option>AIC l.dx.</option><option>AIE l.sin.</option><option>AIE l.dx.</option><option>AII l.sin.</option><option>AII l.dx.</option><option>AFC l.sin.</option><option>AFC l.dx.</option><option>APF l.sin.</option><option>APF l.dx.</option><option>AFS l.sin.</option><option>AFS l.dx.</option><option>P1 l.sin.</option><option>P1 l.dx.</option><option>P2 l.sin.</option><option>P2 l.dx.</option><option>P3 l.sin.</option><option>P3 l.dx.</option><option>ATA l.sin.</option><option>ATA l.dx.</option><option>ATP l.sin.</option><option>ATP l.dx.</option><option>AFib l.sin.</option><option>AFib l.dx.</option><option>TTF l.sin.</option><option>TTF l.dx.</option></select></div>
       <div class="f"><label>Segment</label><select id="sg_sg" onchange="gen()"><option value="">–</option><option>proximálny</option><option>stredný</option><option>distálny</option><option>celý</option></select></div>
     </div>
+    <div id="sg_locs"></div>
+    <button type="button" onclick="addLoc('sg',false,'＋ Stentgraft pokračuje do')" style="margin-top:6px;font-size:11px;padding:3px 9px;border:1px dashed #93c5fd;border-radius:6px;background:#eff6ff;color:#1e40af;cursor:pointer">＋ Stentgraft pokračuje do ďalšieho segmentu / tepny</button>
   </div>
 </div>
 <!-- Ďalšie -->
@@ -1314,6 +1316,9 @@ function collectInterventionItems(){
   if(document.getElementById('c_sg').checked){
     const t=g('sg_t'),n=vN('sg_n'),p=g('sg_p'),d=g('sg_d');
     let s='stentgraft: implantácia'+(t?' '+stGen(t):'')+' stentgraftu'+(n?' '+n:'')+(p&&d?' '+p+'×'+d+' mm':'');
+    // jeden stentgraft cez viac segmentov/tepien – jedna veta, nie viac implantácií
+    const dal=extraLocs('sg').filter(l=>l.tp&&l.tp!=='– tepna –').map(l=>l.tp+(l.sg?' ('+l.sg+')':''));
+    if(dal.length)s+=', s pokračovaním do '+dal.join(', ');
     items.push({tp:g('sg_tp'),sg:g('sg_sg')||'',desc:s,short:'stentgraft',order:9});
   }
   return items;
@@ -1564,7 +1569,7 @@ function collectFullData(){
     });
   }
   if(document.getElementById('c_sg').checked){
-    interventionDetail.push({typ:'stentgraft',stent_typ:g('sg_t'),stent_nazov:nameOf('sg_n'),priemer:g('sg_p'),dlzka:g('sg_d'),tepna:g('sg_tp'),segment:g('sg_sg')});
+    interventionDetail.push({typ:'stentgraft',stent_typ:g('sg_t'),stent_nazov:nameOf('sg_n'),priemer:g('sg_p'),dlzka:g('sg_d'),tepna:g('sg_tp'),segment:g('sg_sg'),extra_locs:extraLocs('sg').map(l=>({tepna:l.tp,segment:l.sg}))});
   }
   if((g('territory')==='pelv'||g('territory')==='both')&&document.getElementById('c_cerab').checked){
     [['ao','aorta'],['sin','l.sin.'],['dx','l.dx.']].forEach(([k,lab])=>{
@@ -2534,6 +2539,7 @@ function restoreInterventionRows(record){
         sv('sg_t',it.stent_typ);setSel('sg_n',it.stent_nazov);
         sv('sg_p',dia(it));sv('sg_d',it.dlzka);
         svTp('sg_tp',it.tepna);sv('sg_sg',it.segment);
+        if(Array.isArray(it.extra_locs))it.extra_locs.forEach(l=>{addLoc('sg',true,'＋ Stentgraft pokračuje do');const li=locCnt['sg']-1;svTp('sg_l'+li+'_tp',l.tepna);sv('sg_l'+li+'_sg',l.segment);});
         return;
       }
       if(it.typ==='aterektomia'){
