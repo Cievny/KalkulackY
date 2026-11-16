@@ -380,7 +380,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   </div>
   <div class="row r3">
     <div class="f"><label>Dĺžka sheatu</label><select id="p2_sheathdlz" onchange="gen()"><option value="">–</option><option>10 cm</option><option>25 cm</option><option>45 cm</option><option>55 cm</option><option>90 cm</option><option>110 cm</option></select></div>
-    <div class="f"><label>Uzáver vpichu</label><select id="p2_uzaver" onchange="gen()"><option value="">–</option><option>manuálna kompresia</option><option>Angio-Seal</option><option>ProGlide</option><option>FemoSeal</option><option>TR band</option></select></div>
+    <div class="f"><label>Uzáver vpichu</label><select id="p2_uzaver" onchange="gen()"><option value="">–</option><option>manuálna kompresia</option><option>Angio-Seal</option><option>ProGlide</option><option>FemoSeal</option><option>TR band</option><option>chirurgická sutura – plánovaná</option><option>chirurgická sutura – neplánovaná</option></select></div>
     <div class="f"><label>Účel / poznámka</label><input type="text" id="p2_pozn" placeholder="napr. pre kontralaterálnu intervenciu" oninput="gen()"></div>
   </div>
 </div>
@@ -566,7 +566,8 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
 <div class="st">5. Uzáver &amp; Hemostáza</div>
 <div class="row r2">
   <div class="f"><label>Kompresia (min)</label><input type="number" id="kompr" placeholder="10" oninput="gen()"></div>
-  <div class="f"><label>Uzatváracie zariadenie</label><select id="uzatv" onchange="gen()"><option value="">Manuálna kompresia</option><option>AngioSeal 6F</option><option>AngioSeal 8F</option><option>FemoSeal</option><option>ProStyle</option><option>MynxControl</option></select></div>
+  <div class="f"><label>Uzatváracie zariadenie</label><select id="uzatv" onchange="gen()"><option value="">Manuálna kompresia</option><option>AngioSeal 6F</option><option>AngioSeal 8F</option><option>FemoSeal</option><option>ProStyle</option><option>MynxControl</option><optgroup label="Chirurgické ošetrenie miesta vpichu"><option value="Chirurgická sutura – plánovaná">Chirurgická sutura – plánovaná</option><option value="Chirurgická sutura – neplánovaná">Chirurgická sutura – neplánovaná</option></optgroup></select>
+    <input type="text" id="uzatv_chir" placeholder="spresnenie: napr. cut-down, sutura AFC Prolene 5-0 / dôvod pri neplánovanej…" oninput="gen()" style="display:none;margin-top:5px"></div>
 </div>
 <div class="row r2">
   <div class="f"><label>Hemostáza dosiahnutá</label><select id="hemo" onchange="gen()"><option>ihneď</option><option>po manuálnej kompresii</option><option>za použitia PatchPro bandáže</option></select></div>
@@ -1594,7 +1595,8 @@ function collectFullData(){
       bezint:bezR?bezR.value:'',
       bezint_vlastny:bezR&&bezR.value==='vlastny'?g('bezint_vlastny'):'',
       bezint_on:bezOn,
-      poradie:stepOrder.length?stepOrder.slice():undefined
+      poradie:stepOrder.length?stepOrder.slice():undefined,
+      uzatv_chir:g('uzatv_chir').trim()||undefined
     });
   }
   // --- Flatten materiálov pre publikačnú analýzu ---
@@ -2021,7 +2023,10 @@ function gen(){
   L.push('UZÁVER:');
   let uz='';const kompr=g('kompr'),uzatv=g('uzatv'),hemo=g('hemo'),fs=document.getElementById('femostop').checked;
   if(kompr)uz+='Kompresia v trvaní '+kompr+' min. ';
-  uz+=(uzatv?'Uzatváracie zariadenie: '+uzatv+'. ':'Manuálna kompresia. ');
+  const _chir=/^Chirurgická sutura/.test(uzatv),_ci=document.getElementById('uzatv_chir');
+  if(_ci)_ci.style.display=_chir?'block':'none';
+  if(_chir){const sp=g('uzatv_chir').trim().replace(/[.!?]\s*$/,'');uz+=(/neplánovaná/.test(uzatv)?'Neplánované':'Plánované')+' chirurgické ošetrenie miesta vpichu – sutura artérie'+(sp?' ('+sp+')':'')+'. ';}
+  else uz+=(uzatv?'Uzatváracie zariadenie: '+uzatv+'. ':'Manuálna kompresia. ');
   uz+='Dosahujeme hemostázu '+hemo+(fs?', nasadený Femostop':'')+'.';;L.push(uz);
 
   if(!zaverManual){document.getElementById('zaver').value=buildAutoZaver()||'';}
@@ -2559,6 +2564,7 @@ function restoreInterventionRows(record){
       }
       if(it.typ==='ostatne'){
         if(Array.isArray(it.poradie))stepOrder=it.poradie.slice();
+        sv('uzatv_chir',it.uzatv_chir);
         sv('kompr',it.kompr);
         sv('support_kat',it.support_kat);chkVl('support_kat');sv('support_kat_c',it.support_kat_c);
         if(it.dal||(it.dal_d||[]).length||(it.dal_t||[]).length||it.dal_text){
