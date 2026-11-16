@@ -151,8 +151,8 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   <div class="f"><label>ABI pred výkonom</label><input type="number" id="abi_pred" step="0.01" min="0" max="2" placeholder="0,55" oninput="gen()"></div>
 </div>
 <div class="row r3">
-  <div class="f"><label>Rutherford</label>
-    <select id="ruth" onchange="gen()"><option value="">–</option><option value="0/0 – Asymptomatický">0/0 – Asymptomatický</option><option value="I/1 – Ľahká klaudikácia">I/1 – Ľahká klaudikácia</option><option value="I/2 – Stredná klaudikácia">I/2 – Stredná klaudikácia</option><option value="I/3 – Ťažká klaudikácia">I/3 – Ťažká klaudikácia</option><option value="II/4 – Ischemická kľudová bolesť">II/4 – Ischemická kľudová bolesť</option><option value="II/5 – Menšia tkanivová strata">II/5 – Menšia tkanivová strata</option><option value="III/6 – Väčšia tkanivová strata">III/6 – Väčšia tkanivová strata</option></select>
+  <div class="f"><label>Rutherford <span style="font-weight:400;color:#9ca3af">(chronická / akútna)</span></label>
+    <select id="ruth" onchange="gen()"><option value="">–</option><optgroup label="Chronická ischémia (PAO)"><option value="0/0 – Asymptomatický">0/0 – Asymptomatický</option><option value="I/1 – Ľahká klaudikácia">I/1 – Ľahká klaudikácia</option><option value="I/2 – Stredná klaudikácia">I/2 – Stredná klaudikácia</option><option value="I/3 – Ťažká klaudikácia">I/3 – Ťažká klaudikácia</option><option value="II/4 – Ischemická kľudová bolesť">II/4 – Ischemická kľudová bolesť</option><option value="II/5 – Menšia tkanivová strata">II/5 – Menšia tkanivová strata</option><option value="III/6 – Väčšia tkanivová strata">III/6 – Väčšia tkanivová strata</option></optgroup><optgroup label="Akútna ischémia (ALI)"><option value="ALI I – životaschopná končatina">I – životaschopná končatina</option><option value="ALI IIa – marginálne ohrozená končatina">IIa – marginálne ohrozená</option><option value="ALI IIb – bezprostredne ohrozená končatina">IIb – bezprostredne ohrozená</option><option value="ALI III – ireverzibilná ischémia">III – ireverzibilná ischémia</option></optgroup></select>
   </div>
   <div class="f" style="grid-column:span 2"><label>Diagnóza / indikácia</label><input type="text" id="diag" placeholder="napr. ICHDK, kritická ischémia ľavej DK" oninput="gen()"></div>
 </div>
@@ -550,6 +550,7 @@ details.komor-details{margin-bottom:9px}details.komor-details>summary{font-size:
   </div>
 </div>
 <!-- Ďalšie -->
+<div id="poradie_box" style="display:none;margin:4px 0 9px;padding:8px 10px;background:#f8faff;border:1.5px dashed #c7d2fe;border-radius:7px"></div>
 <div class="tog"><label class="thdr"><input type="checkbox" id="c_dal" onchange="tB('dal');gen()"><span>Ďalšie nevyhnutné ošetrenie</span></label>
   <div class="tbody" id="b_dal">
     <div class="f"><div class="lbl">Dôvod</div><div class="checks"><label class="ck"><input type="checkbox" class="dal_d" value="prietok limitujúca disekcia" onchange="gen()"> Disekcia</label><label class="ck"><input type="checkbox" class="dal_d" value="perforácia" onchange="gen()"> Perforácia</label><label class="ck"><input type="checkbox" class="dal_d" value="extravazát" onchange="gen()"> Extravazát</label><label class="ck"><input type="checkbox" class="dal_d" value="reziduálne stenózy" onchange="gen()"> Reziduálne stenózy</label><label class="ck"><input type="checkbox" class="dal_d" value="spazmus" onchange="gen()"> Spazmus</label><label class="ck"><input type="checkbox" class="dal_d" value="recoil" onchange="gen()"> Recoil</label><label class="ck"><input type="checkbox" class="dal_d" value="trombóza" onchange="gen()"> Trombóza</label><label class="ck"><input type="checkbox" class="dal_d" value="distálna embolizácia" onchange="gen()"> Distálna embolizácia</label></div></div>
@@ -816,6 +817,25 @@ function pedIM(x){
 }
 const FEM_GROUPS=[{st:'Femorálne riečisko',vs:[['AFC','f_AFC'],['APF','f_APF'],['AFS','f_AFS']]},{st:'Popliteálne riečisko',vs:[['P1','p_P1'],['P2','p_P2'],['P3','p_P3']]},{st:'Predkolenie',vs:[['ATA','d_ATA'],['ATP','d_ATP'],['AFib','d_AFib'],['TTF','d_TTF']]}];
 let cnts={}, zaverManual=false, locCnt={};
+// Vlastné poradie krokov v texte nálezu (napr. DEB pred PTA). Prázdne = predvolené poradie.
+let stepOrder=[];
+function stepRank(it){const i=stepOrder.indexOf(it.short);return i>=0?i:1000+it.order;}
+function stepsUsed(items){const m={};items.forEach(it=>{if(!(it.short in m)||it.order<m[it.short].order)m[it.short]=it;});return Object.values(m).sort((a,b)=>stepRank(a)-stepRank(b)).map(it=>it.short);}
+function stepMove(k,dir){
+  const cur=stepsUsed(collectInterventionItems());const i=cur.indexOf(k),j=i+dir;
+  if(i<0||j<0||j>=cur.length)return;
+  [cur[i],cur[j]]=[cur[j],cur[i]];stepOrder=cur;gen();
+}
+function stepReset(){stepOrder=[];gen();}
+function renderPoradie(items){
+  const box=document.getElementById('poradie_box');if(!box)return;
+  const cur=stepsUsed(items);
+  if(cur.length<2){box.style.display='none';box.innerHTML='';return;}
+  const b='border:1px solid #c7d2fe;background:#fff;color:#3730a3;border-radius:5px;padding:0 6px;cursor:pointer;font-weight:700;font-size:12px;line-height:18px';
+  box.style.display='block';
+  box.innerHTML='<div style="font-size:10.5px;font-weight:700;color:#5a6a8a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Poradie krokov v náleze'+(stepOrder.length?' <button type="button" onclick="stepReset()" style="margin-left:6px;font-size:10px;padding:1px 7px;border:1px solid #dde1ea;border-radius:4px;background:#f7f8fc;cursor:pointer;color:#5a6a8a;text-transform:none">↺ predvolené</button>':'')+'</div><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">'+
+    cur.map((k,i)=>'<span class="step-chip" data-k="'+k+'" style="display:inline-flex;align-items:center;gap:4px;background:#eef2ff;border-radius:6px;padding:3px 6px;font-size:12px;font-weight:600;color:#1e1b4b"><button type="button" title="skôr" onclick="stepMove(\''+k+'\',-1)" style="'+b+(i===0?';visibility:hidden':'')+'">◀</button>'+(i+1)+'. '+k+'<button type="button" title="neskôr" onclick="stepMove(\''+k+'\',1)" style="'+b+(i===cur.length-1?';visibility:hidden':'')+'">▶</button></span>').join('')+'</div>';
+}
 
 // Tepny vo výkonoch len pre stranu zvolenú v DSA lateralite (pelv_lat / fem_lat).
 // Panvové tepny sa riadia pelv_lat, femoropopliteálne fem_lat; pri skrytom
@@ -1325,7 +1345,7 @@ function buildAutoZaver(){
     if(!byVessel[t]){byVessel[t]=[];vOrder.push(t);}
     if(!byVessel[t].includes(label))byVessel[t].push(label);
   }
-  collectInterventionItems().forEach(it=>addV(it.tp,it.short));
+  collectInterventionItems().sort((a,b)=>stepRank(a)-stepRank(b)).forEach(it=>addV(it.tp,it.short));
   if(document.getElementById('c_atek').checked){const t=chk('atek_t');addV(g('atek_tp'),'aterektómia'+(t.length?' ('+t.join(', ')+')':''));}
   if(document.getElementById('c_reentry').checked){document.querySelectorAll('#reentry_list .dyn-row').forEach(row=>{addV(g('reentry_'+row.dataset.idx+'_tp'),'reentry katéter');});}
   const extra=[];
@@ -1568,7 +1588,8 @@ function collectFullData(){
       dal_text:dalOn?g('dal_text'):'',
       bezint:bezR?bezR.value:'',
       bezint_vlastny:bezR&&bezR.value==='vlastny'?g('bezint_vlastny'):'',
-      bezint_on:bezOn
+      bezint_on:bezOn,
+      poradie:stepOrder.length?stepOrder.slice():undefined
     });
   }
   // --- Flatten materiálov pre publikačnú analýzu ---
@@ -1859,7 +1880,7 @@ function gen(){
   const tl=terr==='fem'?'Femoropopliteálne + predkolenie':terr==='pelv'?'Panvové (aortoiliakálne)':'Panvové + Femoropopliteálne';
   L.push('Riečisko: '+tl);L.push('-'.repeat(46));
 
-  const pi=[vek?vek+'-roč'+adj+' '+noun:noun,g('ruth')?'Rutherford '+g('ruth'):'',g('diag')].filter(Boolean);
+  const pi=[vek?vek+'-roč'+adj+' '+noun:noun,g('ruth')?(/^ALI /.test(g('ruth'))?'akútna končatinová ischémia, Rutherford '+g('ruth').slice(4):'Rutherford '+g('ruth')):'',g('diag')].filter(Boolean);
   L.push('PACIENT: '+pi.join(', '));
   if(komor.length)L.push('Komorbidity: '+komor.join(', '));
 
@@ -1968,6 +1989,7 @@ function gen(){
   }
   // GROUPED BY TEPNA (vessel prep, pred, IVL, PTA, DEB, stent, post)
   const allItems=collectInterventionItems();
+  renderPoradie(allItems);
   const grouped={},noTepna=[];
   allItems.forEach(item=>{
     const key=item.tp&&item.tp!=='– tepna –'?item.tp:null;
@@ -1977,7 +1999,7 @@ function gen(){
   const vesselOrder=VESSEL_OPTS.filter(v=>v!=='– tepna –');
   Object.keys(grouped).sort((a,b)=>vesselOrder.indexOf(a)-vesselOrder.indexOf(b)).forEach(tepna=>{
     const segs={};
-    grouped[tepna].sort((a,b)=>a.order-b.order).forEach(item=>{
+    grouped[tepna].sort((a,b)=>stepRank(a)-stepRank(b)).forEach(item=>{
       const sk=item.sg||'';if(!segs[sk])segs[sk]=[];segs[sk].push(item.desc);
     });
     Object.entries(segs).forEach(([seg,descs])=>{
@@ -1985,7 +2007,7 @@ function gen(){
     });
   });
   if(noTepna.length){
-    noTepna.sort((a,b)=>a.order-b.order);
+    noTepna.sort((a,b)=>stepRank(a)-stepRank(b));
     L.push('Ostatné: '+noTepna.map(i=>i.desc).join('; ')+'.');
   }
 
@@ -2530,6 +2552,7 @@ function restoreInterventionRows(record){
         return;
       }
       if(it.typ==='ostatne'){
+        if(Array.isArray(it.poradie))stepOrder=it.poradie.slice();
         sv('kompr',it.kompr);
         sv('support_kat',it.support_kat);chkVl('support_kat');sv('support_kat_c',it.support_kat_c);
         if(it.dal||(it.dal_d||[]).length||(it.dal_t||[]).length||it.dal_text){
