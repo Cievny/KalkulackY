@@ -250,6 +250,18 @@ h1{font-size:18px;font-weight:700;color:#5b0e1a;padding:20px 20px 0;}
         </select></div>
         <div id="ifu_verdikt" style="grid-column:span 2;align-self:end"></div>
       </div>
+      <div id="za_box" style="display:none;margin-top:12px;border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 12px;background:#f8fbff">
+        <div style="font-size:12.5px;font-weight:700;color:#991b1b;margin-bottom:6px">🧮 Zenith Alpha – plánování podle pracovního listu Cook (AI-D53801)</div>
+        <div class="m-grid">
+          <div class="fld"><label>Strana zavedení hlavního těla</label><select id="sz_zenith_strana"><option value="">–</option><option value="dx">vpravo (dx)</option><option value="sin">vlevo (sin)</option></select></div>
+        </div>
+        <div id="za_out" style="font-size:12.5px;line-height:1.55;margin-top:8px"></div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="btn-edit" id="za_btn" onclick="zaDoMaterialu()" style="display:none">➕ Zapsat do „Materiál k objednání“</button>
+          <a href="https://cdnnamsseuspwsprod.azureedge.net/data/resources/AI-D53801-EN-IA_1579213260886.pdf" target="_blank" rel="noopener" style="font-size:12px">📄 původní list (PDF)</a>
+        </div>
+        <p class="page-sub" style="padding:6px 0 0">Návrh je pouze orientační. Měření a rozhodnutí o velikostech potvrzuje lékař.</p>
+      </div>
     </details>
     </div>
 
@@ -804,6 +816,8 @@ function sizingToObj(){
   });
   const g=document.getElementById('sz_graft').value;
   if(g)s.graft=g;
+  const zs=document.getElementById('sz_zenith_strana').value;
+  if(zs&&g==='Zenith Alpha')s.zenith_strana=zs;
   return s;
 }
 function sizingToForm(it){
@@ -817,8 +831,10 @@ function sizingToForm(it){
   const g=document.getElementById('sz_graft');
   g.value=s.graft||'';
   if(g.selectedIndex===-1)g.selectedIndex=0;
+  document.getElementById('sz_zenith_strana').value=s.zenith_strana||'';
   document.getElementById('sizing_det').open=Object.keys(s).length>0;
   ifuEval();
+  zaEval();
 }
 
 // IFU limity (typické infrarenálne IFU – informatívne, neblokuje)
@@ -855,8 +871,92 @@ function ifuEval(){
     ?'<span class="ifu-chip ifu-warn">⚠️ mimo IFU: '+escHtml(V.join(' · '))+'</span>'
     :'<span class="ifu-chip ifu-ok">✅ v rámci IFU</span>';
 }
+// ── 🧮 Zenith Alpha – plánovací hárok Cook AI-D53801-EN-F (01/2020) ──
+// Tabuľky sú prepísané z hárku. D = priemer cievy → priemer graftu; L = dĺžka → dĺžka graftu.
+const ZA_MB_D=[[18,19,22],[20,21,24],[22,22,26],[23,24,28],[25,26,30],[27,28,32],[29,32,36]];
+const ZA_MB_L=[[75,88,70,94],[89,102,84,108],[103,112,98,122],[113,122,108,132],[123,132,118,142],[133,142,128,152]];
+const ZA_LEG_D=[[8,8,9],[9,9,11],[10,12,13],[13,15,16],[16,18,20],[19,20,24]];
+// [dĺžka cievy od, do, priemer graftu od, do, dĺžka na štítku, celková dĺžka]
+const ZA_CL=[[38,54,9,24,42,70],[55,71,9,24,59,87],[72,89,9,24,77,105],[90,105,9,24,93,121],[106,122,9,13,110,138],[123,137,9,13,125,153]];
+const ZA_IL=[[38,54,9,13,42,70],[51,54,16,24,42,70],[55,71,9,13,59,87],[68,71,16,24,59,87],[72,89,9,24,77,105],[90,105,9,24,93,121],[106,122,9,13,110,138],[123,137,9,13,125,153]];
+function zaRow(tab,v){return tab.find(r=>v>=r[0]&&v<=r[1])||null;}
+function zaLeg(tab,len,dia){return tab.find(r=>len>=r[0]&&len<=r[1]&&dia>=r[2]&&dia<=r[3])||null;}
+// m = {D1,L1,D2,L2,D3,L3,ei,bif} v mm; D2/L2 kontralaterálne, D3/L3 ipsilaterálne (strana zavedenia)
+function zaPlan(m){
+  const R=v=>Math.round(v), P={warn:[],miss:[]};
+  if(isNaN(m.D1))P.miss.push('průměr krčku (D1)');
+  if(isNaN(m.L1))P.miss.push('délka renální tepna → bifurkace (L1)');
+  if(P.miss.length)return P;
+  const d=zaRow(ZA_MB_D,R(m.D1)), l=zaRow(ZA_MB_L,R(m.L1));
+  if(!d)P.warn.push('D1 '+m.D1+' mm je mimo tabulku hlavního těla (18–32 mm)');
+  if(!l)P.warn.push('L1 '+m.L1+' mm je mimo tabulku hlavního těla (75–142 mm)');
+  if(!d||!l)return P;
+  P.mb={dia:d[2],cl:l[2],il:l[3],kod:'ZIMB-'+d[2]+'-'+l[2]};
+  const sheath=d[2]===36?6.5:6;
+  if(!isNaN(m.ei)&&m.ei<sheath)P.warn.push('přístupová AIE '+m.ei+' mm je užší než zavaděč '+sheath+' mm (vnější průměr)');
+  if(!isNaN(m.bif)&&m.bif<20)P.warn.push('úzká aorta/bifurkace '+m.bif+' mm (< 20 mm) – vyšší riziko okluze raménka, zvážit PTA/stent');
+  [['cl','kontralaterální',m.D2,m.L2,ZA_CL],['il','ipsilaterální',m.D3,m.L3,ZA_IL]].forEach(([k,lbl,D,L,tab])=>{
+    if(isNaN(D)||isNaN(L)){P.miss.push(lbl+' raménko: průměr a délka AIC');return;}
+    if(D>=7&&D<=8)P.warn.push(lbl+' AIC '+D+' mm (7–8 mm) – vyšší riziko okluze raménka, zvážit PTA/stent');
+    const dr=zaRow(ZA_LEG_D,R(D));
+    if(!dr){P.warn.push(lbl+' AIC '+D+' mm je mimo tabulku ramének (8–20 mm)');return;}
+    const ves=R(L)-P.mb.cl, lr=zaLeg(tab,ves,dr[2]);
+    if(!lr){
+      const kratsie=k==='il'&&dr[2]>=16&&((ves>=38&&ves<=50)||(ves>=55&&ves<=67));
+      P.warn.push(lbl+' raménko: délka cévy '+ves+' mm při průměru graftu '+dr[2]+' mm není v tabulce'+(kratsie?' – list doporučuje kratší hlavní tělo':''));
+      return;
+    }
+    P[k]={dia:dr[2],ves,label:lr[4],total:lr[5],kod:'ZISL-'+dr[2]+'-'+lr[4]};
+  });
+  if(P.il&&(P.il.label===42||P.il.label===59))P.warn.push('ipsilaterální raménko '+P.il.label+' mm: přesah kontralaterálního raménka do hlavního těla omezit na 16 mm');
+  return P;
+}
+function zaMerania(){
+  const n=id=>parseFloat(document.getElementById(id).value);
+  const st=document.getElementById('sz_zenith_strana').value;
+  if(!st)return null;
+  const il=st, cl=st==='dx'?'sin':'dx', L1=n('sz_dlzka_renalka_bifurkacia_mm');
+  return {st,il,cl,D1:n('af_krcok_priemer'),L1,
+    D2:n('sz_AIC_'+cl+'_mm'),L2:L1+n('sz_dlzka_AIC_'+cl+'_mm'),
+    D3:n('sz_AIC_'+il+'_mm'),L3:L1+n('sz_dlzka_AIC_'+il+'_mm'),
+    ei:n('sz_AIE_'+il+'_mm'),bif:n('sz_bifurkacia_mm')};
+}
+function zaText(P,m){
+  const a=[];
+  if(P.mb)a.push(P.mb.kod);
+  if(P.cl)a.push(P.cl.kod+' (kontralat. '+m.cl+')');
+  if(P.il)a.push(P.il.kod+' (ipsilat. '+m.il+')');
+  return a.length?'Zenith Alpha: '+a.join(' + '):'';
+}
+function zaEval(){
+  const box=document.getElementById('za_box'), out=document.getElementById('za_out'), btn=document.getElementById('za_btn');
+  const on=document.getElementById('sz_graft').value==='Zenith Alpha';
+  box.style.display=on?'':'none';
+  if(!on)return;
+  btn.style.display='none';
+  const m=zaMerania();
+  if(!m){out.innerHTML='<span class="ifu-chip ifu-info">Vyberte stranu zavedení hlavního těla.</span>';return;}
+  const P=zaPlan(m), H=[];
+  if(P.mb)H.push('<div><b>Hlavní tělo:</b> <span class="ifu-chip ifu-ok">'+P.mb.kod+'</span> průměr '+P.mb.dia+' mm, kontralat. délka '+P.mb.cl+' mm, ipsilat. délka '+P.mb.il+' mm</div>');
+  [['cl','Kontralaterální raménko ('+m.cl+')','L2',m.L2],['il','Ipsilaterální raménko ('+m.il+')','L3',m.L3]].forEach(([k,lbl,ln,L])=>{
+    if(P[k])H.push('<div><b>'+lbl+':</b> <span class="ifu-chip ifu-ok">'+P[k].kod+'</span> průměr '+P[k].dia+' mm, délka '+P[k].label+' mm (celková '+P[k].total+' mm) · '+ln+' '+Math.round(L)+' − '+P.mb.cl+' = '+P[k].ves+' mm</div>');
+  });
+  if(P.mb&&(P.cl||P.il))H.push('<div style="color:#6b7280">L2 a L3 = délka renální tepna → bifurkace + délka AIC příslušné strany. Potřebný přesah ramének 16–32 mm.</div>');
+  if(P.miss.length)H.push('<div><span class="ifu-chip ifu-info">Chýba: '+escHtml(P.miss.join(' · '))+'</span></div>');
+  P.warn.forEach(w=>H.push('<div><span class="ifu-chip ifu-warn">⚠️ '+escHtml(w)+'</span></div>'));
+  out.innerHTML=H.join('');
+  if(zaText(P,m))btn.style.display='';
+}
+function zaDoMaterialu(){
+  const m=zaMerania(); if(!m)return;
+  const t=zaText(zaPlan(m),m); if(!t)return;
+  const el=document.getElementById('af_material');
+  const old=el.value.replace(/\s*Zenith Alpha: [^;]*;?/,'').trim();
+  el.value=(old?old+'; ':'')+t;
+}
 SIZING_FIELDS.forEach(k=>{const el=document.getElementById('sz_'+k);el.addEventListener('input',ifuEval);el.addEventListener('change',ifuEval);});
 document.getElementById('sz_graft').addEventListener('change',ifuEval);
+['sz_graft','sz_zenith_strana','af_krcok_priemer'].concat(SIZING_FIELDS.map(k=>'sz_'+k)).forEach(id=>{const el=document.getElementById(id);el.addEventListener('input',zaEval);el.addEventListener('change',zaEval);});
 ['af_krcok_dlzka','af_krcok_priemer','af_krcok_angulacia'].forEach(id=>{const el=document.getElementById(id);el.addEventListener('input',ifuEval);el.addEventListener('change',ifuEval);});
 
 // ── 📝 Napsat nález (handoff do PEVAR) ──────────────────────
