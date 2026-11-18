@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Merací hárok Zenith Alpha (PDF)</title>
+<title>Merací hárok (PDF)</title>
 <link rel="stylesheet" href="/tools/vendor/pdfjs/annotation_layer.css">
 <style>
 *{box-sizing:border-box}
@@ -23,7 +23,7 @@ body{margin:0;background:#e5e9f5;font-family:-apple-system,BlinkMacSystemFont,"S
 </head>
 <body>
 <div id="bar">
-  <b>📄 Merací hárok Zenith Alpha <span id="pac" style="font-weight:400;color:#6b7280"></span></b>
+  <b>📄 Merací hárok <span id="tit"></span> <span id="pac" style="font-weight:400;color:#6b7280"></span></b>
   <button type="button" class="pri" id="b_save" disabled>💾 Uložiť k pacientovi</button>
   <button type="button" id="b_navrh" disabled>🧮 Doplniť návrh z tabuliek</button>
   <button type="button" id="b_dl" disabled>⬇️ Stiahnuť PDF</button>
@@ -33,19 +33,19 @@ body{margin:0;background:#e5e9f5;font-family:-apple-system,BlinkMacSystemFont,"S
 <div id="msg"></div>
 <div id="tpl" style="display:none;margin:0 12px 16px;background:#fff;border:1.5px solid #bfdbfe;border-radius:10px;padding:14px 16px;max-width:560px;font-size:13.5px;line-height:1.5">
   <b>Prázdny hárok ešte nie je v úložisku.</b><br>
-  Nahrajte ho raz – pôvodné PDF od výrobcu (Zenith Alpha, Device planning and sizing worksheet). Uloží sa do chráneného úložiska a odvtedy sa otvára všetkým prihláseným.
+  Nahrajte ho raz – pôvodné PDF od výrobcu: <b id="tpl_popis"></b>. Uloží sa do chráneného úložiska a odvtedy sa otvára všetkým prihláseným.
   <div style="margin-top:10px"><input type="file" id="tpl_file" accept="application/pdf,.pdf"></div>
 </div>
 <div id="pages"></div>
 <script type="module">
-// Vyplniteľný originál hárku Cook AI-D53801. Stránka sama nič nenačíta ani neukladá:
+// Vyplniteľný originál hárku výrobcu. Stránka sama nič nenačíta ani neukladá:
 // PDF dostane od rodičovskej stránky Požiadaviek (parent.zhPdf*) a vyplnené ho vráti jej.
 import * as pdfjsLib from '/tools/vendor/pdfjs/pdf.min.mjs';
 pdfjsLib.GlobalWorkerOptions.workerSrc='/tools/vendor/pdfjs/pdf.worker.min.mjs';
 const $=id=>document.getElementById(id);
 const say=(t,c)=>{$('msg').textContent=t||'';$('msg').style.color=c||'#374151';};
 const host=(window.parent!==window&&typeof window.parent.zhPdfLoad==='function')?window.parent:null;
-let doc=null, dirty=false, over=[];
+let doc=null, dirty=false, cfg={calc:[],skupiny:[]};
 window.zhPdfDirty=()=>dirty;
 
 const fields=name=>[...document.querySelectorAll('.annotationLayer [name="'+CSS.escape(name)+'"]')];
@@ -61,12 +61,21 @@ function allVals(){
   document.querySelectorAll('.annotationLayer [name]').forEach(e=>{o[e.name]=e.type==='checkbox'?e.checked:e.value.trim();});
   return o;
 }
-// hárok počíta dĺžku cievy = L − cl dĺžka hlavného tela (v PDF to robí skript, tu my)
+// dopočítavané polia podľa hárku: výsledok = a + znamienko·b (v PDF Cook to robí skript, tu my)
 function calc(){
-  [['L2','clLength1','Contralateral vessel length'],['L3','clLength','Ipsilateral vessel length']].forEach(([a,b,out])=>{
+  (cfg.calc||[]).forEach(([a,b,out,zn])=>{
     const x=parseFloat(String(getVal(a)).replace(',','.')), y=parseFloat(String(getVal(b)).replace(',','.'));
-    const v=(isNaN(x)||isNaN(y))?'':String(Math.round((x-y)*10)/10);
+    const v=(isNaN(x)||isNaN(y))?'':String(Math.round((x+zn*y)*10)/10);
     if(getVal(out)!==v)setVal(out,v);
+  });
+}
+// políčka jednej otázky (napr. sma_yes / sma_no) sa navzájom vylučujú
+function skupina(e){
+  if(!e||e.type!=='checkbox'||!e.checked)return;
+  const g=(cfg.skupiny||[]).find(x=>e.name.startsWith(x+'_'));
+  if(!g)return;
+  document.querySelectorAll('.annotationLayer input[type=checkbox]').forEach(o=>{
+    if(o!==e&&o.name.startsWith(g+'_')&&o.checked){o.checked=false;o.dispatchEvent(new Event('change',{bubbles:true}));}
   });
 }
 const linkService={externalLinkEnabled:false,getDestinationHash:()=>'#',getAnchorUrl:()=>'#',addLinkAttributes(){},
@@ -94,16 +103,26 @@ async function render(){
       annotationStorage:doc.annotationStorage,enableScripting:false,hasJSActions:false,fieldObjects:null});
   }
   box.addEventListener('input',()=>{dirty=true;calc();});
-  box.addEventListener('change',()=>{dirty=true;});
+  box.addEventListener('change',e=>{dirty=true;skupina(e.target);});
 }
-async function bytes(){calc();return await doc.saveDocument();}
+// Výsledné PDF zapisujeme cez pdf-lib s vloženým písmom (diakritika vo všetkých prehliadačoch PDF);
+// knižnice a písmo sa načítajú až pri prvom uložení.
+let nastroje=null;
+async function bytes(){
+  calc();
+  nastroje=nastroje||Promise.all([import('/tools/vendor/pdf-lib/pdf-lib.esm.min.js'),new Promise((ok,zle)=>{if(window.fontkit)return ok(window.fontkit);const el=document.createElement('script');el.src='/tools/vendor/fontkit/fontkit.umd.min.js';el.onload=()=>ok(window.fontkit);el.onerror=()=>zle(new Error('fontkit sa nenačítal'));document.head.append(el);}),
+    import('/tools/Aorta/harok-polia.mjs'),fetch('/tools/vendor/fonts/DejaVuSans.ttf').then(r=>{if(!r.ok)throw new Error('písmo sa nenačítalo');return r.arrayBuffer();})]);
+  const [pdfLib,fk,P,font]=await nastroje;
+  return await P.zapisPdf(pdfLib,fk.default||fk,await doc.getData(),font,allVals());
+}
 
 async function start(){
   if(!host){say('Tento hárok sa otvára z požiadavky (Požiadavky → Sizing → Zenith Alpha).','#b45309');return;}
   say('Načítavam hárok…');
   try{
     const src=await host.zhPdfLoad();
-    if(src.needTemplate){over=src.over||[];say('');$('tpl').style.display='';return;}
+    cfg=src;$('tit').textContent=src.titul||'';document.title='Merací hárok '+(src.titul||'')+' (PDF)';
+    if(src.needTemplate){say('');$('tpl_popis').textContent=src.popis||'';$('tpl').style.display='';return;}
     $('tpl').style.display='none';
     $('pac').textContent=src.pacient?'· '+src.pacient:'';
     doc=await pdfjsLib.getDocument({data:new Uint8Array(src.bytes)}).promise;
@@ -118,10 +137,21 @@ $('tpl_file').onchange=async e=>{
   const f=e.target.files&&e.target.files[0];if(!f)return;
   say('Kontrolujem súbor…');
   try{
-    const buf=await f.arrayBuffer();
-    const d=await pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise;
-    const fo=await d.getFieldObjects()||{};
-    const chyba=over.filter(k=>!fo[k]);
+    let buf=await f.arrayBuffer();
+    const polia=async b=>(await (await pdfjsLib.getDocument({data:new Uint8Array(b.slice(0))}).promise).getFieldObjects())||{};
+    let fo=await polia(buf);
+    if(cfg.polia&&!(cfg.over||[]).some(k=>fo[k])){
+      // tlačové PDF bez polí: overíme, že je to ten hárok, a polia doň doplníme
+      const d=await pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise;
+      const txt=(await (await d.getPage(1)).getTextContent()).items.map(i=>i.str).join(' ');
+      if(cfg.text&&!txt.includes(cfg.text)){say('❌ Toto nie je správny hárok – na prvej strane chýba text „'+cfg.text+'“.','#dc2626');e.target.value='';return;}
+      say('Dopĺňam vyplniteľné polia…');
+      const [pdfLib,P]=await Promise.all([import('/tools/vendor/pdf-lib/pdf-lib.esm.min.js'),import('/tools/Aorta/harok-polia.mjs')]);
+      const out=await P.doplnPolia(pdfLib,buf,P.POLIA[cfg.polia]);
+      buf=out.buffer.slice(out.byteOffset,out.byteOffset+out.byteLength);
+      fo=await polia(buf);
+    }
+    const chyba=(cfg.over||[]).filter(k=>!fo[k]);
     if(chyba.length){say('❌ Toto nie je správny hárok – chýbajú v ňom vyplniteľné polia ('+chyba.join(', ')+').','#dc2626');e.target.value='';return;}
     say('Nahrávam šablónu…');
     const r=await host.zhPdfSablonaUpload(buf);
@@ -146,7 +176,7 @@ $('b_navrh').onclick=()=>{
 };
 $('b_dl').onclick=async()=>{
   const u=URL.createObjectURL(new Blob([await bytes()],{type:'application/pdf'}));
-  const a=document.createElement('a');a.href=u;a.download='zenith-alpha-harok.pdf';a.click();
+  const a=document.createElement('a');a.href=u;a.download=cfg.subor||'harok.pdf';a.click();
   setTimeout(()=>URL.revokeObjectURL(u),5000);
 };
 $('b_print').onclick=()=>window.print();

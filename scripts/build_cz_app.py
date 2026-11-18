@@ -238,7 +238,9 @@ def build():
     GENERATED['index.html'] = '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=/tools/Aorta/"><title>%s</title>' % CFG['APP_NAME']
     # vyplniteľný PDF hárok Zenith Alpha: stránka (preložená) a pdf.js; šablóna je v úložisku, nie v repozitári
     GENERATED['tools/Aorta/harok.html'] = preloz(read('tools/Aorta/harok.html')).replace('<html lang="sk">', '<html lang="cs">')
-    for rel in ('tools/vendor/pdfjs/pdf.min.mjs', 'tools/vendor/pdfjs/pdf.worker.min.mjs',
+    for rel in ('tools/Aorta/harok-polia.mjs', 'tools/vendor/pdf-lib/pdf-lib.esm.min.js', 'tools/vendor/pdf-lib/LICENSE.md',
+                'tools/vendor/fontkit/fontkit.umd.min.js', 'tools/vendor/fonts/DejaVuSans.ttf', 'tools/vendor/fonts/DejaVu-LICENSE.txt',
+                'tools/vendor/pdfjs/pdf.min.mjs', 'tools/vendor/pdfjs/pdf.worker.min.mjs',
                 'tools/vendor/pdfjs/annotation_layer.css', 'tools/vendor/pdfjs/LICENSE'):
         with open(os.path.join(ROOT, rel), 'rb') as f:
             GENERATED[rel] = f.read()

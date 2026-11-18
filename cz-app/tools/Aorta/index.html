@@ -265,6 +265,10 @@ body.zh-print .zh-noprint{display:none !important;}}
         </select></div>
         <div id="ifu_verdikt" style="grid-column:span 2;align-self:end"></div>
       </div>
+      <div id="zhpdf_row" style="display:none;margin-top:10px;gap:8px;flex-wrap:wrap;align-items:center">
+        <button type="button" class="btn-save" onclick="zhPdfOpen()">📄 Otevřít měřicí list (PDF)</button>
+        <span id="zhpdf_stav" style="font-size:12px;color:#6b7280"></span>
+      </div>
       <div id="za_box" style="display:none;margin-top:12px;border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 12px;background:#f8fbff">
         <div style="font-size:12.5px;font-weight:700;color:#991b1b;margin-bottom:6px">🧮 Zenith Alpha – plánování podle pracovního listu Cook (AI-D53801)</div>
         <div class="m-grid">
@@ -272,7 +276,6 @@ body.zh-print .zh-noprint{display:none !important;}}
         </div>
         <div id="za_out" style="font-size:12.5px;line-height:1.55;margin-top:8px"></div>
         <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button type="button" class="btn-save" onclick="zhPdfOpen()">📄 Otevřít měřicí list (PDF)</button>
           <button type="button" class="btn-edit" onclick="zhOpen()">🧮 Rychlý list s výpočtem</button>
           <span id="zh_stav" style="font-size:12px;color:#6b7280"></span>
           <button type="button" class="btn-edit" id="za_btn" onclick="zaDoMaterialu()" style="display:none">➕ Zapsat do „Materiál k objednání“</button>
@@ -895,6 +898,7 @@ function sizingToObj(){
   const zs=document.getElementById('sz_zenith_strana').value;
   if(zs&&g==='Zenith Alpha')s.zenith_strana=zs;
   if(g==='Zenith Alpha'&&Object.keys(zhData).length)s.zenith=zhData;
+  if(g==='Endurant II'&&Object.keys(zhEnd).length)s.endurant=zhEnd;
   return s;
 }
 function sizingToForm(it){
@@ -910,6 +914,7 @@ function sizingToForm(it){
   if(g.selectedIndex===-1)g.selectedIndex=0;
   document.getElementById('sz_zenith_strana').value=s.zenith_strana||'';
   zhData=(s.zenith&&typeof s.zenith==='object'&&!Array.isArray(s.zenith))?Object.assign({},s.zenith):{};
+  zhEnd=(s.endurant&&typeof s.endurant==='object'&&!Array.isArray(s.endurant))?Object.assign({},s.endurant):{};
   document.getElementById('sizing_det').open=Object.keys(s).length>0;
   ifuEval();
   zaEval();
@@ -933,7 +938,7 @@ function ifuEval(){
   const dl=parseFloat(document.getElementById('af_krcok_dlzka').value);
   const pr=parseFloat(document.getElementById('af_krcok_priemer').value);
   const ang=document.getElementById('af_krcok_angulacia').value;
-  if(!isNaN(dl)&&dl<lim.krcok_dlzka_min)V.push('krčok '+dl+' mm (<'+lim.krcok_dlzka_min+')');
+  if(!isNaN(dl)&&dl<lim.krcok_dlzka_min)V.push('krček '+dl+' mm (<'+lim.krcok_dlzka_min+')');
   if(!isNaN(pr)&&(pr<lim.krcok_priemer[0]||pr>lim.krcok_priemer[1]))V.push('priemer krčka '+pr+' mm (mimo '+lim.krcok_priemer[0]+'–'+lim.krcok_priemer[1]+')');
   if(ang==='>60'){
     // presný uhol nad 60° nevieme z formulára overiť – varujeme aj pri graftoch s limitom do 75°
@@ -1031,11 +1036,15 @@ function zaHtml(P,m){
 function zaEval(){
   const box=document.getElementById('za_box'), out=document.getElementById('za_out'), btn=document.getElementById('za_btn');
   const on=document.getElementById('sz_graft').value==='Zenith Alpha';
+  const sab=zhSabl();
+  document.getElementById('zhpdf_row').style.display=sab?'flex':'none';
+  if(sab){const d=(sab.kluc==='zenith'?zhData:zhEnd).datum;
+    document.getElementById('zhpdf_stav').textContent=(editId&&zhPdfRow())?'PDF list '+sab.titul+' uložen'+(d?' · '+d:''):'PDF list '+sab.titul+' zatím nevyplněn';}
   box.style.display=on?'':'none';
   if(!on)return;
   btn.style.display='none';
   const n=Object.keys(zhData).length;
-  document.getElementById('zh_stav').textContent=(editId&&zhPdfRow())?'PDF list uložen'+(zhData.datum?' · '+zhData.datum:''):(n?'měření vyplněna ('+n+' údajů)'+(zhData.datum?' · '+zhData.datum:''):'list zatím prázdný');
+  document.getElementById('zh_stav').textContent=n?'měření vyplněna ('+n+' údajů)'+(zhData.datum?' · '+zhData.datum:''):'rychlý list zatím prázdný';
   const m=zaMerania();
   if(!m){out.innerHTML='<span class="ifu-chip ifu-info">Vyberte stranu zavedení hlavního těla.</span>';return;}
   const P=zaPlan(m);
@@ -1043,7 +1052,7 @@ function zaEval(){
   if(zaText(P,m))btn.style.display='';
 }
 // ── 📐 Merací hárok Zenith Alpha – ukladá sa do sizing.zenith ─────
-let zhData={};
+let zhData={}, zhEnd={};
 const ZH_NUM=['tp_ren','tp_bif','tp_cl','tp_il','D1','D2','D3','L1','L2','L3','n0','n5','n10','n15','aaa_cm','bif',
   'dx20','dx15','dx10','dx5','dx0','sin20','sin15','sin10','sin5','sin0'];
 const ZH_TXT=['ord_mb','ord_cl','ord_il','notes'];
@@ -1107,19 +1116,24 @@ function zhClose(){
   document.getElementById('zh_overlay').classList.remove('open');
   zaEval();
 }
-// ── 📄 Originál hárku ako vyplniteľné PDF (tools/Aorta/harok.html v iframe) ──
-// Prázdna šablóna NIE JE v repozitári (verejný) – leží v chránenom úložisku (bucket príloh,
-// priečinok sablony/) a nahráva sa raz cez aplikáciu. Vyplnené PDF ide medzi prílohy pacienta.
-const ZH_PDF_NAZOV='Zenith Alpha – měřicí list.pdf';
-const ZH_PDF_SABLONA='sablony/zenith-alpha-harok.pdf';
-const ZH_PDF_OVER=['D1','L3','ZIMB graft diameter','Graft Length'];   // polia, podľa ktorých spoznáme správny hárok
-async function zhPdfSablonaUpload(buf){
-  const up=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${ZH_PDF_SABLONA}`,{method:'POST',
-    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/pdf','x-upsert':'false'},body:new Blob([buf],{type:'application/pdf'})});
-  return up.ok?{ok:true,text:'✓ Šablona nahrána'}:{ok:false,text:'❌ Nahrání šablony selhalo: '+up.status};
-}
-function zhPdfRow(){return PRILOHY.find(p=>p.indikacia_id===editId&&p.typ==='subor'&&p.nazov===ZH_PDF_NAZOV)||null;}
+// ── 📄 Originály hárkov výrobcov ako vyplniteľné PDF (tools/Aorta/harok.html v iframe) ──
+// Prázdne šablóny NIE SÚ v repozitári (verejný) – ležia v chránenom úložisku (bucket príloh,
+// priečinok sablony/) a nahrávajú sa raz cez aplikáciu. Vyplnené PDF ide medzi prílohy pacienta.
+// over = polia, podľa ktorých spoznáme správny hárok; polia = kľúč v harok-polia.mjs, ak výrobca
+// dodáva len tlačové PDF a formulárové polia doň dopĺňame my; text = slovo, ktoré v ňom musí byť.
+const ZH_SABL={
+  'Zenith Alpha':{kluc:'zenith',titul:'Zenith Alpha',nazov:'Zenith Alpha – měřicí list.pdf',path:'sablony/zenith-alpha-harok.pdf',
+    over:['D1','L3','ZIMB graft diameter','Graft Length'],popis:'Zenith Alpha – Device planning and sizing worksheet (Cook)',
+    calc:[['L2','clLength1','Contralateral vessel length',-1],['L3','clLength','Ipsilateral vessel length',-1]],skupiny:[]},
+  'Endurant II':{kluc:'endurant',titul:'Endurant II/IIs',nazov:'Endurant II – měřicí list.pdf',path:'sablony/endurant-ii-harok.pdf',
+    over:['D1a','L3R','pc1','bifur_right'],polia:'endurant',text:'Endurant',popis:'Endurant II/IIs – sizing sheet (Medtronic)',
+    calc:[['L2','L3R','tot_R',1],['L2','L3L','tot_L',1]],
+    skupiny:['sma','renal','thrombus','neckcalc','anchors','lumbar','ima','rcalc','lcalc','coil','bifur']}
+};
+function zhSabl(){return ZH_SABL[document.getElementById('sz_graft').value]||null;}
+function zhPdfRow(){const sab=zhSabl();return sab&&PRILOHY.find(p=>p.indikacia_id===editId&&p.typ==='subor'&&p.nazov===sab.nazov)||null;}
 function zhPdfOpen(){
+  if(!zhSabl())return;
   if(!editId){msg('m_msg','⚠️ Požadavek nejprve uložte (💾 Uložit) – PDF list se ukládá k uloženému požadavku.','#b45309');return;}
   document.getElementById('zhpdf_frame').src='/tools/Aorta/harok.html';
   document.getElementById('zhpdf_overlay').classList.add('open');
@@ -1129,27 +1143,50 @@ function zhPdfClose(){
   document.getElementById('zhpdf_frame').src='about:blank';
   renderPrilohy();zaEval();
 }
-// hodnoty hárku (naše kľúče) ↔ názvy polí v PDF
+async function zhPdfSablonaUpload(buf){
+  const up=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${zhSabl().path}`,{method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/pdf','x-upsert':'false'},body:new Blob([buf],{type:'application/pdf'})});
+  return up.ok?{ok:true,text:'✓ Šablona nahrána'}:{ok:false,text:'❌ Nahrání šablony selhalo: '+up.status};
+}
+// hodnoty hárku Zenith (naše kľúče) ↔ názvy polí v PDF Cook
 const ZH_PDF_MAP={D1:'D1',D2:'D2',D3:'D3',L1:'L1',L2:'L2',L3:'L3',tp_ren:'Table position',tp_bif:'Lowest renal artery',
   tp_cl:'15 mm below the lowest renal artery',tp_il:'Origin il internal iliac',notes:'Text4'};
-async function zhPdfLoad(){
-  const row=zhPdfRow(), pacient=document.getElementById('af_inicialy').value.trim();
-  if(row){
-    const r=await fetch(`${SB_URL}/storage/v1/object/authenticated/${BUCKET}/${row.storage_path}`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
-    if(!r.ok)throw new Error('uložený list nelze načíst ('+r.status+')');
-    return {bytes:await r.arrayBuffer(),fresh:false,pacient,datum:new Date(row.created_at).toLocaleDateString('cs-CZ')};
+// Endurant: číselné polia PDF, ktoré si pamätáme aj v požiadavke (sizing.endurant)
+const ZH_END_NUM=['D1a','D1b','D2','D3','D4R','D5R','D6R','D7R','D4L','D5L','D6L','D7L','L1','L2','L3R','L3L','tot_R','tot_L','ang_supra','ang_infra'];
+function zhPdfPrefill(sab){
+  const pre={}, n=id=>{const v=parseFloat(document.getElementById(id).value);return isNaN(v)?null:Math.round(v*10)/10;};
+  const dnes=new Date().toLocaleDateString('cs-CZ');
+  if(sab.kluc==='zenith'){
+    const st=document.getElementById('sz_zenith_strana').value, o=st?zaOdvodene(st):{};
+    Object.entries(ZH_PDF_MAP).forEach(([k,f])=>{const v=zhData[k]??o[k];if(v!=null&&v!==''&&!(typeof v==='number'&&isNaN(v)))pre[f]=typeof v==='number'?Math.round(v*10)/10:v;});
+    if(st==='dx')pre['Right Iliac']=true;
+    if(st==='sin')pre['Left Iliac']=true;
+    [['dx','Right EI mm'],['sin','Left EI mm']].forEach(([x,f])=>{const v=document.getElementById('sz_AIE_'+x+'_mm').value;if(v)pre[f]=v;});
+    pre['1Date']=dnes;
+  }else{
+    // len jednoznačné zhody polí požiadavky s hárkom
+    [['D1a','af_krcok_priemer'],['L1','af_krcok_dlzka'],['D3','af_priemer'],['L2','sz_dlzka_renalka_bifurkacia_mm'],
+     ['L3R','sz_dlzka_AIC_dx_mm'],['L3L','sz_dlzka_AIC_sin_mm'],['D7R','sz_AIE_dx_mm'],['D7L','sz_AIE_sin_mm']]
+      .forEach(([f,id])=>{const v=zhEnd[f]??n(id);if(v!=null)pre[f]=v;});
+    pre.eval_date=dnes;
+    const ct=document.getElementById('af_datum_ct').value;
+    if(ct)pre.ct_date=new Date(ct).toLocaleDateString('cs-CZ');
   }
-  const r=await fetch(`${SB_URL}/storage/v1/object/authenticated/${BUCKET}/${ZH_PDF_SABLONA}`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
-  if(r.status===400||r.status===404)return {needTemplate:true,over:ZH_PDF_OVER,pacient};
+  return pre;
+}
+async function zhPdfLoad(){
+  const sab=zhSabl(), row=zhPdfRow(), pacient=document.getElementById('af_inicialy').value.trim();
+  const zakl={titul:sab.titul,popis:sab.popis,calc:sab.calc,skupiny:sab.skupiny,subor:sab.path.split('/').pop(),pacient};
+  const hd={'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()};
+  if(row){
+    const r=await fetch(`${SB_URL}/storage/v1/object/authenticated/${BUCKET}/${row.storage_path}`,{headers:hd});
+    if(!r.ok)throw new Error('uložený list nelze načíst ('+r.status+')');
+    return {...zakl,bytes:await r.arrayBuffer(),fresh:false,datum:new Date(row.created_at).toLocaleDateString('cs-CZ')};
+  }
+  const r=await fetch(`${SB_URL}/storage/v1/object/authenticated/${BUCKET}/${sab.path}`,{headers:hd});
+  if(r.status===400||r.status===404)return {...zakl,needTemplate:true,over:sab.over,polia:sab.polia||null,text:sab.text||null};
   if(!r.ok)throw new Error('šablonu listu nelze načíst ('+r.status+')');
-  // predvyplnenie: vlastní merania z rýchleho hárku, inak hodnoty odvodené z požiadavky
-  const st=document.getElementById('sz_zenith_strana').value, o=st?zaOdvodene(st):{}, pre={};
-  Object.entries(ZH_PDF_MAP).forEach(([k,f])=>{const v=zhData[k]??o[k];if(v!=null&&v!==''&&!(typeof v==='number'&&isNaN(v)))pre[f]=typeof v==='number'?Math.round(v*10)/10:v;});
-  if(st==='dx')pre['Right Iliac']=true;
-  if(st==='sin')pre['Left Iliac']=true;
-  [['dx','Right EI mm'],['sin','Left EI mm']].forEach(([x,f])=>{const v=document.getElementById('sz_AIE_'+x+'_mm').value;if(v)pre[f]=v;});
-  pre['1Date']=new Date().toLocaleDateString('cs-CZ');
-  return {bytes:await r.arrayBuffer(),fresh:true,pacient,prefill:pre};
+  return {...zakl,bytes:await r.arrayBuffer(),fresh:true,prefill:zhPdfPrefill(sab)};
 }
 function zhPdfNum(v){const n=parseFloat(String(v??'').replace(',','.'));return isNaN(n)?null:n;}
 // PDF → merania pre návrh (strana zavedenia = zaškrtnuté políčko)
@@ -1161,7 +1198,34 @@ function zhPdfMerania(v){
   m.ei=st?zhPdfNum(v[st==='dx'?'Right EI mm':'Left EI mm'])??NaN:NaN;
   return m;
 }
+// Endurant II/IIs – tabuľka „sizing guidelines“ z hárku: priemer cievy → veľkosť graftu
+const END_PROX=[[19,20,23],[21,22,25],[23,25,28],[26,28,32],[29,32,36]];
+const END_DIST=[[8,9,10],[10,11,13],[12,14,16],[15,18,20],[19,22,24],[23,25,28]];
+function zhEndNavrh(v){
+  const N=k=>zhPdfNum(v[k]), A=[], W=[];
+  const d1=[N('D1a'),N('D1b')].filter(x=>x!=null);
+  if(d1.length){const d=Math.max(...d1), r=zaRow(END_PROX,Math.round(d));
+    if(r)A.push('proximální graft '+r[2]+' mm (krček '+d+' mm)');else W.push('krček '+d+' mm je mimo tabulku (19–32 mm)');}
+  else W.push('chybí průměr krčku (D1a/D1b)');
+  [['R','vpravo'],['L','vlevo']].forEach(([s,lbl])=>{
+    const k=['D6'+s,'D5'+s,'D4'+s].find(x=>N(x)!=null);
+    if(!k){W.push('chybí průměr iliaky '+lbl+' (D4–D6'+s+')');return;}
+    const d=N(k), r=zaRow(END_DIST,Math.round(d));
+    if(r)A.push('iliaka '+lbl+' '+r[2]+' mm ('+k+' '+d+' mm)');else W.push('iliaka '+lbl+' '+d+' mm je mimo tabulku (8–25 mm)');
+  });
+  [['R','vpravo'],['L','vlevo']].forEach(([s,lbl])=>{const a=N('L2'),b=N('L3'+s);if(a!=null&&b!=null)A.push('celková délka '+lbl+' '+Math.round((a+b)*10)/10+' mm');});
+  return {A,W};
+}
 function zhPdfNavrh(v){
+  const sab=zhSabl();
+  if(sab.kluc==='endurant'){
+    const {A,W}=zhEndNavrh(v);
+    if(!A.length)return {text:'Návrh nelze vypočítat: '+W.join(' · ')+'.'};
+    const uvod='Návrh podle tabulky velikostí: ', riadok=uvod+A.join('; ')+'.';
+    const stare=String(v.comments||'').split('\n').filter(l=>!l.startsWith(uvod.trim())).join('\n').trim();
+    return {vals:{comments:(stare?stare+'\n':'')+riadok},
+      text:'Do komentáře doplněno: '+A.join('; ')+(W.length?' · ⚠️ '+W.join(' · '):'')+' · kódy a délky vyberte z tabulky na 2. straně; návrh potvrzuje lékař'};
+  }
   const m=zhPdfMerania(v), P=zaPlan(m);
   if(!P.mb)return {text:'Návrh nelze vypočítat: '+(P.miss.concat(P.warn).join(' · ')||'chybí měření')+'.'};
   const o={'ZIMB graft diameter':P.mb.dia,'ZIMB cl length/ graft length':P.mb.cl,'clLength1':P.mb.cl,'clLength':P.mb.cl};
@@ -1171,13 +1235,14 @@ function zhPdfNavrh(v){
   return {vals:o,text:'Doplněno podle tabulek: '+kody+(P.miss.concat(P.warn).length?' · ⚠️ '+P.miss.concat(P.warn).join(' · '):'')+' · návrh potvrzuje lékař'};
 }
 async function zhPdfSave(bytes,v){
-  if(!editId)return {ok:false,text:'❌ Požadavek není uložen.'};
-  const stary=zhPdfRow(), path=editId+'/'+Date.now()+'_zenith_alpha_harok.pdf';
+  const sab=zhSabl();
+  if(!editId||!sab)return {ok:false,text:'❌ Požadavek není uložen.'};
+  const stary=zhPdfRow(), path=editId+'/'+Date.now()+'_'+sab.kluc+'_harok.pdf';
   const up=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${path}`,{method:'POST',
     headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/pdf','x-upsert':'false'},body:new Blob([bytes],{type:'application/pdf'})});
   if(!up.ok)return {ok:false,text:'❌ Uložení PDF selhalo: '+up.status};
   const r=await fetch(`${SB_URL}/rest/v1/${TBL_PRIL}`,{method:'POST',headers:{...SB_HEAD(),'Prefer':'return=minimal'},
-    body:JSON.stringify({indikacia_id:editId,typ:'subor',nazov:ZH_PDF_NAZOV,storage_path:path,mime:'application/pdf'})});
+    body:JSON.stringify({indikacia_id:editId,typ:'subor',nazov:sab.nazov,storage_path:path,mime:'application/pdf'})});
   if(!r.ok)return {ok:false,text:'❌ Chyba při zápisu přílohy: '+r.status};
   // predošlá verzia hárku sa nahradí (až po úspešnom uložení novej)
   if(stary){
@@ -1187,18 +1252,27 @@ async function zhPdfSave(bytes,v){
     }catch{}
   }
   // merania z PDF prevezmeme do požiadavky, aby návrh a karta sedeli s hárkom
-  const z=Object.assign({},zhData);
-  Object.entries(ZH_PDF_MAP).forEach(([k,f])=>{
-    if(k==='notes'){if(v[f])z.notes=v[f];else delete z.notes;return;}
-    const n=zhPdfNum(v[f]);if(n==null)delete z[k];else z[k]=n;
-  });
-  const kod=(pre,a,b)=>{const x=String(v[a]||'').trim(),y=String(v[b]||'').trim();return x&&y?pre+'-'+x+'-'+y:'';};
-  [['ord_mb',kod('ZIMB','ZIMB graft diameter','ZIMB cl length/ graft length')],['ord_cl',kod('ZISL','Graft Diameter 1','Graft Length 1')],
-   ['ord_il',kod('ZISL','Graft Diameter','Graft Length')]].forEach(([k,c])=>{if(c)z[k]=c;else delete z[k];});
-  z.datum=today();z.pdf=true;zhData=z;
-  const m=zhPdfMerania(v);
-  if(m.st)document.getElementById('sz_zenith_strana').value=m.st;
-  [['dx','Right EI mm'],['sin','Left EI mm']].forEach(([x,f])=>{const n=zhPdfNum(v[f]);if(n!=null)document.getElementById('sz_AIE_'+x+'_mm').value=n;});
+  if(sab.kluc==='endurant'){
+    const z={};
+    ZH_END_NUM.forEach(k=>{const n=zhPdfNum(v[k]);if(n!=null)z[k]=n;});
+    const kody=[];
+    for(let i=1;i<=16;i++){const c=String(v['pc'+i]||'').trim(), q=String(v['qty'+i]||'').trim();if(c)kody.push((q?q+'× ':'')+c);}
+    if(kody.length)z.kody=kody;
+    z.datum=today();z.pdf=true;zhEnd=z;
+  }else{
+    const z=Object.assign({},zhData);
+    Object.entries(ZH_PDF_MAP).forEach(([k,f])=>{
+      if(k==='notes'){if(v[f])z.notes=v[f];else delete z.notes;return;}
+      const n=zhPdfNum(v[f]);if(n==null)delete z[k];else z[k]=n;
+    });
+    const kod=(pre,a,b)=>{const x=String(v[a]||'').trim(),y=String(v[b]||'').trim();return x&&y?pre+'-'+x+'-'+y:'';};
+    [['ord_mb',kod('ZIMB','ZIMB graft diameter','ZIMB cl length/ graft length')],['ord_cl',kod('ZISL','Graft Diameter 1','Graft Length 1')],
+     ['ord_il',kod('ZISL','Graft Diameter','Graft Length')]].forEach(([k,c])=>{if(c)z[k]=c;else delete z[k];});
+    z.datum=today();z.pdf=true;zhData=z;
+    const m=zhPdfMerania(v);
+    if(m.st)document.getElementById('sz_zenith_strana').value=m.st;
+    [['dx','Right EI mm'],['sin','Left EI mm']].forEach(([x,f])=>{const n=zhPdfNum(v[f]);if(n!=null)document.getElementById('sz_AIE_'+x+'_mm').value=n;});
+  }
   await saveCard();           // uloží merania v požiadavke a obnoví zoznam príloh
   const mm=document.getElementById('m_msg').textContent;
   if(/^[❌⚠]/.test(mm))return {ok:false,text:'PDF je uloženo, ale požadavek se nepodařilo uložit: '+mm};
