@@ -1107,9 +1107,16 @@ function zhClose(){
   zaEval();
 }
 // ── 📄 Originál hárku ako vyplniteľné PDF (tools/Aorta/harok.html v iframe) ──
-// Prázdna šablóna je súčasťou aplikácie; vyplnené PDF sa ukladá medzi prílohy pacienta.
+// Prázdna šablóna NIE JE v repozitári (verejný) – leží v chránenom úložisku (bucket príloh,
+// priečinok sablony/) a nahráva sa raz cez aplikáciu. Vyplnené PDF ide medzi prílohy pacienta.
 const ZH_PDF_NAZOV='Zenith Alpha – merací hárok.pdf';
-const ZH_PDF_SABLONA='/tools/Aorta/zenith-alpha-harok.pdf';
+const ZH_PDF_SABLONA='sablony/zenith-alpha-harok.pdf';
+const ZH_PDF_OVER=['D1','L3','ZIMB graft diameter','Graft Length'];   // polia, podľa ktorých spoznáme správny hárok
+async function zhPdfSablonaUpload(buf){
+  const up=await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${ZH_PDF_SABLONA}`,{method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken(),'Content-Type':'application/pdf','x-upsert':'false'},body:new Blob([buf],{type:'application/pdf'})});
+  return up.ok?{ok:true,text:'✓ Šablóna nahraná'}:{ok:false,text:'❌ Nahratie šablóny zlyhalo: '+up.status};
+}
 function zhPdfRow(){return PRILOHY.find(p=>p.indikacia_id===editId&&p.typ==='subor'&&p.nazov===ZH_PDF_NAZOV)||null;}
 function zhPdfOpen(){
   if(!editId){msg('m_msg','⚠️ Požiadavku najprv uložte (💾 Uložiť) – PDF hárok sa ukladá k uloženej požiadavke.','#b45309');return;}
@@ -1131,8 +1138,9 @@ async function zhPdfLoad(){
     if(!r.ok)throw new Error('uložený hárok sa nedá načítať ('+r.status+')');
     return {bytes:await r.arrayBuffer(),fresh:false,pacient,datum:new Date(row.created_at).toLocaleDateString('sk-SK')};
   }
-  const r=await fetch(ZH_PDF_SABLONA);
-  if(!r.ok)throw new Error('šablóna hárku chýba ('+r.status+')');
+  const r=await fetch(`${SB_URL}/storage/v1/object/authenticated/${BUCKET}/${ZH_PDF_SABLONA}`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbToken()}});
+  if(r.status===400||r.status===404)return {needTemplate:true,over:ZH_PDF_OVER,pacient};
+  if(!r.ok)throw new Error('šablóna hárku sa nedá načítať ('+r.status+')');
   // predvyplnenie: vlastné merania z rýchleho hárku, inak hodnoty odvodené z požiadavky
   const st=document.getElementById('sz_zenith_strana').value, o=st?zaOdvodene(st):{}, pre={};
   Object.entries(ZH_PDF_MAP).forEach(([k,f])=>{const v=zhData[k]??o[k];if(v!=null&&v!==''&&!(typeof v==='number'&&isNaN(v)))pre[f]=typeof v==='number'?Math.round(v*10)/10:v;});

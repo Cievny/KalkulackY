@@ -31,6 +31,11 @@ body{margin:0;background:#e5e9f5;font-family:-apple-system,BlinkMacSystemFont,"S
   <button type="button" id="b_close">Zavrieť</button>
 </div>
 <div id="msg"></div>
+<div id="tpl" style="display:none;margin:0 12px 16px;background:#fff;border:1.5px solid #bfdbfe;border-radius:10px;padding:14px 16px;max-width:560px;font-size:13.5px;line-height:1.5">
+  <b>Prázdny hárok ešte nie je v úložisku.</b><br>
+  Nahrajte ho raz – pôvodné PDF od výrobcu (Zenith Alpha, Device planning and sizing worksheet). Uloží sa do chráneného úložiska a odvtedy sa otvára všetkým prihláseným.
+  <div style="margin-top:10px"><input type="file" id="tpl_file" accept="application/pdf,.pdf"></div>
+</div>
 <div id="pages"></div>
 <script type="module">
 // Vyplniteľný originál hárku Cook AI-D53801. Stránka sama nič nenačíta ani neukladá:
@@ -40,7 +45,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='/tools/vendor/pdfjs/pdf.worker.min.mjs';
 const $=id=>document.getElementById(id);
 const say=(t,c)=>{$('msg').textContent=t||'';$('msg').style.color=c||'#374151';};
 const host=(window.parent!==window&&typeof window.parent.zhPdfLoad==='function')?window.parent:null;
-let doc=null, dirty=false;
+let doc=null, dirty=false, over=[];
 window.zhPdfDirty=()=>dirty;
 
 const fields=name=>[...document.querySelectorAll('.annotationLayer [name="'+CSS.escape(name)+'"]')];
@@ -98,6 +103,8 @@ async function start(){
   say('Načítavam hárok…');
   try{
     const src=await host.zhPdfLoad();
+    if(src.needTemplate){over=src.over||[];say('');$('tpl').style.display='';return;}
+    $('tpl').style.display='none';
     $('pac').textContent=src.pacient?'· '+src.pacient:'';
     doc=await pdfjsLib.getDocument({data:new Uint8Array(src.bytes)}).promise;
     await render();
@@ -107,6 +114,21 @@ async function start(){
     ['b_save','b_navrh','b_dl','b_print'].forEach(id=>$(id).disabled=false);
   }catch(e){say('❌ Hárok sa nepodarilo načítať: '+(e&&e.message||e),'#dc2626');}
 }
+$('tpl_file').onchange=async e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  say('Kontrolujem súbor…');
+  try{
+    const buf=await f.arrayBuffer();
+    const d=await pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise;
+    const fo=await d.getFieldObjects()||{};
+    const chyba=over.filter(k=>!fo[k]);
+    if(chyba.length){say('❌ Toto nie je správny hárok – chýbajú v ňom vyplniteľné polia ('+chyba.join(', ')+').','#dc2626');e.target.value='';return;}
+    say('Nahrávam šablónu…');
+    const r=await host.zhPdfSablonaUpload(buf);
+    if(!r.ok){say(r.text,'#dc2626');return;}
+    await start();
+  }catch(err){say('❌ Súbor sa nedá prečítať ako PDF: '+(err&&err.message||err),'#dc2626');}
+};
 $('b_save').onclick=async()=>{
   $('b_save').disabled=true;say('Ukladám…');
   try{

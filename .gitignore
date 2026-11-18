@@ -144,3 +144,7 @@ katalog_materialu*.json
 # Python cache (generátor cz-app)
 __pycache__/
 *.pyc
+
+# šablóny hárkov výrobcov – patria do chráneného úložiska, nie do verejného repozitára
+tools/Aorta/*.pdf
+cz-app/tools/Aorta/*.pdf
