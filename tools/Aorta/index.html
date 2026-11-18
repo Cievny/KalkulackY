@@ -89,6 +89,21 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
 .ifu-ok{background:#dcfce7;color:#15803d;}
 .ifu-warn{background:#fef3c7;color:#b45309;}
 .ifu-info{background:#f0f2f7;color:#6b7280;font-weight:600;}
+.zh-ov{z-index:400;}
+.zh-sec{font-size:11.5px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px;border-bottom:1px solid #e5e9f5;padding-bottom:4px;}
+.zh-g{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}
+.zh-g .fld input{padding:6px 7px;}
+.zh-sk{display:grid;grid-template-columns:1fr 210px 1fr;gap:10px;align-items:start;}
+.zh-sk h4{font-size:11.5px;color:#1e40af;margin:0 0 4px;}
+.zh-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:12px;color:#374151;}
+.zh-row span{flex:1;}
+.zh-row input{width:74px;padding:5px 6px;border:1.5px solid #dde1ea;border-radius:6px;font-size:13px;}
+.zh-ord{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+@media(max-width:700px){.zh-g{grid-template-columns:repeat(3,1fr);}.zh-sk{grid-template-columns:1fr;}.zh-ord{grid-template-columns:1fr;}}
+@media print{body.zh-print>*:not(#zh_overlay){display:none !important;}
+body.zh-print #zh_overlay{position:static;display:block;background:#fff;padding:0;}
+body.zh-print #zh_overlay .modal{box-shadow:none;max-width:none;padding:0;}
+body.zh-print .zh-noprint{display:none !important;}}
 .btn-nalez{padding:9px 16px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
 .btn-nalez:hover{background:#6d28d9;}
 .btn-nalez-done{display:inline-block;padding:9px 16px;background:#dcfce7;color:#15803d;border:1.5px solid #86efac;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none;}
@@ -256,6 +271,8 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
         </div>
         <div id="za_out" style="font-size:12.5px;line-height:1.55;margin-top:8px"></div>
         <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="btn-save" onclick="zhOpen()">📐 Otvoriť merací hárok</button>
+          <span id="zh_stav" style="font-size:12px;color:#6b7280"></span>
           <button type="button" class="btn-edit" id="za_btn" onclick="zaDoMaterialu()" style="display:none">➕ Zapísať do „Materiál na objednanie“</button>
           <a href="https://cdnnamsseuspwsprod.azureedge.net/data/resources/AI-D53801-EN-IA_1579213260886.pdf" target="_blank" rel="noopener" style="font-size:12px">📄 pôvodný hárok (PDF)</a>
         </div>
@@ -347,6 +364,60 @@ h1{font-size:18px;font-weight:700;color:#1a2745;padding:20px 20px 0;}
       <button class="btn-close" onclick="closeSeminar()">Zavrieť</button>
       <span class="m-msg" id="sem_msg"></span>
     </div>
+  </div>
+</div>
+
+<!-- Modal: merací hárok Zenith Alpha -->
+<div class="overlay zh-ov" id="zh_overlay">
+  <div class="modal" style="max-width:860px">
+    <div class="m-head">
+      <h2>📐 Merací hárok – Zenith Alpha <span id="zh_pac" style="font-weight:400;color:#6b7280;font-size:13px"></span></h2>
+      <div class="zh-noprint" style="display:flex;gap:6px;flex-wrap:wrap">
+        <button type="button" class="btn-save-top" onclick="zhSave()">💾 Uložiť</button>
+        <button type="button" class="btn-close" onclick="zhPrint()">🖨️ Tlač / PDF</button>
+        <button type="button" class="btn-close" onclick="zhClose()">Zavrieť</button>
+      </div>
+    </div>
+    <div id="zh_msg" class="m-msg zh-noprint" style="min-height:16px"></div>
+    <div class="zh-sec">1. Zavedenie hlavného tela</div>
+    <div class="m-grid">
+      <div class="fld"><label>Strana zavedenia (ipsilaterálna)</label><select id="zh_strana"><option value="">–</option><option value="dx">vpravo (dx)</option><option value="sin">vľavo (sin)</option></select></div>
+      <div class="fld" style="grid-column:span 2;align-self:end"><p class="page-sub" style="padding:0">Merajte najmenší vnútorný priemer od miesta zavedenia po aortu. Zavádzač má vonkajší priemer 6 mm, pri 36 mm tele 6,5 mm.</p></div>
+    </div>
+    <div class="zh-sec">2. Poloha stola (voliteľné – dopočíta dĺžky)</div>
+    <div class="zh-g"><div class="fld"><label>Najnižšia renálka</label><input id="zh_tp_ren" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>Bifurkácia aorty</label><input id="zh_tp_bif" type="number" step="0.1" inputmode="decimal"></div><div class="fld" style="grid-column:span 2"><label>Odstup AII kontralat.</label><input id="zh_tp_cl" type="number" step="0.1" inputmode="decimal"></div><div class="fld" style="grid-column:span 2"><label>Odstup AII ipsilat.</label><input id="zh_tp_il" type="number" step="0.1" inputmode="decimal"></div></div>
+    <p class="page-sub" style="padding:4px 0 0">Pri meraní dĺžky z CT pripočítajte k rozdielu polôh odhad laterálnej deviácie (tortuozity).</p>
+    <div class="zh-sec">3. Priemery a dĺžky (mm)</div>
+    <div class="zh-g"><div class="fld"><label>D1 krčok</label><input id="zh_D1" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>D2 kontralat. AIC</label><input id="zh_D2" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>D3 ipsilat. AIC</label><input id="zh_D3" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>L1 → bifurkácia</label><input id="zh_L1" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>L2 → AII kontralat.</label><input id="zh_L2" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>L3 → AII ipsilat.</label><input id="zh_L3" type="number" step="0.1" inputmode="decimal"></div></div>
+    <p class="page-sub" style="padding:4px 0 0">Dĺžky L sa merajú od najnižšej renálky. D1 merajte 15 mm pod najnižšou renálkou a skontrolujte, či priemer nerastie o viac ako 10 %. Sivé hodnoty sú prevzaté z požiadavky; prepíšte ich vlastným meraním.</p>
+    <div class="zh-sec">4. Náčrt a kontrolné priemery (mm)</div>
+    <div class="zh-sk">
+      <div><h4>Pravá strana (dx)</h4><div class="zh-row"><span>20 mm nad AII</span><input id="zh_dx20" type="number" step="0.1" inputmode="decimal"></div><div class="zh-row"><span>15 mm nad AII</span><input id="zh_dx15" type="number" step="0.1" inputmode="decimal"></div><div class="zh-row"><span>10 mm nad AII</span><input id="zh_dx10" type="number" step="0.1" inputmode="decimal"></div><div class="zh-row"><span>5 mm nad AII</span><input id="zh_dx5" type="number" step="0.1" inputmode="decimal"></div><div class="zh-row"><span>pri odstupe AII</span><input id="zh_dx0" type="number" step="0.1" inputmode="decimal"></div><div class="zh-row"><span>AIE – najužšie miesto</span><input id="zh_ei_dx" type="number" step="0.1" inputmode="decimal"></div></div>
+      <div><svg viewBox="0 0 210 330" style="width:100%;max-width:210px;display:block;margin:0 auto" aria-hidden="true">
+<g fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M88 6 V52 C88 78 52 96 52 140 C52 184 84 196 90 222 C82 250 60 280 44 322"/>
+<path d="M122 6 V52 C122 78 158 96 158 140 C158 184 126 196 120 222 C128 250 150 280 166 322"/>
+<path d="M105 236 C96 262 78 292 66 322"/><path d="M105 236 C114 262 132 292 144 322"/>
+<path d="M88 30 H58 M88 40 H60"/><path d="M122 24 H152 M122 34 H150"/>
+<path d="M62 290 C52 296 46 306 44 318" stroke-dasharray="3 3"/><path d="M148 290 C158 296 164 306 166 318" stroke-dasharray="3 3"/>
+</g>
+<g stroke="#3b82f6" stroke-width="1" stroke-dasharray="2 3"><path d="M80 44 H130"/><path d="M80 52 H130"/><path d="M80 60 H130"/><path d="M80 68 H130"/><path d="M46 140 H164"/><path d="M84 222 H126"/></g>
+<g font-size="9" fill="#1e40af" font-family="sans-serif"><text x="133" y="47">renálka</text><text x="133" y="71">15 mm</text><text x="86" y="136">max. Ø</text><text x="129" y="225">bifurkácia</text><text x="4" y="300">dx</text><text x="192" y="300">sin</text><text x="20" y="328">AII</text><text x="176" y="328">AII</text></g>
+</svg></div>
+      <div><h4>Ľavá strana (sin)</h4><div class="zh-row"><span>20 mm nad AII</span><input id="zh_sin20" type="number" step="0.1" inputmode="decimal"></div><div class="zh-row"><span>15 mm nad AII</span><input id="zh_sin15" type="number" step="0.1" inputmode="decimal"></div><div class="zh-row"><span>10 mm nad AII</span><input id="zh_sin10" type="number" step="0.1" inputmode="decimal"></div><div class="zh-row"><span>5 mm nad AII</span><input id="zh_sin5" type="number" step="0.1" inputmode="decimal"></div><div class="zh-row"><span>pri odstupe AII</span><input id="zh_sin0" type="number" step="0.1" inputmode="decimal"></div><div class="zh-row"><span>AIE – najužšie miesto</span><input id="zh_ei_sin" type="number" step="0.1" inputmode="decimal"></div></div>
+    </div>
+    <div class="zh-g" style="margin-top:8px"><div class="fld"><label>Krčok pri renálke</label><input id="zh_n0" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>Krčok −5 mm</label><input id="zh_n5" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>Krčok −10 mm</label><input id="zh_n10" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>Krčok −15 mm</label><input id="zh_n15" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>Max. Ø vaku (cm)</label><input id="zh_aaa_cm" type="number" step="0.1" inputmode="decimal"></div><div class="fld"><label>Bifurkácia Ø</label><input id="zh_bif" type="number" step="0.1" inputmode="decimal"></div></div>
+    <div class="zh-sec">5. Návrh a objednávacie čísla</div>
+    <div id="zh_plan" style="font-size:12.5px;line-height:1.55"></div>
+    <div class="zh-ord" style="margin-top:8px">
+      <div class="fld"><label>Hlavné telo (ZIMB)</label><input id="zh_ord_mb" placeholder="podľa tabuľky"></div>
+      <div class="fld"><label>Kontralat. ramienko (ZISL)</label><input id="zh_ord_cl" placeholder="podľa tabuľky"></div>
+      <div class="fld"><label>Ipsilat. ramienko (ZISL)</label><input id="zh_ord_il" placeholder="podľa tabuľky"></div>
+    </div>
+    <p class="page-sub" style="padding:4px 0 0">Prázdne pole = platí návrh z tabuliek. Ak sa rozhodnete inak, napíšte vlastné číslo.</p>
+    <div class="zh-sec">6. Poznámky</div>
+    <div class="fld"><textarea id="zh_notes" placeholder="Poznámky k meraniu a plánu…"></textarea></div>
+    <p class="page-sub" style="padding:8px 0 0">Podľa hárku Cook AI-D53801-EN-F (01/2020). Návrh je len orientačný; merania a rozhodnutie potvrdzuje lekár.</p>
   </div>
 </div>
 
@@ -817,6 +888,7 @@ function sizingToObj(){
   if(g)s.graft=g;
   const zs=document.getElementById('sz_zenith_strana').value;
   if(zs&&g==='Zenith Alpha')s.zenith_strana=zs;
+  if(g==='Zenith Alpha'&&Object.keys(zhData).length)s.zenith=zhData;
   return s;
 }
 function sizingToForm(it){
@@ -831,6 +903,7 @@ function sizingToForm(it){
   g.value=s.graft||'';
   if(g.selectedIndex===-1)g.selectedIndex=0;
   document.getElementById('sz_zenith_strana').value=s.zenith_strana||'';
+  zhData=(s.zenith&&typeof s.zenith==='object'&&!Array.isArray(s.zenith))?Object.assign({},s.zenith):{};
   document.getElementById('sizing_det').open=Object.keys(s).length>0;
   ifuEval();
   zaEval();
@@ -910,22 +983,44 @@ function zaPlan(m){
   if(P.il&&(P.il.label===42||P.il.label===59))P.warn.push('ipsilaterálne ramienko '+P.il.label+' mm: presah kontralaterálneho ramienka do hlavného tela obmedziť na 16 mm');
   return P;
 }
-function zaMerania(){
+// hodnoty z meracieho hárku majú prednosť; inak sa dopočítajú z polí požiadavky
+function zaOdvodene(st){
   const n=id=>parseFloat(document.getElementById(id).value);
+  const il=st, cl=st==='dx'?'sin':'dx', L1=n('sz_dlzka_renalka_bifurkacia_mm');
+  return {D1:n('af_krcok_priemer'),L1,D2:n('sz_AIC_'+cl+'_mm'),L2:L1+n('sz_dlzka_AIC_'+cl+'_mm'),
+    D3:n('sz_AIC_'+il+'_mm'),L3:L1+n('sz_dlzka_AIC_'+il+'_mm'),bif:n('sz_bifurkacia_mm')};
+}
+function zaMerania(z){
+  z=z||zhData;
   const st=document.getElementById('sz_zenith_strana').value;
   if(!st)return null;
-  const il=st, cl=st==='dx'?'sin':'dx', L1=n('sz_dlzka_renalka_bifurkacia_mm');
-  return {st,il,cl,D1:n('af_krcok_priemer'),L1,
-    D2:n('sz_AIC_'+cl+'_mm'),L2:L1+n('sz_dlzka_AIC_'+cl+'_mm'),
-    D3:n('sz_AIC_'+il+'_mm'),L3:L1+n('sz_dlzka_AIC_'+il+'_mm'),
-    ei:n('sz_AIE_'+il+'_mm'),bif:n('sz_bifurkacia_mm')};
+  const o=zaOdvodene(st), m={st,il:st,cl:st==='dx'?'sin':'dx',zh:{}};
+  ['D1','L1','D2','L2','D3','L3','bif'].forEach(k=>{const v=parseFloat(z[k]);m.zh[k]=!isNaN(v);m[k]=isNaN(v)?o[k]:v;});
+  m.ei=parseFloat(document.getElementById('sz_AIE_'+st+'_mm').value);
+  m.ord={mb:z.ord_mb||'',cl:z.ord_cl||'',il:z.ord_il||''};
+  return m;
 }
 function zaText(P,m){
   const a=[];
-  if(P.mb)a.push(P.mb.kod);
-  if(P.cl)a.push(P.cl.kod+' (kontralat. '+m.cl+')');
-  if(P.il)a.push(P.il.kod+' (ipsilat. '+m.il+')');
+  const o=m.ord||{}, mb=o.mb||(P.mb&&P.mb.kod), cl=o.cl||(P.cl&&P.cl.kod), il=o.il||(P.il&&P.il.kod);
+  if(mb)a.push(mb);
+  if(cl)a.push(cl+' (kontralat. '+m.cl+')');
+  if(il)a.push(il+' (ipsilat. '+m.il+')');
   return a.length?'Zenith Alpha: '+a.join(' + '):'';
+}
+function zaHtml(P,m){
+  const H=[], o=m.ord||{}, vl=(k)=>o[k]?' <span class="ifu-chip ifu-info">vlastné: '+escHtml(o[k])+'</span>':'';
+  if(P.mb)H.push('<div><b>Hlavné telo:</b> <span class="ifu-chip ifu-ok">'+P.mb.kod+'</span> priemer '+P.mb.dia+' mm, kontralat. dĺžka '+P.mb.cl+' mm, ipsilat. dĺžka '+P.mb.il+' mm'+vl('mb')+'</div>');
+  [['cl','Kontralaterálne ramienko ('+m.cl+')','L2',m.L2],['il','Ipsilaterálne ramienko ('+m.il+')','L3',m.L3]].forEach(([k,lbl,ln,L])=>{
+    if(P[k])H.push('<div><b>'+lbl+':</b> <span class="ifu-chip ifu-ok">'+P[k].kod+'</span> priemer '+P[k].dia+' mm, dĺžka '+P[k].label+' mm (celková '+P[k].total+' mm) · '+ln+' '+Math.round(L)+' − '+P.mb.cl+' = '+P[k].ves+' mm'+vl(k)+'</div>');
+  });
+  if(P.mb&&(P.cl||P.il)){
+    const odv=!m.zh.L2||!m.zh.L3;
+    H.push('<div style="color:#6b7280">'+(odv?'L2 a L3 bez vlastného merania = dĺžka renálka → bifurkácia + dĺžka AIC príslušnej strany. ':'')+'Potrebný presah ramienok 16–32 mm.</div>');
+  }
+  if(P.miss.length)H.push('<div><span class="ifu-chip ifu-info">Chýba: '+escHtml(P.miss.join(' · '))+'</span></div>');
+  P.warn.forEach(w=>H.push('<div><span class="ifu-chip ifu-warn">⚠️ '+escHtml(w)+'</span></div>'));
+  return H.join('');
 }
 function zaEval(){
   const box=document.getElementById('za_box'), out=document.getElementById('za_out'), btn=document.getElementById('za_btn');
@@ -933,19 +1028,87 @@ function zaEval(){
   box.style.display=on?'':'none';
   if(!on)return;
   btn.style.display='none';
+  const n=Object.keys(zhData).length;
+  document.getElementById('zh_stav').textContent=n?'hárok vyplnený ('+n+' údajov)'+(zhData.datum?' · '+zhData.datum:''):'hárok zatiaľ prázdny';
   const m=zaMerania();
   if(!m){out.innerHTML='<span class="ifu-chip ifu-info">Vyberte stranu zavedenia hlavného tela.</span>';return;}
-  const P=zaPlan(m), H=[];
-  if(P.mb)H.push('<div><b>Hlavné telo:</b> <span class="ifu-chip ifu-ok">'+P.mb.kod+'</span> priemer '+P.mb.dia+' mm, kontralat. dĺžka '+P.mb.cl+' mm, ipsilat. dĺžka '+P.mb.il+' mm</div>');
-  [['cl','Kontralaterálne ramienko ('+m.cl+')','L2',m.L2],['il','Ipsilaterálne ramienko ('+m.il+')','L3',m.L3]].forEach(([k,lbl,ln,L])=>{
-    if(P[k])H.push('<div><b>'+lbl+':</b> <span class="ifu-chip ifu-ok">'+P[k].kod+'</span> priemer '+P[k].dia+' mm, dĺžka '+P[k].label+' mm (celková '+P[k].total+' mm) · '+ln+' '+Math.round(L)+' − '+P.mb.cl+' = '+P[k].ves+' mm</div>');
-  });
-  if(P.mb&&(P.cl||P.il))H.push('<div style="color:#6b7280">L2 a L3 = dĺžka renálka → bifurkácia + dĺžka AIC príslušnej strany. Potrebný presah ramienok 16–32 mm.</div>');
-  if(P.miss.length)H.push('<div><span class="ifu-chip ifu-info">Chýba: '+escHtml(P.miss.join(' · '))+'</span></div>');
-  P.warn.forEach(w=>H.push('<div><span class="ifu-chip ifu-warn">⚠️ '+escHtml(w)+'</span></div>'));
-  out.innerHTML=H.join('');
+  const P=zaPlan(m);
+  out.innerHTML=zaHtml(P,m);
   if(zaText(P,m))btn.style.display='';
 }
+// ── 📐 Merací hárok Zenith Alpha – ukladá sa do sizing.zenith ─────
+let zhData={};
+const ZH_NUM=['tp_ren','tp_bif','tp_cl','tp_il','D1','D2','D3','L1','L2','L3','n0','n5','n10','n15','aaa_cm','bif',
+  'dx20','dx15','dx10','dx5','dx0','sin20','sin15','sin10','sin5','sin0'];
+const ZH_TXT=['ord_mb','ord_cl','ord_il','notes'];
+function zhRead(){
+  const z={};
+  ZH_NUM.forEach(k=>{const v=parseFloat(document.getElementById('zh_'+k).value);if(!isNaN(v))z[k]=v;});
+  ZH_TXT.forEach(k=>{const v=document.getElementById('zh_'+k).value.trim();if(v)z[k]=v;});
+  return z;
+}
+// hárok → polia požiadavky, ktoré sa nezdvojujú (strana, AIE)
+function zhSync(){
+  document.getElementById('sz_zenith_strana').value=document.getElementById('zh_strana').value;
+  ['dx','sin'].forEach(st=>{document.getElementById('sz_AIE_'+st+'_mm').value=document.getElementById('zh_ei_'+st).value;});
+}
+function zhLive(){
+  zhSync();
+  // poloha stola → dĺžky (len keď sú obe polohy vyplnené)
+  const n=k=>parseFloat(document.getElementById('zh_'+k).value), r=n('tp_ren');
+  [['tp_bif','L1'],['tp_cl','L2'],['tp_il','L3']].forEach(([a,b])=>{
+    if(zhLive._src===a||zhLive._src==='tp_ren'){const v=n(a);if(!isNaN(r)&&!isNaN(v))document.getElementById('zh_'+b).value=Math.abs(Math.round((v-r)*10)/10);}
+  });
+  const z=zhRead(), box=document.getElementById('zh_plan'), st=document.getElementById('zh_strana').value;
+  const o=st?zaOdvodene(st):{};
+  ['D1','D2','D3','L1','L2','L3','bif'].forEach(k=>{document.getElementById('zh_'+k).placeholder=(o[k]!=null&&!isNaN(o[k]))?String(Math.round(o[k]*10)/10):'';});
+  const m=zaMerania(z);
+  if(!m){box.innerHTML='<span class="ifu-chip ifu-info">Vyberte stranu zavedenia hlavného tela.</span>';return;}
+  const P=zaPlan(m);
+  box.innerHTML=zaHtml(P,m);
+  [['mb','ord_mb'],['cl','ord_cl'],['il','ord_il']].forEach(([k,id])=>{document.getElementById('zh_'+id).placeholder=P[k]?P[k].kod:'podľa tabuľky';});
+}
+function zhOpen(){
+  ZH_NUM.concat(ZH_TXT).forEach(k=>{document.getElementById('zh_'+k).value=zhData[k]??'';});
+  document.getElementById('zh_strana').value=document.getElementById('sz_zenith_strana').value;
+  ['dx','sin'].forEach(st=>{document.getElementById('zh_ei_'+st).value=document.getElementById('sz_AIE_'+st+'_mm').value;});
+  const ini=document.getElementById('af_inicialy').value.trim();
+  document.getElementById('zh_pac').textContent=ini?'· '+ini:'';
+  msg('zh_msg','','');
+  zhLive._src='';zhLive();
+  document.getElementById('zh_overlay').classList.add('open');
+}
+// prevezme hárok do požiadavky (bez zápisu do databázy)
+function zhApply(){
+  zhSync();
+  const z=zhRead();
+  if(Object.keys(z).length)z.datum=today();
+  zhData=z;
+  ifuEval();zaEval();
+}
+async function zhSave(){
+  zhApply();
+  if(!document.getElementById('af_rodne_cislo').value.trim()){msg('zh_msg','⚠️ Hárok je prevzatý do požiadavky. Na uloženie do databázy doplňte v požiadavke rodné číslo a dajte Uložiť.','#b45309');return;}
+  msg('zh_msg','Ukladám…','#6b7280');
+  await saveCard();
+  const mm=document.getElementById('m_msg');
+  msg('zh_msg',mm.textContent,mm.style.color||'#1d6f42');
+}
+function zhClose(){
+  const norm=o=>JSON.stringify(Object.entries(o).filter(([k])=>k!=='datum').sort((a,b)=>a[0]<b[0]?-1:1));
+  if(norm(zhRead())!==norm(zhData)&&
+     !confirm('Hárok má neuložené zmeny. Zavrieť bez uloženia?'))return;
+  document.getElementById('zh_overlay').classList.remove('open');
+  zaEval();
+}
+function zhPrint(){
+  document.body.classList.add('zh-print');
+  const off=()=>{document.body.classList.remove('zh-print');window.removeEventListener('afterprint',off);};
+  window.addEventListener('afterprint',off);
+  window.print();
+}
+ZH_NUM.concat(ZH_TXT,['strana','ei_dx','ei_sin']).forEach(k=>{const el=document.getElementById('zh_'+k);
+  ['input','change'].forEach(ev=>el.addEventListener(ev,()=>{zhLive._src=k;zhLive();}));});
 function zaDoMaterialu(){
   const m=zaMerania(); if(!m)return;
   const t=zaText(zaPlan(m),m); if(!t)return;
